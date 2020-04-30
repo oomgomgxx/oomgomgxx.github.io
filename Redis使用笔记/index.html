@@ -1,0 +1,871 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>一篇文章解决Redis的基本使用 | 学然后知不足</title><meta name="description" content="一篇文章解决Redis的基本使用"><meta name="keywords" content="数据库"><meta name="author" content="TD"><meta name="copyright" content="TD"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/img/binary-code.svg"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="crossorigin"/><meta name="twitter:card" content="summary"><meta name="twitter:title" content="一篇文章解决Redis的基本使用"><meta name="twitter:description" content="一篇文章解决Redis的基本使用"><meta name="twitter:image" content="https://tandi.pub/image/redis.png"><meta property="og:type" content="article"><meta property="og:title" content="一篇文章解决Redis的基本使用"><meta property="og:url" content="https://tandi.pub/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/"><meta property="og:site_name" content="学然后知不足"><meta property="og:description" content="一篇文章解决Redis的基本使用"><meta property="og:image" content="https://tandi.pub/image/redis.png"><script src="https://cdn.jsdelivr.net/npm/js-cookie/dist/js.cookie.min.js"></script><script>var autoChangeMode = '1'
+var t = Cookies.get("theme")
+if (autoChangeMode == '1'){
+  var isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
+  var isLightMode = window.matchMedia("(prefers-color-scheme: light)").matches
+  var isNotSpecified = window.matchMedia("(prefers-color-scheme: no-preference)").matches
+  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+  if (t === undefined){
+    if (isLightMode) activateLightMode()
+    else if (isDarkMode) activateDarkMode()
+    else if (isNotSpecified || hasNoSupport){
+      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
+      var now = new Date()
+      var hour = now.getHours()
+      var isNight = hour < 6 || hour >= 18
+      isNight ? activateDarkMode() : activateLightMode()
+  }
+  } else if (t == 'light') activateLightMode()
+  else activateDarkMode()
+
+} else if (autoChangeMode == '2'){
+  now = new Date();
+  hour = now.getHours();
+  isNight = hour < 6 || hour >= 18
+  if(t === undefined) isNight? activateDarkMode() : activateLightMode()
+  else if (t === 'light') activateLightMode()
+  else activateDarkMode() 
+} else {
+  if ( t == 'dark' ) activateDarkMode()
+  else if ( t == 'light') activateLightMode()
+}
+
+function activateDarkMode(){
+  document.documentElement.setAttribute('data-theme', 'dark')
+  if (document.querySelector('meta[name="theme-color"]') !== null){
+    document.querySelector('meta[name="theme-color"]').setAttribute('content','#000')
+  }
+}
+function activateLightMode(){
+  document.documentElement.setAttribute('data-theme', 'light')
+  if (document.querySelector('meta[name="theme-color"]') !== null){
+  document.querySelector('meta[name="theme-color"]').setAttribute('content','#fff')
+  }
+}</script><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="canonical" href="https://tandi.pub/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/"><link rel="prev" title="Redis高可用解决方案" href="https://tandi.pub/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/"><link rel="next" title="了解NoSQL" href="https://tandi.pub/%E4%BA%86%E8%A7%A3NoSQL/"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css"><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"cookieDomain":"https://tandi.pub","msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  bookmark: {
+    message_prev: '按',
+    message_next: '键将本页加入书签'
+  },
+  runtime_unit: '天',
+  runtime: false,
+  copyright: undefined,
+  ClickShowText: undefined,
+  medium_zoom: false,
+  fancybox: true,
+  Snackbar: undefined,
+  baiduPush: true,
+  highlightCopy: true,
+  highlightLang: true,
+  highlightShrink: 'false',
+  isFontAwesomeV5: false,
+  isPhotoFigcaption: false
+  
+}</script><script>var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isSidebar: true  
+  }</script><noscript><style>
+#page-header {
+  opacity: 1
+}
+.justified-gallery img{
+  opacity: 1
+}
+</style></noscript><meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head><body><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/archives/"><div class="headline">文章</div><div class="length_num">58</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/tags/"><div class="headline">标签</div><div class="length_num">19</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/categories/"><div class="headline">分类</div><div class="length_num">17</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div></div></div><i class="fa fa-arrow-right on" id="toggle-sidebar" aria-hidden="true">     </i><div id="sidebar"><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar">     </div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么？"><span class="toc-number">2.</span> <span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#入门案例"><span class="toc-number">3.</span> <span class="toc-text">入门案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#下载和安装"><span class="toc-number">3.1.</span> <span class="toc-text">下载和安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服务端的3种启动方式"><span class="toc-number">3.2.</span> <span class="toc-text">服务端的3种启动方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#停止服务端"><span class="toc-number">3.3.</span> <span class="toc-text">停止服务端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#客户端连接服务端"><span class="toc-number">3.4.</span> <span class="toc-text">客户端连接服务端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实时监控"><span class="toc-number">3.5.</span> <span class="toc-text">实时监控</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用key命令"><span class="toc-number">4.</span> <span class="toc-text">常用key命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#支持的5种数据类型"><span class="toc-number">5.</span> <span class="toc-text">支持的5种数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#string"><span class="toc-number">5.1.</span> <span class="toc-text">string</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#list"><span class="toc-number">5.2.</span> <span class="toc-text">list</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#hash"><span class="toc-number">5.3.</span> <span class="toc-text">hash</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-number">5.4.</span> <span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#zset"><span class="toc-number">5.5.</span> <span class="toc-text">zset</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#stream（redis-5-x）"><span class="toc-number">5.6.</span> <span class="toc-text">stream（redis 5.x）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他命令"><span class="toc-number">6.</span> <span class="toc-text">其他命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事务相关"><span class="toc-number">7.</span> <span class="toc-text">事务相关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用场景"><span class="toc-number">8.</span> <span class="toc-text">使用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#两种持久化策略"><span class="toc-number">9.</span> <span class="toc-text">两种持久化策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#RDB（默认）"><span class="toc-number">9.1.</span> <span class="toc-text">RDB（默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AOF"><span class="toc-number">9.2.</span> <span class="toc-text">AOF</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据库文件的校验"><span class="toc-number">9.3.</span> <span class="toc-text">数据库文件的校验</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis重启加载流程"><span class="toc-number">9.4.</span> <span class="toc-text">Redis重启加载流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么单线程还那么快？"><span class="toc-number">10.</span> <span class="toc-text">为什么单线程还那么快？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于分布式缓存"><span class="toc-number">11.</span> <span class="toc-text">关于分布式缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis的缓存更新策略"><span class="toc-number">11.1.</span> <span class="toc-text">Redis的缓存更新策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis中算法剔除相关的配置"><span class="toc-number">11.2.</span> <span class="toc-text">Redis中算法剔除相关的配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式缓存需要注意问题"><span class="toc-number">11.3.</span> <span class="toc-text">分布式缓存需要注意问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存穿透"><span class="toc-number">11.3.1.</span> <span class="toc-text">缓存穿透</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#无底洞问题"><span class="toc-number">11.3.2.</span> <span class="toc-text">无底洞问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存击穿（热点key失效）"><span class="toc-number">11.3.3.</span> <span class="toc-text">缓存击穿（热点key失效）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存雪崩"><span class="toc-number">11.3.4.</span> <span class="toc-text">缓存雪崩</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#数据库和缓存之间的双写一致性问题"><span class="toc-number">11.3.5.</span> <span class="toc-text">数据库和缓存之间的双写一致性问题</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#问题赘述"><span class="toc-number">11.3.5.1.</span> <span class="toc-text">问题赘述</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#主动更新方案对比"><span class="toc-number">11.3.5.2.</span> <span class="toc-text">主动更新方案对比</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#解决缓存更新失败问题"><span class="toc-number">11.3.5.3.</span> <span class="toc-text">解决缓存更新失败问题</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于Redis的内存碎片问题"><span class="toc-number">12.</span> <span class="toc-text">关于Redis的内存碎片问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是内存碎片和造成内存碎片的原因"><span class="toc-number">12.1.</span> <span class="toc-text">什么是内存碎片和造成内存碎片的原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展知识"><span class="toc-number">12.2.</span> <span class="toc-text">拓展知识</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查看是否存在内存碎片"><span class="toc-number">12.3.</span> <span class="toc-text">查看是否存在内存碎片</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#解决内存碎片问题方案"><span class="toc-number">12.4.</span> <span class="toc-text">解决内存碎片问题方案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#有趣的功能"><span class="toc-number">13.</span> <span class="toc-text">有趣的功能</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#发布-订阅"><span class="toc-number">13.1.</span> <span class="toc-text">发布&#x2F;订阅</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GEO"><span class="toc-number">13.2.</span> <span class="toc-text">GEO</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用配置"><span class="toc-number">14.</span> <span class="toc-text">常用配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java版客户端"><span class="toc-number">15.</span> <span class="toc-text">Java版客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Jedis"><span class="toc-number">15.1.</span> <span class="toc-text">Jedis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-Data-Redis"><span class="toc-number">15.2.</span> <span class="toc-text">Spring Data Redis</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#可视化客户端"><span class="toc-number">16.</span> <span class="toc-text">可视化客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis-Desktop-Manager"><span class="toc-number">16.1.</span> <span class="toc-text">Redis Desktop Manager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TablePlus"><span class="toc-number">16.2.</span> <span class="toc-text">TablePlus</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-number">17.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-number">18.</span> <span class="toc-text">内容修订</span></a></li></ol></div></div></div><div id="body-wrap"><div class="post-bg" id="nav" style="background-image: url(/image/redis.png)"><div id="page-header"><span class="pull_left" id="blog_name"><a class="blog_title" id="site-name" href="/">学然后知不足</a></span><span class="pull_right menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fa fa-bars fa-fw" aria-hidden="true"></i></a></span></span></div><div id="post-info"><div id="post-title"><div class="posttitle">一篇文章解决Redis的基本使用</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2019-01-02 13:24:33"><i class="fa fa-calendar" aria-hidden="true"></i> 发表于 2019-01-02</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-04-12 09:35:29"><i class="fa fa-history" aria-hidden="true"></i> 更新于 2020-04-12</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fa fa-angle-right post-meta__separator" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span></div><div class="meta-secondline"> </div><div class="meta-thirdline"><span class="post-meta-pv-cv"></span><span class="post-meta-commentcount"><i class="post-meta__icon fa fa-comment-o" aria-hidden="true"></i><span>评论数:</span><a href="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/#post-comment"><span class="gitalk-comment-count comment-count"></span></a></span></div></div></div></div><main class="layout_post" id="content-inner"><article id="post"><div id="article-container"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>推荐入门书籍：《Redis开发与运维》和《Redis实战》</p>
+<p>Redis 命令参考：<a href="http://doc.redisfans.com/" target="_blank" rel="noopener">http://doc.redisfans.com/</a></p>
+<p>Redis 文档：<a href="http://www.redis.cn/documentation.html" target="_blank" rel="noopener">http://www.redis.cn/documentation.html</a></p>
+<p>lua入门：<a href="https://moonbingbing.gitbooks.io/openresty-best-practices/" target="_blank" rel="noopener">https://moonbingbing.gitbooks.io/openresty-best-practices/</a></p>
+<h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><p>Redis是一款C语言开发的键值对（key-value）NoSQL。</p>
+<p>Redis具有以下特性：</p>
+<ul>
+<li>开源</li>
+<li>基于内存</li>
+<li>单线程</li>
+<li>支持多种数据类型</li>
+<li>跨平台且支持多种语言客户端</li>
+</ul>
+<h2 id="入门案例"><a href="#入门案例" class="headerlink" title="入门案例"></a>入门案例</h2><h3 id="下载和安装"><a href="#下载和安装" class="headerlink" title="下载和安装"></a>下载和安装</h3><blockquote>
+<p>官网地址：<a href="https://redis.io/" target="_blank" rel="noopener">https://redis.io/</a></p>
+</blockquote>
+<p><strong>[下载并解压]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget http://download.redis.io/releases/redis-5.0.5.tar.gz # 下载redis源码包</span><br><span class="line">tar -zxvf redis-5.0.5.tar.gz -C ~/apps/   # 解压到指定位置</span><br></pre></td></tr></table></figure>
+
+<p><strong>[安装]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd ~/apps/redis-5.0.5 # 切换到解压的目录下</span><br><span class="line">make # 编译源码（需要gcc-c++提供编译支持）</span><br><span class="line">mkdir ～/app/redis # 创建一个用于存放安装内容的文件夹</span><br><span class="line">make install PREFIX=/home/用户名称/apps/redis  #　安装到该文件夹下，注意要绝对路径</span><br><span class="line">cp redis.conf ../redis # 将配置文件复制一份给安装好的redis</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="服务端的3种启动方式"><a href="#服务端的3种启动方式" class="headerlink" title="服务端的3种启动方式"></a>服务端的3种启动方式</h3><p><strong>[默认启动]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/redis-server</span><br></pre></td></tr></table></figure>
+
+<p><strong>[配置启动]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./redis-server --port 7777</span><br></pre></td></tr></table></figure>
+
+<p><strong>[配置文件启动] - 推荐</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/redis-server redis.conf # 可以在配置文件种添加 daemonize yes 配置以后台形式运行</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="停止服务端"><a href="#停止服务端" class="headerlink" title="停止服务端"></a>停止服务端</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/redis-cli shutdown</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="客户端连接服务端"><a href="#客户端连接服务端" class="headerlink" title="客户端连接服务端"></a>客户端连接服务端</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">bin/redis-cli # 或者添加参数指定： -h localhost -p 6379</span><br><span class="line"><span class="meta">#</span><span class="bash"> string类型基本操作</span></span><br><span class="line">localhost:6379&gt; set name zhangsan # 设置一个string类型的key value</span><br><span class="line">OK</span><br><span class="line">localhost:6379&gt; get name # 根据key来获取value</span><br><span class="line">"zhangsan"</span><br><span class="line">localhost:6379&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="实时监控"><a href="#实时监控" class="headerlink" title="实时监控"></a>实时监控</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/bin/redis-cli monitor</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="常用key命令"><a href="#常用key命令" class="headerlink" title="常用key命令"></a>常用key命令</h2><p>keys：打印符合给定pattern的key</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; keys *</span><br><span class="line">1) "name"</span><br><span class="line">127.0.0.1:6379&gt; keys na*</span><br><span class="line">1) "name"</span><br></pre></td></tr></table></figure>
+
+<p>dbsize：查询当前redis种有多少key</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set name1 zhangsan</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; set name2 lisi</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; dbsize</span><br><span class="line">(integer) 2</span><br></pre></td></tr></table></figure>
+
+<p>exists：检查指定key是否存在</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; exists name1</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; exists name3</span><br><span class="line">(integer) 0</span><br></pre></td></tr></table></figure>
+
+<p>del：删除指定的key</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; del name1</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; exists name1</span><br><span class="line">(integer) 0</span><br></pre></td></tr></table></figure>
+
+<p>expire和pexpire：设置key的过期时间，单位默认为s和ms</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; expire name2 30</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; pexpire name1 10000</span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure>
+
+<p>persist：清除key的过期设定</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set name1 zhangsan</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; expire name1 60</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; ttl name1</span><br><span class="line">(integer) 57</span><br><span class="line">127.0.0.1:6379&gt; persist name1</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; ttl name1</span><br><span class="line">(integer) -1</span><br></pre></td></tr></table></figure>
+
+<p>ttl和pttl：返回key的存活时间，ttl返回s，pttl返回ms</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set name1 zhangsan</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; expire name1 30</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; ttl name1</span><br><span class="line">(integer) 23</span><br><span class="line">127.0.0.1:6379&gt; pttl name1</span><br><span class="line">(integer) 20462</span><br></pre></td></tr></table></figure>
+
+<p>flushdb和flushall：删除当前db的所有key和删除所有db的所有key</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; flushall</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>rename：修改key的名字</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; keys *</span><br><span class="line">(empty list or set)</span><br><span class="line">127.0.0.1:6379&gt; set name1 zhangsam</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; rename name1 name100</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; keys *</span><br><span class="line">1) "name100"</span><br></pre></td></tr></table></figure>
+
+<p>type：查看key的数据类型</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; type name100</span><br><span class="line">string</span><br></pre></td></tr></table></figure>
+
+<p>object encoding：查看数据类型的内部编码</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; object encoding name100</span><br><span class="line">"embstr"</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="支持的5种数据类型"><a href="#支持的5种数据类型" class="headerlink" title="支持的5种数据类型"></a>支持的5种数据类型</h2><blockquote>
+<p>图片源自：《Redis开发与运维》</p>
+</blockquote>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/001.png" alt></p>
+<h3 id="string"><a href="#string" class="headerlink" title="string"></a>string</h3><p>set和get：设置和获取值</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set name1 zhangsan</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; get name1</span><br><span class="line">"zhangsan"</span><br></pre></td></tr></table></figure>
+
+<p>append：追加值</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; append name1 -helloworld</span><br><span class="line">(integer) 19</span><br><span class="line">127.0.0.1:6379&gt; get name1</span><br><span class="line">"zhangsan-helloworld"</span><br></pre></td></tr></table></figure>
+
+<p>incr：自增1</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set num1 1</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; incr num1</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"2"</span><br></pre></td></tr></table></figure>
+
+<p>decr：自减1</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"2"</span><br><span class="line">127.0.0.1:6379&gt; decr num1</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"1"</span><br></pre></td></tr></table></figure>
+
+<p>incrby和decrby：增加和自减指定的值</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set num1 10</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; incrby num1 90</span><br><span class="line">(integer) 100</span><br><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"100"</span><br><span class="line">127.0.0.1:6379&gt; decrby num1 80</span><br><span class="line">(integer) 20</span><br><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"20"</span><br></pre></td></tr></table></figure>
+
+<p>setnx：只有当key不存在的时候才会设置成功</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"1"</span><br><span class="line">127.0.0.1:6379&gt; setnx num1 100</span><br><span class="line">(integer) 0 # 因为num1存在所以设置结果为0（false）</span><br><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"1"</span><br></pre></td></tr></table></figure>
+
+<p>setex：强制设入值并指定超时时间</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"1"</span><br><span class="line">127.0.0.1:6379&gt; setex num1 60 1000 # 存在则覆盖</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; get num1</span><br><span class="line">"1000"</span><br><span class="line">127.0.0.1:6379&gt; ttl num1</span><br><span class="line">(integer) 52</span><br></pre></td></tr></table></figure>
+
+<p>mset和mget：批量设置和批量获取</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; mset name1 zhangsam name2 lisi name3 wangwu</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; mget name1 name2 name3</span><br><span class="line">1) "zhangsam"</span><br><span class="line">2) "lisi"</span><br><span class="line">3) "wangwu"</span><br></pre></td></tr></table></figure>
+
+<p>strlen：值长</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; mget name1 name2 name3</span><br><span class="line">1) "zhangsam"</span><br><span class="line">2) "lisi"</span><br><span class="line">3) "wangwu"</span><br><span class="line">127.0.0.1:6379&gt; strlen name1</span><br><span class="line">(integer) 8</span><br><span class="line">127.0.0.1:6379&gt; strlen name2</span><br><span class="line">(integer) 4</span><br></pre></td></tr></table></figure>
+
+<p>getset：设置并返回旧值（覆盖式）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; getset name4 zhaoliu</span><br><span class="line">(nil)</span><br><span class="line">127.0.0.1:6379&gt; getset name4 zhaoliu</span><br><span class="line">"zhaoliu"</span><br><span class="line">127.0.0.1:6379&gt; getset name4 zhaoliu1</span><br><span class="line">"zhaoliu"</span><br><span class="line">127.0.0.1:6379&gt; getset name4 zhaoliu2</span><br><span class="line">"zhaoliu1"</span><br></pre></td></tr></table></figure>
+
+<p>setrange和getrange：获取和设置指定下标的字符（覆盖式）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set name helloworld</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; getrange name 0 4</span><br><span class="line">"hello"</span><br><span class="line">127.0.0.1:6379&gt; setrange name 5 zhangsan</span><br><span class="line">(integer) 13</span><br><span class="line">127.0.0.1:6379&gt; get name</span><br><span class="line">"hellozhangsan"</span><br></pre></td></tr></table></figure>
+
+
+
+<blockquote>
+<p>图片string</p>
+</blockquote>
+<h3 id="list"><a href="#list" class="headerlink" title="list"></a>list</h3><p>rpush和lpush：向右插入值和向左插入值</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; rpush nums 1 2 3</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "1"</span><br><span class="line">2) "2"</span><br><span class="line">3) "3"</span><br><span class="line">127.0.0.1:6379&gt; lpush nums 0</span><br><span class="line">(integer) 4</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "0"</span><br><span class="line">2) "1"</span><br><span class="line">3) "2"</span><br><span class="line">4) "3"</span><br><span class="line">127.0.0.1:6379&gt; rpush nums 4</span><br><span class="line">(integer) 5</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "0"</span><br><span class="line">2) "1"</span><br><span class="line">3) "2"</span><br><span class="line">4) "3"</span><br><span class="line">5) "4"</span><br></pre></td></tr></table></figure>
+
+<p>linsert：在执行元素前或后插入元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "0"</span><br><span class="line">2) "1"</span><br><span class="line">3) "2"</span><br><span class="line">4) "3"</span><br><span class="line">5) "4"</span><br><span class="line">127.0.0.1:6379&gt; linsert nums before 0 hello # before/after</span><br><span class="line">(integer) 6</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "hello"</span><br><span class="line">2) "0"</span><br><span class="line">3) "1"</span><br><span class="line">4) "2"</span><br><span class="line">5) "3"</span><br><span class="line">6) "4"</span><br></pre></td></tr></table></figure>
+
+<p>lindex：获取指定下标的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; lindex nums 0</span><br><span class="line">"hello"</span><br></pre></td></tr></table></figure>
+
+<p>llen：获取列表的长度</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; llen nums</span><br><span class="line">(integer) 6</span><br></pre></td></tr></table></figure>
+
+<p>rpop和lpop：弹出右边和弹出左边的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "hello"</span><br><span class="line">2) "0"</span><br><span class="line">3) "1"</span><br><span class="line">4) "2"</span><br><span class="line">5) "3"</span><br><span class="line">6) "4"</span><br><span class="line">127.0.0.1:6379&gt; lpop nums</span><br><span class="line">"hello"</span><br><span class="line">127.0.0.1:6379&gt; rpop nums</span><br><span class="line">"4"</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "0"</span><br><span class="line">2) "1"</span><br><span class="line">3) "2"</span><br><span class="line">4) "3"</span><br></pre></td></tr></table></figure>
+
+<p>lrem：删除指定的元素</p>
+<p>count &gt; 0 ：从头起删除count个</p>
+<p>count &lt; 0 ：从尾起删除count个</p>
+<p>count = 0 ：删除所有</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; rpush nums 1 1 1 2 2 2 3 3 3</span><br><span class="line">(integer) 9</span><br><span class="line">127.0.0.1:6379&gt; lrem nums 3 2 # 从头开始删除3个2</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "1"</span><br><span class="line">2) "1"</span><br><span class="line">3) "1"</span><br><span class="line">4) "3"</span><br><span class="line">5) "3"</span><br><span class="line">6) "3"</span><br><span class="line">127.0.0.1:6379&gt; lrem nums -3 3 # 从尾开始删除3个3</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "1"</span><br><span class="line">2) "1"</span><br><span class="line">3) "1"</span><br></pre></td></tr></table></figure>
+
+<p>ltrim：修剪列表</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; rpush nums 1 1 1 2 2 2 3 3 3</span><br><span class="line">(integer) 9</span><br><span class="line">127.0.0.1:6379&gt; ltrim nums 3 5 # 保留下标从[3,5]的元素</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "2"</span><br><span class="line">2) "2"</span><br><span class="line">3) "2"</span><br></pre></td></tr></table></figure>
+
+<p>lset：修改指定下标的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "2"</span><br><span class="line">2) "2"</span><br><span class="line">3) "2"</span><br><span class="line">127.0.0.1:6379&gt; lset nums 0 1</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "1"</span><br><span class="line">2) "2"</span><br><span class="line">3) "2"</span><br></pre></td></tr></table></figure>
+
+<p>blpop和brpop：阻塞式弹出</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "1"</span><br><span class="line">2) "2"</span><br><span class="line">3) "2"</span><br><span class="line">127.0.0.1:6379&gt; blpop nums 60 # 阻塞式弹出（左），超时时间为60s</span><br><span class="line">1) "nums"</span><br><span class="line">2) "1"</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "2"</span><br><span class="line">2) "2"</span><br><span class="line">127.0.0.1:6379&gt; brpop nums 60 # 阻塞式弹出（右），超时时间为60s</span><br><span class="line">1) "nums"</span><br><span class="line">2) "2"</span><br><span class="line">127.0.0.1:6379&gt; lrange nums 0 -1</span><br><span class="line">1) "2"</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="hash"><a href="#hash" class="headerlink" title="hash"></a>hash</h3><p>hset和hget：设置和获取值</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hset person:1 name zhangsan # 设置person1的name</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; hset person:1 age 23 # 设置person1的age</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; hget person:1 name</span><br><span class="line">"zhangsan"</span><br><span class="line">127.0.0.1:6379&gt; hget person:1 age</span><br><span class="line">"23"</span><br></pre></td></tr></table></figure>
+
+<p>hdel：删除指定key的属性</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hget person:1 age</span><br><span class="line">"23"</span><br><span class="line">127.0.0.1:6379&gt; hdel person:1 age</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; hget person:1 age</span><br><span class="line">(nil)</span><br></pre></td></tr></table></figure>
+
+<p>hlen：获取指定key的属性长度</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hlen person:1</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; hset person:1 age 23</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; hlen person:1</span><br><span class="line">(integer) 2</span><br></pre></td></tr></table></figure>
+
+<p>hmset和hmget：批量设入属性和获取属性</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hmset person:1 name zhangsan age 23</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; hmget person:1 name age</span><br><span class="line">1) "zhangsan"</span><br><span class="line">2) "23"</span><br></pre></td></tr></table></figure>
+
+<p>hexists：判断指定key的属性是否存在</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hmget person:1 name age</span><br><span class="line">1) "zhangsan"</span><br><span class="line">2) "23"</span><br><span class="line">127.0.0.1:6379&gt; hexists person:1 name</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; hexists person:1 city</span><br><span class="line">(integer) 0</span><br></pre></td></tr></table></figure>
+
+<p>hkeys：获取指定key的所有属性名称</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hkeys person:1</span><br><span class="line">1) "name"</span><br><span class="line">2) "age"</span><br></pre></td></tr></table></figure>
+
+<p>hvals：获取指定key的所有属性值</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hkeys person:1</span><br><span class="line">1) "name"</span><br><span class="line">2) "age"</span><br><span class="line">127.0.0.1:6379&gt; hvals person:1</span><br><span class="line">1) "zhangsan"</span><br><span class="line">2) "23"</span><br></pre></td></tr></table></figure>
+
+<p>hincrby：指定属性自增</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hkeys person:1</span><br><span class="line">1) "name"</span><br><span class="line">2) "age"</span><br><span class="line">127.0.0.1:6379&gt; hincrby person:1 age 10</span><br><span class="line">(integer) 33</span><br><span class="line">127.0.0.1:6379&gt; hget person:1 age</span><br><span class="line">"33"</span><br></pre></td></tr></table></figure>
+
+<p>hstrlen：值长</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hget person:1 age</span><br><span class="line">"33"</span><br><span class="line">127.0.0.1:6379&gt; hstrlen person:1 age</span><br><span class="line">(integer) 2</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="set"><a href="#set" class="headerlink" title="set"></a>set</h3><p>sadd和smembers和sismember：添加元素、列出所有元素、是否存在某个元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd myset a b c d</span><br><span class="line">(integer) 4</span><br><span class="line">127.0.0.1:6379&gt; smembers myset</span><br><span class="line">1) "c"</span><br><span class="line">2) "d"</span><br><span class="line">3) "b"</span><br><span class="line">4) "a"</span><br><span class="line">127.0.0.1:6379&gt; sismember myset c</span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure>
+
+<p>srem：移除集合中的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd myset a b c d</span><br><span class="line">(integer) 4</span><br><span class="line">127.0.0.1:6379&gt; smembers myset</span><br><span class="line">1) "c"</span><br><span class="line">2) "d"</span><br><span class="line">3) "b"</span><br><span class="line">4) "a"</span><br><span class="line">127.0.0.1:6379&gt; srem myset b</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; smembers myset</span><br><span class="line">1) "c"</span><br><span class="line">2) "d"</span><br><span class="line">3) "a"</span><br></pre></td></tr></table></figure>
+
+<p>scard：获取集合当中的元素个数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd myset a b c d</span><br><span class="line">(integer) 4</span><br><span class="line">127.0.0.1:6379&gt; scard myset</span><br><span class="line">(integer) 4</span><br></pre></td></tr></table></figure>
+
+<p>srandmember：随机返回集合中指定个数的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; srandmember myset 2</span><br><span class="line">1) "a"</span><br><span class="line">2) "b"</span><br><span class="line">127.0.0.1:6379&gt; srandmember myset 2</span><br><span class="line">1) "d"</span><br><span class="line">2) "b"</span><br></pre></td></tr></table></figure>
+
+<p>spop：随机弹出一个集合元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; spop myset</span><br><span class="line">"b"</span><br><span class="line">127.0.0.1:6379&gt; smembers myset</span><br><span class="line">1) "c"</span><br><span class="line">2) "d"</span><br><span class="line">3) "a"</span><br></pre></td></tr></table></figure>
+
+<p>sinter：求集合之间的交集</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd myset a b c d e</span><br><span class="line">(integer) 5</span><br><span class="line">127.0.0.1:6379&gt; sadd myset2 e d f g</span><br><span class="line">(integer) 4</span><br><span class="line">127.0.0.1:6379&gt; sinter myset myset2</span><br><span class="line">1) "d"</span><br><span class="line">2) "e"</span><br></pre></td></tr></table></figure>
+
+<p>sunion：求集合之间的并集（去重）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd myset a b c d e</span><br><span class="line">(integer) 5</span><br><span class="line">127.0.0.1:6379&gt; sadd myset2 e d f g</span><br><span class="line">(integer) 4</span><br><span class="line">127.0.0.1:6379&gt; sunion myset myset2</span><br><span class="line">1) "c"</span><br><span class="line">2) "d"</span><br><span class="line">3) "g"</span><br><span class="line">4) "a"</span><br><span class="line">5) "b"</span><br><span class="line">6) "f"</span><br><span class="line">7) "e"</span><br></pre></td></tr></table></figure>
+
+<p>sdiff：求集合之间的差集</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd myset a b c d e</span><br><span class="line">(integer) 5</span><br><span class="line">127.0.0.1:6379&gt; sadd myset2 e d f g</span><br><span class="line">(integer) 4</span><br><span class="line">127.0.0.1:6379&gt; sdiff myset myset2</span><br><span class="line">1) "c"</span><br><span class="line">2) "b"</span><br><span class="line">3) "a"</span><br></pre></td></tr></table></figure>
+
+<p>smove：将一个元素移动到另外的集合</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; sadd myset a b c</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; smembers myset2</span><br><span class="line">(empty list or set)</span><br><span class="line">127.0.0.1:6379&gt; smove myset myset2 b</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; smembers myset2</span><br><span class="line">1) "b"</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="zset"><a href="#zset" class="headerlink" title="zset"></a>zset</h3><p>zadd和zrange：添加元素、返回指定下标区间的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zadd myzset 1 a 2 b 3 c # 排序分数越小越靠前</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; zrange myzset 0 -1</span><br><span class="line">1) "a"</span><br><span class="line">2) "b"</span><br><span class="line">3) "c"</span><br></pre></td></tr></table></figure>
+
+<p>zcard：返回集合元素的个数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zcard myzset</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
+
+<p>zscore：返回元素的排序分数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zadd myzset 10 a 1 b 2 c</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; zrange myzset 0 -1</span><br><span class="line">1) "b"</span><br><span class="line">2) "c"</span><br><span class="line">3) "a"</span><br><span class="line">127.0.0.1:6379&gt; zscore myzset a</span><br><span class="line">"10"</span><br></pre></td></tr></table></figure>
+
+<p>zincrby：增加元素的分数（没有元素先创建）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zscore myzset b</span><br><span class="line">"2"</span><br><span class="line">127.0.0.1:6379&gt; zincrby myzset 10 b</span><br><span class="line">"12"</span><br><span class="line">127.0.0.1:6379&gt; zscore myzset b</span><br><span class="line">"12"</span><br></pre></td></tr></table></figure>
+
+<p>zrevrange：获取指定下标范围分数从高到低排序的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zincrby likecount 2 num1  # 文章编号为num1的文章获取了2个赞</span><br><span class="line">"2"</span><br><span class="line">127.0.0.1:6379&gt; zincrby likecount -1 num1  # 文章编号为num1的文章减少了1个赞</span><br><span class="line">"1"</span><br><span class="line">127.0.0.1:6379&gt; zadd likecount 1 num2 # 文章编号为num2的文章获取了1个赞</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; zincrby likecount 1 num1  # 文章编号为num1的文章减少了1个赞</span><br><span class="line">"2"</span><br><span class="line">127.0.0.1:6379&gt; zrevrange likecount 0 9 # 按照分数的排序获取0到9下标的元素</span><br><span class="line">1) "num1"</span><br><span class="line">2) "num2"</span><br></pre></td></tr></table></figure>
+
+<p>zcount：返回指定分数范围的元素个数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zcount myzset 0 5</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
+
+<p>zrangebyscore：返回指定分数范围的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zcount myzset 0 5</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; zrangebyscore myzset 0 5</span><br><span class="line">1) "a"</span><br><span class="line">2) "c"</span><br><span class="line">3) "d"</span><br></pre></td></tr></table></figure>
+
+<p>zremrangebyscore：删除指定分数范围的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zremrangebyscore myzset 0 5</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; zrangebyscore myzset 0 5</span><br><span class="line">(empty list or set)</span><br></pre></td></tr></table></figure>
+
+<p>zrank：返回元素的排序下标</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zadd myzset 10 a 1 b 2 c</span><br><span class="line">(integer) 3</span><br><span class="line">127.0.0.1:6379&gt; zrange myzset 0 -1</span><br><span class="line">1) "b"</span><br><span class="line">2) "c"</span><br><span class="line">3) "a"</span><br><span class="line">127.0.0.1:6379&gt; zscore myzset a</span><br><span class="line">"10"</span><br><span class="line">127.0.0.1:6379&gt; zrank myzset a</span><br><span class="line">(integer) 2</span><br></pre></td></tr></table></figure>
+
+<p>zrem：删除指定的元素</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zrem myzset a</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; zrange myzset 0 -1</span><br><span class="line">1) "b"</span><br><span class="line">2) "c"</span><br></pre></td></tr></table></figure>
+
+<p>zpopmax/bzpopmax：删除并返回最高分值得元素</p>
+<p>格式：zpopmax key [count]</p>
+<p>count表示返回个数，因为可能会存在几个一样高分的元素，默认1</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; zpopmax myzset</span><br><span class="line">1) "b"</span><br></pre></td></tr></table></figure>
+
+<p>zpopmin/bzpopmin：删除并返回最低分值得元素，和zpopmax用法一样</p>
+<h3 id="stream（redis-5-x）"><a href="#stream（redis-5-x）" class="headerlink" title="stream（redis 5.x）"></a>stream（redis 5.x）</h3><p>xadd：添加stream</p>
+<p>格式：xadd key ID field string</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 使用自动生成id：*</span></span><br><span class="line">127.0.0.1:6379&gt; xadd test:person * name zhangsan</span><br><span class="line">"1571756285397-0"</span><br><span class="line">127.0.0.1:6379&gt; xadd test:person * age 18</span><br><span class="line">"1571756296247-0"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 自定义id</span></span><br><span class="line">127.0.0.1:6379&gt; xadd test2:person 0-1 name lisi age 19</span><br><span class="line">"0-1"</span><br></pre></td></tr></table></figure>
+
+<p>xlen：查看key的长度</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; xlen test:person</span><br><span class="line">(integer) 2</span><br></pre></td></tr></table></figure>
+
+<p>xdel：按照key和id删除一个stream</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; xdel test2:person 0-1</span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure>
+
+<p>xread：查看指定stream【后】的1个或多个stream</p>
+<p>格式：xread [COUNT count] [BLOCK ms] streams key [key…] id [id…]</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看key为<span class="built_in">test</span>:person且id为1571756285397-0后的stream</span></span><br><span class="line">127.0.0.1:6379&gt; xread streams test:person 1571756285397-0</span><br><span class="line">1) 1) "test:person"</span><br><span class="line">   2) 1) 1) "1571756296247-0"</span><br><span class="line">         2) 1) "age"</span><br><span class="line">            2) "18"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加一个stream</span></span><br><span class="line">127.0.0.1:6379&gt; xadd test:person * city qy</span><br><span class="line">"1571757314013-0"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看key为<span class="built_in">test</span>:person且id为1571756285397-0后的stream</span></span><br><span class="line">127.0.0.1:6379&gt; xread streams test:person 1571756285397-0</span><br><span class="line">1) 1) "test:person"</span><br><span class="line">   2) 1) 1) "1571756296247-0"</span><br><span class="line">         2) 1) "age"</span><br><span class="line">            2) "18"</span><br><span class="line">      2) 1) "1571757314013-0"</span><br><span class="line">         2) 1) "city"</span><br><span class="line">            2) "qy"     </span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看指定数量的stream</span></span><br><span class="line">127.0.0.1:6379&gt; xread COUNT 1 streams test:person 1571756285397-0</span><br><span class="line">1) 1) "test:person"</span><br><span class="line">   2) 1) 1) "1571756296247-0"</span><br><span class="line">         2) 1) "age"</span><br><span class="line">            2) "18"</span><br></pre></td></tr></table></figure>
+
+
+
+<p>xrange：查看范围stream</p>
+<p>格式：xrange key startid endid</p>
+<p>特殊字符：+表示最大，-表示最小</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看从1571756285397-0到1571756296247-0</span></span><br><span class="line">127.0.0.1:6379&gt; xrange test:person 1571756285397-0 1571756296247-0</span><br><span class="line">1) 1) "1571756285397-0"</span><br><span class="line">   2) 1) "name"</span><br><span class="line">      2) "zhangsan"</span><br><span class="line">2) 1) "1571756296247-0"</span><br><span class="line">   2) 1) "age"</span><br><span class="line">      2) "18"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 从1571756285397-0开始查看</span></span><br><span class="line">127.0.0.1:6379&gt; xrange test:person 1571756285397-0 +</span><br><span class="line">1) 1) "1571756285397-0"</span><br><span class="line">   2) 1) "name"</span><br><span class="line">      2) "zhangsan"</span><br><span class="line">2) 1) "1571756296247-0"</span><br><span class="line">   2) 1) "age"</span><br><span class="line">      2) "18"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看所有</span></span><br><span class="line">127.0.0.1:6379&gt; xrange test:person - +</span><br><span class="line">1) 1) "1571756285397-0"</span><br><span class="line">   2) 1) "name"</span><br><span class="line">      2) "zhangsan"</span><br><span class="line">2) 1) "1571756296247-0"</span><br><span class="line">   2) 1) "age"</span><br><span class="line">      2) "18"</span><br></pre></td></tr></table></figure>
+
+<p>xgroup：创建生产者，消息为stream</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 城市名称为 广州</span></span><br><span class="line">127.0.0.1:6379&gt; xadd city * name guangzhou</span><br><span class="line">"1571757812063-0"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 城市名称为 清远</span></span><br><span class="line">127.0.0.1:6379&gt; xadd city * name qingyuan</span><br><span class="line">"1571757817679-0"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 城市名称为 佛山</span></span><br><span class="line">127.0.0.1:6379&gt; xadd city * name foshan</span><br><span class="line">"1571757823298-0"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建城市组 组名：guangdongsheng 从对应key的id为1571757812063-0到尾的所有stream成员</span></span><br><span class="line">127.0.0.1:6379&gt; xgroup create city guangdongsheng 1571757812063-0</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>xreadgroup：消费stream</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看组名为guangdongsheng且key为city的生产者组最近产生的stream信息</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> &gt;表示最近（未被消费）的信息。zhangsan为消费者名称，自定义</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup group guangdongsheng zhangsan streams city &gt;</span><br><span class="line">1) 1) "city"</span><br><span class="line">   2) 1) 1) "1571757817679-0"</span><br><span class="line">         2) 1) "name"</span><br><span class="line">            2) "qingyuan"</span><br><span class="line">      2) 1) "1571757823298-0"</span><br><span class="line">         2) 1) "name"</span><br><span class="line">            2) "foshan"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 消费指定id后的stream消息</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup group guangdongsheng zhangsan streams city 1571757812063-0</span><br><span class="line">1) 1) "city"</span><br><span class="line">   2) 1) 1) "1571757817679-0"</span><br><span class="line">         2) 1) "name"</span><br><span class="line">            2) "qingyuan"</span><br><span class="line">      2) 1) "1571757823298-0"</span><br><span class="line">         2) 1) "name"</span><br><span class="line">            2) "foshan"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 可以看出stream被消费者消费完就没了</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup group guangdongsheng zhangsan streams city &gt;</span><br><span class="line">(nil)</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 再生产（添加）一条key为city的stream</span></span><br><span class="line">127.0.0.1:6379&gt; xadd city * name shenzhen</span><br><span class="line">"1571758247531-0"</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 可以看到消费者可以消费到刚生产的stream。</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup group guangdongsheng zhangsan streams city &gt;</span><br><span class="line">1) 1) "city"</span><br><span class="line">   2) 1) 1) "1571758247531-0"</span><br><span class="line">         2) 1) "name"</span><br><span class="line">            2) "shenzhen"</span><br><span class="line">            </span><br><span class="line">127.0.0.1:6379&gt; xadd city * name shenzhen2</span><br><span class="line">"1571759438214-0"</span><br><span class="line">127.0.0.1:6379&gt; xadd city * name shenzhen3</span><br><span class="line">"1571759440128-0"</span><br><span class="line">127.0.0.1:6379&gt; xadd city * name shenzhen4</span><br><span class="line">"1571759442164-0"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 消费1条stream，但这里需要注意它并不是消费最新的那条stream</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup COUNT 1 group guangdongsheng zhangsan streams city &gt;</span><br><span class="line">1) 1) "city"</span><br><span class="line">   2) 1) 1) "1571759438214-0"</span><br><span class="line">         2) 1) "name"</span><br><span class="line">            2) "shenzhen2"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 阻塞消费，表示如果拿不到数据就等待BLOCK毫秒，超时还拿不到才退出</span></span><br><span class="line">127.0.0.1:6379&gt; xreadgroup COUNT 1 BLOCK 10000 group guangdongsheng zhangsan streams city &gt;</span><br><span class="line">(nil)</span><br><span class="line">(10.01s)</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<h2 id="其他命令"><a href="#其他命令" class="headerlink" title="其他命令"></a>其他命令</h2><p>help：命令帮组手册</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; help</span><br><span class="line">redis-cli 5.0.5</span><br><span class="line">To get help about Redis commands type:</span><br><span class="line">      "help @&lt;group&gt;" to get a list of commands in &lt;group&gt;</span><br><span class="line">      "help &lt;command&gt;" for help on &lt;command&gt;</span><br><span class="line">      "help &lt;tab&gt;" to get a list of possible help topics</span><br><span class="line">      "quit" to exit</span><br><span class="line">127.0.0.1:6379&gt; help keys</span><br><span class="line"></span><br><span class="line">  KEYS pattern</span><br><span class="line">  summary: Find all keys matching the given pattern</span><br><span class="line">  since: 1.0.0</span><br><span class="line">  group: generic</span><br></pre></td></tr></table></figure>
+
+<p>memory usage：查看key占的字节大小</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; memory usage test:person</span><br><span class="line">(integer) 1057</span><br></pre></td></tr></table></figure>
+
+<p>select：切换数据库。默认情况下redis有16个db默认启用db0（配置文件属性databases指定）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; select 1</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379[1]&gt; select 0</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; select 15</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379[15]&gt; select 16</span><br><span class="line">(error) ERR DB index is out of range</span><br></pre></td></tr></table></figure>
+
+<p>ping：测试服务端，服务端会回复pong表示正常</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; ping</span><br><span class="line">PONG</span><br></pre></td></tr></table></figure>
+
+<p>config：实时配置redis服务器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 打印当前redis服务端的所有配置</span></span><br><span class="line">config get *</span><br><span class="line"><span class="meta">#</span><span class="bash"> 设置配置</span></span><br><span class="line">config set 属性名称 属性值</span><br></pre></td></tr></table></figure>
+
+<p>slowlog：慢查询查询</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; slowlog len # 查看慢查询日志信息</span><br><span class="line">(integer) 0</span><br><span class="line">127.0.0.1:6379&gt; slowlog get 5 # 获取n条慢查询日志</span><br><span class="line">(empty list or set)</span><br><span class="line">127.0.0.1:6379&gt; SLOWLOG RESET # 重置慢查询日志</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>lastsave：返回最近一次成功持久化数据的时间（UNIX 时间戳）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; LASTSAVE</span><br><span class="line">(integer) 1570740724</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="事务相关"><a href="#事务相关" class="headerlink" title="事务相关"></a>事务相关</h2><p>&emsp;&emsp;redis的事务和传统的ACID事务不同，redis提供的事务只能保证命令的要么都执行要么都不执行，且事务就算出错了也没办法自动回滚。</p>
+<p>&emsp;&emsp;redis提供了<code>multi</code>和<code>exec</code>两个命令来表示事务。用法如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 第1次事务</span></span><br><span class="line">127.0.0.1:6379&gt; multi</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; set num 1</span><br><span class="line">QUEUED</span><br><span class="line">127.0.0.1:6379&gt; incr num 1</span><br><span class="line">(error) ERR wrong number of arguments for 'incr' command</span><br><span class="line">127.0.0.1:6379&gt; incr num</span><br><span class="line">QUEUED</span><br><span class="line">127.0.0.1:6379&gt; exec</span><br><span class="line">(error) EXECABORT Transaction discarded because of previous errors.</span><br><span class="line"><span class="meta">#</span><span class="bash"> 第2次事务</span></span><br><span class="line">127.0.0.1:6379&gt; multi</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; set num 1</span><br><span class="line">QUEUED</span><br><span class="line">127.0.0.1:6379&gt; incr num</span><br><span class="line">QUEUED</span><br><span class="line">127.0.0.1:6379&gt; exec</span><br><span class="line">1) OK</span><br><span class="line">2) (integer) 2</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，如果事务途中出现错误那么事务就会丢失（不成功），其次是redis的事务其实只是相当于将单个命令转为单个队列（包含多个命令）执行。</p>
+<p>&emsp;&emsp;其中，redis还提供了一个<code>watch</code>命令，其中能类似于乐观锁，用于监听key的改变，一旦监听到key的改变事务就会失败。用法如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set num 1</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; watch num # 监听num</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; multi</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; incr num </span><br><span class="line">QUEUED</span><br><span class="line"><span class="meta">#</span><span class="bash"> 客户端2 ----</span></span><br><span class="line">127.0.0.1:6379&gt; incr num</span><br><span class="line">(integer) 2</span><br><span class="line"><span class="meta">#</span><span class="bash"> 客户端2 ----</span></span><br><span class="line">127.0.0.1:6379&gt; incr num </span><br><span class="line">QUEUED</span><br><span class="line">127.0.0.1:6379&gt; exe</span><br><span class="line">(nil) # 因为watch监听到由其他客户端修改num，所以当前事务失效</span><br><span class="line">127.0.0.1:6379&gt; get num</span><br><span class="line">"2"</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;当然，除了上面提到的 multi 和 exec 之外，redis还支持lua脚本。一段lua脚本相当于一条redis命令，且lua脚本内置redis函数，可以直接在lua脚本种调用redis命令。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set str redis</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; eval 'return "hello - " .. redis.call("get",KEYS[1])' 1 str</span><br><span class="line">"hello - redis"</span><br></pre></td></tr></table></figure>
+
+<p>除了<code>eval</code>命令可以执行lua脚本之外，redis还提供了<code>evalsha</code>，evalsha和eval的区别在于evalsha可以将lua脚本传递给服务端让其得到复用从而客户端降低每次都需要发送lua脚本的开销。</p>
+<h2 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h2><p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/004.png" alt></p>
+<h2 id="两种持久化策略"><a href="#两种持久化策略" class="headerlink" title="两种持久化策略"></a>两种持久化策略</h2><p>&emsp;&emsp;Redis提供了两种持久化数据方案来避免进程退出而导致内存中的数据丢失。分别是：<code>RDB</code>（默认）、<code>AOF</code>。两者主要的区别在于RDB持久化的是内存镜像，而AOF持久化的是修改数据的命令操作（类似于MySQL的二进制日志）。</p>
+<h3 id="RDB（默认）"><a href="#RDB（默认）" class="headerlink" title="RDB（默认）"></a>RDB（默认）</h3><p>触发RDB的方法分为：<code>手动触发</code>和<code>自动触发</code>；</p>
+<p><strong>[手动触发]</strong></p>
+<ul>
+<li>save命令：阻塞当前redis服务线程来持久化内存中的数据直到持久化完成。</li>
+<li>bgsave命令：redis服务线程fork出一条子进程来做持久化操作。但需要注意的是fork这个动作是阻塞的，不过显然的是bgsave比save在生产环境中更加高效。</li>
+</ul>
+<p><strong>[自动触发]</strong></p>
+<p>情况1：满足服务端配置的save属性条件自动触发，例如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">save 900 1 # 表示900s内触发1次修改，则自动触发bgsave</span><br><span class="line">save 300 10 # 表示300s内触发10次修改，则自动触发bgsave</span><br><span class="line">save 60 10000 # 表示60s内触发10000次修改，则自动触发bgsave</span><br><span class="line"><span class="meta">#</span><span class="bash"> 设置多个save条件是为了适应不同的情况，为了在更加合适的条件下持久化数据</span></span><br></pre></td></tr></table></figure>
+
+<p>情况2：主从复制情况下，从节点进行<code>全量复制</code>时自动触发bgsave</p>
+<p>情况3：客户端执行<code>debug reload</code>命令刷新redis时自动触发bgsave</p>
+<p>情况4：没有开启AOF的情况下，客户端执行<code>shutdown</code>命令时自动触发bgsave</p>
+<p><strong>[指定RDB文件存储位置]</strong></p>
+<p>方法1：配置属性文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dir ./ # 保存到redis当前目录下（默认）</span><br></pre></td></tr></table></figure>
+
+<p>方法2：在运行时客户端执行 <code>config set dir {路径}</code> 指定，例如</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; config set dir ./ # 指定路径</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; config set dbfilename rdb.rdb # 指定文件名称</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[RDB流程]</strong></p>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/006.png" alt></p>
+<p><strong>[RDB的优缺点]</strong></p>
+<ul>
+<li>恢复速度比AOF快</li>
+<li>可以代表某一个时间点的数据状态，且因为是紧凑的二进制文件所以较为节省空间</li>
+<li>因为是条件触发，所以在没满足持久化条件前出现异常则会丢失数据</li>
+<li>fork属于重量级的操作，频繁的bgsave会导致redis性能下降</li>
+<li>可能出现旧版本无法兼容新版本的rdb文件导致无法恢复数据的问题</li>
+</ul>
+<h3 id="AOF"><a href="#AOF" class="headerlink" title="AOF"></a>AOF</h3><blockquote>
+<p>AOF，append only file</p>
+</blockquote>
+<p><strong>[aof流程]</strong></p>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png" alt></p>
+<p><strong>[aof使用]</strong></p>
+<p>默认情况下AOF是没有启用的，需要在服务端配置文件种进行如下设置：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">appendonly yes # 开启AOF功能</span><br><span class="line">appendfilename "appendonly.aof" # 指定AOF文件</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 同步策略</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> appendfsync always <span class="comment"># 每条命令都立即fsync到文件中</span></span></span><br><span class="line">appendfsync everysec # 只需调用系统的write后就立即返回，并开启一条aof线程，每1秒从缓存中fsync一次</span><br><span class="line"><span class="meta">#</span><span class="bash"> appendfsync no <span class="comment"># 交给操作系统处理，30秒内fsync一次</span></span></span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[aof注意]</strong></p>
+<ul>
+<li><p>everysec相对于always来说，属于延时写入，这样有利于提高操作系统缓冲区使用率，且因为调用系统write命令后就返回而无需等待fsync，因此而提高了服务端的吞吐量。</p>
+</li>
+<li><p>设置成always，则表示每条修改数据的命令都需要马上持久化到硬盘，显然这是非常低效的，所以不推荐配置成always。但always可能将数据丢失的风险降到最低。</p>
+</li>
+<li><p>理论来说everysec最大可能丢失1s的命令（aof缓冲的层面上）</p>
+</li>
+<li><p>还需要注意的是，如果系统fsync操作缓慢则会影响主线程的服务，导致主线程阻塞，原因如下：</p>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/007.png" alt></p>
+</li>
+</ul>
+<p>可以看出，主线程会对比上一次系统fsync的操作时间，如果发现上一次fsync操作时间大于2秒的话，主线程就会阻塞停止服务来腾出些许时间给系统fsync，这样做的好处在于避免大量fsync操作延迟导致命令没有切实写入到硬盘，换句话就是通过这样的方式进一步确保数据的持久化。</p>
+<ul>
+<li>sync和fsync的区别：<a href="https://www.cnblogs.com/liudehao/p/6647674.html" target="_blank" rel="noopener">https://www.cnblogs.com/liudehao/p/6647674.html</a></li>
+</ul>
+<p><strong>[aof重写]</strong></p>
+<p>随着时间的推移，aof文件会变得非常大，因此redis提供了<code>aof重写</code>操作来压缩文件的大小。</p>
+<p>主要通过：<code>去除无效命令</code>、<code>命令合并</code>、<code>去除超时数据</code></p>
+<p>触发aof的条件：</p>
+<ul>
+<li><p>手动触发：<code>bgrewriteaof</code>命令</p>
+</li>
+<li><p>自动触发：</p>
+<p><code>auto-aof-rewrite-percentage</code>：当前文件大小和上一次重写后的文件大小的比值大于该属性指定的值时</p>
+<p><code>auto-aof-rewrite-min-size</code>：大于该属性指定的值时</p>
+</li>
+</ul>
+<p>重写过程，如下图：</p>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/008.png" alt></p>
+<p>当发生aof重写时，主线程会根据原来的<code>aof缓冲</code>fork出一条子线程和<code>aof重写缓存</code>。</p>
+<p>其中，aof重写缓存是专门用来保存在重写过程中产生的新命令的。</p>
+<p>子线程将旧aof文件中的内容重写到新aof文件中，完成后通过信号来通知主线程，主线程得知信息后接着就会将aof重写缓存的内容追加到新aof文件中，至此aof重写结束。</p>
+<h3 id="数据库文件的校验"><a href="#数据库文件的校验" class="headerlink" title="数据库文件的校验"></a>数据库文件的校验</h3><p>Redis提供了2个命令行工具来对数据库文件进行损毁校验。分别是：<code>redis-check-aof</code>、<code>redis-check-rdb</code>；</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">➜  redis bin/redis-check-rdb dump.rdb </span><br><span class="line">[offset 0] Checking RDB file dump.rdb</span><br><span class="line">[offset 26] AUX FIELD redis-ver = '5.0.5'</span><br><span class="line">[offset 40] AUX FIELD redis-bits = '64'</span><br><span class="line">[offset 52] AUX FIELD ctime = '1569750040'</span><br><span class="line">[offset 67] AUX FIELD used-mem = '812528'</span><br><span class="line">[offset 83] AUX FIELD aof-preamble = '0'</span><br><span class="line">[offset 85] Selecting DB ID 0</span><br><span class="line">[offset 107] Checksum OK</span><br><span class="line">[offset 107] \o/ RDB looks OK! \o/</span><br><span class="line">[info] 1 keys read</span><br><span class="line">[info] 0 expires</span><br><span class="line">[info] 0 already expired</span><br><span class="line"></span><br><span class="line">➜  redis bin/redis-check-aof appendonly.aof </span><br><span class="line">AOF analyzed: size=55, ok_up_to=55, diff=0</span><br><span class="line">AOF is valid # 表示当前aof文件是可用的</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="Redis重启加载流程"><a href="#Redis重启加载流程" class="headerlink" title="Redis重启加载流程"></a>Redis重启加载流程</h3><p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/009.png" alt></p>
+<h2 id="为什么单线程还那么快？"><a href="#为什么单线程还那么快？" class="headerlink" title="为什么单线程还那么快？"></a>为什么单线程还那么快？</h2><ul>
+<li>基于内存的读写操作</li>
+<li>单线程避免了上下文切换和资源竞争的消耗</li>
+<li>采用网络IO多路复用技术（epoll） 和 事件处理；类似与Netty属于非阻塞IO，减少了网络IO的时间消耗</li>
+<li>客户端和服务端采用高效的RESP协议（Redis序列化协议）进行通信。（协议特点：易于实现、解析速度快、人可读懂）</li>
+</ul>
+<p><strong>[注意]</strong></p>
+<p>因为Redis是单线程的缘故，因此不会存在多条命令同时执行的情况，换句话来说就是要一条一条地执行，正因这样就必须注意命令如果执行时间过长就会阻塞后面的命令（Redis阻塞），<code>这是个非常严重的问题</code>，所以Redis的设计理念其实是面向快速执行的场景，即每条命令都是简短快速的。所以尽量避免诸如<code>keys</code>、<code>hgetall</code>这样的命令使用。</p>
+<h2 id="关于分布式缓存"><a href="#关于分布式缓存" class="headerlink" title="关于分布式缓存"></a>关于分布式缓存</h2><h3 id="Redis的缓存更新策略"><a href="#Redis的缓存更新策略" class="headerlink" title="Redis的缓存更新策略"></a>Redis的缓存更新策略</h3><ol>
+<li>算法剔除（FIFO[无]、LRU、LRU、最小TTL）</li>
+<li>超时剔除（expire命令）</li>
+<li>主动更新（推荐，例如CRUD数据库时同时跟新缓存）</li>
+</ol>
+<h3 id="Redis中算法剔除相关的配置"><a href="#Redis中算法剔除相关的配置" class="headerlink" title="Redis中算法剔除相关的配置"></a>Redis中算法剔除相关的配置</h3><p>配置redis最大可用内存。默认为0，即不设置限制直到耗尽主内存</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">maxmemory &lt;bytes&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>指定当maxmemory满了的时候，使用什么策略来管理内存</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">maxmemory-policy noeviction</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>volatile-lru：从具有过期设置（expire）的key中使用近似的LRU剔除（最近最少使用）缓存后再保存新的缓存</li>
+<li>volatile-lfu：从具有过期设置（expire）的key中使用近似的LFU剔除（最近最少命中）缓存后再保存新的缓存</li>
+<li>volatile-random：从具有过期设置（expire）的key中随机剔除缓存后再保存新的缓存</li>
+<li>volatile-ttl：从具有过期设置（expire）的key中剔除ttl时间较小的缓存后再保存新的缓存</li>
+<li>allkeys-lru：使用近似的LRU剔除缓存后再保存新的缓存</li>
+<li>allkeys-lfu：使用近似的LFU剔除缓存后再保存新的缓存</li>
+<li>allkeys-random：随机剔除缓存后再保存新的缓存</li>
+<li>noeviction：不剔除，只在写操作是返回错误告知</li>
+</ul>
+<blockquote>
+<p>需要注意的是LFU是在Redis 4.x加入的，以下图片源自网络</p>
+</blockquote>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/010.png" alt></p>
+<p>指定每次对比样本的数量</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">maxmemory-samples 5</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>因为Redis中实现的LRU、LFU、最小TTL等都不是精准的算法。maxmemory-samples用于指定剔除时对比的样本数。官方注释表示，设置为10非常接近真是的算法所达的精准度，但是会消耗更多的CPU资源</p>
+</blockquote>
+<p>指定副本节点复制缓存时忽略maxmemory设置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">replica-ignore-maxmemory yes</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>非常重要的是，Redis 5.x开始replica-ignore-maxmemory默认为yes，表示副本在复制时将会忽略主节点的maxmemory设置，换句话来说就是副本节点不会对剔除缓存。</p>
+</blockquote>
+<h3 id="分布式缓存需要注意问题"><a href="#分布式缓存需要注意问题" class="headerlink" title="分布式缓存需要注意问题"></a>分布式缓存需要注意问题</h3><h4 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h4><p>缓存穿透指的是访问了不存在的数据导致间接绕过了缓存层（因为数据根本不存在）;</p>
+<p>举个例子，根据id=nihao来获取对象信息，但数据库并没有id=nihao的对象，这时如果有人故意攻击，拿着一个不存在的id不断请求应用，这就会导致所有请求落在数据库上，从而间接导致缓存层失效; </p>
+<p>为了解决这种问题有2种方法：</p>
+<ul>
+<li><p><strong>缓存空值：</strong>访问数据库时如果数据库没有数据，则返回一个null给缓存层，避免拿着不存在的值不停地访问应用从而造成压力。同时最好给这个空值设置超时时间，这个可以避免大量空值占用空间。</p>
+</li>
+<li><p><strong>BloomFilter(布隆过滤器)：</strong>基于比特向量。原理是先将数据的key（例如某个字段）通过哈希计算并保存到集合中。那么请求到来时先检查BloomFilter集合中是否<code>可能</code>存在该值。存在则查找数据库，不存在直接返回。但这里注意的是BloomFilter是<code>存在误判问题</code>的，即BloomFilter并非百分百准确，换句话来说BloomFilter只能减少无畏的数据库查询。在Google Guava工具库中提供了对BloomFilter的先关实现。</p>
+<p>BloomFilter原理展示：   <a href="https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/" target="_blank" rel="noopener">https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/</a> </p>
+</li>
+</ul>
+<h4 id="无底洞问题"><a href="#无底洞问题" class="headerlink" title="无底洞问题"></a>无底洞问题</h4><p>无底洞问题由Facebook所发现，当时Facebook的Memcache节点数已多达3000个，开发人员发现水平扩容节点不但没有得来想要的效果，反而降低了性能。</p>
+<p>其原因主要是key散乱在不同的缓存节点上导致了网络的开销。</p>
+<p>所以预防这个问题基本思想就是，<code>减少网络通讯的次数</code>和<code>让相关的key落在相同的节点上</code>。所以可以使用<code>管道</code>、mget、m* 这样的命令来解决。</p>
+<blockquote>
+<p>图片源自《Redis开发与运维》</p>
+</blockquote>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/011.png" alt></p>
+<h4 id="缓存击穿（热点key失效）"><a href="#缓存击穿（热点key失效）" class="headerlink" title="缓存击穿（热点key失效）"></a>缓存击穿（热点key失效）</h4><p>其实这个名字个人觉得不是很恰当，缓存击穿指的是当大量并发访问同一个key的时候，这个key恰好失效了，导致所有并发请求落到数据库; </p>
+<p>解决的思路：</p>
+<ul>
+<li>进行<code>互斥处理</code>来等待先发现key为空的线程将该key重新放入缓存后其他线程再获取。(多服务节点下可使用分布式锁)</li>
+<li>key不过期。使用后台线程来定时更新缓存</li>
+</ul>
+<h4 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h4><p>缓存雪崩类似于缓存击穿。指的是缓存层突然失效。</p>
+<blockquote>
+<p>图片源自《Redis开发与运维》</p>
+</blockquote>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/012.png" alt></p>
+<p>解决方法：</p>
+<ul>
+<li>保证缓存层的高可用</li>
+<li>后端请求限流</li>
+<li>提前测试缓存雪崩后的应对能力</li>
+</ul>
+<h4 id="数据库和缓存之间的双写一致性问题"><a href="#数据库和缓存之间的双写一致性问题" class="headerlink" title="数据库和缓存之间的双写一致性问题"></a>数据库和缓存之间的双写一致性问题</h4><blockquote>
+<p>使用缓存就意味着存在数据一致性问题。</p>
+</blockquote>
+<h5 id="问题赘述"><a href="#问题赘述" class="headerlink" title="问题赘述"></a>问题赘述</h5><p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/010.png" alt></p>
+<p>上图是Redis缓存的剔除策略。通常在实际使用中会混搭来满足需求。而缓存双写一致性问题发生在主动更新上。</p>
+<p>怎样更新才能更好地保证数据库和缓存的最终一致性？还有就是需要考虑缓存更新失败的情况。</p>
+<h5 id="主动更新方案对比"><a href="#主动更新方案对比" class="headerlink" title="主动更新方案对比"></a>主动更新方案对比</h5><p><strong>1）先更新数据库，再更新缓存（在缓存足够情况下，也推荐）</strong></p>
+<ul>
+<li><code>浪费内存</code>。因为并不是所有数据都需要缓存</li>
+<li>可能缓存到脏数据。如下：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>a线程（新）</th>
+<th>b线程（旧）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td>更新数据库</td>
+</tr>
+<tr>
+<td>更新数据库</td>
+<td></td>
+</tr>
+<tr>
+<td>更新缓存</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>更新缓存</td>
+</tr>
+</tbody></table>
+<p><strong>2）先更新缓存，再更新数据库</strong></p>
+<ul>
+<li><code>浪费内存</code>，因为并不是所有数据都需要缓存</li>
+<li>可能缓存到脏数据。如下：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>a线程（新）</th>
+<th>b线程（旧）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>更新缓存</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>更新缓存</td>
+</tr>
+<tr>
+<td></td>
+<td>更新数据库</td>
+</tr>
+<tr>
+<td>更新数据库</td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>3）先更新数据库，再删除缓存（推荐）</strong></p>
+<ul>
+<li>可能缓存到脏数据（读写分离延迟 或 更新缓存失败）。如下读写分离问题：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>a线程</th>
+<th>b线程</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>更新数据库</td>
+<td></td>
+</tr>
+<tr>
+<td>删除缓存</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>读取从节点数据更新缓存</td>
+</tr>
+<tr>
+<td>同步完成</td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>4）先删除缓存，再更新数据库</strong></p>
+<ul>
+<li>可能缓存到脏数据。如下：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>a线程</th>
+<th>b线程</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>删除缓存</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>读取数据库数据更新缓存</td>
+</tr>
+<tr>
+<td>更新数据</td>
+<td></td>
+</tr>
+</tbody></table>
+<h5 id="解决缓存更新失败问题"><a href="#解决缓存更新失败问题" class="headerlink" title="解决缓存更新失败问题"></a>解决缓存更新失败问题</h5><ul>
+<li>使用消息队列来异步执行缓存操作和开启失败重试处理</li>
+</ul>
+<h2 id="关于Redis的内存碎片问题"><a href="#关于Redis的内存碎片问题" class="headerlink" title="关于Redis的内存碎片问题"></a>关于Redis的内存碎片问题</h2><h3 id="什么是内存碎片和造成内存碎片的原因"><a href="#什么是内存碎片和造成内存碎片的原因" class="headerlink" title="什么是内存碎片和造成内存碎片的原因"></a>什么是内存碎片和造成内存碎片的原因</h3><p>内存碎片可以简单理解为无法使用的内存空缺。</p>
+<p>产生内存碎片的原因主要有2个：</p>
+<ol>
+<li><code>受系统的内存分配器影响，例如频繁进行大小不定的内存分配且（例如大量修改value值，且value值前后大小差异较大）</code></li>
+<li><code>大量增删操作，因为删除key后并不会马上回收内存。</code></li>
+</ol>
+<h3 id="拓展知识"><a href="#拓展知识" class="headerlink" title="拓展知识"></a>拓展知识</h3><ol>
+<li><p>内存池是一种<a href="https://baike.baidu.com/item/内存分配/9796631" target="_blank" rel="noopener">内存分配</a>方式。通常我们习惯直接使用new、malloc等API申请分配内存，这样做的缺点在于：由于所申请内存块的大小不定，当频繁使用时会造成大量的<a href="https://baike.baidu.com/item/内存碎片/3883950" target="_blank" rel="noopener">内存碎片</a>并进而降低性能。— 百度百科</p>
+</li>
+<li><p>因为Redis没有实现自己的内存池，因此需要依赖系统自身的内存分配器（如Linux上的libc库）来进行内存的管理。换句话来说，操作系统内存分配器性能和处理内存碎片的能力对Redis有一定能影响。</p>
+</li>
+<li><p>在较新版本的Redis中使用 <code>Jemalloc</code>代替了系统默认的内存分配器。（在Redis5.x中Jemalloc也得到了升级，对内存分配和碎片整理更加高效）</p>
+</li>
+<li><p>主动回收内容有两种情况：<code>key过时（expire）</code>、<code>内容到达maxmemory出发驱逐策略</code></p>
+</li>
+</ol>
+<h3 id="查看是否存在内存碎片"><a href="#查看是否存在内存碎片" class="headerlink" title="查看是否存在内存碎片"></a>查看是否存在内存碎片</h3><p>命令：<code>info memory</code></p>
+<blockquote>
+<p>图片源自《Redis开发与运维》</p>
+</blockquote>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" alt></p>
+<p>可以看到内存碎片的公式为：<code>内存碎片 = 进程占用的物理内存总量 / 实际数据内存占用量</code></p>
+<p><code>该值最好的状态是接近1，该值越大表示存在内存碎片越多。</code></p>
+<h3 id="解决内存碎片问题方案"><a href="#解决内存碎片问题方案" class="headerlink" title="解决内存碎片问题方案"></a>解决内存碎片问题方案</h3><p>Redis4.x版本之前，只能通过重启Redis解决，这个就可以重新配置内存。</p>
+<p>Redis4.x版本之后，通过设置<code>activedefrag yes</code>开启自动整理内存碎片功能，此后Redis会尽最大努力解决内存碎片问题。</p>
+<h2 id="有趣的功能"><a href="#有趣的功能" class="headerlink" title="有趣的功能"></a>有趣的功能</h2><h3 id="发布-订阅"><a href="#发布-订阅" class="headerlink" title="发布/订阅"></a>发布/订阅</h3><p><strong>[订阅频道]</strong></p>
+<p>格式：subscribe 频道名称，例子如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">subscribe channel:test</span><br></pre></td></tr></table></figure>
+
+<p><strong>[在指定频道发送消息]</strong></p>
+<p>格式：publish 频道名称 消息，例子如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">publish channel:test hello</span><br></pre></td></tr></table></figure>
+
+<p><strong>[取消订阅]</strong></p>
+<p>格式：unsubscribe 频道名称，例子如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">unsubscribe channel:test</span><br></pre></td></tr></table></figure>
+
+<p><strong>[查看当前有订阅者的频道有那些]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pubsub channels</span><br></pre></td></tr></table></figure>
+
+<p><strong>[查看频道的订阅者数量]</strong></p>
+<p>格式：pubsub numsub 频道名称，例子如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; pubsub numsub channel:test</span><br><span class="line">1) "channel:test"</span><br><span class="line">2) (integer) 2 # 有两个订阅者</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="GEO"><a href="#GEO" class="headerlink" title="GEO"></a>GEO</h3><blockquote>
+<p>GEO，地理信息定位。使用zset存储</p>
+</blockquote>
+<p>redis 3.2 开始提供了个有趣的功能，就是GEO。GEO可以实现诸如<code>附近的人</code>、<code>地点距离</code>、<code>摇一摇</code>这样的功能，有趣吧？</p>
+<p><strong>[添加地理位置信息]</strong></p>
+<blockquote>
+<p>获取地址的经纬度信息：<a href="http://api.map.baidu.com/lbsapi/getpoint/index.html" target="_blank" rel="noopener">http://api.map.baidu.com/lbsapi/getpoint/index.html</a></p>
+</blockquote>
+<p>格式：geoadd key longitude latitude member</p>
+<ul>
+<li>longitude：经度</li>
+<li>latitude：纬度</li>
+<li>member：成员/地点</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; geoadd guangzhou 113.327679 23.125237 zjxc # 珠江新城</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; geoadd guangzhou 113.327998 23.023749 ds # 大石</span><br><span class="line">(integer) 1</span><br><span class="line">127.0.0.1:6379&gt; geoadd guangzhou 113.27604 22.995208 gznz # 广州南站</span><br><span class="line">(integer) 1</span><br></pre></td></tr></table></figure>
+
+<p><strong>[获取地理位置信息]</strong></p>
+<p>格式：geopos key member，例子如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; geopos guangzhou zjxc</span><br><span class="line">1) 1) "113.32767874002456665"</span><br><span class="line">   2) "23.12523573693501788"</span><br></pre></td></tr></table></figure>
+
+<p><strong>[获取两地理位置之间的距离]</strong></p>
+<p>格式：geodist key member1 member2 [单位]</p>
+<ul>
+<li>m：米</li>
+<li>km：公里</li>
+<li>mi：英里</li>
+<li>ft：尺</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 大石到南站</span></span><br><span class="line">127.0.0.1:6379&gt; geodist guangzhou ds gznz km</span><br><span class="line">"6.1947"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 大石到珠江新城</span></span><br><span class="line">127.0.0.1:6379&gt; geodist guangzhou ds zjxc km</span><br><span class="line">"11.2881"</span><br></pre></td></tr></table></figure>
+
+<p><strong>[获取指定距离范围的地里信息]</strong></p>
+<p>格式1：georadiusbymember key member 单位</p>
+<p>格式2：georadius key longitude latitude 单位</p>
+<blockquote>
+<p>其中member或longitude latitude为中心节点的位置，查询指定半径范围的位置（包含返回中心节点）</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; georadiusbymember guangzhou ds 10 km</span><br><span class="line">1) "gznz" # 广州南站</span><br><span class="line">2) "ds"</span><br><span class="line">127.0.0.1:6379&gt; georadiusbymember guangzhou ds 15 km</span><br><span class="line">1) "gznz" # 广州南站</span><br><span class="line">2) "ds"</span><br><span class="line">3) "zjxc" # 珠江新城</span><br></pre></td></tr></table></figure>
+
+<p>除了上面写法之外，还可以追加以下参数：</p>
+<ul>
+<li>withcoord：返回结果包含经纬度</li>
+<li>withdist：返回结果包含距离中心节点位置的距离</li>
+<li>count 数字参数：执行返回的数量（最近开始）</li>
+<li>asc|desc：升序和降序（最好指定asc，因为没有默认值，这样做返回的第1个为中心节点）</li>
+<li>store key：将返回结果的地理位置保存到指定key种</li>
+<li>storedist key：将返回结果的经纬度保存到指定key种</li>
+</ul>
+<p><strong>[删除指定的地里位置信息]</strong></p>
+<p>格式：zrem key member</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">zrem guangzhou zjxc</span><br></pre></td></tr></table></figure>
+
+<p><strong>[返回geo的hash值（经纬度）]</strong></p>
+<p>格式：geohash key member</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; geohash guangzhou ds</span><br><span class="line">1) "ws0dfz6gjc0"</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="常用配置"><a href="#常用配置" class="headerlink" title="常用配置"></a>常用配置</h2><blockquote>
+<p>不包含 复制/集群/Docker 和 高级配置</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br></pre></td><td class="code"><pre><span class="line">################################## NETWORK #####################################</span><br><span class="line"></span><br><span class="line"># 服务端绑定地址</span><br><span class="line"># bind 192.168.1.100 10.0.0.1</span><br><span class="line"># bind 127.0.0.1 ::1</span><br><span class="line">bind 127.0.0.1</span><br><span class="line">port 6379</span><br><span class="line"></span><br><span class="line">################################# GENERAL #####################################</span><br><span class="line"></span><br><span class="line"># 是否作为守护进程运行</span><br><span class="line">daemonize no</span><br><span class="line"></span><br><span class="line"># 运行时pid，默认为&#x2F;var&#x2F;run&#x2F;redis.pid  </span><br><span class="line">pidfile &#x2F;var&#x2F;run&#x2F;redis_6379.pid</span><br><span class="line"></span><br><span class="line"># 日志级别</span><br><span class="line"># debug&#x2F;verbose&#x2F;notice&#x2F;warning</span><br><span class="line">loglevel notice</span><br><span class="line"></span><br><span class="line"># 指定日志文</span><br><span class="line">logfile &quot;&quot;</span><br><span class="line"></span><br><span class="line"># 指定数据的数量</span><br><span class="line">databases 16</span><br><span class="line"></span><br><span class="line">################################ SNAPSHOTTING  ################################</span><br><span class="line"></span><br><span class="line"># RDB配置</span><br><span class="line">save 900 1</span><br><span class="line">save 300 10</span><br><span class="line">save 60 10000</span><br><span class="line"></span><br><span class="line"># bgsave出错后是否停止写入操作</span><br><span class="line">stop-writes-on-bgsave-error yes</span><br><span class="line"></span><br><span class="line"># RDB文件是否压缩，设置为yes则消耗更多cpu资源但节省空间</span><br><span class="line">rdbcompression yes</span><br><span class="line"></span><br><span class="line"># 是否开启快照校验</span><br><span class="line">rdbchecksum yes</span><br><span class="line"></span><br><span class="line"># RDB文件名称</span><br><span class="line">dbfilename dump.rdb</span><br><span class="line"></span><br><span class="line"># RDB文件路径</span><br><span class="line">dir .&#x2F;</span><br><span class="line"></span><br><span class="line">################################### CLIENTS ####################################</span><br><span class="line"></span><br><span class="line"># 最大的客户端连接数</span><br><span class="line">maxclients 10000</span><br><span class="line"></span><br><span class="line"># 客户端连接空闲多久自动关闭，默认为0，即不关闭</span><br><span class="line">timeout 0</span><br><span class="line"></span><br><span class="line">############################## MEMORY MANAGEMENT ################################</span><br><span class="line"></span><br><span class="line"># redi内存最大值</span><br><span class="line">maxmemory 1024</span><br><span class="line"></span><br><span class="line"># 缓存剔除策略</span><br><span class="line"># volatile-lru -&gt; Evict using approximated LRU among the keys with an expire set.</span><br><span class="line"># allkeys-lru -&gt; Evict any key using approximated LRU.</span><br><span class="line"># volatile-lfu -&gt; Evict using approximated LFU among the keys with an expire set.</span><br><span class="line"># allkeys-lfu -&gt; Evict any key using approximated LFU.</span><br><span class="line"># volatile-random -&gt; Remove a random key among the ones with an expire set.</span><br><span class="line"># allkeys-random -&gt; Remove a random key, any key.</span><br><span class="line"># volatile-ttl -&gt; Remove the key with the nearest expire time (minor TTL)</span><br><span class="line"># noeviction -&gt; Don&#39;t evict anything, just return an error on write operations.</span><br><span class="line">maxmemory-policy noeviction</span><br><span class="line"></span><br><span class="line"># 策略的样本抽取数量</span><br><span class="line">maxmemory-samples 5</span><br><span class="line"></span><br><span class="line"># 副本节点是否忽略maxmemory配置</span><br><span class="line">replica-ignore-maxmemory yes</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">############################## APPEND ONLY MODE ###############################</span><br><span class="line"></span><br><span class="line"># 开启AOF备份</span><br><span class="line">appendonly yes</span><br><span class="line"></span><br><span class="line"># 指定AOF文件名称</span><br><span class="line">appendfilename &quot;appendonly.aof&quot;</span><br><span class="line"></span><br><span class="line"># 指定AOF持久化频率</span><br><span class="line"># appendfsync always</span><br><span class="line">appendfsync everysec</span><br><span class="line"># appendfsync no</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># AOF重写条件</span><br><span class="line">auto-aof-rewrite-percentage 100 # 增长比例临界（当前&#x2F;上次）</span><br><span class="line">auto-aof-rewrite-min-size 64mb # 临界大小</span><br><span class="line"></span><br><span class="line"># 是否加载尾部不完整的AOF文件</span><br><span class="line">aof-load-truncated yes</span><br><span class="line"></span><br><span class="line"># 设置为yes表示rewrite期间不对新的操作fsync，而时暂时存放在缓冲区</span><br><span class="line">no-appendfsync-on-rewrite no</span><br><span class="line"></span><br><span class="line"># 开启混合持久化模式（aof保存最新的操作，rdb保存之前的数据，这样可以提高恢复速度）</span><br><span class="line">aof-use-rdb-preamble yes</span><br><span class="line"></span><br><span class="line">################################ LUA SCRIPTING  ###############################</span><br><span class="line"></span><br><span class="line"># 脚本最大执行时间</span><br><span class="line">lua-time-limit 5000</span><br><span class="line"></span><br><span class="line">################################## SLOW LOG ###################################</span><br><span class="line"></span><br><span class="line"># 慢查询临界（微秒）</span><br><span class="line">slowlog-log-slower-than 10000</span><br><span class="line"></span><br><span class="line"># 慢查询日志重置临界</span><br><span class="line">slowlog-max-len 128</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">########################### ACTIVE DEFRAGMENTATION #######################</span><br><span class="line"></span><br><span class="line"># 开启内存碎片自动整理</span><br><span class="line">activedefrag yes</span><br><span class="line"></span><br><span class="line"># 进行内存碎片整理的内存碎片触发值（内存大小）</span><br><span class="line">active-defrag-ignore-bytes 100 mb</span><br><span class="line"></span><br><span class="line"># 进行内存碎片整理的内存碎片触发值（百分比）</span><br><span class="line">active-defrag-threshold-lower 10</span><br><span class="line"></span><br><span class="line"># 打算整理碎片的百分比（redis尽量满足），100表示尽可能整理内存碎片</span><br><span class="line">active-defrag-threshold-upper 100</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Java版客户端"><a href="#Java版客户端" class="headerlink" title="Java版客户端"></a>Java版客户端</h2><h3 id="Jedis"><a href="#Jedis" class="headerlink" title="Jedis"></a>Jedis</h3><p><strong>依赖</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- jedis --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>redis.clients<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jedis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>例子</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Jedis</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testJedis</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Jedis jedis = <span class="keyword">new</span> Jedis(<span class="string">"127.0.0.1"</span>, <span class="number">6379</span>);</span><br><span class="line"></span><br><span class="line">    jedis.set(<span class="string">"sayhi"</span>, <span class="string">"hello redis!!!"</span>);</span><br><span class="line">    System.out.println(jedis.get(<span class="string">"sayhi"</span>));</span><br><span class="line"></span><br><span class="line">    jedis.close();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// JedisPool</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testJedisPool</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 连接池参数设置</span></span><br><span class="line">    <span class="keyword">final</span> GenericObjectPoolConfig config = <span class="keyword">new</span> GenericObjectPoolConfig();</span><br><span class="line">    config.setMaxTotal(<span class="number">30</span>); <span class="comment">// 最大连接数</span></span><br><span class="line">    config.setMaxIdle(<span class="number">10</span>); <span class="comment">// 最大空闲连接数</span></span><br><span class="line">    config.setNumTestsPerEvictionRun(<span class="number">5</span>); <span class="comment">// 每次释放连接的最大数目</span></span><br><span class="line">    config.setTimeBetweenEvictionRunsMillis(<span class="number">30000</span>); <span class="comment">// 释放连接的扫描间隔（毫秒）</span></span><br><span class="line">    config.setMaxWaitMillis(<span class="number">1500</span>); <span class="comment">// 获取连接的最大等待时间（毫秒）</span></span><br><span class="line">    config.setTestOnBorrow(<span class="keyword">true</span>); <span class="comment">// 获取连接时候检查有效性, 默认false</span></span><br><span class="line">    config.setTestWhileIdle(<span class="keyword">true</span>); <span class="comment">// 空闲时检查有效性, 默认false</span></span><br><span class="line">    config.setBlockWhenExhausted(<span class="keyword">false</span>); <span class="comment">// 连接耗尽时是否阻塞, false报异常,ture阻塞直到超时, 默认true</span></span><br><span class="line"></span><br><span class="line">    JedisPool pool = <span class="keyword">new</span> JedisPool(config, <span class="string">"127.0.0.1"</span>, <span class="number">6379</span>);</span><br><span class="line">    Jedis jedis = pool.getResource(); <span class="comment">// 获取连接</span></span><br><span class="line"></span><br><span class="line">    jedis.set(<span class="string">"sayhi2"</span>, <span class="string">"hello redis!!! 222"</span>);</span><br><span class="line">    System.out.println(jedis.get(<span class="string">"sayhi2"</span>));</span><br><span class="line"></span><br><span class="line">    jedis.close();</span><br><span class="line">    pool.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="Spring-Data-Redis"><a href="#Spring-Data-Redis" class="headerlink" title="Spring Data Redis"></a>Spring Data Redis</h3><blockquote>
+<p>官方文档：<a href="https://spring.io/projects/spring-data-redis#learn" target="_blank" rel="noopener">https://spring.io/projects/spring-data-redis#learn</a></p>
+</blockquote>
+<p>SpringBoot 2.x 开始默认 Spring Data Redis 使用 Lettuce 作为Redis客户端。（SpringBoot 1.x 默认为Jedis）</p>
+<p><strong>[ Lettuce和Jedis区别 ]</strong></p>
+<ul>
+<li>Jedis是非线程安全的。Jedis的设计和Redis对应都是单线程读写，一个Jedis连接对应一个Redis，多以在多线程场景下应该使用JedisPool来操作。</li>
+<li>Lettuce基于Netty来实现，连接实例（StatefulRedisConnection）可以在多个线程间并发访问，因为StatefulRedisConnection是线程安全的，所以一个连接实例（StatefulRedisConnection）就可以满足多线程环境下的并发访问。而在Spring Boot 2.x中Lettuce是默认的Redis客户端。</li>
+</ul>
+<p><strong>依赖</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.commons<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-pool2<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.6.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>配置</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">redis:</span></span><br><span class="line">    <span class="attr">host:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">6379</span></span><br><span class="line">    <span class="attr">timeout:</span> <span class="number">5000</span></span><br><span class="line">    <span class="attr">lettuce:</span></span><br><span class="line">      <span class="attr">pool:</span></span><br><span class="line">        <span class="attr">max-active:</span> <span class="number">8</span></span><br><span class="line">        <span class="attr">max-idle:</span> <span class="number">8</span></span><br><span class="line">        <span class="attr">min-idle:</span> <span class="number">0</span></span><br><span class="line">        <span class="attr">max-wait:</span> <span class="string">1500ms</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>例子</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> RedisTemplate&lt;String, String&gt; redisTemplate;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> StringRedisTemplate stringRedisTemplate;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testRedisTemplate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">        //操作hash</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForHash();</span></span><br><span class="line"><span class="comment">        //操作list</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForList();</span></span><br><span class="line"><span class="comment">        //操作set</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForSet();</span></span><br><span class="line"><span class="comment">        //操作有序set</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForZSet();</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="comment">//操作字符串</span></span><br><span class="line">    redisTemplate.opsForValue().set(<span class="string">"hi"</span>, <span class="string">"hello spring data redis!!!"</span>);</span><br><span class="line">    System.out.println(redisTemplate.opsForValue().get(<span class="string">"hi"</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testStringRedisTemplate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    stringRedisTemplate.opsForValue().set(<span class="string">"hi"</span>, <span class="string">"hello spring data redis!!!"</span>);</span><br><span class="line">    System.out.println(redisTemplate.opsForValue().get(<span class="string">"hi"</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// RedisConnection为Reids客户端的抽象，当RedisTemplate不够使用时，就可以使用以下的方式来使用</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testExecuteMethod</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    Boolean execute = stringRedisTemplate.execute((RedisConnection connection) -&gt; &#123;</span><br><span class="line">        <span class="comment">// setnx并指定过期时间</span></span><br><span class="line">        <span class="keyword">return</span> connection.set(<span class="string">"hi"</span>.getBytes(), <span class="string">"test setnx"</span>.getBytes(),</span><br><span class="line">                              Expiration.seconds(<span class="number">30</span>), <span class="comment">// 过期时间</span></span><br><span class="line">                              RedisStringCommands.SetOption.SET_IF_ABSENT); <span class="comment">// 设置NX</span></span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    System.out.println(execute);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>StringRedisTemplate继承自RedisTemplate</li>
+<li>StringRedisTemplate默认使用StringRedisSerializer进行序列化，而RedisTemplate默认使用JdkSerializationRedisSerializer</li>
+</ul>
+<h2 id="可视化客户端"><a href="#可视化客户端" class="headerlink" title="可视化客户端"></a>可视化客户端</h2><h3 id="Redis-Desktop-Manager"><a href="#Redis-Desktop-Manager" class="headerlink" title="Redis Desktop Manager"></a>Redis Desktop Manager</h3><p>官网：<a href="https://redisdesktop.com/" target="_blank" rel="noopener">https://redisdesktop.com/</a></p>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/002.png" alt></p>
+<h3 id="TablePlus"><a href="#TablePlus" class="headerlink" title="TablePlus"></a>TablePlus</h3><p>官网：<a href="https://tableplus.com/" target="_blank" rel="noopener">https://tableplus.com/</a></p>
+<blockquote>
+<p>可惜目前不支持Linux系统，需要.net framework 4.8的支持，wine安装不成功。</p>
+</blockquote>
+<p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/003.png" alt></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>《Redis开发与运维》</li>
+<li>《Redis实战》</li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年10月22日21:06:17 — 添加关于Redis内存碎片问题内容</li>
+<li>2019年10月22日22:35:05 — 添加关于Stream数据类型内容（redis5.x）</li>
+<li>2019年10月29日10:05:26 — 添加缓存双写一致性问题解决方案</li>
+</ul>
+</div><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">TD</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://tandi.pub/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/">https://tandi.pub/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://tandi.pub" target="_blank">学然后知不足</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></div><div class="post_share"><div class="social-share" data-image="/image/orm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination_post" id="pagination"><div class="prev-post pull_left"><a href="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/"><img class="prev_cover" src="/image/redis.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Redis高可用解决方案</div></div></a></div><div class="next-post pull_right"><a href="/%E4%BA%86%E8%A7%A3NoSQL/"><img class="next_cover" src="/image/nosql.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">了解NoSQL</div></div></a></div></nav><hr><div id="post-comment"><div class="comment_headling"><i class="fa fa-comments fa-fw" aria-hidden="true"></i><span> 评论</span></div><div id="gitalk-container"></div><script>var gitalk = new Gitalk({
+  clientID: '38b84fb92012be686d1c',
+  clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+  repo: 'hexo-comments',
+  owner: 'oomgomgxx',
+  admin: ['oomgomgxx'],
+  id: md5(decodeURI(location.pathname)),
+  language: 'zh-CN',
+  perPage: 10,
+  distractionFreeMode: false,
+  pagerDirection: 'last',
+  createIssueManually: false,
+  updateCountCallback: commentCount
+})
+gitalk.render('gitalk-container')
+
+function commentCount(n){
+  try {
+    document.getElementsByClassName('gitalk-comment-count')[0].innerHTML= n
+  } catch (e) {
+    return false
+  }
+}</script></div></article></main><footer id="footer" style="background-image: url(/image/redis.png)" data-type="photo"><div id="footer-wrap"><div class="copyright">&copy;2020 TD</div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><i class="fa fa-book" id="readmode" title="阅读模式"></i><i class="fa fa-plus" id="font_plus" title="放大字体"></i><i class="fa fa-minus" id="font_minus" title="缩小字体"></i><a class="translate_chn_to_cht" id="translateLink" href="javascript:translatePage();" title="简繁转换" target="_self">簡</a><i class="darkmode fa fa-moon-o" id="darkmode" title="夜间模式"></i></div><div id="rightside-config-show"><div id="rightside_config" title="设置"><i class="fa fa-cog" aria-hidden="true"></i></div><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fa fa-comments">  </i></a><i class="fa fa-list-ul close" id="mobile-toc-button" title="目录" aria-hidden="true"></i><i class="fa fa-arrow-up" id="go-up" title="回到顶部" aria-hidden="true"></i></div></section><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js"></script><script>document.addEventListener('DOMContentLoaded', function() {
+      pangu.spacingElementById('content-inner')
+})</script></body></html>

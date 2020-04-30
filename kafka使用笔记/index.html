@@ -1,0 +1,681 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>一篇文章解决Kafka的基本使用 | 学然后知不足</title><meta name="description" content="一篇文章解决Kafka的基本使用"><meta name="keywords" content="中间件"><meta name="author" content="TD"><meta name="copyright" content="TD"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/img/binary-code.svg"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="crossorigin"/><meta name="twitter:card" content="summary"><meta name="twitter:title" content="一篇文章解决Kafka的基本使用"><meta name="twitter:description" content="一篇文章解决Kafka的基本使用"><meta name="twitter:image" content="https://tandi.pub/image/kafka.jpg"><meta property="og:type" content="article"><meta property="og:title" content="一篇文章解决Kafka的基本使用"><meta property="og:url" content="https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/"><meta property="og:site_name" content="学然后知不足"><meta property="og:description" content="一篇文章解决Kafka的基本使用"><meta property="og:image" content="https://tandi.pub/image/kafka.jpg"><script src="https://cdn.jsdelivr.net/npm/js-cookie/dist/js.cookie.min.js"></script><script>var autoChangeMode = '1'
+var t = Cookies.get("theme")
+if (autoChangeMode == '1'){
+  var isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
+  var isLightMode = window.matchMedia("(prefers-color-scheme: light)").matches
+  var isNotSpecified = window.matchMedia("(prefers-color-scheme: no-preference)").matches
+  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+  if (t === undefined){
+    if (isLightMode) activateLightMode()
+    else if (isDarkMode) activateDarkMode()
+    else if (isNotSpecified || hasNoSupport){
+      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
+      var now = new Date()
+      var hour = now.getHours()
+      var isNight = hour < 6 || hour >= 18
+      isNight ? activateDarkMode() : activateLightMode()
+  }
+  } else if (t == 'light') activateLightMode()
+  else activateDarkMode()
+
+} else if (autoChangeMode == '2'){
+  now = new Date();
+  hour = now.getHours();
+  isNight = hour < 6 || hour >= 18
+  if(t === undefined) isNight? activateDarkMode() : activateLightMode()
+  else if (t === 'light') activateLightMode()
+  else activateDarkMode() 
+} else {
+  if ( t == 'dark' ) activateDarkMode()
+  else if ( t == 'light') activateLightMode()
+}
+
+function activateDarkMode(){
+  document.documentElement.setAttribute('data-theme', 'dark')
+  if (document.querySelector('meta[name="theme-color"]') !== null){
+    document.querySelector('meta[name="theme-color"]').setAttribute('content','#000')
+  }
+}
+function activateLightMode(){
+  document.documentElement.setAttribute('data-theme', 'light')
+  if (document.querySelector('meta[name="theme-color"]') !== null){
+  document.querySelector('meta[name="theme-color"]').setAttribute('content','#fff')
+  }
+}</script><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="canonical" href="https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/"><link rel="prev" title="使用阿里云公网IP和FRP工具对内网设备进行穿透访问" href="https://tandi.pub/%E4%BD%BF%E7%94%A8%E9%98%BF%E9%87%8C%E4%BA%91%E6%8F%90%E4%BE%9B%E7%9A%84%E5%85%AC%E7%BD%91ip%E5%92%8Cfrp%E5%B7%A5%E5%85%B7%E5%AF%B9%E5%86%85%E7%BD%91%E8%AE%BE%E5%A4%87%E8%BF%9B%E8%A1%8C%E7%A9%BF%E9%80%8F%E8%AE%BF%E9%97%AE/"><link rel="next" title="Manjaro Linux" href="https://tandi.pub/Manjaro%E4%BD%BF%E7%94%A8%E6%84%9F%E5%8F%97/"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css"><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"cookieDomain":"https://tandi.pub","msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  bookmark: {
+    message_prev: '按',
+    message_next: '键将本页加入书签'
+  },
+  runtime_unit: '天',
+  runtime: false,
+  copyright: undefined,
+  ClickShowText: undefined,
+  medium_zoom: false,
+  fancybox: true,
+  Snackbar: undefined,
+  baiduPush: true,
+  highlightCopy: true,
+  highlightLang: true,
+  highlightShrink: 'false',
+  isFontAwesomeV5: false,
+  isPhotoFigcaption: false
+  
+}</script><script>var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isSidebar: true  
+  }</script><noscript><style>
+#page-header {
+  opacity: 1
+}
+.justified-gallery img{
+  opacity: 1
+}
+</style></noscript><meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head><body><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/archives/"><div class="headline">文章</div><div class="length_num">58</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/tags/"><div class="headline">标签</div><div class="length_num">19</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/categories/"><div class="headline">分类</div><div class="length_num">17</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div></div></div><i class="fa fa-arrow-right on" id="toggle-sidebar" aria-hidden="true">     </i><div id="sidebar"><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar">     </div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展知识点"><span class="toc-number">1.</span> <span class="toc-text">拓展知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是磁盘的顺序写入？"><span class="toc-number">1.1.</span> <span class="toc-text">什么是磁盘的顺序写入？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存映射文件（mmap操作）"><span class="toc-number">1.2.</span> <span class="toc-text">内存映射文件（mmap操作）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是上线程下文切换和用户态内核态切换？"><span class="toc-number">1.3.</span> <span class="toc-text">什么是上线程下文切换和用户态内核态切换？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#线程上下文切换"><span class="toc-number">1.3.1.</span> <span class="toc-text">线程上下文切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户态和内核态切换-系统调度上下文切换"><span class="toc-number">1.3.2.</span> <span class="toc-text">用户态和内核态切换(系统调度上下文切换)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#总结"><span class="toc-number">1.3.3.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是Zero-copy（零拷贝）？"><span class="toc-number">1.4.</span> <span class="toc-text">什么是Zero-copy（零拷贝）？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么kafka性能高？"><span class="toc-number">2.</span> <span class="toc-text">为什么kafka性能高？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于topic、partition、replica之间的关系"><span class="toc-number">3.</span> <span class="toc-text">关于topic、partition、replica之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#kafka是如何存储topic数据的？"><span class="toc-number">4.</span> <span class="toc-text">kafka是如何存储topic数据的？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#消息相关"><span class="toc-number">5.</span> <span class="toc-text">消息相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息的格式"><span class="toc-number">5.1.</span> <span class="toc-text">消息的格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic-offset和consumer-offset"><span class="toc-number">5.2.</span> <span class="toc-text">topic offset和consumer offset</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Producer"><span class="toc-number">6.</span> <span class="toc-text">Java kafka Producer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者模型"><span class="toc-number">6.1.</span> <span class="toc-text">生产者模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer-interceptor"><span class="toc-number">6.2.</span> <span class="toc-text">producer interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer的分区策略"><span class="toc-number">6.3.</span> <span class="toc-text">producer的分区策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置参数"><span class="toc-number">6.4.</span> <span class="toc-text">常用配置参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Broker常用配置参数"><span class="toc-number">7.</span> <span class="toc-text">Broker常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Consumer"><span class="toc-number">8.</span> <span class="toc-text">Java kafka Consumer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group概念"><span class="toc-number">8.1.</span> <span class="toc-text">Consumer Group概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分区再均衡"><span class="toc-number">8.2.</span> <span class="toc-text">分区再均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用参数"><span class="toc-number">8.3.</span> <span class="toc-text">常用参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动提交offset"><span class="toc-number">8.4.</span> <span class="toc-text">手动提交offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动提交存在的问题"><span class="toc-number">8.4.1.</span> <span class="toc-text">自动提交存在的问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#同步提交"><span class="toc-number">8.4.2.</span> <span class="toc-text">同步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#异步提交"><span class="toc-number">8.4.3.</span> <span class="toc-text">异步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合提交"><span class="toc-number">8.4.4.</span> <span class="toc-text">混合提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot-Kafka手动提交案例"><span class="toc-number">8.4.5.</span> <span class="toc-text">SpringBoot Kafka手动提交案例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#管理kafka的命令行工具"><span class="toc-number">9.</span> <span class="toc-text">管理kafka的命令行工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#zookeeper相关"><span class="toc-number">9.1.</span> <span class="toc-text">zookeeper相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#broker相关"><span class="toc-number">9.2.</span> <span class="toc-text">broker相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic相关"><span class="toc-number">9.3.</span> <span class="toc-text">topic相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者相关"><span class="toc-number">9.4.</span> <span class="toc-text">生产者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#消费者相关"><span class="toc-number">9.5.</span> <span class="toc-text">消费者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他维护命令工具"><span class="toc-number">9.6.</span> <span class="toc-text">其他维护命令工具</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#问题配置"><span class="toc-number">10.</span> <span class="toc-text">问题配置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证消息不丢失"><span class="toc-number">10.1.</span> <span class="toc-text">如何保证消息不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证只消费1次"><span class="toc-number">10.2.</span> <span class="toc-text">如何保证只消费1次</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解决消息乱需问题"><span class="toc-number">10.3.</span> <span class="toc-text">如何解决消息乱需问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-number">11.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-number">12.</span> <span class="toc-text">内容修订</span></a></li></ol></div></div></div><div id="body-wrap"><div class="post-bg" id="nav" style="background-image: url(/image/kafka.jpg)"><div id="page-header"><span class="pull_left" id="blog_name"><a class="blog_title" id="site-name" href="/">学然后知不足</a></span><span class="pull_right menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fa fa-bars fa-fw" aria-hidden="true"></i></a></span></span></div><div id="post-info"><div id="post-title"><div class="posttitle">一篇文章解决Kafka的基本使用</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2019-09-08 02:31:39"><i class="fa fa-calendar" aria-hidden="true"></i> 发表于 2019-09-08</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-04-30 05:14:38"><i class="fa fa-history" aria-hidden="true"></i> 更新于 2020-04-30</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fa fa-angle-right post-meta__separator" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a></span></div><div class="meta-secondline"> </div><div class="meta-thirdline"><span class="post-meta-pv-cv"></span><span class="post-meta-commentcount"><i class="post-meta__icon fa fa-comment-o" aria-hidden="true"></i><span>评论数:</span><a href="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/#post-comment"><span class="gitalk-comment-count comment-count"></span></a></span></div></div></div></div><main class="layout_post" id="content-inner"><article id="post"><div id="article-container"><h2 id="拓展知识点"><a href="#拓展知识点" class="headerlink" title="拓展知识点"></a>拓展知识点</h2><p>为了更好地学习和理解kafka，个人觉得有必要搞清楚一些概念</p>
+<p>在开始之前，推荐书籍《Apache Kafka实战》和《Kafka权威指南》来作为kafka的入门书籍</p>
+<h3 id="什么是磁盘的顺序写入？"><a href="#什么是磁盘的顺序写入？" class="headerlink" title="什么是磁盘的顺序写入？"></a>什么是磁盘的顺序写入？</h3><p>&emsp;&emsp;所谓的磁盘顺序写入其实是相对与随机写入而言的，指的是在写入数据时磁盘的磁头不用寻道而可以一次将数据写完，因为省略了磁头寻道的时间，所以在速度来说是非常快的，甚至可以媲美内存的随机写入; 那什么情况下会出现顺序写入呢？如文件追加内容时（kafka就采用这种方式进行顺序写入，因为kafka存放数据的日志文件不能修改只能追加）</p>
+<p>以下为<strong>磁盘</strong>、<strong>SSD</strong>、<strong>内存</strong>之间的访问速度对比图</p>
+<blockquote>
+<p>图片源自：queue.acm.org</p>
+</blockquote>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/002.png" alt></p>
+<p>可以看出，磁盘的顺序访问是相当快的，所以<strong>kafka选择将内容写入磁盘</strong></p>
+<h3 id="内存映射文件（mmap操作）"><a href="#内存映射文件（mmap操作）" class="headerlink" title="内存映射文件（mmap操作）"></a>内存映射文件（mmap操作）</h3><p>&emsp;&emsp;游戏就经常玩了，但不知道有没有这么一个疑问：<code>游戏体积这么大，而内存这么小，那么操作系统到底是怎么运行游戏的呢？</code>答案就是，操作系统会预先为程序生成一个内存镜像保存在磁盘中，在运行该程序时并不会真的将该程序全部加载进主存，而是当使用到某部分代码时才会加载进主存，而这个保存程序内存镜像的文件就是内存映射文件。操作可以可以直接将内存映射文件映射到对应的内存地址中，因此对于用户线程而言是可以直接访问到该内存地址的。而且操作系统会自动管理者块内存空间，例如操作完该内存中的数据后系统会自动将脏数据刷会文件中。</p>
+<blockquote>
+<p>参考图</p>
+</blockquote>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/018.png" alt></p>
+<p>&emsp;&emsp;这属于操作系统内存管理方面的知识。操作系统通一般使用<code>页</code>作为内存的基本单位。将用户进程的虚拟内存地址划分为大小相等的页，这种页成为<code>页面</code>；而物理内存地址亦划分为大小相等的页，这种页成为<code>页框</code>。每个页面的大小为2的整数次幂，范围在512字节～1M，通常为4KB（32bit系统）和8KB（64bit系统）。在管理方面操作系统使用一种叫<code>页表</code>的结构来映射<code>虚拟内存地址</code>和<code>物理内存地址</code>之间的关系（虚拟内存通常远大于虚拟内存）。</p>
+<blockquote>
+<p>参考图</p>
+</blockquote>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/017.png" alt></p>
+<p>从图种可以看出，并不是所有虚拟地址都有实际的映射的。当程序访问到一个没有映射的虚拟地址时，就会发生<code>缺页中断</code>操作，该操作会将物理内存地址中较为不常用的内存页替换成当前缺页的程序部分，具体步骤是系统会从内存映射文件中加载内容到主存上（物理内存地址），然后更新进程的虚拟内存空间（虚拟内存地址），最后恢复缺页中断位置的操作。</p>
+<p>&emsp;&emsp;总结：mmap操作能够实现文件与内存的映射。因此内存映射文件的访问速度和直接访问内存差别不大。<code>而kafka就是使用mmap将日志索引映射到内存的，因此在定位数据方速度面也相当快</code>。</p>
+<blockquote>
+<p>kafka只用mmap来映射索引是因为如果同时映射索引和日志的话就会存在一直性问题。而且mmap操作并不操作百分百成功将内存刷会磁盘。例如并发操作时修改了日志并回刷成功，但应为某些原因索引回刷失败，这就导致了数据不一致性问题</p>
+</blockquote>
+<h3 id="什么是上线程下文切换和用户态内核态切换？"><a href="#什么是上线程下文切换和用户态内核态切换？" class="headerlink" title="什么是上线程下文切换和用户态内核态切换？"></a>什么是上线程下文切换和用户态内核态切换？</h3><h4 id="线程上下文切换"><a href="#线程上下文切换" class="headerlink" title="线程上下文切换"></a>线程上下文切换</h4><p>&emsp;&emsp;指的是在任务执行前，CPU寄存器和程序计数器会预先加载将要执行的任务的内容，而系统将会保存正在执行的任务内容用来下次执行时恢复到CPU寄存器和程序计数器中，这个过程也称作硬件上下文切换；而这里的提到的内容就是上下文；所以线程上下文切换指的是线程进程之间的任务切换。</p>
+<h4 id="用户态和内核态切换-系统调度上下文切换"><a href="#用户态和内核态切换-系统调度上下文切换" class="headerlink" title="用户态和内核态切换(系统调度上下文切换)"></a>用户态和内核态切换(系统调度上下文切换)</h4><p>&emsp;&emsp;操作系统将进程/线程的执行空间分为：<code>用户空间</code> 和 <code>内核空间</code></p>
+<p>&emsp;&emsp;用户线程处于用户空间，用户空间的权限非常有限，如不能访问除系统分配给自己的内存外的内容，且用户空间不能直接调用底层资源，如 磁盘io、网络套接字等。</p>
+<p>&emsp;&emsp;内核空间拥有所有的权限，且线程和进程的调度都有内核来控制。</p>
+<p>&emsp;&emsp;举个例子，用户线程想要读取磁盘上的文件内容，这时就会触发系统调用，此时就会出现从用户空间执行切换到内核空间执行的动作，这就是所谓的用户态和内核态切换，如下图所示：</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/001.png" alt></p>
+<p>&emsp;&emsp;因此应用在做IO操作时并不是直接操作设备本身的，而是通过内核来去操作;</p>
+<p>&emsp;&emsp;内核读取磁盘上的内容并将返回值保存到自己的缓冲区中，然后再将缓冲区的内容复制到用户空间中，从图可以看出，一个读取的io操作就出现了两次用户态和内核态之间的切换；</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>&emsp;&emsp;用户态和内核态之间的切换从程序的角度显然比较重量。而线程上下文切换虽然按理论来说时间并不长，但是需要注意的是，上下文切换途中任务是停止的，即对任务进度没任何的推进，而若果应用发生大量的上下文切换，就会白白浪费CPU资源和降低应用的执行效率。</p>
+<p>&emsp;&emsp;需要说明的是，在Linux中每条进程都有两个栈，分别用于用户态和内核态使用。</p>
+<p>&emsp;&emsp;再多说一句，在jdk 1.6之前，synchronized使用的monitor锁被称为重量级锁，这是因为在多线程争夺锁的时候，线程都需要从用户态切换到内核态，而且如果线程没有抢到锁就会被挂起，当持锁线程释放锁时，挂起的线程又会被唤醒来争夺锁，这样的动作来回重复，这就是synchronized“重”的地方。但jdk 1.6之后，jdk对synchronized的monitor锁进行了优化，通过引入<strong>锁升级</strong>概念来降低用户态切换到内核态和线程频繁地挂起唤醒的次数。</p>
+<h3 id="什么是Zero-copy（零拷贝）？"><a href="#什么是Zero-copy（零拷贝）？" class="headerlink" title="什么是Zero-copy（零拷贝）？"></a>什么是Zero-copy（零拷贝）？</h3><p>&emsp;&emsp;Zero-copy通常是在网络传输上使用的，指的是内核态直接将buffer（page buffer）中的数据通过网络发出去; </p>
+<p>还是看图说话，如下</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/003.png" alt></p>
+<p>从图可以得出结论是，所谓”零拷贝”就是不将内核态的数据写到用户态，而是直接通过socket发送给接收方，从而避免了数据拷贝（主要使用的是Linux的sendfile()）</p>
+<h2 id="为什么kafka性能高？"><a href="#为什么kafka性能高？" class="headerlink" title="为什么kafka性能高？"></a>为什么kafka性能高？</h2><ul>
+<li>保存数据的文件操作方式为顺序访问</li>
+<li>通过Zero-copy传输数据</li>
+<li>使用mmap操作将日志索引映射到内存提高索引速度</li>
+<li>使用批量数据发送策略，只有数据大小到达<code>batch.size</code>才会发出，目的是提高发送效率和吞吐量</li>
+</ul>
+<h2 id="关于topic、partition、replica之间的关系"><a href="#关于topic、partition、replica之间的关系" class="headerlink" title="关于topic、partition、replica之间的关系"></a>关于topic、partition、replica之间的关系</h2><p>&emsp;&emsp;通常生产者生产一个消息是存放在Broker的topic中的，但是topic只是逻辑上的概念，而消息实际存放的地方是partition（分区）;</p>
+<p>&emsp;&emsp;partition是一个有序的序列，也就说明了为什么保存数据的日志文件不能修改只能追加 ;</p>
+<p>&emsp;&emsp;其中，1个topic可以有1个或多个partition，换句话说就是1个topic的数据分拆存放到1个或多个partition中;  还有就是，kafka只能保证单个partition中的消息数据是有序的，而如果1个topic有多个partition的话，并不能保证多个partition的有序性，既kafka是不能保证全局有序的 ;</p>
+<p>&emsp;&emsp;replica其实是partition另外一个身份，kafka防止partition中的日志数据丢失提供的冗余备份机制，其中replica主要分为两种：leader replica、follower replica; </p>
+<p>&emsp;&emsp;follower replica是不对客户端提供服务的，只负责同步leader replica中的数据，但需要注意的是多个replica时，replica肯定是分布在不同的broker上的，如果不是就没有意义了，所以基于partition和replica的缘故，kafka通常都是以集群的形式使用;</p>
+<p>&emsp;&emsp;而follower replica又分为 in-sync replica（ISR，能够实时同步leader数据的replica）和 非ISR ; 其中只有 ISR 能够选举成为 leader replica，且在borker接收消息请求时，只有在 leader replica 和 ISR 都接受到该请求，这条消息才会被broker认为发送成功; 实质上一开始所有的replica（包含leader replica）都属于 ISR集合，但经过运行后可能因为网络又或者其它的干扰因素，导致其它broker上的replica无法跟上复制 leader replica 数据的进度因此被踢出 ISR集合 ，但当被踢出 ISR集合的replica跟上进度又会被重新纳入ISR集合; </p>
+<blockquote>
+<p>参考图：图片源自网络</p>
+</blockquote>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/006.png" alt></p>
+<p><strong>为什么需要partition？</strong></p>
+<p>&emsp;&emsp;有些人可能会有这样的疑问，就是即然有了topic为什么要有partition的概念呢？如ActiveMQ就没有partition概念; </p>
+<p>&emsp;&emsp;首先kafka的目标是为<code>处理实时数据</code>提供一个<code>统一</code>、<code>高吞吐</code>、<code>低延迟</code>的平台; 而partition就是用来提高topic的操作吞吐量的，既为topic提供负载均衡的功能;</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/004.png" alt></p>
+<p>上图源自kafka官网，可以看出，当1和topic有多个partition时，生产者生产数据可以同时分别写入到同一个topic的不同partition中，但如果只有一个partition的话，并发写入时压力就全部落在这个partition上，因此会降低操作的性能;</p>
+<h2 id="kafka是如何存储topic数据的？"><a href="#kafka是如何存储topic数据的？" class="headerlink" title="kafka是如何存储topic数据的？"></a>kafka是如何存储topic数据的？</h2><p>上面已经提到，topic只是逻辑上的概念，而真正存储消息的是partition;</p>
+<p>执行命令创建名称为test的topic，指定为2个partition分区，有1个replica（leader replica）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./kafka-topics.sh --create --zookeeper 192.168.4.157:2181 --partitions 2 --rerelication-factor 1 --topic test</span><br></pre></td></tr></table></figure>
+
+<p>再观察logDir目录</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">➜  data ls -al</span><br><span class="line">... 省略</span><br><span class="line">drwxr-xr-x 2 tandi tandi 4096  9月  8 06:30 test-0</span><br><span class="line">drwxr-xr-x 2 tandi tandi 4096  9月  8 06:30 test-1</span><br></pre></td></tr></table></figure>
+
+<p>可以看到生成了<code>test-0</code>、<code>test-1</code>两个文件夹，而这两个文件接就对应test的两个partition，既1个partition对应着一个物理文件夹，序号从0开始，既partition0和partition1; </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➜  test-1 ll</span><br><span class="line">00000000000000000000.index</span><br><span class="line">00000000000000000000.log</span><br><span class="line">00000000000000000000.timeindex</span><br><span class="line">leader-epoch-checkpoint</span><br></pre></td></tr></table></figure>
+
+<p><strong>*.index：</strong>保存offset index(偏移量索引)</p>
+<p><strong>*.log：</strong>保存消息数据</p>
+<p><strong>*.timeindex：</strong>保存time index(时间戳索引)</p>
+<p><strong>leader-epoch-checkpoint：</strong>保存leader写入的offset信息，当follower成为leader 时会获取出对应leader的offset信息进行对比，其中offset较大的follower会增加成为leader的概率，因为它的消息数比较全; </p>
+<p><strong>partition的segment文件存储结构念</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">00000000000000000000.index</span><br><span class="line">00000000000000000000.log</span><br><span class="line">00000000000000000000.timeindex</span><br><span class="line"></span><br><span class="line">00000000000000010000.index</span><br><span class="line">00000000000000010000.log</span><br><span class="line">00000000000000010000.timeindex</span><br></pre></td></tr></table></figure>
+
+<p>可以简单将segment理解为以offset对数据的分组;</p>
+<p>其中00000000000000000000和00000000000000010000均为segment;</p>
+<p>例如 00000000000000010000 这串数字，是segment下的数据的起始offset;</p>
+<p>默认情况下，每个segment能够保存1G的数据，保存时长为7天; </p>
+<p><strong>为什么有segment？</strong></p>
+<p>1个partition多个segment主要是为了方便查找数据，因为每个segment的文件名称就包含了数据的offset信息，因此在二分查找时只需找到对应的segment即可，而不需要扫描所有的消息数据;</p>
+<h2 id="消息相关"><a href="#消息相关" class="headerlink" title="消息相关"></a>消息相关</h2><h3 id="消息的格式"><a href="#消息的格式" class="headerlink" title="消息的格式"></a>消息的格式</h3><p>了解下就好了：<a href="https://blog.csdn.net/u013256816/article/details/80300225" target="_blank" rel="noopener">https://blog.csdn.net/u013256816/article/details/80300225</a></p>
+<h3 id="topic-offset和consumer-offset"><a href="#topic-offset和consumer-offset" class="headerlink" title="topic offset和consumer offset"></a>topic offset和consumer offset</h3><p><strong>topic offset</strong></p>
+<p>当消息数据被写到partition时就会分配一个顺序的offset，称为偏移量;</p>
+<p>offset从0开始随着数据增加而递增，不同的partition的offset并不干扰; </p>
+<p><strong>consumer offset</strong></p>
+<p>消费者offset和topic offset不一样这个不要混淆;</p>
+<p>消费者offset主要是用来记录分区中消息被消费到的位置，换句话来说是用来在发生再均衡后来告诉新的消费者应该从哪里开始消费的标记;</p>
+<p>需要注意的是，在kafka中消费者offset是由消费者（消费者组）自己保存的，这样做的好处在于减轻了broker压力，如果让broker记录的话就会让broker带有状态。而且kafka consumer引入了checkpointing定期对offset进行持久话。</p>
+<p><strong>consumer offset提交</strong></p>
+<p>消费者会定期向broker提交offset来汇报自己的消费进度，这个动作称为位移提交;</p>
+<p>在新版本的kafka中，有个专门用来保存新版consumer（就版保存在zookeeper中）的offset的内部topic（__consumer__offsets），这个也可以在kafka的日志文件夹下看到，一共有50个文件夹，既这个topic有50个partition，如下</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/012.png" alt></p>
+<p>为什么需要这么多partition?</p>
+<p>这是因为利用partition的负载均衡特性来减轻同时提交offset时topic的压力;</p>
+<h2 id="Java-kafka-Producer"><a href="#Java-kafka-Producer" class="headerlink" title="Java kafka Producer"></a>Java kafka Producer</h2><h3 id="生产者模型"><a href="#生产者模型" class="headerlink" title="生产者模型"></a>生产者模型</h3><p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png" alt></p>
+<blockquote>
+<p>注意：Producer是异步发送的，除了当前调用send方法的线程外还会创建一条专门负责冲消息缓冲池取数据发送给broker的线程</p>
+</blockquote>
+<ul>
+<li><strong>ProducerRecord：</strong>消息</li>
+<li><strong>Serializer：</strong>序列化ProducerRecord对象进行网络传输，注意生产者和消费者的序列化器类型要一致，否则消费者无法进行反序列化操作</li>
+<li><strong>Partitioner：</strong>分区器，根据ProducerRecord中的key来判断保存在那个所保存到那个分区，如同一个key会保存在同一个分区，但ProducerRecord没有指定key的话则采用轮询分区方式保存消息</li>
+<li><strong>消息缓冲池：</strong>用于减少用户态和内核态的切换次数，提高操作性能</li>
+</ul>
+<h3 id="producer-interceptor"><a href="#producer-interceptor" class="headerlink" title="producer interceptor"></a>producer interceptor</h3><p>生产者拦截器，可以在消息序列化之前将其拦截，做一些消息的定制化修改;</p>
+<p>继承以下接口，并添加进生产者的配置即可（ProducerConfig.INTERCEPTOR_CLASSES_CONFIG）;</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ProducerInterceptor</span>&lt;<span class="title">K</span>, <span class="title">V</span>&gt; <span class="keyword">extends</span> <span class="title">Configurable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 拦截消息</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ProducerRecord&lt;K, V&gt; <span class="title">onSend</span><span class="params">(ProducerRecord&lt;K, V&gt; record)</span></span>;</span><br><span class="line">    <span class="comment">// 接收到broker ack应答调用</span></span><br><span class="line">    <span class="comment">// 当Exception为null时消息生产成功</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAcknowledgement</span><span class="params">(RecordMetadata metadata, Exception exception)</span></span>;</span><br><span class="line">    <span class="comment">// 拦截器关闭时调用，发送完消息后关闭</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="producer的分区策略"><a href="#producer的分区策略" class="headerlink" title="producer的分区策略"></a>producer的分区策略</h3><p>在默认情况下，如果ProducerRecord设置了key值，则Partitioner会进来确保具有相同key的消息发送到同一个partition上（根据key的hash值和分区数取模），而如果没有设置key值的话，则是通过轮询来将消息均匀地发送到不同的partition上;</p>
+<p>如果默认的分区策略无法满足业务的使用，则可以尝试自己来实现分区策略，通过实现以下接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Partitioner</span> <span class="keyword">extends</span> <span class="title">Configurable</span>, <span class="title">Closeable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 分区逻辑实现</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">partition</span><span class="params">(String topic, Object key, <span class="keyword">byte</span>[] keyBytes, Object value, <span class="keyword">byte</span>[] valueBytes, Cluster cluster)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Partitioner关闭，用于回收资源操作</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="常用配置参数"><a href="#常用配置参数" class="headerlink" title="常用配置参数"></a>常用配置参数</h3><p><strong>[bootstrap.servers]</strong></p>
+<p>kafka broker地址，host:ip，多个用逗号隔开;</p>
+<p><strong>[key.serializer]</strong></p>
+<p>指定key使用那个序列化器，必须使用全类名;</p>
+<p><strong>[value.serializer]</strong></p>
+<p>指定value使用那个序列化器，必须使用全类名;</p>
+<p><strong>[acks]</strong></p>
+<p>producer判断消息是否发送成功的依据;</p>
+<p>acks为0时，producer完全不理会broker的ack应答，发送完一条消息后马上发下一条，此时producer的吞吐量最高，但因为完全不理会broker的ack应答，所以就算发送失败也不会做重试操作，因此可能会丢失消息;</p>
+<p><strong>acks为1时（默认值）</strong>，producer会等待leader broker的ack应到，换句话就是只要leader border保存数据成功（持久化到日志），producer就视为发送成功;</p>
+<p>acks为-1或all时，producer会等待集群中所有broker的ack应到，既等所有的brokder将消息持久化到日志才进行下一条消息的发送，这时消息的持久性是最好的，但因为需要等待所有的broker应答，因此吞吐量也是3种中最低的; </p>
+<p>还有就是，这里的”发送”并不是调用了send，而是将消息缓冲池中的数据发送给brokder这个发生</p>
+<p><strong>[buffer.memory]</strong></p>
+<p>指定消息缓冲池的大小，默认为32M;</p>
+<p>如果修改该值，需要注意的是不要太小，因为如果producer的send速度过快，且超过了发送消息给brokder的线程的话，肯定是会把memory撑满的，撑满之后producer线程就会停止send操作来等待发送消息给brokder的线程腾出memory空间再进行send</p>
+<p><strong>[block.on.buffer.full]</strong></p>
+<p>缓冲池用尽停止接受新的消息而不抛出异常;</p>
+<p><strong>[compression.type]</strong></p>
+<p>用于指定消息的压缩类型，默认为none，既不对消息进行压缩;</p>
+<p>目前kafka支持：gzip、snappy、lz4</p>
+<p><strong>[retries]</strong></p>
+<p>producer提供的消息重发机制; </p>
+<p>消息发送失败的原因可能是broker瞬时之间因为网络问题又或者执行了leader选举而导致的; </p>
+<p>retries为0时（默认），表示不进行重试; </p>
+<p>retries为n时，表示可以重试n次;</p>
+<p>但要注意，重试这个操作是可能会导致<strong>消息重复发送</strong>的，如因为网络原因，brokder保存消息成功，但没有成功响应producer; </p>
+<p>还会出现<strong>消息乱序</strong>问题，这是因为producer会将消息发送请求缓存在内存中的原因，那么当重写时，原本因该在这么缓存在内存的消息请求前面的消息，就会变成在后面了因此而乱序了，所以<code>如果开启retries功能</code>的话需要将producer参数设置如：<code>max.in.flight.requests.per.connection = 1</code>（针对partition区内）</p>
+<p><strong>[max.in.flight.requests.per.connection]</strong></p>
+<p>用于设置producer单个连接上发送的未应答请求的最大数量，默认为5;</p>
+<p>通俗点说就是在broker未相应之前producer可以send多少条数据; </p>
+<p>需要注意的是，如果开启的retries但想要保持有序的话，那么需要将该值设置为1。</p>
+<p>例子说明原因：将设max.in.flight.requests.per.connection=2，这是有两条数据 xxx 和 ccc 要发送给broker，但出于某些原因ccc成功而xxx没成功进入重试，而在重试期间数据 nnn 发送给了broker，这时就算 xxx 重拾成功，但显然乱需了，因为 nnn 应该在 xxx 后面。如果max.in.flight.requests.per.connection=1，那么发送了 xxx 之后，只要broker不应到，producer就不会发送nnn; </p>
+<p><strong>[retry.backoff.ms]</strong></p>
+<p>用于设置开启retries后的重试间隔时间，默认为100毫秒，当然这是在开启了重试机制前提下才有效的; </p>
+<p><strong>[batch.size]</strong></p>
+<p>batch.size用于设置存放将要发送到同一个paritition的batch值; </p>
+<p>但需要紧记的是，producer也并不是每次都等到batch慢才放入buffer，换句话来说，batch.size是一个上限制，既满了就必须放入buffer，但不要求一定要放满(具体参考linger.ms参数);</p>
+<p>batch.size默认值为16384（16k）;</p>
+<p>通常可以增大batch.size来提高producer的吞吐量，但是与此同时会加大内存的压力，因为不管怎么样batch.size都会占据固定大小的内存;</p>
+<p><strong>[linger.ms]</strong></p>
+<p>linger.ms用于设置消息的发送延时时间，默认为0，既不进行延时发送;</p>
+<p>如果你想要尽量填满batch.size，那么就可以适当地设置linger.ms来提高producer的吞吐量，但这样固然就会延迟了消息发送到broker的时间，所以linger.ms的设置需要按照实际的需要来权衡，既想要增大producer的吞吐量就设置，想要降低消息发送的延迟就不设置;</p>
+<p><strong>[max.request.size]</strong></p>
+<p>max.request.size用于设置producer发送请求的最大值，默认为 1048574 byte; </p>
+<p>如果producer需要发送的消息很大，可以作出相应的调整，但建议对应brokder中的配置message.max.bytes（brokder能够接收消息的最大值）来设置</p>
+<p><strong>[request.timeout.ms]</strong></p>
+<p>request.timeout.ms用于设置broker接收到producer请求后的响应超时时间，默认为30s，既producer发送请求，broker要在30s内响应producer，告诉producer是否持久化成功，如果超时则抛出TimeoutException; </p>
+<p><strong>[partitioner.class]</strong></p>
+<p>partitioner.class用于指定自定义分区策略实现;</p>
+<p><strong>[interceptor.classes]</strong></p>
+<p>interceptor.classes用于指定自定义消息拦截器实现;</p>
+<h2 id="Broker常用配置参数"><a href="#Broker常用配置参数" class="headerlink" title="Broker常用配置参数"></a>Broker常用配置参数</h2><p><strong>[broker.id]</strong></p>
+<p>指定kafka在集群中的id值，默认为-1;</p>
+<p>需要注意的是，集群中的所有broker的id都必须唯一; </p>
+<p><strong>[zookeeper.connect]</strong></p>
+<p>zookeeper的地址，格式：ip:port</p>
+<p><strong>[listeners]</strong></p>
+<p>kafka broker监听（bind）的地址，默认采用情况使用java.net.InetAddress.getCanonicalHostName() 来配置;</p>
+<p>格式：listeners = listener_name://host_name:port</p>
+<p>例子：listeners = PLAINTEXT://your.host.name:9092</p>
+<p><strong>[advertised.listeners]</strong></p>
+<p>advertised.listeners和listeners的功能类似，一般用于IaaS环境，既kafka服务器有内网ip和外网ip（阿里云）;</p>
+<p>如果kafka处于如阿里云这样的服务器，则如果不配置advertised.listeners是无法通过外网访问到kafka的，解决这个问题需要以下配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">listeners&#x3D;PLAINTEXT:&#x2F;&#x2F;内网ip:9092</span><br><span class="line">advertised.listeners&#x3D;PLAINTEXT:&#x2F;&#x2F;外网ip:9092</span><br></pre></td></tr></table></figure>
+
+<p><strong>[num.network.threads]</strong></p>
+<p>指定处理网络请求的线程数，默认为3; </p>
+<p><strong>[num.io.threads]</strong></p>
+<p>指定执行网络请求的io线程数，默认为8;</p>
+<p><strong>[log.dirs]</strong></p>
+<p>指定保存日志文件（数据文件）的绝对路径; </p>
+<p>例子：log.dirs=/tmp/data 或者 log.dirs=/tmp/data,/tmp/data2</p>
+<p>建议，如果kafka服务器有多块磁盘的话，推荐指定多个日志文件，因为这样kafka可以负载均衡存储日志数据，多块磁盘可以同时写入，因此大大提高写入操作的吞吐量;</p>
+<p><strong>[unclean.leader.election.enable]</strong></p>
+<p>是否允许非ISR中的副本参与leader选举，<strong>默认值为false</strong>（版本0.11后），既不允许非ISR中的副本被选举为leader; </p>
+<p>如果设置为true，在一些较为极端的情况下，如ISR全部宕机后，非ISR被选举成为leader就会造成数据丢失; </p>
+<p><strong>[delete.topic.enable]</strong></p>
+<p>是否允许删除topic，默认为true。</p>
+<p><strong>[log.retention.{hours|minutes|ms}]</strong></p>
+<p>用于设置日志文件的保存时间，默认情况下保存7天。</p>
+<p><strong>[log.retention.bytes]</strong></p>
+<p>用于设置保留日志的大小临界，既当超过该值就会则会被清除，默认为-1，既不启用该功能。</p>
+<p><strong>[min.insync.replicas]</strong></p>
+<p>该参数只针对producer参数acks为-1或all时才会起作用。</p>
+<p>作用是指定必须应答成功写入的replicas最小数。如果partition有3个replica，min.insync.replicas = 2，则表示kafka集群只允许1台broker宕机不响应。</p>
+<p><strong>[message.max.bytes]</strong></p>
+<p>指定kafka能够接收的消息的最大值，默认为977KB。</p>
+<h2 id="Java-kafka-Consumer"><a href="#Java-kafka-Consumer" class="headerlink" title="Java kafka Consumer"></a>Java kafka Consumer</h2><h3 id="Consumer-Group概念"><a href="#Consumer-Group概念" class="headerlink" title="Consumer Group概念"></a>Consumer Group概念</h3><p><strong>为什么需要消费者组？</strong></p>
+<p>因为当producer生产消息的速度比consumer速度快时，consumer就无法即使消费消息，对于一些实时要求较强的业务功能就无法满足需求了。</p>
+<p><strong>用图片了解消费者组</strong></p>
+<p>消费者组订阅topic T1，其中T1的partition数量为4;</p>
+<p>消费者组中仅有1个消费者;</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/007.png" alt></p>
+<p>消费者组订阅topic T1，其中T1的partition数量为4;</p>
+<p>消费者组中有2个消费者;</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/008.png" alt></p>
+<p>消费者组订阅topic T1，其中T1的partition数量为4;</p>
+<p>消费者组中有4个消费者;</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/009.png" alt></p>
+<p>消费者组订阅topic T1，其中T1的partition数量为4;</p>
+<p>消费者组中有5个消费者;</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/010.png" alt></p>
+<p>2个消费者组同时订阅topic T1，其中T1的partition数量为4;</p>
+<p>消费者组1中有4个消费者;</p>
+<p>消费者组2中有2个消费者;</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/011.png" alt></p>
+<blockquote>
+<p>总结上图：</p>
+<ol>
+<li>相同Consumer Group中的不同Consumer，在同一时刻无法消费同一个partition</li>
+<li>Consumer Group中的Consumer可以同时消费多个partition</li>
+<li>即使Consumer Group中的Consumer数量多于partition数量，都不会提高Consumer Group的消费能力</li>
+<li>多个Consumer Group同时订阅同一个topic互不干扰</li>
+</ol>
+</blockquote>
+<h3 id="分区再均衡"><a href="#分区再均衡" class="headerlink" title="分区再均衡"></a>分区再均衡</h3><p><strong>是什么？</strong></p>
+<p>通俗来说，再均衡指的是消费者与原来消费开的partition关系发生改变。</p>
+<p>其实我觉得叫消费者再均衡更加贴切。</p>
+<p><strong>什么情况会发生再均衡？</strong></p>
+<ol>
+<li>消费者组加入新的消费者</li>
+<li>消费者组中有消费者宕机</li>
+<li>topic修改partition数量</li>
+</ol>
+<p><strong>如何确定消费者死亡？</strong></p>
+<p>首先broker会作为消费者组的<code>协调器</code>，消费者在<code>消费消息</code>或<code>提交offset</code>时会发送心跳包。所以如果当消费者长时间（特定）不望broker发送心跳包，则会被broker视为死亡，因此就会发生再均衡。</p>
+<p><strong>需要注意写什么？</strong></p>
+<ul>
+<li>在在均衡期间，消费者无法消费消息，所以造成短时间消费者组不可用</li>
+<li>当分区被重新分配给新的消费者时，该消费者会掉失消费状态知道重新回复位置，因此会托慢应用的消费速度</li>
+</ul>
+<h3 id="常用参数"><a href="#常用参数" class="headerlink" title="常用参数"></a>常用参数</h3><p><strong>[bootstrap.servers]</strong></p>
+<p>kafka broker地址，host:ip，多个用逗号隔开;</p>
+<p><strong>[key.deserializer]</strong></p>
+<p>指定key使用那个序列化器，必须使用全类名;</p>
+<p><strong>[value.deserializer]</strong></p>
+<p>指定value使用那个序列化器，必须使用全类名;</p>
+<p><strong>[group.id]</strong></p>
+<p>指定consumer group的名字，这个名字必须在broker中是唯一的;</p>
+<p>默认之为空字符串，建议是尽量取一个与业务有关有意义的名字;</p>
+<p><strong>[session.timeout.ms]</strong>（kafka0.10.1.0版本之前）</p>
+<p><code>非常重要的属性</code>;</p>
+<p><strong>第1个含义：</strong>用于指定<strong>broker协调器</strong>对消费者故障时间的最大容忍程度，默认为3秒; 如当 session.timeout.ms = 60000 时，消费者组中某个消费者故障，必须在60s内与broker协调器通信，否则视为死亡，则会进行再均衡;</p>
+<p><strong>第2个含义：</strong>消费者处理消息的最大时间限制(两次poll之间的时间间隔)，例如 session.timeout.ms = 60000 那么消费者处理消息必须在60s完成。否则<strong>broker协调器</strong>会将该消费者视为跟不上消费进度，会将其踢出消费者组，因而会发生再均衡;</p>
+<p><strong>[max.poll.interval.ms]</strong></p>
+<p>kafka0.10.1.0版本之后，session.timeout.ms进行了分离，分离之后session.timeout.ms只包含第1个含义，且默认为10s，推荐尽量设置小一些; </p>
+<p>而max.poll.interval.ms则是第2个含义，建议设置为比每条消息所需的时间稍微大一些;</p>
+<p><strong>[auto.offset.reset]</strong></p>
+<p>该配置指定了消费者在读取一个<code>没有偏移量的分区(还没有消费提交offset)</code>或者<code>偏移量无效（因消费者长时间失效，包含偏移量的记录已经过时井被删除）</code>的情况下该作何处理;</p>
+<p>配置有3种：</p>
+<ul>
+<li>latest（默认）：<ul>
+<li><strong>在偏移量无效的情况下</strong>，consumer将从最新的记录开始读取数据（在消费者启动之后生成的记录）;</li>
+<li><code>偏移量有效，在最新的偏移量开始;</code></li>
+</ul>
+</li>
+<li>earliest：<ul>
+<li><strong>在偏移量无效的情况下</strong>，consumer将从起始位置读取分区的记录;</li>
+<li><code>偏移量有效，在最新的偏移量开始;</code></li>
+</ul>
+</li>
+<li>none：<ul>
+<li>topic各分区都存在已提交的offset时，从提交的offest处开始消费；</li>
+<li>只要有一个分区不存在已提交的offset，则抛出异常</li>
+</ul>
+</li>
+</ul>
+<p><strong>[enable.auto.commit]</strong></p>
+<p>非常重要，该配置指定了consumer是否自动提交偏移量，<strong>默认值是true</strong>; </p>
+<p><code>为了尽量避免出现[重复消费]和[数据丢失]，可以把它设为false，然后由自
+己控制何时提交偏移量;</code></p>
+<p>如果把它设为true，还可以通过配置 auto.commit.interval.ms 属性来控制提交的频率;</p>
+<p><strong>[auto.commit.interval.ms]</strong></p>
+<p>该参数必须在 enable.auto.commit = true 时才生效; </p>
+<p>功能是控制consumer自动提交offset的时间间隔，默认为5000; </p>
+<p><strong>[partition.assignment.strategy]</strong></p>
+<p>用于指定分区分配策略，通俗点来说就是如果将分区分配给对应的消费者;</p>
+<p>默认为range，既随机分配，还可以设置成roundrobin，轮询分配; </p>
+<p><strong>[client.id]</strong></p>
+<p>用于给broker作为客户端表示;</p>
+<p><strong>[fetch.max.bytes]</strong></p>
+<p>非常重要，用于指定consumer单次获取的消息数据的最大字节，默认为52428800; </p>
+<p><code>如果实际业务每条消息都很大，则必须设置一个较大的值，否这无法获取数据;</code></p>
+<p><strong>[max.poll.records]</strong></p>
+<p>非常重要，指定单次poll()能够获取到的最大record数量，默认为500;</p>
+<p>建议：</p>
+<ul>
+<li>如果处理消息的逻辑需要较长时间，则尽量将该值设置小一些，如1;</li>
+<li>反之则可以设置大一些; </li>
+</ul>
+<p><strong>[heartbeat.interval.ms]</strong></p>
+<p>非常重要，设置消费者发送心跳的时间间隔，默认为3000;</p>
+<p><code>该值必须必比session.timeout.ms小，通常不高于1/3;</code>它可以调整的更低，以控制正常<strong>重新平衡的预期时间</strong>;</p>
+<p>可以简单理解 heartbeat.interval.ms 可以让broker协调器更快检测到消费者故障; </p>
+<h3 id="手动提交offset"><a href="#手动提交offset" class="headerlink" title="手动提交offset"></a>手动提交offset</h3><h4 id="自动提交存在的问题"><a href="#自动提交存在的问题" class="headerlink" title="自动提交存在的问题"></a>自动提交存在的问题</h4><p>按照默认的offset提交频率5秒为例，假设现在消费者已经提交了offset，但过了3秒后（未够5秒提交offset）发生了<strong>再均衡</strong>，换句话来说就是因为不够5秒提交offset且再均衡期间Broker停止提供服务，所以在这3秒期间的消费是没有提交offset的，也就是说这3秒期间所消费的消息在再均衡后会被<strong>重复消费</strong>。当然这是比较极端的情况，这个问题可以使用<strong>手动提交</strong>offset来解决，可以在消费完后马上提交而不需要等待时间来提交;</p>
+<h4 id="同步提交"><a href="#同步提交" class="headerlink" title="同步提交"></a>同步提交</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">    </span><br><span class="line">    ConsumerRecords&lt;String, String&gt; records = consumer.poll(<span class="number">100</span>);</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 处理消息</span></span><br><span class="line">    <span class="comment">// 。。。</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        consumer.commitSync();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (CommitFailedException e) &#123;</span><br><span class="line">        log.error(<span class="string">"commit failed"</span>, e)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同步提交是一个阻塞操作，既需要等待Broker应答后才能继续工作，换句话来说只要不是发生无法恢复的异常commitSync()都能提交成功;</p>
+<p><strong>这样虽然保证了offset的提交安全，但无疑会降低消费者的吞吐量;</strong></p>
+<h4 id="异步提交"><a href="#异步提交" class="headerlink" title="异步提交"></a>异步提交</h4><p>用于解决同步提交降低吞吐量的问题</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">    </span><br><span class="line">    ConsumerRecords&lt;String, String&gt; records = consumer.poll(<span class="number">100</span>);</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 处理消息</span></span><br><span class="line">    <span class="comment">// 。。。</span></span><br><span class="line">    </span><br><span class="line">	consumer.commitAsync();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是commitAsync()不会像commitSync()那样重试提交，也就是说可能会提交失败，这个可以使用commitSync()的回调方法来处理（回调方法会在Broker响应后触发）;</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">    ConsumerRecords&lt;String, String&gt; records = consumer.poll(<span class="number">100</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 处理消息</span></span><br><span class="line">    <span class="comment">// 。。。</span></span><br><span class="line">    </span><br><span class="line">    consumer.commitAsync(<span class="keyword">new</span> OffsetCommitCallback() &#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onComplete</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            Map&lt;TopicPartition,</span></span></span><br><span class="line"><span class="function"><span class="params">            OffsetAndMetadata&gt; offsets, </span></span></span><br><span class="line"><span class="function"><span class="params">            Exception exception)</span> </span>&#123;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> (e != <span class="keyword">null</span>)&#123;</span><br><span class="line">                <span class="comment">// 异常处理</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="混合提交"><a href="#混合提交" class="headerlink" title="混合提交"></a>混合提交</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">        ConsumerRecords&lt;String, String&gt; records = consumer.poll(<span class="number">100</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 处理消息</span></span><br><span class="line">        <span class="comment">// 。。。</span></span><br><span class="line"></span><br><span class="line">       	<span class="comment">// 异步提交</span></span><br><span class="line">        consumer.commitAsync();</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    log.error(<span class="string">"Unexpected error"</span>, e);</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 同步提交，用于防止异步提交失败</span></span><br><span class="line">        consumer.commitSync();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        consumer.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="SpringBoot-Kafka手动提交案例"><a href="#SpringBoot-Kafka手动提交案例" class="headerlink" title="SpringBoot Kafka手动提交案例"></a>SpringBoot Kafka手动提交案例</h4><p>配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">kafka:</span></span><br><span class="line">    <span class="attr">bootstrap-servers:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:9092</span></span><br><span class="line">    <span class="attr">producer:</span></span><br><span class="line">      <span class="attr">key-serializer:</span> <span class="string">org.apache.kafka.common.serialization.StringSerializer</span></span><br><span class="line">      <span class="attr">value-serializer:</span> <span class="string">org.apache.kafka.common.serialization.StringSerializer</span></span><br><span class="line">    <span class="attr">consumer:</span></span><br><span class="line">      <span class="attr">key-deserializer:</span> <span class="string">org.apache.kafka.common.serialization.StringDeserializer</span></span><br><span class="line">      <span class="attr">value-deserializer:</span> <span class="string">org.apache.kafka.common.serialization.StringDeserializer</span></span><br><span class="line">      <span class="attr">enable-auto-commit:</span> <span class="literal">false</span> <span class="comment"># 禁止自动提交offset</span></span><br><span class="line">      <span class="attr">max-poll-records:</span> <span class="number">100</span> <span class="comment"># 默认500条</span></span><br></pre></td></tr></table></figure>
+
+<p>JavaConfig</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">KafkaConsumerConfig</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> KafkaProperties properties;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ConsumerFactory&lt;String, String&gt; <span class="title">kafkaConsumerFactory</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 注入消费者配置</span></span><br><span class="line">        Map&lt;String, Object&gt; map = properties.buildConsumerProperties();</span><br><span class="line">        <span class="comment">// 默认允许处理消息的最大时间，默认300s</span></span><br><span class="line">        map.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, <span class="number">50000</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> DefaultKafkaConsumerFactory&lt;&gt;(map);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> KafkaListenerContainerFactory&lt;ConcurrentMessageListenerContainer&lt;String, String&gt;&gt; kafkaListenerContainerFactory() &#123;</span><br><span class="line">        ConcurrentKafkaListenerContainerFactory&lt;String, String&gt; factory = <span class="keyword">new</span> ConcurrentKafkaListenerContainerFactory&lt;&gt;();</span><br><span class="line">        factory.setConsumerFactory(kafkaConsumerFactory());</span><br><span class="line">        <span class="comment">// 消费完马上提交</span></span><br><span class="line">factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE); </span><br><span class="line">        <span class="comment">// 异步提交</span></span><br><span class="line">      factory.getContainerProperties().setSyncCommits(<span class="keyword">true</span>);</span><br><span class="line">        <span class="keyword">return</span> factory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>消费</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@KafkaListener</span>(topics = <span class="string">"test"</span>, groupId = <span class="string">"test-consumer"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">listener</span><span class="params">(List&lt;String&gt; recordes, Acknowledgment ack)</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 处理消息</span></span><br><span class="line">    <span class="keyword">for</span> (String recorde : recordes) &#123;</span><br><span class="line">        System.out.println(<span class="string">"--------------:"</span> + recorde);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 手动提交offsset</span></span><br><span class="line">    ack.acknowledge();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="管理kafka的命令行工具"><a href="#管理kafka的命令行工具" class="headerlink" title="管理kafka的命令行工具"></a>管理kafka的命令行工具</h2><h3 id="zookeeper相关"><a href="#zookeeper相关" class="headerlink" title="zookeeper相关"></a>zookeeper相关</h3><p>其实个人更加建议另外下载一个最新版的zookeeper来管理kafka集群，而不是使用它自带的zookeeper，除非是单机kafka提供服务，否这如果需要为zookeeper进行高可用集群配置的话，那么kafka自带的zookeeper就显然非常不方便了。一下为kafka自带的zookeeper的基本操作：</p>
+<p><strong>[前台启动运行zookeeper]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/zookeeper-server-start.sh config/zookeeper.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>[后台启动运行zookeeper]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/zookeeper-server-start.sh -daemon config/zookeeper.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>[停止zookeeper]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/zookeeper-server-stop.sh</span><br></pre></td></tr></table></figure>
+
+<p>这里多说一句，不要动不动就<code>kill -9</code>去强制杀死进程，这样可能会导致进行无法及时处理资源而导致下次无法启动。如果发生这种情况可以尝试将数据文件夹清空再启动应用。</p>
+<p><strong>[zkClient连接zookeeper]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/zookeeper-shell.sh localhost:2181</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="broker相关"><a href="#broker相关" class="headerlink" title="broker相关"></a>broker相关</h3><p><strong>[前台启动broker]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-server-start.sh config/server.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>[后台启动broker]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-server-start.sh -daemon config/server.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>[停止broker]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-server-stop.sh</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="topic相关"><a href="#topic相关" class="headerlink" title="topic相关"></a>topic相关</h3><p><strong>[手动创建topic]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic testx</span><br></pre></td></tr></table></figure>
+
+<p>参数注意：</p>
+<ul>
+<li><p>partitions：指定topic的分区数</p>
+</li>
+<li><p>replication-factor：指定每个分区的副本数量，但不能超过broker数量; 如果设置为1其实就是只有partition而没有replica，换句话说这时replica（leader）就是partition; broker集群时建议设置大于1，不是的话broker宕机，该机器上的partition（replica）就不可用了。设置大于1，broker宕机该其它的replica就会选举成leader replica来提供服务。用下图来理解（两个broker的集群）</p>
+<blockquote>
+<p>bin/kafka-topics.sh –create –zookeeper localhost:2181 –replication-factor 2 –partitions 1 –topic testx</p>
+</blockquote>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" alt></p>
+<p>从上图可以看出为什么replication-factor不能大于broker数量，原因很简单，就是多余。</p>
+</li>
+</ul>
+<p><strong>[查看kafka中有那些topic]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-topics.sh --zookeeper localhost:2181 --list</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[查看指定topic信息]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-topics.sh --zookeeper localhost:2181 --describe --topic testx</span><br></pre></td></tr></table></figure>
+
+<p>输出以下内容</p>
+<blockquote>
+<p>bin/kafka-topics.sh –create –zookeeper localhost:2181 –replication-factor 1 –partitions 2 –topic testx</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Topic:testx		PartitionCount:2	ReplicationFactor:1		Configs:</span><br><span class="line">Topic: testx	Partition: 0		Leader: 0	Replicas: 0		Isr: 0</span><br><span class="line">Topic: testx	Partition: 1		Leader: 0	Replicas: 0		Isr: 0</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，testx这个topic有两个partition。因为replication-factor设置为1，所以leader replica是replica0，follower replica也是replica0，即Partition0和Partition1都不具备宕机可继续提供服务的功能，也因为这个缘故所以Isr为0，即没有其他replica可以在leader replica宕机之后接替leader replica的工作。</p>
+<p><strong>[动态修改topic分区数量]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-topics.sh --alter --zookeeper localhost:2181 --partitions 3 --topic testx</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[动态修改分区的replication-factor数量]</strong></p>
+<p>首先需要创建一个json文件，添加上下面有关topic的元数内容，这里我将这个文件叫update-topic.json</p>
+<blockquote>
+<p>bin/kafka-topics.sh –create –zookeeper localhost:2181 –replication-factor 1 –partitions 3 –topic testx</p>
+</blockquote>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="attr">"version"</span>: <span class="number">1</span>,</span><br><span class="line">	<span class="attr">"partitions"</span>: [</span><br><span class="line">        &#123;<span class="attr">"topic"</span>:<span class="string">"testx"</span>,<span class="attr">"partition"</span>:<span class="number">0</span>,<span class="attr">"replicas"</span>:[<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>]&#125;,</span><br><span class="line">        &#123;<span class="attr">"topic"</span>:<span class="string">"testx"</span>,<span class="attr">"partition"</span>:<span class="number">1</span>,<span class="attr">"replicas"</span>:[<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>]&#125;,</span><br><span class="line">        &#123;<span class="attr">"topic"</span>:<span class="string">"testx"</span>,<span class="attr">"partition"</span>:<span class="number">2</span>,<span class="attr">"replicas"</span>:[<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>]&#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的意思是将对应partition的replica分别放在brokerid为0，1，2这三台broker上，然后使用以下命令修改topic的分区数量</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 --reassignment-json-file ./update-topic.json --execute</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="生产者相关"><a href="#生产者相关" class="headerlink" title="生产者相关"></a>生产者相关</h3><p><strong>[控制台生产消息]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-console-producer.sh --broker-list localhost:9092 --topic testx </span><br><span class="line"><span class="meta">&gt;</span><span class="bash"> <span class="built_in">test</span></span></span><br><span class="line"><span class="meta">&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[快速生产测试用消息]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-verifiable-producer.sh --topic testx --max-messages 500000 --broker-list localhost:9092</span><br></pre></td></tr></table></figure>
+
+<p>上面的意思是，向指定topic中生产从0到499999个数字</p>
+<p><strong>[测试生产者生产消息的性能]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-producer-perf-test.sh --topic testx --num-records 100000 --record-size 1000 --throughput 2000 --producer-props bootstrap.servers=localhost:9092</span><br></pre></td></tr></table></figure>
+
+<p>参数：</p>
+<ul>
+<li>topic：指定测试的topic</li>
+<li>num-records：指定这次测试需要生产的消息数量</li>
+<li>record-size：单个消息的大小（字节）</li>
+<li>throughput：吞吐量最大消息限制（每秒），这是一个大约值</li>
+<li>producer-props：生产者配置参数</li>
+</ul>
+<p>输出结果如下</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/014.png" alt></p>
+<p>最后一行是结论，意思是生产了10万条数据，每秒大概生产2千条（上面限制参数指定），平均每次延时2.08毫秒，而最大延时是318毫秒</p>
+<p>进行第二次测试，这次添加生产者参数：acks = 0 (默认1)，意思是生产者无需等待broker应答，这时生产者可达最高吞吐量</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-producer-perf-test.sh --topic testx --num-records 100000 --record-size 1000 --throughput 2000 --producer-props bootstrap.servers=localhost:9092 acks=0</span><br></pre></td></tr></table></figure>
+
+<p>输出结果如下</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/015.png" alt></p>
+<p>可以看到添加 acks=0 后平均延时下降将近一半。</p>
+<p>当然其实所谓的优化无非就是 <strong>空间和时间</strong> 的衡量。如，想要时间快，就应该将单位时间内需要处理的消息数量减少; 想要每次进来处理更多的消息，这时需要花费的单位时间自然就更大。</p>
+<h3 id="消费者相关"><a href="#消费者相关" class="headerlink" title="消费者相关"></a>消费者相关</h3><p><strong>[控制台消息消息]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic testx</span><br></pre></td></tr></table></figure>
+
+<p>注意：–from-beginning 表示从上一次提高的offset处开始消费，而不是我们理解的从头。还可以制定 –group 来设置消费者组id</p>
+<p><strong>[查看目前有那些消费者组（列出所有消费者组id）]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[查看消费者组的消费情况]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group testx-group --describe</span><br></pre></td></tr></table></figure>
+
+<p>输出以下内容</p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/016.png" alt></p>
+<h3 id="其他维护命令工具"><a href="#其他维护命令工具" class="headerlink" title="其他维护命令工具"></a>其他维护命令工具</h3><p><strong>[实时校验观察topic的replica同步情况]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-replica-verification.sh --broker-list localhost:9092 --topic-white-list testx</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[删除指定分区下特定低水位offset的消息日志]</strong>   </p>
+<p>首先，编写关于topic的元数据json文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">"&#123;"partitions":[&#123;"topic": "testx", "partition": 2,"offset": 40000&#125;],"version":1&#125;" &gt; offset-json-file.json</span><br></pre></td></tr></table></figure>
+
+<p>表示删除testx的partition2中低于40000offset的日志</p>
+<p>然后，执行以下命令</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-delete-records.sh --bootstrap-server localhost:9092 --offset-json-file ./offset-json-file.json</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[打印指定topic的日志文件信息]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-log-dirs.sh --bootstrap-server localhost:9092 --describe --topic-list testx</span><br></pre></td></tr></table></figure>
+
+<p>输出如下</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="attr">"version"</span>: <span class="number">1</span>,</span><br><span class="line">	<span class="attr">"brokers"</span>: [&#123;</span><br><span class="line">		<span class="attr">"broker"</span>: <span class="number">0</span>,</span><br><span class="line">		<span class="attr">"logDirs"</span>: [&#123;</span><br><span class="line">			<span class="attr">"logDir"</span>: <span class="string">"/home/xxxx/apps/kafka-test/kafka_2.12-2.3.0/data"</span>,</span><br><span class="line">			<span class="attr">"error"</span>: <span class="literal">null</span>,</span><br><span class="line">			<span class="attr">"partitions"</span>: [&#123;</span><br><span class="line">				<span class="attr">"partition"</span>: <span class="string">"testx-1"</span>,</span><br><span class="line">				<span class="attr">"size"</span>: <span class="number">145159606</span>,</span><br><span class="line">				<span class="attr">"offsetLag"</span>: <span class="number">0</span>,</span><br><span class="line">				<span class="attr">"isFuture"</span>: <span class="literal">false</span></span><br><span class="line">			&#125;, &#123;</span><br><span class="line">				<span class="attr">"partition"</span>: <span class="string">"testx-0"</span>,</span><br><span class="line">				<span class="attr">"size"</span>: <span class="number">145064262</span>,</span><br><span class="line">				<span class="attr">"offsetLag"</span>: <span class="number">0</span>,</span><br><span class="line">				<span class="attr">"isFuture"</span>: <span class="literal">false</span></span><br><span class="line">			&#125;, &#123;</span><br><span class="line">				<span class="attr">"partition"</span>: <span class="string">"testx-2"</span>,</span><br><span class="line">				<span class="attr">"size"</span>: <span class="number">145007959</span>,</span><br><span class="line">				<span class="attr">"offsetLag"</span>: <span class="number">0</span>,</span><br><span class="line">				<span class="attr">"isFuture"</span>: <span class="literal">false</span></span><br><span class="line">			&#125;]</span><br><span class="line">		&#125;]</span><br><span class="line">	&#125;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>[查看日志文件内容]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-dump-log.sh --files data/testx-0/00000000000000000000.log</span><br></pre></td></tr></table></figure>
+
+<p>可以查看分区文件夹中的 .index、.log、.timeindex等文件。</p>
+<ul>
+<li>以下为log中2条消息的日志：</li>
+</ul>
+<p>bin/kafka-dump-log.sh –files data/testx-0/00000000000000000000.log</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">baseOffset: 31183 lastOffset: 31184 count: 2 baseSequence: -1 lastSequence: -1 producerId: -1 producerEpoch: -1 partitionLeaderEpoch: 0 isTransactional: false isControl: false position: 32746211 CreateTime: 1568921770388 size: 2079 magic: 2 compresscodec: NONE crc: 2715532263 isvalid: true</span><br><span class="line"></span><br><span class="line">baseOffset: 31185 lastOffset: 31185 count: 1 baseSequence: -1 lastSequence: -1 producerId: -1 producerEpoch: -1 partitionLeaderEpoch: 0 isTransactional: false isControl: false position: 32748290 CreateTime: 1568921770390 size: 1070 magic: 2 compresscodec: NONE crc: 4201538556 isvalid: true</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>以下为index中2条消息的日志：</li>
+</ul>
+<p>bin/kafka-dump-log.sh –files data/testx-0/00000000000000000000.index</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">offset: 3134 position: 3269239</span><br><span class="line">offset: 3139 position: 3274528</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>以下为timeindex中2条消息的日志：</li>
+</ul>
+<p>bin/kafka-dump-log.sh –files data/testx-0/00000000000000000000.timeindex</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">timestamp: 1568921728315 offset: 3134</span><br><span class="line">timestamp: 1568921728321 offset: 3139</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从上面的信息可以的出结论<ul>
+<li>index和timeindex文件只是维度不同，但都是定位索引的（position）</li>
+<li>index/timeindex文件和log文件不是一一对应的，而是从索引区间来定位消息</li>
+</ul>
+</li>
+</ul>
+<p><strong>[查看topic消费到的offset]</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list localhost:9092 --topic testx</span><br></pre></td></tr></table></figure>
+
+<p>输出如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">testx:0:468335</span><br><span class="line">testx:1:468334</span><br><span class="line">testx:2:468332</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="问题配置"><a href="#问题配置" class="headerlink" title="问题配置"></a>问题配置</h2><h3 id="如何保证消息不丢失"><a href="#如何保证消息不丢失" class="headerlink" title="如何保证消息不丢失"></a>如何保证消息不丢失</h3><p>数据丢失原因：broker没有保存成功</p>
+<p><strong>[producer配置]</strong></p>
+<ul>
+<li><p>block.on.buffer.full = true</p>
+<p>缓冲池满停止接受消息而不抛出异常，避免因为异常丢失数据</p>
+</li>
+<li><p>acks = all</p>
+<p>需要所有的follower应答，否则都不认为发送成功，但吞吐量会明显降低</p>
+</li>
+<li><p>retries = Integer.MAX_VALUE</p>
+<p>将重试次数设置到最大值，表示尽量重试</p>
+</li>
+<li><p>max.in.flight.requests.per.connection = 1</p>
+<p>因为开启了充实，所以将其设置为1来保证消息顺序</p>
+</li>
+<li><p>使用send(消息，回调函数)方法发送</p>
+<p>预防发送失败，使用回调函数来补救</p>
+</li>
+</ul>
+<p><strong>[broker配置]</strong></p>
+<ul>
+<li><p>unclean.leader.election.enable = false</p>
+<p>避免非ISR的replica竞选到leader而导致数据丢失</p>
+</li>
+<li><p>replication.factor &gt;= 3</p>
+<p>尽量使用备份来避免分区单点故障</p>
+</li>
+<li><p>min.insync.replicas = 1</p>
+<p>表示最少有1个replica成功写入数据，否则视为保存不成功（producer抛出异常）。该配置只有在producer设置了acks=all才有效。（acks是应答，而min.insync.replicas是限制至少多少replica保存数据成功，这个应到什么内容是不冲突的）</p>
+</li>
+</ul>
+<h3 id="如何保证只消费1次"><a href="#如何保证只消费1次" class="headerlink" title="如何保证只消费1次"></a>如何保证只消费1次</h3><p>一条消息多次消费原因：</p>
+<ol>
+<li>offset没有准确提交</li>
+<li>生产者开启了重试导致消息重复生产</li>
+<li>消费者处理消息的时间过长</li>
+</ol>
+<p>所以在条件允许的情况下不开启重试发送功能，且将提交消费者offset的操作改为手动（最好为同步提交）和按照实际的业务情况来设置 max.poll.interval.ms</p>
+<h3 id="如何解决消息乱需问题"><a href="#如何解决消息乱需问题" class="headerlink" title="如何解决消息乱需问题"></a>如何解决消息乱需问题</h3><p>首先需要知道的是目前的kafka并不支持全局消息有序，即保持消息在所有的partition之间有序是做不到的，而kafka只能保证单个partition内有序。</p>
+<p>而当开启了重试功能后，partition内部也是可能发生乱序情况的，这时就需要将max.in.flight.requests.per.connection 设置为1来保证在重试期间不会想broker发送新的数据而导致乱序。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://stackoverflow.com/questions/48665257/why-kafka-index-files-use-memory-mapped-files-but-log-files-dont" target="_blank" rel="noopener">why kafka index files use memory mapped files ,but log files don’t?</a></li>
+<li><a href="https://www.cnblogs.com/huxiao-tee/p/4660352.html" target="_blank" rel="noopener">认真分析mmap：是什么 为什么 怎么用</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019.10.10：修改关于上下文切换、用户态和内核态、内存映射文件相关内容</li>
+</ul>
+</div><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">TD</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/">https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://tandi.pub" target="_blank">学然后知不足</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a></div><div class="post_share"><div class="social-share" data-image="/image/orm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination_post" id="pagination"><div class="prev-post pull_left"><a href="/%E4%BD%BF%E7%94%A8%E9%98%BF%E9%87%8C%E4%BA%91%E6%8F%90%E4%BE%9B%E7%9A%84%E5%85%AC%E7%BD%91ip%E5%92%8Cfrp%E5%B7%A5%E5%85%B7%E5%AF%B9%E5%86%85%E7%BD%91%E8%AE%BE%E5%A4%87%E8%BF%9B%E8%A1%8C%E7%A9%BF%E9%80%8F%E8%AE%BF%E9%97%AE/"><img class="prev_cover" src="image/safe.jpg" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">使用阿里云公网IP和FRP工具对内网设备进行穿透访问</div></div></a></div><div class="next-post pull_right"><a href="/Manjaro%E4%BD%BF%E7%94%A8%E6%84%9F%E5%8F%97/"><img class="next_cover" src="/image/linux.jpg" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Manjaro Linux</div></div></a></div></nav><hr><div id="post-comment"><div class="comment_headling"><i class="fa fa-comments fa-fw" aria-hidden="true"></i><span> 评论</span></div><div id="gitalk-container"></div><script>var gitalk = new Gitalk({
+  clientID: '38b84fb92012be686d1c',
+  clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+  repo: 'hexo-comments',
+  owner: 'oomgomgxx',
+  admin: ['oomgomgxx'],
+  id: md5(decodeURI(location.pathname)),
+  language: 'zh-CN',
+  perPage: 10,
+  distractionFreeMode: false,
+  pagerDirection: 'last',
+  createIssueManually: false,
+  updateCountCallback: commentCount
+})
+gitalk.render('gitalk-container')
+
+function commentCount(n){
+  try {
+    document.getElementsByClassName('gitalk-comment-count')[0].innerHTML= n
+  } catch (e) {
+    return false
+  }
+}</script></div></article></main><footer id="footer" style="background-image: url(/image/kafka.jpg)" data-type="photo"><div id="footer-wrap"><div class="copyright">&copy;2020 TD</div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><i class="fa fa-book" id="readmode" title="阅读模式"></i><i class="fa fa-plus" id="font_plus" title="放大字体"></i><i class="fa fa-minus" id="font_minus" title="缩小字体"></i><a class="translate_chn_to_cht" id="translateLink" href="javascript:translatePage();" title="简繁转换" target="_self">簡</a><i class="darkmode fa fa-moon-o" id="darkmode" title="夜间模式"></i></div><div id="rightside-config-show"><div id="rightside_config" title="设置"><i class="fa fa-cog" aria-hidden="true"></i></div><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fa fa-comments">  </i></a><i class="fa fa-list-ul close" id="mobile-toc-button" title="目录" aria-hidden="true"></i><i class="fa fa-arrow-up" id="go-up" title="回到顶部" aria-hidden="true"></i></div></section><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js"></script><script>document.addEventListener('DOMContentLoaded', function() {
+      pangu.spacingElementById('content-inner')
+})</script></body></html>

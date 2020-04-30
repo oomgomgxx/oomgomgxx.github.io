@@ -1,0 +1,254 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MySQL索引闲记 | 学然后知不足</title><meta name="description" content="MySQL索引闲记"><meta name="keywords" content="数据库"><meta name="author" content="TD"><meta name="copyright" content="TD"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/img/binary-code.svg"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="crossorigin"/><meta name="twitter:card" content="summary"><meta name="twitter:title" content="MySQL索引闲记"><meta name="twitter:description" content="MySQL索引闲记"><meta name="twitter:image" content="https://tandi.pub/image/mysql.png"><meta property="og:type" content="article"><meta property="og:title" content="MySQL索引闲记"><meta property="og:url" content="https://tandi.pub/mysql%E7%B4%A2%E5%BC%95/"><meta property="og:site_name" content="学然后知不足"><meta property="og:description" content="MySQL索引闲记"><meta property="og:image" content="https://tandi.pub/image/mysql.png"><script src="https://cdn.jsdelivr.net/npm/js-cookie/dist/js.cookie.min.js"></script><script>var autoChangeMode = '1'
+var t = Cookies.get("theme")
+if (autoChangeMode == '1'){
+  var isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
+  var isLightMode = window.matchMedia("(prefers-color-scheme: light)").matches
+  var isNotSpecified = window.matchMedia("(prefers-color-scheme: no-preference)").matches
+  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+  if (t === undefined){
+    if (isLightMode) activateLightMode()
+    else if (isDarkMode) activateDarkMode()
+    else if (isNotSpecified || hasNoSupport){
+      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
+      var now = new Date()
+      var hour = now.getHours()
+      var isNight = hour < 6 || hour >= 18
+      isNight ? activateDarkMode() : activateLightMode()
+  }
+  } else if (t == 'light') activateLightMode()
+  else activateDarkMode()
+
+} else if (autoChangeMode == '2'){
+  now = new Date();
+  hour = now.getHours();
+  isNight = hour < 6 || hour >= 18
+  if(t === undefined) isNight? activateDarkMode() : activateLightMode()
+  else if (t === 'light') activateLightMode()
+  else activateDarkMode() 
+} else {
+  if ( t == 'dark' ) activateDarkMode()
+  else if ( t == 'light') activateLightMode()
+}
+
+function activateDarkMode(){
+  document.documentElement.setAttribute('data-theme', 'dark')
+  if (document.querySelector('meta[name="theme-color"]') !== null){
+    document.querySelector('meta[name="theme-color"]').setAttribute('content','#000')
+  }
+}
+function activateLightMode(){
+  document.documentElement.setAttribute('data-theme', 'light')
+  if (document.querySelector('meta[name="theme-color"]') !== null){
+  document.querySelector('meta[name="theme-color"]').setAttribute('content','#fff')
+  }
+}</script><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="canonical" href="https://tandi.pub/mysql%E7%B4%A2%E5%BC%95/"><link rel="prev" title="MySQL日志" href="https://tandi.pub/mysql%E6%97%A5%E5%BF%97/"><link rel="next" title="CAS理解" href="https://tandi.pub/CAS%E7%90%86%E8%A7%A3/"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css"><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"cookieDomain":"https://tandi.pub","msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  bookmark: {
+    message_prev: '按',
+    message_next: '键将本页加入书签'
+  },
+  runtime_unit: '天',
+  runtime: false,
+  copyright: undefined,
+  ClickShowText: undefined,
+  medium_zoom: false,
+  fancybox: true,
+  Snackbar: undefined,
+  baiduPush: true,
+  highlightCopy: true,
+  highlightLang: true,
+  highlightShrink: 'false',
+  isFontAwesomeV5: false,
+  isPhotoFigcaption: false
+  
+}</script><script>var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isSidebar: true  
+  }</script><noscript><style>
+#page-header {
+  opacity: 1
+}
+.justified-gallery img{
+  opacity: 1
+}
+</style></noscript><meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head><body><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/archives/"><div class="headline">文章</div><div class="length_num">58</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/tags/"><div class="headline">标签</div><div class="length_num">19</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/categories/"><div class="headline">分类</div><div class="length_num">17</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div></div></div><i class="fa fa-arrow-right on" id="toggle-sidebar" aria-hidden="true">     </i><div id="sidebar"><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar">     </div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是索引？"><span class="toc-number">1.</span> <span class="toc-text">什么是索引？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么情况需要添加索引？"><span class="toc-number">2.</span> <span class="toc-text">什么情况需要添加索引？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#索引是不是越多越好和那些字段不适合用索引？"><span class="toc-number">3.</span> <span class="toc-text">索引是不是越多越好和那些字段不适合用索引？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#索引类型"><span class="toc-number">4.</span> <span class="toc-text">索引类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见索引数据结构"><span class="toc-number">5.</span> <span class="toc-text">常见索引数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#散列表"><span class="toc-number">5.1.</span> <span class="toc-text">散列表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#有序数组"><span class="toc-number">5.2.</span> <span class="toc-text">有序数组</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二叉查找树、平衡二叉查找树"><span class="toc-number">5.3.</span> <span class="toc-text">二叉查找树、平衡二叉查找树</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-树"><span class="toc-number">5.4.</span> <span class="toc-text">B+树</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于索引和约束"><span class="toc-number">6.</span> <span class="toc-text">关于索引和约束</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#索引是不是越多越好"><span class="toc-number">7.</span> <span class="toc-text">索引是不是越多越好</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是覆盖索引"><span class="toc-number">8.</span> <span class="toc-text">什么是覆盖索引</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么情况下索引会失效"><span class="toc-number">9.</span> <span class="toc-text">什么情况下索引会失效</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-number">10.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-number">11.</span> <span class="toc-text">内容修订</span></a></li></ol></div></div></div><div id="body-wrap"><div class="post-bg" id="nav" style="background-image: url(/image/mysql.png)"><div id="page-header"><span class="pull_left" id="blog_name"><a class="blog_title" id="site-name" href="/">学然后知不足</a></span><span class="pull_right menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fa fa-bars fa-fw" aria-hidden="true"></i></a></span></span></div><div id="post-info"><div id="post-title"><div class="posttitle">MySQL索引闲记</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2019-06-16 20:03:25"><i class="fa fa-calendar" aria-hidden="true"></i> 发表于 2019-06-16</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-04-30 01:11:52"><i class="fa fa-history" aria-hidden="true"></i> 更新于 2020-04-30</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fa fa-angle-right post-meta__separator" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span></div><div class="meta-secondline"> </div><div class="meta-thirdline"><span class="post-meta-pv-cv"></span><span class="post-meta-commentcount"><i class="post-meta__icon fa fa-comment-o" aria-hidden="true"></i><span>评论数:</span><a href="/mysql%E7%B4%A2%E5%BC%95/#post-comment"><span class="gitalk-comment-count comment-count"></span></a></span></div></div></div></div><main class="layout_post" id="content-inner"><article id="post"><div id="article-container"><h2 id="什么是索引？"><a href="#什么是索引？" class="headerlink" title="什么是索引？"></a>什么是索引？</h2><ol>
+<li>使用目录来去理解索引是最好的方法</li>
+<li>不同类型的索引实现方式不同</li>
+<li>就算是相同类型的索引在不同的存储引擎中实现方式也可能有所不同</li>
+</ol>
+<h2 id="什么情况需要添加索引？"><a href="#什么情况需要添加索引？" class="headerlink" title="什么情况需要添加索引？"></a>什么情况需要添加索引？</h2><ol>
+<li>当表的数据量越来越大时，有人建议超过300条记录就该加上索引了</li>
+<li>频繁被用作条件查询、表连接条件、分组、排序的字段</li>
+<li>索引性高的字段，通俗点说就是重复性小的字段，最好是唯一字段</li>
+</ol>
+<h2 id="索引是不是越多越好和那些字段不适合用索引？"><a href="#索引是不是越多越好和那些字段不适合用索引？" class="headerlink" title="索引是不是越多越好和那些字段不适合用索引？"></a>索引是不是越多越好和那些字段不适合用索引？</h2><ol>
+<li>答案是否定的。原因是索引是独立的数据结构，需要花费额外的时间和磁盘空间来维护</li>
+<li>频繁进行修改的字段不适合做索引，原因同上</li>
+<li>值较大的字段不适合作为索引，上面已经提到索引是需要额外的磁盘空间存放的，所以如果字段值大且如果表的记录较多的时，索引所占的磁盘空间就会急速增加</li>
+<li>离散度低的字段不适合</li>
+</ol>
+<h2 id="索引类型"><a href="#索引类型" class="headerlink" title="索引类型"></a>索引类型</h2><p><img src="/mysql%E7%B4%A2%E5%BC%95/8.png" alt></p>
+<h2 id="常见索引数据结构"><a href="#常见索引数据结构" class="headerlink" title="常见索引数据结构"></a>常见索引数据结构</h2><h3 id="散列表"><a href="#散列表" class="headerlink" title="散列表"></a>散列表</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/3.png" alt></p>
+<ul>
+<li>散列表数据结构由 数组 和 链表 组成，通过对关键字段 key 进行哈希计算后再用其计算出数组的下标值以确立存储位置。</li>
+<li>散列表最理想的查询时间复杂度是O(1)，即没有任何的哈希冲突，且表示存储的数据离散度非常高（如身份证号码），此时散列表优势明显。但如果存储时出现哈希冲突，就需要使用<code>拉链法</code>来形成链表解决冲突，而因为链表查找需要一个个遍历，因此这时查询复杂度将退化为O（n）。</li>
+<li>使用散列表做为索引数据结构时需要注意其以下特性：<ul>
+<li>散列表并不支持多列（联合）索引的<code>最佳左前缀</code>原则，因为在计算数组下标时会将多个索引列一同计算以达到尽可能离散</li>
+<li>散列表因为采用哈希算法来确立数组下标，因此是没有顺序可言的，所以散列表并不支持<code>区间操作</code>和<code>排序</code></li>
+<li>散列表只<code>适合简单的等值操作</code>，而其他操作并不能发挥散列表的特性，因此在使用前应考虑场合</li>
+</ul>
+</li>
+</ul>
+<h3 id="有序数组"><a href="#有序数组" class="headerlink" title="有序数组"></a>有序数组</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/4.png" alt></p>
+<ul>
+<li>有序数组的特点是内存连续，所以在<code>等值查询</code>和<code>区间查询</code>上效率是非常高的</li>
+<li>但需要意识到的是，有序数组因为要求内存连续的特性，所以在进行增删操作时需要挪动后续的数据以保持连续性，因此有序数组会随着数据量的增大，效率会逐渐降低</li>
+<li>因此，从上可以得出结论就是，有序数组比较适用于<code>读多写少</code>的场景</li>
+</ul>
+<h3 id="二叉查找树、平衡二叉查找树"><a href="#二叉查找树、平衡二叉查找树" class="headerlink" title="二叉查找树、平衡二叉查找树"></a>二叉查找树、平衡二叉查找树</h3><blockquote>
+<p> 图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/5.png" alt></p>
+<ul>
+<li><p>二叉查找树的特点是左边子节点小于右边子节点，因此除了<code>有序</code>之外还可以使用<code>二分查找</code>的高效检索方法</p>
+</li>
+<li><p>虽然二叉查找树从综合性来看效率不错，但是也存在一些隐患，例如极端情况下如果数据呈递增表现，那么就会出现数据结构退化的现象，即二叉树退化为链表，从时间复杂度O（logn）退化成O（n），因此会影响检索数据的效率</p>
+</li>
+<li><p>对于二叉树数据结构退化这种现象可以通过使用平衡版二叉查找来解决。所谓的平衡二叉树指的是根节点到叶节点的路径长度一样（绝对平衡）。例如插入数据时，平衡二叉树判断到路径长度不一致就会触发节点自旋操作以恢复到平衡以确保数据查询的时间复杂度。但平衡二叉树并不是十全十美的，因为如果发生大量修改节点操作的话就会出大量的自旋操作导致性能下降</p>
+</li>
+<li><p>以个人目前的观察，其实直接使用二叉树数和绝对平衡二叉树来做存储结果的系统甚少，用的较多的都是红黑树，因为红黑树首先它是平衡二叉查找树，但并非绝对平衡，因为红黑树只要求左右子节点的黑色节点数量相等即可，所以光看这个特性就可以得出结论，红黑树可以降低绝对平衡二叉树的大自旋操作和普通二叉树可能会退化成链表的隐患，因此红黑树其实是 二叉查找树和绝对平衡二叉树的折中选项</p>
+</li>
+</ul>
+<h3 id="B-树"><a href="#B-树" class="headerlink" title="B+树"></a>B+树</h3><blockquote>
+<p>图片源自网络 </p>
+</blockquote>
+<img src="/mysql%E7%B4%A2%E5%BC%95/7.png" style="zoom:67%;">
+
+<ul>
+<li><p>B+树的B是balance的意思，即B+Tree也是平衡树，且是棵多叉树，一般树高保持在3-4左右，即通常一次查找只需3-4次IO即可</p>
+</li>
+<li><p>B+树的特点是普通节点不记录数据，而数据全部位于叶子节点上，即所谓的聚簇索引，而且B+树的叶子节点的数据呈有序递增之余每个叶子节点都包含左右两边叶子节点的引用，因此天然支持区间和排序等操作</p>
+</li>
+<li><p>首先是 B+树 和 普通二叉查找树、平衡二叉树的对比。B+树 因为是平衡树所以不存在数据结退化的现象，而且 B+树 一般高度比较小因此在效率和自旋等方面都要比 普通二叉查找树和平衡二叉树 稳定和高效</p>
+</li>
+<li><p>还有需要谨记的一件事就是，B+树思想是希望普通节点尽可能记录多些自己子节点的信息。如在MySQL中，MySQL默认的内存页大小是16k，因此如果每个节点都只保存左右子节点的信息的话实在是浪费内存，也可以说1次IO操作查询到的数据就变少了，因此 B+树 普通节点并没有拿来存储当前节点的数据，而是存储了多个子节点的引用信息以减少IO操作来提高操作效率。B+树这种做法其实就是空间换时间，也因此现在的关系型数据库如果不是有特别场景的话都是用的B+树来实现索引的</p>
+</li>
+<li><p>最后聊一聊B树，B树是B+树的前身，数据结构如下</p>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/9.png" alt></p>
+</li>
+<li><p>从上面的图可以看出B树的数据和一般二叉查找数一样是存储在每个节点上的</p>
+</li>
+<li><p>在先前已经提到过，B+树 是希望节点多存储些子节点的信息以此来降低IO的检索次数来提高效率。那么不禁地有个这样的问题，就是B+树这么好，那么B树还有存在的意义吗？答案是肯定的，以本人了解，在NoSQL的MongoDB中就采用B+树来存储数据，主要的原因是MongoDB是一种文档存储类型的NoSQL，而且操作的都是半结构化数据（数据结构可以变动），因此数据呈聚合型。所以如果数据不存储在节点上的话就需要更多的额外操作来将数据聚合，因此会效率低下，所以B树就成为了B+数之下的首选</p>
+</li>
+</ul>
+<blockquote>
+<p>小知识：</p>
+<ul>
+<li>聚簇索引指数据和索引顺序是一致的，且保存在一起。 聚簇索引并不是索引类型，而是一种数据的存储方式</li>
+<li>MySQL存储引擎InnoDB的主键就是聚簇索引，而二级索引（也有人叫辅助索引）虽然也是使用B+树实现，但是二级索引的叶子节点中保存的只是主键索引的引用，所以如果使用二级索引去检索记录的步骤是，先根据二级索引查找的主键索引，然后根据主键索引引用进行<code>回表查询</code></li>
+</ul>
+</blockquote>
+<h2 id="关于索引和约束"><a href="#关于索引和约束" class="headerlink" title="关于索引和约束"></a>关于索引和约束</h2><ul>
+<li><p>当添加primary key时，会自动创建<code>主键索引</code>且同时添加<code>unique</code>和<code>not null</code>两个约束</p>
+</li>
+<li><p>当添加foreign key时，则处理添加<code>外键约束</code>之外，同时还会创建<code>普通索引</code>（原因是避免死锁）</p>
+</li>
+<li><p>当添加unique key时，会自动添加<code>唯一约束</code>且同时创建<code>普通索引</code></p>
+</li>
+</ul>
+<blockquote>
+<p>例子</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> address(</span><br><span class="line">	a_id <span class="built_in">INT</span> PRIMARY <span class="keyword">KEY</span> auto_increment,</span><br><span class="line">	a_addr <span class="built_in">VARCHAR</span>(<span class="number">100</span>)</span><br><span class="line">)<span class="keyword">ENGINE</span>=<span class="keyword">INNODB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person(</span><br><span class="line">	p_id <span class="built_in">int</span> PRIMARY <span class="keyword">KEY</span> auto_increment, <span class="comment">-- 主键（默认约束 unique 和 not null）</span></span><br><span class="line">	p_id_card <span class="built_in">VARCHAR</span>(<span class="number">18</span>) <span class="keyword">UNIQUE</span>, <span class="comment">-- 方法1: 添加唯一约束且创建唯一索引</span></span><br><span class="line">	p_name <span class="built_in">VARCHAR</span>(<span class="number">10</span>), </span><br><span class="line">	p_addr <span class="built_in">VARCHAR</span>(<span class="number">100</span>) <span class="keyword">UNIQUE</span>,</span><br><span class="line">	p_age <span class="built_in">INT</span>,</span><br><span class="line">	<span class="keyword">UNIQUE</span> <span class="keyword">KEY</span> uindex_age (p_age), <span class="comment">-- 方法2: 添加唯一约束且创建唯一索引</span></span><br><span class="line">	<span class="comment">-- CONSTRAINT uindex_age UNIQUE KEY (p_age), -- 方法3: 添加唯一约束且创建唯一索引</span></span><br><span class="line">	<span class="keyword">CONSTRAINT</span> fk_addr_address_a_addr <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span>(p_addr) <span class="keyword">references</span> test.address(a_addr)  <span class="comment">-- 添加外键约束且创建一个普通索引</span></span><br><span class="line">)<span class="keyword">ENGINE</span>=<span class="keyword">INNODB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>拓展小知识：</strong></p>
+<ul>
+<li><p>首先外键是一个跨表关联机制，外键字段的操作表现为，可以为null和可以重复，但是外键字段的值不能超出所关联的表的字段值。例如 student.tid 外键引用了 teacher.id，那么 student.tid 的值就不能超出 teacher.id 的返回，例如设置一个 teacher.id 不存在的值，这是可以的。</p>
+</li>
+<li><p>那么为什么说外键如果不加索引的话就可能会死锁呢？如上所述外键是一种约束机制，控制着子表（student）的值不能超过父表（teacher）字段值的范围。那么如何做到在增删改父表期间又能保证不破坏约束呢？答案就是加锁，通过悲观锁进行互斥从而避免同步问题。但如果外键没有建立索引，在操作父表时就不能准确地知道子表的那条记录引用了自己，因此而不能进行行级别的加锁而被迫对整个表进行加锁，而这就是导致死锁的根源。案例如下（旧版本oracle的外键是不加索引的）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- oracle默认隔离级别:读已提交</span></span><br><span class="line"><span class="comment">-- session-1</span></span><br><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> student <span class="keyword">where</span> <span class="keyword">id</span>=<span class="number">1</span>; // student加行锁</span><br><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> teacher <span class="keyword">where</span> <span class="keyword">id</span>=<span class="number">1</span>; // teacher加行锁，并请求往student加表锁</span><br><span class="line"><span class="comment">-- session-2 </span></span><br><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> student <span class="keyword">where</span> <span class="keyword">id</span>=<span class="number">2</span>; // student加行锁</span><br><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> teacher <span class="keyword">where</span> <span class="keyword">id</span>=<span class="number">2</span>; // teacher加行锁，并请求往student加表锁</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>死锁指的是在并发时，持有锁的一方因为某些原因而导致未能释放锁从而造成其他想要获取该锁的线程或事物一致处于阻塞状态</p>
+</li>
+<li><p><strong>分析案例：</strong>当session-1请求往student加表锁时，因为此时session-2持有student的行锁，所以session-1会阻塞等待session-2释放行锁，但由于session-2的事物还没提交所以session-2并不会释放锁。<br>此时同样的理由，session-2在删除id为2的teacher记录是也会申请往student加表锁，但session-1已经处于阻塞状态所以不可能释放锁，从而导致session-1和session-2交叉等待，导致死锁的发生。但如果此时外键有索引的话，那么session-1和session-2都不需要互相等待其释放锁，因为行锁粒度小，所以session-1和session-2要不是操作同一条记录的话是不需要等待对方释放锁的，从而也降低了死锁出现的记录。</p>
+</li>
+<li><p>需要多说一句的是，锁的粒度越大的话其实发生死锁的记录就越少，如案例中一开始就加表锁的话是不可能存在两个会话同时持有锁的情况的（悲观锁），所以就不会有交叉等待的情况。但表锁会降低事务并发的吞吐量，这点需要明白</p>
+</li>
+</ul>
+<h2 id="索引是不是越多越好"><a href="#索引是不是越多越好" class="headerlink" title="索引是不是越多越好"></a>索引是不是越多越好</h2><ul>
+<li>索引本身不属于我们存储的数据的一部分，而是从中独立出来的一个’目录’，所以索引越多的话就会占据越多的磁盘空间</li>
+<li>当我们往表中插入数据时，数据库需要额外的操作来维护索引结构，因此如果索引越多的话，数据库消耗的额外操作就越多，从而导致性能的损耗</li>
+</ul>
+<h2 id="什么是覆盖索引"><a href="#什么是覆盖索引" class="headerlink" title="什么是覆盖索引"></a>什么是覆盖索引</h2><ul>
+<li>覆盖索引和聚簇索引一样都不是索引的类型，覆盖索引准确点说其实是一种现象。通俗点说就是通过索引字段查找就能直接得到结果的查询，所以覆盖索引的效率是非常高的，例如使用主键来查询，因为上面我们已经分析过B+数，在B+数中主键为聚簇索引，所以可以直接在其叶子节点中获取到整条记录</li>
+<li>因为覆盖索引效率非常高，所以网上经常有人建议尽量少用<code>select *</code>其实大体有以下两个原因：<ul>
+<li>在实际工作中很多情况下其实都不需要一次查询所有字段，所以<code>select *</code>就返回了与本次业务无关的冗余数据，同时也增加了数据的传输开销</li>
+<li>减少覆盖索引的出现。例如使用二级索引需来查询记录的id值，又或者用组合索引的左前缀查找右边的字段等这些操作都是覆盖索引，但如果使用<code>select *</code>的话因为是二级索引，所以叶子节点不可能存储了整条记录的数据，因此肯定是需要进行回表查询的</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>小结</p>
+</blockquote>
+<ul>
+<li>如果想要提高覆盖索引的出现，就应该少用<code>select *</code>，即能不用就不用</li>
+<li>如果某几个字段经常被查询或者组合使用，则应该建立组合索引，而字段的顺序可以由字段的使用频率从高到底由左往右排来组成组合索引</li>
+</ul>
+<h2 id="什么情况下索引会失效"><a href="#什么情况下索引会失效" class="headerlink" title="什么情况下索引会失效"></a>什么情况下索引会失效</h2><ul>
+<li>索引值类型为<code>字符型</code>时，使用<code>值</code>进行运算以及<code>不使用&#39;&#39;包裹</code>都会导致索引失效</li>
+<li>索引值类型为<code>字符型</code>或者索引类型为<code>组合索引</code>时，使用 <code>!=</code>和 <code>&lt;&gt;</code>会导致索引失效</li>
+<li><code>索引列</code>上使用<code>函数</code>或进行<code>运算</code>会导致索引失效。注意这里不是指值，而是索引列，例如 left(‘empId’, 5) = 100</li>
+<li>索引值类型为<code>字符型</code>时，使<code>用了左模糊匹配</code>，既 like ‘%索引列’ 会导致索引失效。如果值类型为<code>数值型</code>则使用<code>模糊查询</code>会直接使<code>索引失效</code>。</li>
+<li>使用<code>组合索引</code>时失效情况：<ul>
+<li><code>没有遵循最佳左前缀</code></li>
+<li>使用 <code>!=</code>和 <code>&lt;&gt;</code>操作，即使符合最佳左前缀也会导致索引失效</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年7月1日11:01:51 — 丰富索引数据结构概念，删减多余内容</li>
+</ul>
+</div><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">TD</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://tandi.pub/mysql%E7%B4%A2%E5%BC%95/">https://tandi.pub/mysql%E7%B4%A2%E5%BC%95/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://tandi.pub" target="_blank">学然后知不足</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></div><div class="post_share"><div class="social-share" data-image="/image/orm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination_post" id="pagination"><div class="prev-post pull_left"><a href="/mysql%E6%97%A5%E5%BF%97/"><img class="prev_cover" src="/image/mysql.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">MySQL日志</div></div></a></div><div class="next-post pull_right"><a href="/CAS%E7%90%86%E8%A7%A3/"><img class="next_cover" src="/image/cas.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">CAS理解</div></div></a></div></nav><hr><div id="post-comment"><div class="comment_headling"><i class="fa fa-comments fa-fw" aria-hidden="true"></i><span> 评论</span></div><div id="gitalk-container"></div><script>var gitalk = new Gitalk({
+  clientID: '38b84fb92012be686d1c',
+  clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+  repo: 'hexo-comments',
+  owner: 'oomgomgxx',
+  admin: ['oomgomgxx'],
+  id: md5(decodeURI(location.pathname)),
+  language: 'zh-CN',
+  perPage: 10,
+  distractionFreeMode: false,
+  pagerDirection: 'last',
+  createIssueManually: false,
+  updateCountCallback: commentCount
+})
+gitalk.render('gitalk-container')
+
+function commentCount(n){
+  try {
+    document.getElementsByClassName('gitalk-comment-count')[0].innerHTML= n
+  } catch (e) {
+    return false
+  }
+}</script></div></article></main><footer id="footer" style="background-image: url(/image/mysql.png)" data-type="photo"><div id="footer-wrap"><div class="copyright">&copy;2020 TD</div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><i class="fa fa-book" id="readmode" title="阅读模式"></i><i class="fa fa-plus" id="font_plus" title="放大字体"></i><i class="fa fa-minus" id="font_minus" title="缩小字体"></i><a class="translate_chn_to_cht" id="translateLink" href="javascript:translatePage();" title="简繁转换" target="_self">簡</a><i class="darkmode fa fa-moon-o" id="darkmode" title="夜间模式"></i></div><div id="rightside-config-show"><div id="rightside_config" title="设置"><i class="fa fa-cog" aria-hidden="true"></i></div><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fa fa-comments">  </i></a><i class="fa fa-list-ul close" id="mobile-toc-button" title="目录" aria-hidden="true"></i><i class="fa fa-arrow-up" id="go-up" title="回到顶部" aria-hidden="true"></i></div></section><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js"></script><script>document.addEventListener('DOMContentLoaded', function() {
+      pangu.spacingElementById('content-inner')
+})</script></body></html>
