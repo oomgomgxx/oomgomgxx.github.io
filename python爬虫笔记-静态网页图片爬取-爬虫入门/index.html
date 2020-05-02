@@ -1,111 +1,292 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Python爬虫笔记-入门 | 学然后知不足</title><meta name="description" content="Python爬虫笔记-入门"><meta name="keywords" content="Python"><meta name="author" content="TD"><meta name="copyright" content="TD"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/img/binary-code.svg"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="crossorigin"/><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Python爬虫笔记-入门"><meta name="twitter:description" content="Python爬虫笔记-入门"><meta name="twitter:image" content="https://tandi.pub/image/python.png"><meta property="og:type" content="article"><meta property="og:title" content="Python爬虫笔记-入门"><meta property="og:url" content="https://tandi.pub/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/"><meta property="og:site_name" content="学然后知不足"><meta property="og:description" content="Python爬虫笔记-入门"><meta property="og:image" content="https://tandi.pub/image/python.png"><script src="https://cdn.jsdelivr.net/npm/js-cookie/dist/js.cookie.min.js"></script><script>var autoChangeMode = '1'
-var t = Cookies.get("theme")
-if (autoChangeMode == '1'){
-  var isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
-  var isLightMode = window.matchMedia("(prefers-color-scheme: light)").matches
-  var isNotSpecified = window.matchMedia("(prefers-color-scheme: no-preference)").matches
-  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+<!-- 主题布局 -->
 
-  if (t === undefined){
-    if (isLightMode) activateLightMode()
-    else if (isDarkMode) activateDarkMode()
-    else if (isNotSpecified || hasNoSupport){
-      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
-      var now = new Date()
-      var hour = now.getHours()
-      var isNight = hour < 6 || hour >= 18
-      isNight ? activateDarkMode() : activateLightMode()
-  }
-  } else if (t == 'light') activateLightMode()
-  else activateDarkMode()
 
-} else if (autoChangeMode == '2'){
-  now = new Date();
-  hour = now.getHours();
-  isNight = hour < 6 || hour >= 18
-  if(t === undefined) isNight? activateDarkMode() : activateLightMode()
-  else if (t === 'light') activateLightMode()
-  else activateDarkMode() 
-} else {
-  if ( t == 'dark' ) activateDarkMode()
-  else if ( t == 'light') activateLightMode()
-}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> Python爬虫笔记-入门学然后知不足 </title>
 
-function activateDarkMode(){
-  document.documentElement.setAttribute('data-theme', 'dark')
-  if (document.querySelector('meta[name="theme-color"]') !== null){
-    document.querySelector('meta[name="theme-color"]').setAttribute('content','#000')
-  }
-}
-function activateLightMode(){
-  document.documentElement.setAttribute('data-theme', 'light')
-  if (document.querySelector('meta[name="theme-color"]') !== null){
-  document.querySelector('meta[name="theme-color"]').setAttribute('content','#fff')
-  }
-}</script><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="canonical" href="https://tandi.pub/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/"><link rel="prev" title="关于ThreadLocal内存泄露和ThreadLocalMap源码浅析" href="https://tandi.pub/%E5%85%B3%E4%BA%8EThreadLocal%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E5%92%8CThreadLocalMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/"><link rel="next" title="从ConcurrentModificationException分析ArrayList迭代器" href="https://tandi.pub/%E4%BB%8EConcurrentModificationException%E5%88%86%E6%9E%90ArrayList%E8%BF%AD%E4%BB%A3%E5%99%A8/"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css"><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web"><script>var GLOBAL_CONFIG = { 
-  root: '/',
-  algolia: undefined,
-  localSearch: undefined,
-  translate: {"defaultEncoding":2,"translateDelay":0,"cookieDomain":"https://tandi.pub","msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
-  copy: {
-    success: '复制成功',
-    error: '复制错误',
-    noSupport: '浏览器不支持'
-  },
-  bookmark: {
-    message_prev: '按',
-    message_next: '键将本页加入书签'
-  },
-  runtime_unit: '天',
-  runtime: false,
-  copyright: undefined,
-  ClickShowText: undefined,
-  medium_zoom: false,
-  fancybox: true,
-  Snackbar: undefined,
-  baiduPush: true,
-  highlightCopy: true,
-  highlightLang: true,
-  highlightShrink: 'false',
-  isFontAwesomeV5: false,
-  isPhotoFigcaption: false
+  <!-- 网站SEO - 关键字和描述 -->
   
-}</script><script>var GLOBAL_CONFIG_SITE = { 
-  isPost: true,
-  isHome: false,
-  isSidebar: false  
-  }</script><noscript><style>
-#page-header {
-  opacity: 1
-}
-.justified-gallery img{
-  opacity: 1
-}
-</style></noscript><meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
-</head><body><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/archives/"><div class="headline">文章</div><div class="length_num">58</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/tags/"><div class="headline">标签</div><div class="length_num">19</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/categories/"><div class="headline">分类</div><div class="length_num">17</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div></div></div><div id="body-wrap"><div class="post-bg" id="nav" style="background-image: url(/image/python.png)"><div id="page-header"><span class="pull_left" id="blog_name"><a class="blog_title" id="site-name" href="/">学然后知不足</a></span><span class="pull_right menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fa fa-bars fa-fw" aria-hidden="true"></i></a></span></span></div><div id="post-info"><div id="post-title"><div class="posttitle">Python爬虫笔记-入门</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2018-03-13 10:30:24"><i class="fa fa-calendar" aria-hidden="true"></i> 发表于 2018-03-13</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-04-12 09:35:29"><i class="fa fa-history" aria-hidden="true"></i> 更新于 2020-04-12</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fa fa-angle-right post-meta__separator" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/Python/">Python</a></span></div><div class="meta-secondline"> </div><div class="meta-thirdline"><span class="post-meta-pv-cv"></span><span class="post-meta-commentcount"><i class="post-meta__icon fa fa-comment-o" aria-hidden="true"></i><span>评论数:</span><a href="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/#post-comment"><span class="gitalk-comment-count comment-count"></span></a></span></div></div></div></div><main class="layout_post" id="content-inner"><article id="post"><div id="article-container"><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># =========== requests基本使用 ===========</span></span><br><span class="line"><span class="comment"># 安装requests模块：用于请求(访问)网站</span></span><br><span class="line"><span class="comment"># pip install requests</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line"><span class="comment"># 请求网站（指定爬取目标）</span></span><br><span class="line"><span class="comment"># response = requests.get('https://news.163.com')</span></span><br><span class="line"><span class="comment"># 获取返回的文本内容</span></span><br><span class="line"><span class="comment"># text = response.text</span></span><br><span class="line"><span class="comment"># print(text)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># =========== 使用BeautifulSoup获取页面标签 ===========</span></span><br><span class="line"><span class="comment"># 安装beautifulsoup4模块：用于解析requests返回的文本内容</span></span><br><span class="line"><span class="comment"># pip install beautifulsoup4</span></span><br><span class="line"><span class="comment"># 安装lxml解析器</span></span><br><span class="line"><span class="comment"># 1.</span></span><br><span class="line"><span class="comment">#  http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml</span></span><br><span class="line"><span class="comment">#  下载适合自己python版本的whl文件，如下为我下载的版本</span></span><br><span class="line"><span class="comment"># 2. 切换到下载whl文件所在目录安装whl，如下</span></span><br><span class="line"><span class="comment"># pip3 install lxml-4.3.3-cp37-cp37m-win_amd64.whl</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> bs4 <span class="keyword">import</span> BeautifulSoup</span><br><span class="line"></span><br><span class="line"><span class="comment"># response = requests.get('https://news.163.com')</span></span><br><span class="line"><span class="comment"># text = response.text</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 指定BeautifulSoup使用lxml解析文本内容</span></span><br><span class="line"><span class="comment"># soup = BeautifulSoup(text, 'lxml')</span></span><br><span class="line"><span class="comment"># 使用find方法查到第一个img标签</span></span><br><span class="line"><span class="comment"># find = soup.find('img')</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出返回值类型</span></span><br><span class="line"><span class="comment"># print("find的类型：", type(find))</span></span><br><span class="line"><span class="comment"># 输出find获取的值</span></span><br><span class="line"><span class="comment"># print("整合标签定义：", find)</span></span><br><span class="line"><span class="comment"># 输出标签的名字</span></span><br><span class="line"><span class="comment"># print("标签名称：", find.name)</span></span><br><span class="line"><span class="comment"># 输出标签的_src属性值</span></span><br><span class="line"><span class="comment"># print("图片：", find['src'])</span></span><br><span class="line"><span class="comment"># 标签体内容</span></span><br><span class="line"><span class="comment"># print('标签体内容：', find.string)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># =========== 获取html注释内容 ===========</span></span><br><span class="line"><span class="comment"># markup = "&lt;b&gt;&lt;!-- python爬虫学习 --&gt;&lt;/b&gt;&lt;a href='www.bing.com'&gt;&lt;!-- aaa python爬虫学习 --&gt;&lt;/a&gt;"</span></span><br><span class="line"><span class="comment"># soup = BeautifulSoup(markup, 'lxml')</span></span><br><span class="line"><span class="comment"># print('b注释内容：', soup.b.string)</span></span><br><span class="line"><span class="comment"># print('a注释内容：', soup.a.string)</span></span><br><span class="line"><span class="comment"># 查找标签string表达式：soup.标签名称.string</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># =========== 遍历img标签(强大的find_all方法) ===========</span></span><br><span class="line"><span class="comment"># response = requests.get('https://news.163.com')</span></span><br><span class="line"><span class="comment"># text = response.text</span></span><br><span class="line"><span class="comment"># soup = BeautifulSoup(text, 'lxml')</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># #得到所有的&lt;a&gt;标签</span></span><br><span class="line"><span class="comment"># find_all = soup.find_all('img')</span></span><br><span class="line"><span class="comment"># for img in find_all:</span></span><br><span class="line"><span class="comment">#     # print(type(img))</span></span><br><span class="line"><span class="comment">#     # &lt;class 'bs4.element.Tag'&gt;</span></span><br><span class="line"><span class="comment">#     if img.get('src'):</span></span><br><span class="line"><span class="comment">#         print(img.get('src'))</span></span><br><span class="line"><span class="comment">#     else:</span></span><br><span class="line"><span class="comment">#         print(img.get('data-src'))</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># =========== 图片保存相关 ===========</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line">dirName = <span class="string">'C:/Users/admin/Desktop/py_save'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建文件夹</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">mkdir</span><span class="params">(path)</span>:</span></span><br><span class="line">    path = path.strip()</span><br><span class="line">    isExists = os.path.exists(path)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> isExists:</span><br><span class="line">        os.makedirs(path)</span><br><span class="line">        print(<span class="string">'文件夹创建成功'</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        print(path, <span class="string">'文件夹已经存在了，不再创建'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建文件夹</span></span><br><span class="line">mkdir(dirName)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 保存图片</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">saveImg</span><span class="params">(requests, url, dirName, fileName)</span>:</span></span><br><span class="line">    img = requests.get(url)</span><br><span class="line">    file_name = dirName + <span class="string">'/'</span> + fileName + <span class="string">'.png'</span></span><br><span class="line">    f = open(file_name, <span class="string">'ab'</span>)</span><br><span class="line">    f.write(img.content)</span><br><span class="line">    print(file_name, <span class="string">'文件保存成功！'</span>)</span><br><span class="line">    f.close()</span><br><span class="line"></span><br><span class="line"><span class="comment"># =========== 去除https://unsplash.com/t/wallpapers中图片地址后面的参数 ===========</span></span><br><span class="line"></span><br><span class="line">reqUrl = <span class="string">'https://unsplash.com/t/wallpapers'</span></span><br><span class="line">text = requests.get(reqUrl).text</span><br><span class="line">soup = BeautifulSoup(text, <span class="string">'lxml'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> uuid</span><br><span class="line"></span><br><span class="line"><span class="comment">#得到所有的&lt;a&gt;标签</span></span><br><span class="line">find_all = soup.find_all(<span class="string">'img'</span>)</span><br><span class="line"><span class="keyword">for</span> img <span class="keyword">in</span> find_all:</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 文件名称</span></span><br><span class="line">    uuid_ = uuid.uuid1()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> img.get(<span class="string">'src'</span>):</span><br><span class="line">        <span class="comment"># 将后面的参数去掉，即?后面的内容</span></span><br><span class="line">        url = img.get(<span class="string">'src'</span>).split(<span class="string">'?'</span>)[<span class="number">0</span>]</span><br><span class="line">        saveImg(requests, url, dirName, str(uuid_))</span><br></pre></td></tr></table></figure>
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
 
-</div><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">TD</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://tandi.pub/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">https://tandi.pub/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://tandi.pub" target="_blank">学然后知不足</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Python/">Python</a></div><div class="post_share"><div class="social-share" data-image="/image/orm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination_post" id="pagination"><div class="prev-post pull_left"><a href="/%E5%85%B3%E4%BA%8EThreadLocal%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E5%92%8CThreadLocalMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/"><img class="prev_cover" src="/image/java.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">关于ThreadLocal内存泄露和ThreadLocalMap源码浅析</div></div></a></div><div class="next-post pull_right"><a href="/%E4%BB%8EConcurrentModificationException%E5%88%86%E6%9E%90ArrayList%E8%BF%AD%E4%BB%A3%E5%99%A8/"><img class="next_cover" src="/image/java.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">从ConcurrentModificationException分析ArrayList迭代器</div></div></a></div></nav><hr><div id="post-comment"><div class="comment_headling"><i class="fa fa-comments fa-fw" aria-hidden="true"></i><span> 评论</span></div><div id="gitalk-container"></div><script>var gitalk = new Gitalk({
-  clientID: '38b84fb92012be686d1c',
-  clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
-  repo: 'hexo-comments',
-  owner: 'oomgomgxx',
-  admin: ['oomgomgxx'],
-  id: md5(decodeURI(location.pathname)),
-  language: 'zh-CN',
-  perPage: 10,
-  distractionFreeMode: false,
-  pagerDirection: 'last',
-  createIssueManually: false,
-  updateCountCallback: commentCount
-})
-gitalk.render('gitalk-container')
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+  
+    <script src="/js/jquery.min.js"></script>
+  
+    <script src="/js/main.js"></script>
+  
+    <script src="/js/md5.min.js"></script>
+  
+    <script src="/js/highlight.min.js"></script>
+  
+  
 
-function commentCount(n){
-  try {
-    document.getElementsByClassName('gitalk-comment-count')[0].innerHTML= n
-  } catch (e) {
-    return false
-  }
-}</script></div></article></main><footer id="footer" style="background-image: url(/image/python.png)" data-type="photo"><div id="footer-wrap"><div class="copyright">&copy;2020 TD</div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><i class="fa fa-book" id="readmode" title="阅读模式"></i><i class="fa fa-plus" id="font_plus" title="放大字体"></i><i class="fa fa-minus" id="font_minus" title="缩小字体"></i><a class="translate_chn_to_cht" id="translateLink" href="javascript:translatePage();" title="简繁转换" target="_self">簡</a><i class="darkmode fa fa-moon-o" id="darkmode" title="夜间模式"></i></div><div id="rightside-config-show"><div id="rightside_config" title="设置"><i class="fa fa-cog" aria-hidden="true"></i></div><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fa fa-comments">  </i></a><i class="fa fa-arrow-up" id="go-up" title="回到顶部" aria-hidden="true"></i></div></section><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js"></script><script>document.addEventListener('DOMContentLoaded', function() {
-      pangu.spacingElementById('content-inner')
-})</script></body></html>
+  <!-- 内部样式文件 -->
+  
+  
+    <link rel="stylesheet" href="/css/main.css">
+  
+    <link rel="stylesheet" href="/css/github.min.css">
+  
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="學然後知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">學然後知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/archives">文章存档</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/books">书籍推荐</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>Python爬虫笔记-入门</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-03-13 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <pre><code class="python">
+# =========== requests基本使用 ===========
+# 安装requests模块：用于请求(访问)网站
+# pip install requests
+
+import requests
+
+# 请求网站（指定爬取目标）
+# response = requests.get(&#39;https://news.163.com&#39;)
+# 获取返回的文本内容
+# text = response.text
+# print(text)
+
+
+# =========== 使用BeautifulSoup获取页面标签 ===========
+# 安装beautifulsoup4模块：用于解析requests返回的文本内容
+# pip install beautifulsoup4
+# 安装lxml解析器
+# 1.
+#  http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
+#  下载适合自己python版本的whl文件，如下为我下载的版本
+# 2. 切换到下载whl文件所在目录安装whl，如下
+# pip3 install lxml-4.3.3-cp37-cp37m-win_amd64.whl
+
+from bs4 import BeautifulSoup
+
+# response = requests.get(&#39;https://news.163.com&#39;)
+# text = response.text
+
+# 指定BeautifulSoup使用lxml解析文本内容
+# soup = BeautifulSoup(text, &#39;lxml&#39;)
+# 使用find方法查到第一个img标签
+# find = soup.find(&#39;img&#39;)
+
+# 输出返回值类型
+# print(&quot;find的类型：&quot;, type(find))
+# 输出find获取的值
+# print(&quot;整合标签定义：&quot;, find)
+# 输出标签的名字
+# print(&quot;标签名称：&quot;, find.name)
+# 输出标签的_src属性值
+# print(&quot;图片：&quot;, find[&#39;src&#39;])
+# 标签体内容
+# print(&#39;标签体内容：&#39;, find.string)
+
+
+# =========== 获取html注释内容 ===========
+# markup = &quot;&lt;b&gt;&lt;!-- python爬虫学习 --&gt;&lt;/b&gt;&lt;a href=&#39;www.bing.com&#39;&gt;&lt;!-- aaa python爬虫学习 --&gt;&lt;/a&gt;&quot;
+# soup = BeautifulSoup(markup, &#39;lxml&#39;)
+# print(&#39;b注释内容：&#39;, soup.b.string)
+# print(&#39;a注释内容：&#39;, soup.a.string)
+# 查找标签string表达式：soup.标签名称.string
+
+
+# =========== 遍历img标签(强大的find_all方法) ===========
+# response = requests.get(&#39;https://news.163.com&#39;)
+# text = response.text
+# soup = BeautifulSoup(text, &#39;lxml&#39;)
+#
+# #得到所有的&lt;a&gt;标签
+# find_all = soup.find_all(&#39;img&#39;)
+# for img in find_all:
+#     # print(type(img))
+#     # &lt;class &#39;bs4.element.Tag&#39;&gt;
+#     if img.get(&#39;src&#39;):
+#         print(img.get(&#39;src&#39;))
+#     else:
+#         print(img.get(&#39;data-src&#39;))
+
+
+# =========== 图片保存相关 ===========
+import os
+
+dirName = &#39;C:/Users/admin/Desktop/py_save&#39;
+
+# 创建文件夹
+def mkdir(path):
+    path = path.strip()
+    isExists = os.path.exists(path)
+    if not isExists:
+        os.makedirs(path)
+        print(&#39;文件夹创建成功&#39;)
+    else:
+        print(path, &#39;文件夹已经存在了，不再创建&#39;)
+
+# 创建文件夹
+mkdir(dirName)
+
+# 保存图片
+def saveImg(requests, url, dirName, fileName):
+    img = requests.get(url)
+    file_name = dirName + &#39;/&#39; + fileName + &#39;.png&#39;
+    f = open(file_name, &#39;ab&#39;)
+    f.write(img.content)
+    print(file_name, &#39;文件保存成功！&#39;)
+    f.close()
+
+# =========== 去除https://unsplash.com/t/wallpapers中图片地址后面的参数 ===========
+
+reqUrl = &#39;https://unsplash.com/t/wallpapers&#39;
+text = requests.get(reqUrl).text
+soup = BeautifulSoup(text, &#39;lxml&#39;)
+
+import uuid
+
+#得到所有的&lt;a&gt;标签
+find_all = soup.find_all(&#39;img&#39;)
+for img in find_all:
+
+    # 文件名称
+    uuid_ = uuid.uuid1()
+
+    if img.get(&#39;src&#39;):
+        # 将后面的参数去掉，即?后面的内容
+        url = img.get(&#39;src&#39;).split(&#39;?&#39;)[0]
+        saveImg(requests, url, dirName, str(uuid_))</code></pre>
+
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: 
+    <a href="TanDi">
+      TanDi
+    </a> <br/>
+    文章链接: 
+    <a href="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">
+      Python爬虫笔记-入门
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '',
+          clientSecret: '',
+          repo: '',
+          owner: '',
+          admin: [''],
+          id: md5('Python爬虫笔记-入门'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在細節中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">網站首頁</a>
+            <a id="bottom-totop" href="#">回到頂部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 外部依赖 -->
+<!-- <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+<script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script> -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

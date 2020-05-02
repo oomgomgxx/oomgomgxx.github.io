@@ -1,88 +1,107 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>微服务开发技术篇-接口故障应对方案 | 学然后知不足</title><meta name="description" content="服务容错"><meta name="keywords" content="微服务"><meta name="author" content="TD"><meta name="copyright" content="TD"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/img/binary-code.svg"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="crossorigin"/><meta name="twitter:card" content="summary"><meta name="twitter:title" content="微服务开发技术篇-接口故障应对方案"><meta name="twitter:description" content="服务容错"><meta name="twitter:image" content="https://tandi.pub/image/springcloud.png"><meta property="og:type" content="article"><meta property="og:title" content="微服务开发技术篇-接口故障应对方案"><meta property="og:url" content="https://tandi.pub/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/"><meta property="og:site_name" content="学然后知不足"><meta property="og:description" content="服务容错"><meta property="og:image" content="https://tandi.pub/image/springcloud.png"><script src="https://cdn.jsdelivr.net/npm/js-cookie/dist/js.cookie.min.js"></script><script>var autoChangeMode = '1'
-var t = Cookies.get("theme")
-if (autoChangeMode == '1'){
-  var isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
-  var isLightMode = window.matchMedia("(prefers-color-scheme: light)").matches
-  var isNotSpecified = window.matchMedia("(prefers-color-scheme: no-preference)").matches
-  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+<!-- 主题布局 -->
 
-  if (t === undefined){
-    if (isLightMode) activateLightMode()
-    else if (isDarkMode) activateDarkMode()
-    else if (isNotSpecified || hasNoSupport){
-      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
-      var now = new Date()
-      var hour = now.getHours()
-      var isNight = hour < 6 || hour >= 18
-      isNight ? activateDarkMode() : activateLightMode()
-  }
-  } else if (t == 'light') activateLightMode()
-  else activateDarkMode()
 
-} else if (autoChangeMode == '2'){
-  now = new Date();
-  hour = now.getHours();
-  isNight = hour < 6 || hour >= 18
-  if(t === undefined) isNight? activateDarkMode() : activateLightMode()
-  else if (t === 'light') activateLightMode()
-  else activateDarkMode() 
-} else {
-  if ( t == 'dark' ) activateDarkMode()
-  else if ( t == 'light') activateLightMode()
-}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 微服务开发技术篇-接口故障应对方案学然后知不足 </title>
 
-function activateDarkMode(){
-  document.documentElement.setAttribute('data-theme', 'dark')
-  if (document.querySelector('meta[name="theme-color"]') !== null){
-    document.querySelector('meta[name="theme-color"]').setAttribute('content','#000')
-  }
-}
-function activateLightMode(){
-  document.documentElement.setAttribute('data-theme', 'light')
-  if (document.querySelector('meta[name="theme-color"]') !== null){
-  document.querySelector('meta[name="theme-color"]').setAttribute('content','#fff')
-  }
-}</script><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="canonical" href="https://tandi.pub/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/"><link rel="prev" title="代码限流操作" href="https://tandi.pub/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/"><link rel="next" title="微服务开发技术篇-REST调用" href="https://tandi.pub/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-REST%E8%B0%83%E7%94%A8/"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css"><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web"><script>var GLOBAL_CONFIG = { 
-  root: '/',
-  algolia: undefined,
-  localSearch: undefined,
-  translate: {"defaultEncoding":2,"translateDelay":0,"cookieDomain":"https://tandi.pub","msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
-  copy: {
-    success: '复制成功',
-    error: '复制错误',
-    noSupport: '浏览器不支持'
-  },
-  bookmark: {
-    message_prev: '按',
-    message_next: '键将本页加入书签'
-  },
-  runtime_unit: '天',
-  runtime: false,
-  copyright: undefined,
-  ClickShowText: undefined,
-  medium_zoom: false,
-  fancybox: true,
-  Snackbar: undefined,
-  baiduPush: true,
-  highlightCopy: true,
-  highlightLang: true,
-  highlightShrink: 'false',
-  isFontAwesomeV5: false,
-  isPhotoFigcaption: false
+  <!-- 网站SEO - 关键字和描述 -->
   
-}</script><script>var GLOBAL_CONFIG_SITE = { 
-  isPost: true,
-  isHome: false,
-  isSidebar: true  
-  }</script><noscript><style>
-#page-header {
-  opacity: 1
-}
-.justified-gallery img{
-  opacity: 1
-}
-</style></noscript><meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
-</head><body><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/archives/"><div class="headline">文章</div><div class="length_num">58</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/tags/"><div class="headline">标签</div><div class="length_num">19</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/categories/"><div class="headline">分类</div><div class="length_num">17</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div></div></div><i class="fa fa-arrow-right on" id="toggle-sidebar" aria-hidden="true">     </i><div id="sidebar"><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar">     </div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#关于接口故障的应对方案"><span class="toc-number">1.</span> <span class="toc-text">关于接口故障的应对方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#降级"><span class="toc-number">1.1.</span> <span class="toc-text">降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#容错"><span class="toc-number">1.2.</span> <span class="toc-text">容错</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#限流"><span class="toc-number">1.3.</span> <span class="toc-text">限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求排队"><span class="toc-number">1.4.</span> <span class="toc-text">请求排队</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于服务雪崩与断路器"><span class="toc-number">2.</span> <span class="toc-text">关于服务雪崩与断路器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Hystrix"><span class="toc-number">3.</span> <span class="toc-text">Netflix Hystrix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-number">3.1.</span> <span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#命令模式实践"><span class="toc-number">3.2.</span> <span class="toc-text">命令模式实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-number">3.3.</span> <span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#非SpringBoot"><span class="toc-number">3.3.1.</span> <span class="toc-text">非SpringBoot</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot"><span class="toc-number">3.3.2.</span> <span class="toc-text">SpringBoot</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-number">3.3.2.1.</span> <span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-number">3.3.2.2.</span> <span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-number">3.4.</span> <span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#快速入门命令模式"><span class="toc-number">3.4.1.</span> <span class="toc-text">快速入门命令模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix工作流程图"><span class="toc-number">3.4.2.</span> <span class="toc-text">Hystrix工作流程图</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器工作原理"><span class="toc-number">3.4.3.</span> <span class="toc-text">断路器工作原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#调用隔离"><span class="toc-number">3.4.4.</span> <span class="toc-text">调用隔离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求合并"><span class="toc-number">3.4.5.</span> <span class="toc-text">请求合并</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求缓存"><span class="toc-number">3.4.6.</span> <span class="toc-text">请求缓存</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代码浅析"><span class="toc-number">3.5.</span> <span class="toc-text">代码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#如何触发fallback？"><span class="toc-number">3.5.1.</span> <span class="toc-text">如何触发fallback？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器"><span class="toc-number">3.5.2.</span> <span class="toc-text">断路器</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详细使用"><span class="toc-number">3.6.</span> <span class="toc-text">详细使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#相关注解"><span class="toc-number">3.6.1.</span> <span class="toc-text">相关注解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCommand"><span class="toc-number">3.6.1.1.</span> <span class="toc-text">@HystrixCommand</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCollapser"><span class="toc-number">3.6.1.2.</span> <span class="toc-text">@HystrixCollapser</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixProperty"><span class="toc-number">3.6.1.3.</span> <span class="toc-text">@HystrixProperty</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCommand属性"><span class="toc-number">3.6.2.</span> <span class="toc-text">常用HystrixCommand属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCollapser属性"><span class="toc-number">3.6.3.</span> <span class="toc-text">常用HystrixCollapser属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixThreadPool属性"><span class="toc-number">3.6.4.</span> <span class="toc-text">常用HystrixThreadPool属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Feign中使用Hystrix"><span class="toc-number">3.6.5.</span> <span class="toc-text">Feign中使用Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Command缓存使用"><span class="toc-number">3.6.6.</span> <span class="toc-text">Command缓存使用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix监控"><span class="toc-number">3.6.7.</span> <span class="toc-text">Hystrix监控</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Hystrix-Dashboard"><span class="toc-number">3.6.7.1.</span> <span class="toc-text">Hystrix Dashboard</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Turbine-Stream-Aggregator-Hystrix-Dashboard"><span class="toc-number">3.6.7.2.</span> <span class="toc-text">Turbine Stream Aggregator + Hystrix Dashboard</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-number">5.</span> <span class="toc-text">内容修订</span></a></li></ol></div></div></div><div id="body-wrap"><div class="post-bg" id="nav" style="background-image: url(image/springcloud.png)"><div id="page-header"><span class="pull_left" id="blog_name"><a class="blog_title" id="site-name" href="/">学然后知不足</a></span><span class="pull_right menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fa fa-bars fa-fw" aria-hidden="true"></i></a></span></span></div><div id="post-info"><div id="post-title"><div class="posttitle">微服务开发技术篇-接口故障应对方案</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2018-08-24 12:40:57"><i class="fa fa-calendar" aria-hidden="true"></i> 发表于 2018-08-24</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-04-14 22:13:24"><i class="fa fa-history" aria-hidden="true"></i> 更新于 2020-04-14</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fa fa-angle-right post-meta__separator" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></span></div><div class="meta-secondline"> </div><div class="meta-thirdline"><span class="post-meta-pv-cv"></span><span class="post-meta-commentcount"><i class="post-meta__icon fa fa-comment-o" aria-hidden="true"></i><span>评论数:</span><a href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/#post-comment"><span class="gitalk-comment-count comment-count"></span></a></span></div></div></div></div><main class="layout_post" id="content-inner"><article id="post"><div id="article-container"><h2 id="关于接口故障的应对方案"><a href="#关于接口故障的应对方案" class="headerlink" title="关于接口故障的应对方案"></a>关于接口故障的应对方案</h2><h3 id="降级"><a href="#降级" class="headerlink" title="降级"></a>降级</h3><p>&emsp;&emsp;降级指的是在系统出现过载现象和功能不可用时的应对方式。例如对服务或者功能进行优先等级划分，当系统出现过载时可以采用优先策略原则进行丢车保帅手段以保持核心服务的可用性。个人理解降级大体可以划分为两种：服务降级 和 功能降级。</p>
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+  
+    <script src="/js/jquery.min.js"></script>
+  
+    <script src="/js/main.js"></script>
+  
+    <script src="/js/md5.min.js"></script>
+  
+    <script src="/js/highlight.min.js"></script>
+  
+  
+
+  <!-- 内部样式文件 -->
+  
+  
+    <link rel="stylesheet" href="/css/main.css">
+  
+    <link rel="stylesheet" href="/css/github.min.css">
+  
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="學然後知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">學然後知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/archives">文章存档</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/books">书籍推荐</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>微服务开发技术篇-接口故障应对方案</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-08-24 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="关于接口故障的应对方案"><a href="#关于接口故障的应对方案" class="headerlink" title="关于接口故障的应对方案"></a>关于接口故障的应对方案</h2><h3 id="降级"><a href="#降级" class="headerlink" title="降级"></a>降级</h3><p>&emsp;&emsp;降级指的是在系统出现过载现象和功能不可用时的应对方式。例如对服务或者功能进行优先等级划分，当系统出现过载时可以采用优先策略原则进行丢车保帅手段以保持核心服务的可用性。个人理解降级大体可以划分为两种：服务降级 和 功能降级。</p>
 <p>&emsp;&emsp;服务降级，通俗点来说就是当系统出现过载时，为了保证核心服务的可用性而削减非核心功能的可用性以求达到为“丢车保帅”。例如博客系统发现系统过载，将博客服务降级为只能读博客而不能写博客，有或者像淘宝这样的大流量电商平台在双十一抢购时可能会暂时先屏蔽不太重要的服务以提高核心服务的可用性等。</p>
 <p>&emsp;&emsp;功能降级，当非核心功能不可用时采取备用处理方案。例如电商系统在下单成功后需要发送手机短信通知买家，但由于手机短信服务不可用且重试数次后还是失败，那么就可以进入降级操作，这时可以由原本发送手机短信改为发送邮件，如果发送邮件都不可行则舍弃通知操作。</p>
 <p>&emsp;&emsp;功能降级 和 服务降级 的区别在于，功能降级的触发点是服务不可用而不是系统资源短缺。例如，调用A服务时发生了服务熔断，这时就可以采用B服务来代替A服务，又或者进行回退操作。显然这时并不是系统资源短缺，而是服务不可用导致服务质量降低。</p>
@@ -128,65 +147,261 @@ function activateLightMode(){
 
 <p>对于 Hystrix 使用命令模式除了解耦之外还可以更好地实现 超时机制 、拒绝服务 、依赖服务隔离 等等功能。</p>
 <h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="非SpringBoot"><a href="#非SpringBoot" class="headerlink" title="非SpringBoot"></a>非SpringBoot</h4><p>依赖</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.netflix.hystrix<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hystrix-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.18<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
+<pre><code class="xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.netflix.hystrix&lt;/groupId&gt;
+    &lt;artifactId&gt;hystrix-core&lt;/artifactId&gt;
+    &lt;version&gt;1.5.18&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
 <p>Command实现 - UserFindAllCommand</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserFindAllCommand</span> <span class="keyword">extends</span> <span class="title">HystrixCommand</span>&lt;<span class="title">String</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UserFindAllCommand</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 设置超时阈值为3s</span></span><br><span class="line">        <span class="keyword">super</span>(HystrixCommandGroupKey.Factory.asKey(<span class="string">"ExampleGroup"</span>), <span class="number">3000</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> String <span class="title">run</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="comment">// 模拟超时</span></span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">10</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"hystrix.UserFindAllCommand.run"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> String <span class="title">getFallback</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"错误信息："</span> + getExecutionException());</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"hystrix.UserFindAllCommand.getFallback"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 执行异常，即不满足要求的执行</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Throwable <span class="title">getExecutionException</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.getExecutionException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">public class UserFindAllCommand extends HystrixCommand&lt;String&gt; {
 
+    public UserFindAllCommand() {
+        // 设置超时阈值为3s
+        super(HystrixCommandGroupKey.Factory.asKey(&quot;ExampleGroup&quot;), 3000);
+    }
+
+    @Override
+    protected String run() throws Exception {
+        // 模拟超时
+        TimeUnit.SECONDS.sleep(10);
+        return &quot;hystrix.UserFindAllCommand.run&quot;;
+    }
+
+    @Override
+    protected String getFallback() {
+        System.out.println(&quot;错误信息：&quot; + getExecutionException());
+        return &quot;hystrix.UserFindAllCommand.getFallback&quot;;
+    }
+
+    // 执行异常，即不满足要求的执行
+    @Override
+    public Throwable getExecutionException() {
+        return super.getExecutionException();
+    }
+}</code></pre>
 <p>Command实现 - UserDeleteByIdCommand</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserDeleteByIdCommand</span> <span class="keyword">extends</span> <span class="title">HystrixCommand</span>&lt;<span class="title">String</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String id;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UserDeleteByIdCommand</span><span class="params">(String id)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(HystrixCommandGroupKey.Factory.asKey(<span class="string">"ExampleGroup"</span>));</span><br><span class="line">        <span class="keyword">this</span>.id = id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> String <span class="title">run</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="comment">// 模拟异常</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"模拟异常！"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> String <span class="title">getFallback</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"错误信息："</span> + getFailedExecutionException());</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"hystrix.UserDeleteByIdCommand.getFallback"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 异常执行，运行时发生了错误</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Throwable <span class="title">getFailedExecutionException</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.getFailedExecutionException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">public class UserDeleteByIdCommand extends HystrixCommand&lt;String&gt; {
 
+    private String id;
+
+    public UserDeleteByIdCommand(String id) {
+        super(HystrixCommandGroupKey.Factory.asKey(&quot;ExampleGroup&quot;));
+        this.id = id;
+    }
+
+    @Override
+    protected String run() throws Exception {
+        // 模拟异常
+        throw new RuntimeException(&quot;模拟异常！&quot;);
+    }
+
+    @Override
+    protected String getFallback() {
+        System.out.println(&quot;错误信息：&quot; + getFailedExecutionException());
+        return &quot;hystrix.UserDeleteByIdCommand.getFallback&quot;;
+    }
+
+    // 异常执行，运行时发生了错误
+    @Override
+    public Throwable getFailedExecutionException() {
+        return super.getFailedExecutionException();
+    }
+}</code></pre>
 <p>运行测试</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Main</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 模拟异常</span></span><br><span class="line">        UserDeleteByIdCommand deleteByIdCommand = <span class="keyword">new</span> UserDeleteByIdCommand(<span class="string">"1"</span>);</span><br><span class="line">        String execute2 = deleteByIdCommand.execute();</span><br><span class="line">        System.out.println(execute2);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">"------"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 模拟超时</span></span><br><span class="line">        UserFindAllCommand findAll = <span class="keyword">new</span> UserFindAllCommand();</span><br><span class="line">        String execute = findAll.execute();</span><br><span class="line">        System.out.println(execute);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * output:</span></span><br><span class="line"><span class="comment">         * 错误信息：java.lang.RuntimeException: 模拟异常！</span></span><br><span class="line"><span class="comment">         * hystrix.UserDeleteByIdCommand.getFallback</span></span><br><span class="line"><span class="comment">         * ------</span></span><br><span class="line"><span class="comment">         * 错误信息：com.netflix.hystrix.exception.HystrixTimeoutException</span></span><br><span class="line"><span class="comment">         * hystrix.UserFindAllCommand.getFallback</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">public class Main {
 
+    public static void main(String[] args) {
 
+        // 模拟异常
+        UserDeleteByIdCommand deleteByIdCommand = new UserDeleteByIdCommand(&quot;1&quot;);
+        String execute2 = deleteByIdCommand.execute();
+        System.out.println(execute2);
 
-<h4 id="SpringBoot"><a href="#SpringBoot" class="headerlink" title="SpringBoot"></a>SpringBoot</h4><h5 id="服务提供者"><a href="#服务提供者" class="headerlink" title="服务提供者"></a>服务提供者</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping</span>(<span class="string">"/user"</span>)</span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserController</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 模拟异常</span></span><br><span class="line">    <span class="meta">@DeleteMapping</span>(<span class="string">"/delete/&#123;id&#125;"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> User <span class="title">deleteUserById</span><span class="params">(@PathVariable Long id)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"模拟异常..."</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 模拟超时</span></span><br><span class="line">    <span class="meta">@GetMapping</span>(<span class="string">"/find/all"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> List&lt;User&gt; <span class="title">findAll</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">10</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        System.out.println(&quot;------&quot;);
 
+        // 模拟超时
+        UserFindAllCommand findAll = new UserFindAllCommand();
+        String execute = findAll.execute();
+        System.out.println(execute);
 
+        /**
+         * output:
+         * 错误信息：java.lang.RuntimeException: 模拟异常！
+         * hystrix.UserDeleteByIdCommand.getFallback
+         * ------
+         * 错误信息：com.netflix.hystrix.exception.HystrixTimeoutException
+         * hystrix.UserFindAllCommand.getFallback
+         */
+    }
+}</code></pre>
+<h4 id="SpringBoot"><a href="#SpringBoot" class="headerlink" title="SpringBoot"></a>SpringBoot</h4><h5 id="服务提供者"><a href="#服务提供者" class="headerlink" title="服务提供者"></a>服务提供者</h5><pre><code class="java">@RequestMapping(&quot;/user&quot;)
+@RestController
+public class UserController {
 
+    // 模拟异常
+    @DeleteMapping(&quot;/delete/{id}&quot;)
+    public User deleteUserById(@PathVariable Long id) {
+        throw new RuntimeException(&quot;模拟异常...&quot;);
+    }
+
+    // 模拟超时
+    @GetMapping(&quot;/find/all&quot;)
+    public List&lt;User&gt; findAll() throws Exception {
+        TimeUnit.SECONDS.sleep(10);
+        return null;
+    }
+}</code></pre>
 <h5 id="服务消费者"><a href="#服务消费者" class="headerlink" title="服务消费者"></a>服务消费者</h5><blockquote>
 <p>依赖</p>
 </blockquote>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">spring-cloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">spring-cloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-hystrix<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<pre><code class="xml">&lt;parent&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+    &lt;version&gt;2.1.5.RELEASE&lt;/version&gt;
+    &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
+&lt;/parent&gt;
 
+&lt;properties&gt;
+    &lt;java.version&gt;1.8&lt;/java.version&gt;
+    &lt;spring-cloud.version&gt;Greenwich.SR2&lt;/spring-cloud.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-cloud-starter-netflix-hystrix&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
 <blockquote>
 <p>消费服务</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MessageRepositor</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> String SERVEICE_NAME =<span class="string">"MSA-EUREKA-PROVIDER-USER"</span>;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> RestTemplate restTemplate;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@HystrixCommand</span>(fallbackMethod=<span class="string">"deleteUserByIdFallbackMethod"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> User <span class="title">deleteUserById</span><span class="params">(Long id)</span> </span>&#123;</span><br><span class="line">        String urlPrefix = <span class="string">"http://"</span>;</span><br><span class="line">        String urlSuffix = <span class="string">"/user/delete/&#123;id&#125;"</span>;</span><br><span class="line">        String url = urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line">        <span class="comment">// restTemplate.delete(url, id); // 无返回值</span></span><br><span class="line">        ResponseEntity&lt;User&gt; exchange = restTemplate.exchange(url, HttpMethod.DELETE, <span class="keyword">null</span>, User<span class="class">.<span class="keyword">class</span>, <span class="title">id</span>)</span>;</span><br><span class="line">        <span class="keyword">return</span> exchange.getBody();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> User <span class="title">deleteUserByIdFallbackMethod</span><span class="params">(Long id, Throwable throwable)</span> </span>&#123;</span><br><span class="line">        log.info(<span class="string">"Throwable=&#123;&#125;"</span>, throwable);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> User(-<span class="number">1L</span>, <span class="string">"默认"</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@HystrixCommand</span>(commandProperties = &#123;</span><br><span class="line">            <span class="meta">@HystrixProperty</span>(name = <span class="string">"execution.isolation.thread.timeoutInMilliseconds"</span>, value = <span class="string">"2000"</span>)</span><br><span class="line">    &#125;, fallbackMethod = <span class="string">"selectAllUserFallbackMethod"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> List <span class="title">selectAllUser</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        String urlPrefix = <span class="string">"http://"</span>;</span><br><span class="line">        String urlSuffix = <span class="string">"/user/find/all"</span>;</span><br><span class="line">        String url = urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line">        <span class="keyword">return</span> restTemplate.getForObject(url, List<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> List <span class="title">selectAllUserFallbackMethod</span><span class="params">(Throwable throwable)</span> </span>&#123;</span><br><span class="line">        log.info(<span class="string">"Throwable=&#123;&#125;"</span>, throwable);</span><br><span class="line">        <span class="keyword">return</span> Arrays.asList(<span class="keyword">new</span> User(-<span class="number">1L</span>, <span class="string">"默认"</span>, <span class="number">0</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">@Repository
+public class MessageRepositor {
+    private final static String SERVEICE_NAME =&quot;MSA-EUREKA-PROVIDER-USER&quot;;
+    @Autowired
+    private RestTemplate restTemplate;
 
+    @HystrixCommand(fallbackMethod=&quot;deleteUserByIdFallbackMethod&quot;)
+    public User deleteUserById(Long id) {
+        String urlPrefix = &quot;http://&quot;;
+        String urlSuffix = &quot;/user/delete/{id}&quot;;
+        String url = urlPrefix + SERVEICE_NAME + urlSuffix;
+        // restTemplate.delete(url, id); // 无返回值
+        ResponseEntity&lt;User&gt; exchange = restTemplate.exchange(url, HttpMethod.DELETE, null, User.class, id);
+        return exchange.getBody();
+    }
+
+    public User deleteUserByIdFallbackMethod(Long id, Throwable throwable) {
+        log.info(&quot;Throwable={}&quot;, throwable);
+        return new User(-1L, &quot;默认&quot;, 0);
+    }
+
+    @HystrixCommand(commandProperties = {
+            @HystrixProperty(name = &quot;execution.isolation.thread.timeoutInMilliseconds&quot;, value = &quot;2000&quot;)
+    }, fallbackMethod = &quot;selectAllUserFallbackMethod&quot;)
+    public List selectAllUser() {
+        String urlPrefix = &quot;http://&quot;;
+        String urlSuffix = &quot;/user/find/all&quot;;
+        String url = urlPrefix + SERVEICE_NAME + urlSuffix;
+        return restTemplate.getForObject(url, List.class);
+    }
+
+    public List selectAllUserFallbackMethod(Throwable throwable) {
+        log.info(&quot;Throwable={}&quot;, throwable);
+        return Arrays.asList(new User(-1L, &quot;默认&quot;, 0));
+    }
+}</code></pre>
 <blockquote>
 <p>启用 Hystrix</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableHystrix</span></span><br><span class="line"><span class="meta">@EnableEurekaClient</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="comment">//@SpringCloudApplication // 可以代替以上三个注解</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MsaEurekaComsumer01Application</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(MsaEurekaComsumer01Application<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
+<pre><code class="java">@EnableHystrix
+@EnableEurekaClient
+@SpringBootApplication
+//@SpringCloudApplication // 可以代替以上三个注解
+public class MsaEurekaComsumer01Application {
+    public static void main(String[] args) {
+        SpringApplication.run(MsaEurekaComsumer01Application.class, args);
+    }
+}</code></pre>
 <h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><h4 id="快速入门命令模式"><a href="#快速入门命令模式" class="headerlink" title="快速入门命令模式"></a>快速入门命令模式</h4><blockquote>
 <p>模拟老师向学生下达命令</p>
 </blockquote>
 <p>模拟过程有以下命令</p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/008.png" alt></p>
 <p>Command接口</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Command</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">execute</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">public interface Command {
+    void execute();
+}</code></pre>
 <p>Command实现 - DancingCommand</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@AllArgsConstructor</span> <span class="comment">// Lombok</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DancingCommand</span> <span class="keyword">implements</span> <span class="title">Command</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Student student;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        student.dancing();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">@AllArgsConstructor // Lombok
+public class DancingCommand implements Command {
+    private Student student;
+    @Override
+    public void execute() {
+        student.dancing();
+    }
+}</code></pre>
 <p>Command实现 - SingingCommand</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@AllArgsConstructor</span> <span class="comment">// Lombok</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SingingCommand</span> <span class="keyword">implements</span> <span class="title">Command</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Student student;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        student.dancing();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">@AllArgsConstructor // Lombok
+public class SingingCommand implements Command {
+    private Student student;
+    @Override
+    public void execute() {
+        student.dancing();
+    }
+}</code></pre>
 <p>执行者 Student</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@AllArgsConstructor</span> <span class="comment">// Lombok</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Student</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">dancing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="keyword">this</span>.name + <span class="string">"正在跳舞"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">singing</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="keyword">this</span>.name + <span class="string">"正在唱歌"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">@AllArgsConstructor // Lombok
+public class Student {
+    private String name;
 
+    public void dancing() {
+        System.out.println(this.name + &quot;正在跳舞&quot;);
+    }
+
+    public void singing() {
+        System.out.println(this.name + &quot;正在唱歌&quot;);
+    }
+}</code></pre>
 <p>调用者 Staff</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Staff</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;Command&gt; commands = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addCommands</span><span class="params">(Command command)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.commands.add(command);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">executeCommands</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        commands.forEach(command -&gt; &#123;</span><br><span class="line">            command.execute();</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">public class Staff {
+    private List&lt;Command&gt; commands = new ArrayList&lt;&gt;();
 
+    public void addCommands(Command command) {
+        this.commands.add(command);
+    }
+
+    public void executeCommands() {
+        commands.forEach(command -&gt; {
+            command.execute();
+        });
+    }
+}</code></pre>
 <blockquote>
 <p>模拟测试</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Main</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        Student xiaoming = <span class="keyword">new</span> Student(<span class="string">"小明"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 老师下达命令，要求小明同学唱歌跳舞</span></span><br><span class="line">        Command singing = <span class="keyword">new</span> SingingCommand(xiaoming);</span><br><span class="line">        Command dancing = <span class="keyword">new</span> DancingCommand(xiaoming);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 调用者</span></span><br><span class="line">        Staff staff = <span class="keyword">new</span> Staff();</span><br><span class="line">        staff.addCommands(singing);</span><br><span class="line">        staff.addCommands(dancing);</span><br><span class="line">        staff.executeCommands(); <span class="comment">// 执行命令</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * output:</span></span><br><span class="line"><span class="comment">         * 小明正在唱歌</span></span><br><span class="line"><span class="comment">         * 小明正在跳舞</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">public class Main {
+    public static void main(String[] args) {
 
+        Student xiaoming = new Student(&quot;小明&quot;);
+
+        // 老师下达命令，要求小明同学唱歌跳舞
+        Command singing = new SingingCommand(xiaoming);
+        Command dancing = new DancingCommand(xiaoming);
+
+        // 调用者
+        Staff staff = new Staff();
+        staff.addCommands(singing);
+        staff.addCommands(dancing);
+        staff.executeCommands(); // 执行命令
+
+        /**
+         * output:
+         * 小明正在唱歌
+         * 小明正在跳舞
+         */
+    }
+}</code></pre>
 <blockquote>
 <p>命令模式优缺点</p>
 </blockquote>
@@ -274,7 +489,7 @@ function activateLightMode(){
 </ul>
 <blockquote>
 <p>Hystrix提供了清楚缓存的方法，在有必要时可以用于清楚缓存</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HystrixRequestCache.getInstance(GETTER_KEY, HystrixConcurrencyStrategyDefault.getInstance()).clear(<span class="string">"commandKey"</span>);</span><br></pre></td></tr></table></figure>
+<pre><code class="java">HystrixRequestCache.getInstance(GETTER_KEY, HystrixConcurrencyStrategyDefault.getInstance()).clear(&quot;commandKey&quot;);</code></pre>
 </blockquote>
 <h3 id="代码浅析"><a href="#代码浅析" class="headerlink" title="代码浅析"></a>代码浅析</h3><ul>
 <li>基于SpringBoot</li>
@@ -286,42 +501,285 @@ function activateLightMode(){
 <blockquote>
 <p>自动配置类 HystrixAutoConfiguration</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HystrixAutoConfiguration</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 开启健康指示器。用于收集打开的断路器信息</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">	<span class="meta">@ConditionalOnEnabledHealthIndicator</span>(<span class="string">"hystrix"</span>)</span><br><span class="line">	<span class="function"><span class="keyword">public</span> HystrixHealthIndicator <span class="title">hystrixHealthIndicator</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> HystrixHealthIndicator();</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Configuration</span></span><br><span class="line">	<span class="meta">@ConditionalOnWebApplication</span>(type = SERVLET)</span><br><span class="line">	<span class="meta">@ConditionalOnBean</span>(HystrixCommandAspect<span class="class">.<span class="keyword">class</span>) // 【重点】<span class="title">Command</span>切面类</span></span><br><span class="line"><span class="class">	@<span class="title">ConditionalOnClass</span>(</span>&#123; HystrixMetricsStreamServlet<span class="class">.<span class="keyword">class</span> &#125;)</span></span><br><span class="line"><span class="class">	@<span class="title">EnableConfigurationProperties</span>(<span class="title">HystrixProperties</span>.<span class="title">class</span>)</span></span><br><span class="line"><span class="class">	<span class="title">protected</span> <span class="title">static</span> <span class="title">class</span> <span class="title">HystrixServletAutoConfiguration</span> </span>&#123;</span><br><span class="line">		<span class="comment">// ...</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">public class HystrixAutoConfiguration {
+    // 开启健康指示器。用于收集打开的断路器信息
+    @Bean
+    @ConditionalOnEnabledHealthIndicator(&quot;hystrix&quot;)
+    public HystrixHealthIndicator hystrixHealthIndicator() {
+        return new HystrixHealthIndicator();
+    }
 
+    @Configuration
+    @ConditionalOnWebApplication(type = SERVLET)
+    @ConditionalOnBean(HystrixCommandAspect.class) // 【重点】Command切面类
+    @ConditionalOnClass({ HystrixMetricsStreamServlet.class })
+    @EnableConfigurationProperties(HystrixProperties.class)
+    protected static class HystrixServletAutoConfiguration {
+        // ...
+    }
+}</code></pre>
 <blockquote>
 <p>进入 HystrixCommandAspect</p>
 </blockquote>
 <p>基础设置</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Map&lt;HystrixPointcutType, MetaHolderFactory&gt; META_HOLDER_FACTORY_MAP;</span><br><span class="line"><span class="keyword">static</span> &#123;</span><br><span class="line">    META_HOLDER_FACTORY_MAP = ImmutableMap.&lt;HystrixPointcutType, MetaHolderFactory&gt;builder()</span><br><span class="line">        .put(HystrixPointcutType.COMMAND, <span class="keyword">new</span> CommandMetaHolderFactory())</span><br><span class="line">        .put(HystrixPointcutType.COLLAPSER, <span class="keyword">new</span> CollapserMetaHolderFactory())</span><br><span class="line">        .build();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 拦截注解用的切入点表达式</span></span><br><span class="line"><span class="meta">@Pointcut</span>(<span class="string">"@annotation(com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand)"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hystrixCommandAnnotationPointcut</span><span class="params">()</span> </span>&#123;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">@Pointcut</span>(<span class="string">"@annotation(com.netflix.hystrix.contrib.javanica.annotation.HystrixCollapser)"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hystrixCollapserAnnotationPointcut</span><span class="params">()</span> </span>&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">private static final Map&lt;HystrixPointcutType, MetaHolderFactory&gt; META_HOLDER_FACTORY_MAP;
+static {
+    META_HOLDER_FACTORY_MAP = ImmutableMap.&lt;HystrixPointcutType, MetaHolderFactory&gt;builder()
+        .put(HystrixPointcutType.COMMAND, new CommandMetaHolderFactory())
+        .put(HystrixPointcutType.COLLAPSER, new CollapserMetaHolderFactory())
+        .build();
+}
 
+// 拦截注解用的切入点表达式
+@Pointcut(&quot;@annotation(com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand)&quot;)
+public void hystrixCommandAnnotationPointcut() {
+}
+@Pointcut(&quot;@annotation(com.netflix.hystrix.contrib.javanica.annotation.HystrixCollapser)&quot;)
+public void hystrixCollapserAnnotationPointcut() {
+}</code></pre>
 <p>切面方法 - methodsAnnotatedWithHystrixCommand</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// HystrixCommand环绕织入</span></span><br><span class="line"><span class="meta">@Around</span>(<span class="string">"hystrixCommandAnnotationPointcut() || hystrixCollapserAnnotationPointcut()"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">methodsAnnotatedWithHystrixCommand</span><span class="params">(<span class="keyword">final</span> ProceedingJoinPoint joinPoint)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">	<span class="comment">// 反射获取到目标方法</span></span><br><span class="line">	Method method = getMethodFromTarget(joinPoint);</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 方法不能同时被HystrixCommand和HystrixCollapser标识</span></span><br><span class="line">	<span class="keyword">if</span> (method.isAnnotationPresent(HystrixCommand<span class="class">.<span class="keyword">class</span>) </span>&#123;&#125;</span><br><span class="line">	</span><br><span class="line">	MetaHolderFactory metaHolderFactory = META_HOLDER_FACTORY_MAP.get(HystrixPointcutType.of(method));</span><br><span class="line">	<span class="comment">// 从工厂中获取元数据持有者</span></span><br><span class="line">	MetaHolder metaHolder = metaHolderFactory.create(joinPoint);</span><br><span class="line">	<span class="comment">// 【重】可调用对象，包含fallback和普通command的execute</span></span><br><span class="line">	HystrixInvokable invokable = HystrixCommandFactory.getInstance().create(metaHolder);</span><br><span class="line">	ExecutionType executionType = metaHolder.isCollapserAnnotationPresent() ?</span><br><span class="line">			metaHolder.getCollapserExecutionType() : metaHolder.getExecutionType();</span><br><span class="line"></span><br><span class="line">	Object result;</span><br><span class="line">	<span class="keyword">if</span> (!metaHolder.isObservable()) &#123; <span class="comment">// 不是可监听</span></span><br><span class="line">		result = CommandExecutor.execute(invokable, executionType, metaHolder);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123; <span class="comment">// 可监听</span></span><br><span class="line">		result = executeObservable(invokable, executionType, metaHolder);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">// HystrixCommand环绕织入
+@Around(&quot;hystrixCommandAnnotationPointcut() || hystrixCollapserAnnotationPointcut()&quot;)
+public Object methodsAnnotatedWithHystrixCommand(final ProceedingJoinPoint joinPoint) throws Throwable {
+    // 反射获取到目标方法
+    Method method = getMethodFromTarget(joinPoint);
 
+    // 方法不能同时被HystrixCommand和HystrixCollapser标识
+    if (method.isAnnotationPresent(HystrixCommand.class) {}
+
+    MetaHolderFactory metaHolderFactory = META_HOLDER_FACTORY_MAP.get(HystrixPointcutType.of(method));
+    // 从工厂中获取元数据持有者
+    MetaHolder metaHolder = metaHolderFactory.create(joinPoint);
+    // 【重】可调用对象，包含fallback和普通command的execute
+    HystrixInvokable invokable = HystrixCommandFactory.getInstance().create(metaHolder);
+    ExecutionType executionType = metaHolder.isCollapserAnnotationPresent() ?
+            metaHolder.getCollapserExecutionType() : metaHolder.getExecutionType();
+
+    Object result;
+    if (!metaHolder.isObservable()) { // 不是可监听
+        result = CommandExecutor.execute(invokable, executionType, metaHolder);
+    } else { // 可监听
+        result = executeObservable(invokable, executionType, metaHolder);
+    }
+    return result;
+}</code></pre>
 <p>HystrixCommandFactory.getInstance().create(metaHolder)</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 这里的HystrixInvokable实质就是GenericCommand</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> HystrixInvokable <span class="title">create</span><span class="params">(MetaHolder metaHolder)</span> </span>&#123;</span><br><span class="line">	HystrixInvokable executable;</span><br><span class="line">	<span class="keyword">if</span> (metaHolder.isCollapserAnnotationPresent()) &#123; <span class="comment">// 是否合并</span></span><br><span class="line">		executable = <span class="keyword">new</span> CommandCollapser(metaHolder);</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (metaHolder.isObservable()) &#123; <span class="comment">// 是否可观察</span></span><br><span class="line">		executable = <span class="keyword">new</span> GenericObservableCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123; <span class="comment">// 普通command</span></span><br><span class="line">        <span class="comment">//【重】这里传入了MetaHolder用来创建了一个GenericCommand</span></span><br><span class="line">		executable = <span class="keyword">new</span> GenericCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> executable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">// 这里的HystrixInvokable实质就是GenericCommand
+public HystrixInvokable create(MetaHolder metaHolder) {
+    HystrixInvokable executable;
+    if (metaHolder.isCollapserAnnotationPresent()) { // 是否合并
+        executable = new CommandCollapser(metaHolder);
+    } else if (metaHolder.isObservable()) { // 是否可观察
+        executable = new GenericObservableCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));
+    } else { // 普通command
+        //【重】这里传入了MetaHolder用来创建了一个GenericCommand
+        executable = new GenericCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));
+    }
+    return executable;
+}</code></pre>
 <p>先看看GenericCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;ResponseType&gt; <span class="function">HystrixCommandBuilder <span class="title">create</span><span class="params">(<span class="comment">/**/</span>)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> HystrixCommandBuilder.builder()</span><br><span class="line">			.setterBuilder(createGenericSetterBuilder(metaHolder)) <span class="comment">// 属性配置器</span></span><br><span class="line">			.commandActions(createCommandActions(metaHolder)) <span class="comment">// 【fallback和execute】命令操作</span></span><br><span class="line">			.collapsedRequests(collapsedRequests) <span class="comment">// 请求合并</span></span><br><span class="line">			<span class="comment">// 缓存相关</span></span><br><span class="line">			.cacheResultInvocationContext(createCacheResultInvocationContext(metaHolder)) </span><br><span class="line">			.cacheRemoveInvocationContext(createCacheRemoveInvocationContext(metaHolder))</span><br><span class="line">			.ignoreExceptions(metaHolder.getCommandIgnoreExceptions()) <span class="comment">// 设置忽略的异常</span></span><br><span class="line">			.executionType(metaHolder.getExecutionType()) <span class="comment">// 方法执行类型</span></span><br><span class="line">			.build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">public &lt;ResponseType&gt; HystrixCommandBuilder create(/**/) {
+    return HystrixCommandBuilder.builder()
+            .setterBuilder(createGenericSetterBuilder(metaHolder)) // 属性配置器
+            .commandActions(createCommandActions(metaHolder)) // 【fallback和execute】命令操作
+            .collapsedRequests(collapsedRequests) // 请求合并
+            // 缓存相关
+            .cacheResultInvocationContext(createCacheResultInvocationContext(metaHolder)) 
+            .cacheRemoveInvocationContext(createCacheRemoveInvocationContext(metaHolder))
+            .ignoreExceptions(metaHolder.getCommandIgnoreExceptions()) // 设置忽略的异常
+            .executionType(metaHolder.getExecutionType()) // 方法执行类型
+            .build();
+}</code></pre>
 <p>createCommandActions(metaHolder)</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> CommandActions <span class="title">createCommandActions</span><span class="params">(MetaHolder metaHolder)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 正常command执行</span></span><br><span class="line">	CommandAction commandAction = createCommandAction(metaHolder);</span><br><span class="line">    <span class="comment">// fallback执行</span></span><br><span class="line">	CommandAction fallbackAction = createFallbackAction(metaHolder);</span><br><span class="line">	<span class="keyword">return</span> CommandActions.builder().commandAction(commandAction).fallbackAction(fallbackAction).build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">private CommandActions createCommandActions(MetaHolder metaHolder) {
+    // 正常command执行
+    CommandAction commandAction = createCommandAction(metaHolder);
+    // fallback执行
+    CommandAction fallbackAction = createFallbackAction(metaHolder);
+    return CommandActions.builder().commandAction(commandAction).fallbackAction(fallbackAction).build();
+}</code></pre>
 <p>然后看 GenericCommand 类</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">GenericCommand</span> <span class="keyword">extends</span> <span class="title">AbstractHystrixCommand</span>&lt;<span class="title">Object</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">GenericCommand</span><span class="params">(HystrixCommandBuilder builder)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(builder);</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// 执行正常逻辑</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> Object <span class="title">run</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> process(<span class="keyword">new</span> Action() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function">Object <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> getCommandAction().execute(getExecutionType());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// 执行fallback</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> Object <span class="title">getFallback</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> CommandAction commandAction = getFallbackAction();</span><br><span class="line">        <span class="keyword">if</span> (commandAction != <span class="keyword">null</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> process(<span class="keyword">new</span> Action() &#123;</span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function">Object <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">					MetaHolder metaHolder = commandAction.getMetaHolder();</span><br><span class="line">					Object[] args = createArgsForFallback(metaHolder, getExecutionException());</span><br><span class="line">					<span class="keyword">return</span> commandAction.executeWithArgs(metaHolder.getFallbackExecutionType(), args);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// Fallback失败会进入父类Fallback</span></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">super</span>.getFallback();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">public class GenericCommand extends AbstractHystrixCommand&lt;Object&gt; {
+    public GenericCommand(HystrixCommandBuilder builder) {
+        super(builder);
+    }
+    // 执行正常逻辑
+    @Override
+    protected Object run() throws Exception {
+        return process(new Action() {
+            @Override
+            Object execute() {
+                return getCommandAction().execute(getExecutionType());
+            }
+        });
+    }
+    // 执行fallback
+    @Override
+    protected Object getFallback() {
+        final CommandAction commandAction = getFallbackAction();
+        if (commandAction != null) {
+            return process(new Action() {
+                @Override
+                Object execute() {
+                    MetaHolder metaHolder = commandAction.getMetaHolder();
+                    Object[] args = createArgsForFallback(metaHolder, getExecutionException());
+                    return commandAction.executeWithArgs(metaHolder.getFallbackExecutionType(), args);
+                }
+            });
+        } else {
+            // Fallback失败会进入父类Fallback
+            return super.getFallback();
+        }
+    }
+}</code></pre>
 <p>命令执行器 - CommandExecutor</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">execute</span><span class="params">(HystrixInvokable invokable, ExecutionType executionType, MetaHolder metaHolder)</span> <span class="keyword">throws</span> RuntimeException </span>&#123;</span><br><span class="line">    <span class="keyword">switch</span> (executionType) &#123;</span><br><span class="line">        <span class="keyword">case</span> SYNCHRONOUS: &#123; <span class="comment">// 同步执行</span></span><br><span class="line">            <span class="comment">// 转换成可执行状态</span></span><br><span class="line">            <span class="comment">// 执行HystrixCommand的execute()方法</span></span><br><span class="line">            <span class="keyword">return</span> castToExecutable(invokable, executionType).execute();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> ASYNCHRONOUS: &#123; <span class="comment">// 异步执行</span></span><br><span class="line">            HystrixExecutable executable = castToExecutable(invokable, executionType);</span><br><span class="line">            <span class="keyword">if</span> (metaHolder.hasFallbackMethodCommand()</span><br><span class="line">                    &amp;&amp; ExecutionType.ASYNCHRONOUS == metaHolder.getFallbackExecutionType()) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">new</span> FutureDecorator(executable.queue());</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> executable.queue();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> OBSERVABLE: &#123; <span class="comment">// 可监听执行</span></span><br><span class="line">            HystrixObservable observable = castToObservable(invokable);</span><br><span class="line">            <span class="keyword">return</span> ObservableExecutionMode.EAGER == metaHolder.getObservableExecutionMode() ? observable.observe() : observable.toObservable();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"unsupported execution type: "</span> + executionType);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">    public static Object execute(HystrixInvokable invokable, ExecutionType executionType, MetaHolder metaHolder) throws RuntimeException {
+        switch (executionType) {
+            case SYNCHRONOUS: { // 同步执行
+                // 转换成可执行状态
+                // 执行HystrixCommand的execute()方法
+                return castToExecutable(invokable, executionType).execute();
+            }
+            case ASYNCHRONOUS: { // 异步执行
+                HystrixExecutable executable = castToExecutable(invokable, executionType);
+                if (metaHolder.hasFallbackMethodCommand()
+                        &amp;&amp; ExecutionType.ASYNCHRONOUS == metaHolder.getFallbackExecutionType()) {
+                    return new FutureDecorator(executable.queue());
+                }
+                return executable.queue();
+            }
+            case OBSERVABLE: { // 可监听执行
+                HystrixObservable observable = castToObservable(invokable);
+                return ObservableExecutionMode.EAGER == metaHolder.getObservableExecutionMode() ? observable.observe() : observable.toObservable();
+            }
+            default:
+                throw new RuntimeException(&quot;unsupported execution type: &quot; + executionType);
+        }
+    }</code></pre>
 <p>HystrixCommand的execute()方法</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Result of &#123;@link #run()&#125; execution or a fallback from &#123;@link #getFallback()&#125; if the command fails for any reason.</span></span><br><span class="line"><span class="comment">// 当execute()执行失败则执行run()或者从getFallback()返回结果</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> R <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> queue().get();</span><br><span class="line">	&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">		<span class="keyword">throw</span> Exceptions.sneakyThrow(decomposeException(e));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">// Result of {@link #run()} execution or a fallback from {@link #getFallback()} if the command fails for any reason.
+// 当execute()执行失败则执行run()或者从getFallback()返回结果
+public R execute() {
+    try {
+        return queue().get();
+    } catch (Exception e) {
+        throw Exceptions.sneakyThrow(decomposeException(e));
+    }
+}</code></pre>
+<h4 id="断路器"><a href="#断路器" class="headerlink" title="断路器"></a>断路器</h4><pre><code class="java">public interface HystrixCircuitBreaker {
+    // 每个HystrixCommand都必须经过该方法来判断是否需要执行
+    public boolean allowRequest();
+    // 断路器是否打开
+    public boolean isOpen();
+    // 闭合断路器
+    void markSuccess();
 
-<h4 id="断路器"><a href="#断路器" class="headerlink" title="断路器"></a>断路器</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">HystrixCircuitBreaker</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 每个HystrixCommand都必须经过该方法来判断是否需要执行</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">allowRequest</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="comment">// 断路器是否打开</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isOpen</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="comment">// 闭合断路器</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">markSuccess</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Factory</span> </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> ConcurrentHashMap&lt;String, HystrixCircuitBreaker&gt; circuitBreakersByCommand = <span class="keyword">new</span> ConcurrentHashMap&lt;String, HystrixCircuitBreaker&gt;();</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> HystrixCircuitBreaker <span class="title">getInstance</span><span class="params">(HystrixCommandKey key, HystrixCommandGroupKey group, HystrixCommandProperties properties, HystrixCommandMetrics metrics)</span> </span>&#123;</span><br><span class="line">            HystrixCircuitBreaker previouslyCached = circuitBreakersByCommand.get(key.name());</span><br><span class="line">            <span class="keyword">if</span> (previouslyCached != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> previouslyCached;</span><br><span class="line">            &#125;</span><br><span class="line">			<span class="comment">// putIfAbsent有则返回value，无则添加且返回null</span></span><br><span class="line">            HystrixCircuitBreaker cbForCommand = circuitBreakersByCommand.putIfAbsent(key.name(), <span class="keyword">new</span> HystrixCircuitBreakerImpl(key, group, properties, metrics));</span><br><span class="line">            <span class="keyword">if</span> (cbForCommand == <span class="keyword">null</span>) &#123;</span><br><span class="line">				<span class="comment">// 表示put成功</span></span><br><span class="line">                <span class="keyword">return</span> circuitBreakersByCommand.get(key.name());</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="comment">// 表示先前已经有了</span></span><br><span class="line">                <span class="keyword">return</span> cbForCommand;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">// 根据HystrixCommandKey获取断路器</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> HystrixCircuitBreaker <span class="title">getInstance</span><span class="params">( key)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> circuitBreakersByCommand.get(key.name());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">reset</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            circuitBreakersByCommand.clear();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">HystrixCircuitBreakerImpl</span> <span class="keyword">implements</span> <span class="title">HystrixCircuitBreaker</span> </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> HystrixCommandProperties properties;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> HystrixCommandMetrics metrics;</span><br><span class="line">		<span class="comment">// 断路器开关</span></span><br><span class="line">        <span class="keyword">private</span> AtomicBoolean circuitOpen = <span class="keyword">new</span> AtomicBoolean(<span class="keyword">false</span>);</span><br><span class="line">        <span class="keyword">private</span> AtomicLong circuitOpenedOrLastTestedTime = <span class="keyword">new</span> AtomicLong();</span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">HystrixCircuitBreakerImpl</span><span class="params">(HystrixCommandKey key, HystrixCommandGroupKey commandGroup, HystrixCommandProperties properties, HystrixCommandMetrics metrics)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.properties = properties;</span><br><span class="line">            <span class="keyword">this</span>.metrics = metrics;</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">// 尝试关闭断路器</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">markSuccess</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (circuitOpen.get()) &#123;</span><br><span class="line">                <span class="keyword">if</span> (circuitOpen.compareAndSet(<span class="keyword">true</span>, <span class="keyword">false</span>)) &#123;</span><br><span class="line">                    metrics.resetStream();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">allowRequest</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (properties.circuitBreakerForceOpen().get()) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>; <span class="comment">// 如果断路器已经打开了则不执行command</span></span><br><span class="line">            &#125;</span><br><span class="line">			<span class="comment">// 断路器没有打开，执行command</span></span><br><span class="line">            <span class="keyword">if</span> (properties.circuitBreakerForceClosed().get()) &#123;</span><br><span class="line">                isOpen();</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">			<span class="comment">// 半打开状态</span></span><br><span class="line">            <span class="keyword">return</span> !isOpen() || allowSingleTest();</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">// 半打开状态，放行下一个commmand尝试调用依赖服务</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">allowSingleTest</span><span class="params">()</span> </span>&#123;</span><br><span class="line">			<span class="comment">// 获取断路器打开时的时间戳</span></span><br><span class="line">            <span class="keyword">long</span> timeCircuitOpenedOrWasLastTested = circuitOpenedOrLastTestedTime.get();</span><br><span class="line">			<span class="comment">// 必须休眠时间circuitBreakerSleepWindowInMilliseconds，默认5秒</span></span><br><span class="line">            <span class="keyword">if</span> (circuitOpen.get() &amp;&amp; System.currentTimeMillis() &gt; timeCircuitOpenedOrWasLastTested + properties.circuitBreakerSleepWindowInMilliseconds().get()) &#123;</span><br><span class="line">                <span class="keyword">if</span> (circuitOpenedOrLastTestedTime.compareAndSet(timeCircuitOpenedOrWasLastTested, System.currentTimeMillis())) &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">true</span>; <span class="comment">// 尝试成功</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>; <span class="comment">// 尝试失败</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isOpen</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (circuitOpen.get()) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;<span class="comment">// 处于打开状态</span></span><br><span class="line">            &#125;</span><br><span class="line">            HealthCounts health = metrics.getHealthCounts();</span><br><span class="line">            <span class="keyword">if</span> (health.getTotalRequests() &lt; properties.circuitBreakerRequestVolumeThreshold().get()) &#123;</span><br><span class="line">				<span class="comment">// 请求总数低于配置circuitBreakerRequestVolumeThreshold（默认20），表示未打开</span></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (health.getErrorPercentage() &lt; properties.circuitBreakerErrorThresholdPercentage().get()) &#123;</span><br><span class="line">				<span class="comment">// 请求错误百分比低于配置circuitBreakerErrorThresholdPercentage（默认50），表示未打开</span></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">false</span>; </span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="comment">// 打开断路器</span></span><br><span class="line">                <span class="keyword">if</span> (circuitOpen.compareAndSet(<span class="keyword">false</span>, <span class="keyword">true</span>)) &#123;</span><br><span class="line">					<span class="comment">// 记录断路器打开时的时间戳</span></span><br><span class="line">                    circuitOpenedOrLastTestedTime.set(System.currentTimeMillis());</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    public static class Factory {
+        private static ConcurrentHashMap&lt;String, HystrixCircuitBreaker&gt; circuitBreakersByCommand = new ConcurrentHashMap&lt;String, HystrixCircuitBreaker&gt;();
+        public static HystrixCircuitBreaker getInstance(HystrixCommandKey key, HystrixCommandGroupKey group, HystrixCommandProperties properties, HystrixCommandMetrics metrics) {
+            HystrixCircuitBreaker previouslyCached = circuitBreakersByCommand.get(key.name());
+            if (previouslyCached != null) {
+                return previouslyCached;
+            }
+            // putIfAbsent有则返回value，无则添加且返回null
+            HystrixCircuitBreaker cbForCommand = circuitBreakersByCommand.putIfAbsent(key.name(), new HystrixCircuitBreakerImpl(key, group, properties, metrics));
+            if (cbForCommand == null) {
+                // 表示put成功
+                return circuitBreakersByCommand.get(key.name());
+            } else {
+                // 表示先前已经有了
+                return cbForCommand;
+            }
+        }
+        // 根据HystrixCommandKey获取断路器
+        public static HystrixCircuitBreaker getInstance( key) {
+            return circuitBreakersByCommand.get(key.name());
+        }
+        static void reset() {
+            circuitBreakersByCommand.clear();
+        }
+    }
 
+    static class HystrixCircuitBreakerImpl implements HystrixCircuitBreaker {
+        private final HystrixCommandProperties properties;
+        private final HystrixCommandMetrics metrics;
+        // 断路器开关
+        private AtomicBoolean circuitOpen = new AtomicBoolean(false);
+        private AtomicLong circuitOpenedOrLastTestedTime = new AtomicLong();
+        protected HystrixCircuitBreakerImpl(HystrixCommandKey key, HystrixCommandGroupKey commandGroup, HystrixCommandProperties properties, HystrixCommandMetrics metrics) {
+            this.properties = properties;
+            this.metrics = metrics;
+        }
+        // 尝试关闭断路器
+        public void markSuccess() {
+            if (circuitOpen.get()) {
+                if (circuitOpen.compareAndSet(true, false)) {
+                    metrics.resetStream();
+                }
+            }
+        }
+        @Override
+        public boolean allowRequest() {
+            if (properties.circuitBreakerForceOpen().get()) {
+                return false; // 如果断路器已经打开了则不执行command
+            }
+            // 断路器没有打开，执行command
+            if (properties.circuitBreakerForceClosed().get()) {
+                isOpen();
+                return true;
+            }
+            // 半打开状态
+            return !isOpen() || allowSingleTest();
+        }
+        // 半打开状态，放行下一个commmand尝试调用依赖服务
+        public boolean allowSingleTest() {
+            // 获取断路器打开时的时间戳
+            long timeCircuitOpenedOrWasLastTested = circuitOpenedOrLastTestedTime.get();
+            // 必须休眠时间circuitBreakerSleepWindowInMilliseconds，默认5秒
+            if (circuitOpen.get() &amp;&amp; System.currentTimeMillis() &gt; timeCircuitOpenedOrWasLastTested + properties.circuitBreakerSleepWindowInMilliseconds().get()) {
+                if (circuitOpenedOrLastTestedTime.compareAndSet(timeCircuitOpenedOrWasLastTested, System.currentTimeMillis())) {
+                    return true; // 尝试成功
+                }
+            }
+            return false; // 尝试失败
+        }
+
+        @Override
+        public boolean isOpen() {
+            if (circuitOpen.get()) {
+                return true;// 处于打开状态
+            }
+            HealthCounts health = metrics.getHealthCounts();
+            if (health.getTotalRequests() &lt; properties.circuitBreakerRequestVolumeThreshold().get()) {
+                // 请求总数低于配置circuitBreakerRequestVolumeThreshold（默认20），表示未打开
+                return false;
+            }
+            if (health.getErrorPercentage() &lt; properties.circuitBreakerErrorThresholdPercentage().get()) {
+                // 请求错误百分比低于配置circuitBreakerErrorThresholdPercentage（默认50），表示未打开
+                return false; 
+            } else {
+                // 打开断路器
+                if (circuitOpen.compareAndSet(false, true)) {
+                    // 记录断路器打开时的时间戳
+                    circuitOpenedOrLastTestedTime.set(System.currentTimeMillis());
+                    return true;
+                } else {
+                    return true;
+                }
+            }
+        }
+
+    }
+}</code></pre>
 <p>与Command的组合</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractCommand</span>&lt;<span class="title">R</span>&gt; <span class="keyword">implements</span> <span class="title">HystrixInvokableInfo</span>&lt;<span class="title">R</span>&gt;, <span class="title">HystrixObservable</span>&lt;<span class="title">R</span>&gt; </span>&#123;</span><br><span class="line">	<span class="comment">// 断路器</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> HystrixCircuitBreaker circuitBreaker;</span><br><span class="line">    <span class="comment">// 线程池</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> HystrixThreadPool threadPool;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> HystrixThreadPoolKey threadPoolKey;</span><br><span class="line">    <span class="comment">// 属性配置</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">final</span> HystrixCommandProperties properties;</span><br></pre></td></tr></table></figure>
-
-
-
+<pre><code class="java">abstract class AbstractCommand&lt;R&gt; implements HystrixInvokableInfo&lt;R&gt;, HystrixObservable&lt;R&gt; {
+    // 断路器
+    protected final HystrixCircuitBreaker circuitBreaker;
+    // 线程池
+    protected final HystrixThreadPool threadPool;
+    protected final HystrixThreadPoolKey threadPoolKey;
+    // 属性配置
+    protected final HystrixCommandProperties properties;</code></pre>
 <h3 id="详细使用"><a href="#详细使用" class="headerlink" title="详细使用"></a>详细使用</h3><h4 id="相关注解"><a href="#相关注解" class="headerlink" title="相关注解"></a>相关注解</h4><h5 id="HystrixCommand"><a href="#HystrixCommand" class="headerlink" title="@HystrixCommand"></a>@HystrixCommand</h5><ul>
 <li>commandKey ：命令标识</li>
 <li>groupKey ：命令集合标识</li>
@@ -520,30 +978,92 @@ function activateLightMode(){
 <blockquote>
 <p>在Feign中开启Hystrix功能</p>
 </blockquote>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">feign:</span></span><br><span class="line">  <span class="attr">hystrix:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
-
+<pre><code class="yaml">feign:
+  hystrix:
+    enabled: true</code></pre>
 <blockquote>
 <p>实现 fallbackFactory 来支持降级</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf</span>4j</span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserFeignClientFallbackFactory</span> <span class="keyword">implements</span> <span class="title">FallbackFactory</span>&lt;<span class="title">UserFeignClient</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> UserFeignClient <span class="title">create</span><span class="params">(Throwable cause)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> UserFeignClient() &#123;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> List <span class="title">selectAllUser</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                log.info(<span class="string">"cause -&gt; &#123;&#125;"</span>, cause);</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> User <span class="title">deleteUserById</span><span class="params">(Long id)</span> </span>&#123;</span><br><span class="line">                log.info(<span class="string">"cause -&gt; &#123;&#125;"</span>, cause);</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> User <span class="title">addUser</span><span class="params">(Long id, String name, <span class="keyword">int</span> age)</span> </span>&#123;</span><br><span class="line">                log.info(<span class="string">"cause -&gt; &#123;&#125;"</span>, cause);</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">@Slf4j
+@Component
+public class UserFeignClientFallbackFactory implements FallbackFactory&lt;UserFeignClient&gt; {
 
+    @Override
+    public UserFeignClient create(Throwable cause) {
+        return new UserFeignClient() {
+
+            @Override
+            public List selectAllUser() {
+                log.info(&quot;cause -&gt; {}&quot;, cause);
+                return null;
+            }
+
+            @Override
+            public User deleteUserById(Long id) {
+                log.info(&quot;cause -&gt; {}&quot;, cause);
+                return null;
+            }
+
+            @Override
+            public User addUser(Long id, String name, int age) {
+                log.info(&quot;cause -&gt; {}&quot;, cause);
+                return null;
+            }
+        };
+    }
+}</code></pre>
 <blockquote>
 <p>FeignClient 接口</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FeignClient</span>(value = <span class="string">"MSA-EUREKA-PROVIDER-USER"</span>, fallbackFactory = UserFeignClientFallbackFactory<span class="class">.<span class="keyword">class</span>)</span></span><br><span class="line"><span class="class"><span class="title">public</span> <span class="title">interface</span> <span class="title">UserFeignClient</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping</span>(<span class="string">"/user/find/all"</span>)</span><br><span class="line">    <span class="function">List <span class="title">selectAllUser</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 需要注意的是，只要使用了Feign并启用Hystrix</span></span><br><span class="line"><span class="comment">     * Hystrix就会为每个FeignClient方法配置一个断路器</span></span><br><span class="line"><span class="comment">     * 即不用直接编写<span class="doctag">@HystrixCommand</span>，如果添加上<span class="doctag">@HystrixCommand</span>会抛异常</span></span><br><span class="line"><span class="comment">     * 参考：https://cloud.spring.io/spring-cloud-openfeign/reference/html/#spring-cloud-feign-hystrix</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@DeleteMapping</span>(<span class="string">"/user/delete/&#123;id&#125;"</span>)</span><br><span class="line">    <span class="function">User <span class="title">deleteUserById</span><span class="params">(@PathVariable Long id)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostMapping</span>(<span class="string">"/user/add"</span>)</span><br><span class="line">    <span class="function">User <span class="title">addUser</span><span class="params">(@RequestParam Long id,</span></span></span><br><span class="line"><span class="function"><span class="params">                  @RequestParam String name,</span></span></span><br><span class="line"><span class="function"><span class="params">                  @RequestParam <span class="keyword">int</span> age)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="java">@FeignClient(value = &quot;MSA-EUREKA-PROVIDER-USER&quot;, fallbackFactory = UserFeignClientFallbackFactory.class)
+public interface UserFeignClient {
 
+    @GetMapping(&quot;/user/find/all&quot;)
+    List selectAllUser();
+
+    /**
+     * 需要注意的是，只要使用了Feign并启用Hystrix
+     * Hystrix就会为每个FeignClient方法配置一个断路器
+     * 即不用直接编写@HystrixCommand，如果添加上@HystrixCommand会抛异常
+     * 参考：https://cloud.spring.io/spring-cloud-openfeign/reference/html/#spring-cloud-feign-hystrix
+     */
+    @DeleteMapping(&quot;/user/delete/{id}&quot;)
+    User deleteUserById(@PathVariable Long id);
+
+    @PostMapping(&quot;/user/add&quot;)
+    User addUser(@RequestParam Long id,
+                  @RequestParam String name,
+                  @RequestParam int age);
+}</code></pre>
 <blockquote>
 <p>Feign中如何配置Hystrix？</p>
 </blockquote>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">hystrix:</span></span><br><span class="line">  <span class="attr">threadpool:</span></span><br><span class="line">    <span class="attr">default:</span></span><br><span class="line">      <span class="attr">coreSize:</span> <span class="number">5</span></span><br><span class="line">  <span class="attr">command:</span></span><br><span class="line">    <span class="comment"># 通用</span></span><br><span class="line">    <span class="attr">default:</span></span><br><span class="line">      <span class="attr">fallback:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="comment"># 特定</span></span><br><span class="line">    <span class="string">UserFeignClient#deleteUserById(Long):</span></span><br><span class="line">      <span class="attr">fallback:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
-
+<pre><code class="yaml">hystrix:
+  threadpool:
+    default:
+      coreSize: 5
+  command:
+    # 通用
+    default:
+      fallback:
+        enabled: true
+    # 特定
+    UserFeignClient#deleteUserById(Long):
+      fallback:
+        enabled: false</code></pre>
 <blockquote>
 <p>启用功能</p>
 </blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableFeignClients</span></span><br><span class="line"><span class="comment">//@EnableCircuitBreaker</span></span><br><span class="line"><span class="comment">//@EnableEurekaClient</span></span><br><span class="line"><span class="comment">//@SpringBootApplication  </span></span><br><span class="line"><span class="meta">@SpringCloudApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MsaEurekaComsumer01Application</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(MsaEurekaComsumer01Application<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
+<pre><code class="java">@EnableFeignClients
+//@EnableCircuitBreaker
+//@EnableEurekaClient
+//@SpringBootApplication  
+@SpringCloudApplication
+public class MsaEurekaComsumer01Application {
+    public static void main(String[] args) {
+        SpringApplication.run(MsaEurekaComsumer01Application.class, args);
+    }
+}</code></pre>
 <h4 id="Command缓存使用"><a href="#Command缓存使用" class="headerlink" title="Command缓存使用"></a>Command缓存使用</h4><blockquote>
 <p>相关注解</p>
 </blockquote>
@@ -554,16 +1074,23 @@ function activateLightMode(){
 <p>例子</p>
 </blockquote>
 <p>缓存</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@CacheResult</span></span><br><span class="line"><span class="meta">@HystrixCommand</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Person <span class="title">get</span><span class="params">(Integer id,String name)</span> </span>&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">@CacheResult
+@HystrixCommand
+public Person get(Integer id,String name) {
+    //...
+}</code></pre>
 <p>指定缓存key</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@CacheResult</span></span><br><span class="line"><span class="meta">@HystrixCommand</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Person <span class="title">get</span><span class="params">(@CacheKey Integer id,String name)</span> </span>&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">@CacheResult
+@HystrixCommand
+public Person get(@CacheKey Integer id,String name) {
+    //...
+}</code></pre>
 <p>移除缓存</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@CacheResult</span>(commandKey = <span class="string">"get"</span>)</span><br><span class="line"><span class="meta">@HystrixCommand</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Person <span class="title">removeById</span><span class="params">(Integer id)</span> </span>&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
+<pre><code class="java">@CacheResult(commandKey = &quot;get&quot;)
+@HystrixCommand
+public Person removeById(Integer id) {
+    //...
+}</code></pre>
 <h4 id="Hystrix监控"><a href="#Hystrix监控" class="headerlink" title="Hystrix监控"></a>Hystrix监控</h4><h5 id="Hystrix-Dashboard"><a href="#Hystrix-Dashboard" class="headerlink" title="Hystrix Dashboard"></a>Hystrix Dashboard</h5><ul>
 <li>同一时刻只能监控单个节点</li>
 <li>可以打开多个Dashboard页面监控不同的节点或服务</li>
@@ -572,14 +1099,46 @@ function activateLightMode(){
 <p>创建一个独立的SpringBoot作为监控服务</p>
 </blockquote>
 <p>依赖</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">spring-cloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">spring-cloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-cloud.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">type</span>&gt;</span>pom<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>import<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-hystrix-dashboard<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<pre><code class="xml">&lt;parent&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+    &lt;version&gt;2.1.5.RELEASE&lt;/version&gt;
+    &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
+&lt;/parent&gt;
 
+&lt;properties&gt;
+    &lt;java.version&gt;1.8&lt;/java.version&gt;
+    &lt;spring-cloud.version&gt;Greenwich.SR2&lt;/spring-cloud.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-dependencies&lt;/artifactId&gt;
+            &lt;version&gt;${spring-cloud.version}&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-cloud-starter-netflix-hystrix-dashboard&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
 <p>配置端口</p>
-<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">server.port</span>=<span class="string">9092</span></span><br></pre></td></tr></table></figure>
-
+<pre><code class="properties">server.port=9092</code></pre>
 <p>启动功能</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableHystrixDashboard</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MsaHystrixDashboardApplication</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(MsaHystrixDashboardApplication<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">@EnableHystrixDashboard
+@SpringBootApplication
+public class MsaHystrixDashboardApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MsaHystrixDashboardApplication.class, args);
+    }
+}</code></pre>
 <p>启动项目，浏览器： <a href="http://localhost:9092/hystrix" target="_blank" rel="noopener">http://localhost:9092/hystrix</a> </p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/017.png" alt></p>
 <blockquote>
@@ -589,8 +1148,12 @@ function activateLightMode(){
 <li>监控对象必须开启 Hystrix 和 Actuator 功能</li>
 </ul>
 <p>1）开启被监控端端点（当前例子被监控端端口为：8081，服务名：msa-eureka-comsumer-01）</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认开启</span></span><br><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoint:</span></span><br><span class="line">    <span class="attr">hystrix:</span></span><br><span class="line">      <span class="attr">stream:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
-
+<pre><code class="yaml"># 默认开启
+management:
+  endpoint:
+    hystrix:
+      stream:
+        enabled: true</code></pre>
 <p>2）浏览器打开Dashboard： <a href="http://localhost:9092/hystrix" target="_blank" rel="noopener">http://localhost:9092/hystrix</a> </p>
 <p>3）在Dashboard中输入：<a href="http://localhost:8081/actuator/hystrix.stream" target="_blank" rel="noopener">http://localhost:8081/actuator/hystrix.stream</a></p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/018.png" alt></p>
@@ -615,17 +1178,64 @@ function activateLightMode(){
 <p>创建一个聚合监控服务</p>
 </blockquote>
 <p>依赖</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">spring-cloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">spring-cloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-cloud.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">type</span>&gt;</span>pom<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>import<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-turbine<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<pre><code class="xml">&lt;parent&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+    &lt;version&gt;2.1.5.RELEASE&lt;/version&gt;
+    &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
+&lt;/parent&gt;
 
+&lt;properties&gt;
+    &lt;java.version&gt;1.8&lt;/java.version&gt;
+    &lt;spring-cloud.version&gt;Greenwich.SR2&lt;/spring-cloud.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-dependencies&lt;/artifactId&gt;
+            &lt;version&gt;${spring-cloud.version}&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-starter-netflix-turbine&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
 <ul>
 <li>spring-cloud-starter-netflix-turbine：集成了Eureka Client用来获取注册中心的服务来监控</li>
 </ul>
 <p>配置</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">9091</span></span><br><span class="line"></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">msa-turbine</span></span><br><span class="line"></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">serviceUrl:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:8761/eureka/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">turbine:</span></span><br><span class="line">  <span class="attr">app-config:</span> <span class="string">MSA-EUREKA-COMSUMER-01,</span> <span class="string">MSA-EUREKA-PROVIDER-USER</span></span><br><span class="line">  <span class="attr">cluster-name-expression:</span> <span class="string">"'default'"</span></span><br></pre></td></tr></table></figure>
+<pre><code class="yaml">server:
+  port: 9091
 
+spring:
+  application:
+    name: msa-turbine
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+turbine:
+  app-config: MSA-EUREKA-COMSUMER-01, MSA-EUREKA-PROVIDER-USER
+  cluster-name-expression: &quot;&#39;default&#39;&quot;</code></pre>
 <p>开启功能</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableEurekaClient</span></span><br><span class="line"><span class="meta">@EnableTurbine</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MsaHystrixTurbineApplication</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(MsaHystrixTurbineApplication<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">@EnableEurekaClient
+@EnableTurbine
+@SpringBootApplication
+public class MsaHystrixTurbineApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MsaHystrixTurbineApplication.class, args);
+    }
+}</code></pre>
 <blockquote>
 <p>测试监控</p>
 </blockquote>
@@ -654,28 +1264,76 @@ function activateLightMode(){
 <li><p>《Spring Cloud 微服务实战》</p>
 </li>
 </ul>
-<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2></div><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">TD</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://tandi.pub/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/">https://tandi.pub/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://tandi.pub" target="_blank">学然后知不足</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></div><div class="post_share"><div class="social-share" data-image="/image/orm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination_post" id="pagination"><div class="prev-post pull_left"><a href="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/"><img class="prev_cover" src="/image/dscs.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">代码限流操作</div></div></a></div><div class="next-post pull_right"><a href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-REST%E8%B0%83%E7%94%A8/"><img class="next_cover" src="image/springcloud.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">微服务开发技术篇-REST调用</div></div></a></div></nav><hr><div id="post-comment"><div class="comment_headling"><i class="fa fa-comments fa-fw" aria-hidden="true"></i><span> 评论</span></div><div id="gitalk-container"></div><script>var gitalk = new Gitalk({
-  clientID: '38b84fb92012be686d1c',
-  clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
-  repo: 'hexo-comments',
-  owner: 'oomgomgxx',
-  admin: ['oomgomgxx'],
-  id: md5(decodeURI(location.pathname)),
-  language: 'zh-CN',
-  perPage: 10,
-  distractionFreeMode: false,
-  pagerDirection: 'last',
-  createIssueManually: false,
-  updateCountCallback: commentCount
-})
-gitalk.render('gitalk-container')
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
 
-function commentCount(n){
-  try {
-    document.getElementsByClassName('gitalk-comment-count')[0].innerHTML= n
-  } catch (e) {
-    return false
-  }
-}</script></div></article></main><footer id="footer" style="background-image: url(image/springcloud.png)" data-type="photo"><div id="footer-wrap"><div class="copyright">&copy;2020 TD</div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><i class="fa fa-book" id="readmode" title="阅读模式"></i><i class="fa fa-plus" id="font_plus" title="放大字体"></i><i class="fa fa-minus" id="font_minus" title="缩小字体"></i><a class="translate_chn_to_cht" id="translateLink" href="javascript:translatePage();" title="简繁转换" target="_self">簡</a><i class="darkmode fa fa-moon-o" id="darkmode" title="夜间模式"></i></div><div id="rightside-config-show"><div id="rightside_config" title="设置"><i class="fa fa-cog" aria-hidden="true"></i></div><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fa fa-comments">  </i></a><i class="fa fa-list-ul close" id="mobile-toc-button" title="目录" aria-hidden="true"></i><i class="fa fa-arrow-up" id="go-up" title="回到顶部" aria-hidden="true"></i></div></section><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js"></script><script>document.addEventListener('DOMContentLoaded', function() {
-      pangu.spacingElementById('content-inner')
-})</script></body></html>
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: 
+    <a href="TanDi">
+      TanDi
+    </a> <br/>
+    文章链接: 
+    <a href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/">
+      微服务开发技术篇-接口故障应对方案
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '',
+          clientSecret: '',
+          repo: '',
+          owner: '',
+          admin: [''],
+          id: md5('微服务开发技术篇-接口故障应对方案'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#关于接口故障的应对方案"><span class="toc-text">关于接口故障的应对方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#降级"><span class="toc-text">降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#容错"><span class="toc-text">容错</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#限流"><span class="toc-text">限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求排队"><span class="toc-text">请求排队</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于服务雪崩与断路器"><span class="toc-text">关于服务雪崩与断路器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Hystrix"><span class="toc-text">Netflix Hystrix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#命令模式实践"><span class="toc-text">命令模式实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#非SpringBoot"><span class="toc-text">非SpringBoot</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot"><span class="toc-text">SpringBoot</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#快速入门命令模式"><span class="toc-text">快速入门命令模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix工作流程图"><span class="toc-text">Hystrix工作流程图</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器工作原理"><span class="toc-text">断路器工作原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#调用隔离"><span class="toc-text">调用隔离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求合并"><span class="toc-text">请求合并</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求缓存"><span class="toc-text">请求缓存</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代码浅析"><span class="toc-text">代码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#如何触发fallback？"><span class="toc-text">如何触发fallback？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器"><span class="toc-text">断路器</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详细使用"><span class="toc-text">详细使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#相关注解"><span class="toc-text">相关注解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCommand"><span class="toc-text">@HystrixCommand</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCollapser"><span class="toc-text">@HystrixCollapser</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixProperty"><span class="toc-text">@HystrixProperty</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCommand属性"><span class="toc-text">常用HystrixCommand属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCollapser属性"><span class="toc-text">常用HystrixCollapser属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixThreadPool属性"><span class="toc-text">常用HystrixThreadPool属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Feign中使用Hystrix"><span class="toc-text">Feign中使用Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Command缓存使用"><span class="toc-text">Command缓存使用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix监控"><span class="toc-text">Hystrix监控</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Hystrix-Dashboard"><span class="toc-text">Hystrix Dashboard</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Turbine-Stream-Aggregator-Hystrix-Dashboard"><span class="toc-text">Turbine Stream Aggregator + Hystrix Dashboard</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在細節中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">網站首頁</a>
+            <a id="bottom-totop" href="#">回到頂部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 外部依赖 -->
+<!-- <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+<script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script> -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

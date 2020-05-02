@@ -1,88 +1,107 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Consul的基本使用 | 学然后知不足</title><meta name="description" content="Consul的基本使用"><meta name="keywords" content="微服务"><meta name="author" content="TD"><meta name="copyright" content="TD"><meta name="format-detection" content="telephone=no"><link rel="shortcut icon" href="/img/binary-code.svg"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="crossorigin"/><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Consul的基本使用"><meta name="twitter:description" content="Consul的基本使用"><meta name="twitter:image" content="https://tandi.pub/image/consul.png"><meta property="og:type" content="article"><meta property="og:title" content="Consul的基本使用"><meta property="og:url" content="https://tandi.pub/consul%E5%85%A5%E9%97%A8/"><meta property="og:site_name" content="学然后知不足"><meta property="og:description" content="Consul的基本使用"><meta property="og:image" content="https://tandi.pub/image/consul.png"><script src="https://cdn.jsdelivr.net/npm/js-cookie/dist/js.cookie.min.js"></script><script>var autoChangeMode = '1'
-var t = Cookies.get("theme")
-if (autoChangeMode == '1'){
-  var isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
-  var isLightMode = window.matchMedia("(prefers-color-scheme: light)").matches
-  var isNotSpecified = window.matchMedia("(prefers-color-scheme: no-preference)").matches
-  var hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+<!-- 主题布局 -->
 
-  if (t === undefined){
-    if (isLightMode) activateLightMode()
-    else if (isDarkMode) activateDarkMode()
-    else if (isNotSpecified || hasNoSupport){
-      console.log('You specified no preference for a color scheme or your browser does not support it. I Schedule dark mode during night time.')
-      var now = new Date()
-      var hour = now.getHours()
-      var isNight = hour < 6 || hour >= 18
-      isNight ? activateDarkMode() : activateLightMode()
-  }
-  } else if (t == 'light') activateLightMode()
-  else activateDarkMode()
 
-} else if (autoChangeMode == '2'){
-  now = new Date();
-  hour = now.getHours();
-  isNight = hour < 6 || hour >= 18
-  if(t === undefined) isNight? activateDarkMode() : activateLightMode()
-  else if (t === 'light') activateLightMode()
-  else activateDarkMode() 
-} else {
-  if ( t == 'dark' ) activateDarkMode()
-  else if ( t == 'light') activateLightMode()
-}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> Consul的基本使用学然后知不足 </title>
 
-function activateDarkMode(){
-  document.documentElement.setAttribute('data-theme', 'dark')
-  if (document.querySelector('meta[name="theme-color"]') !== null){
-    document.querySelector('meta[name="theme-color"]').setAttribute('content','#000')
-  }
-}
-function activateLightMode(){
-  document.documentElement.setAttribute('data-theme', 'light')
-  if (document.querySelector('meta[name="theme-color"]') !== null){
-  document.querySelector('meta[name="theme-color"]').setAttribute('content','#fff')
-  }
-}</script><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="canonical" href="https://tandi.pub/consul%E5%85%A5%E9%97%A8/"><link rel="prev" title="SpringBoot基本的东西需要懂" href="https://tandi.pub/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/"><link rel="next" title="Docker的基本使用" href="https://tandi.pub/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.css"><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js"></script><script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web"><script>var GLOBAL_CONFIG = { 
-  root: '/',
-  algolia: undefined,
-  localSearch: undefined,
-  translate: {"defaultEncoding":2,"translateDelay":0,"cookieDomain":"https://tandi.pub","msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
-  copy: {
-    success: '复制成功',
-    error: '复制错误',
-    noSupport: '浏览器不支持'
-  },
-  bookmark: {
-    message_prev: '按',
-    message_next: '键将本页加入书签'
-  },
-  runtime_unit: '天',
-  runtime: false,
-  copyright: undefined,
-  ClickShowText: undefined,
-  medium_zoom: false,
-  fancybox: true,
-  Snackbar: undefined,
-  baiduPush: true,
-  highlightCopy: true,
-  highlightLang: true,
-  highlightShrink: 'false',
-  isFontAwesomeV5: false,
-  isPhotoFigcaption: false
+  <!-- 网站SEO - 关键字和描述 -->
   
-}</script><script>var GLOBAL_CONFIG_SITE = { 
-  isPost: true,
-  isHome: false,
-  isSidebar: true  
-  }</script><noscript><style>
-#page-header {
-  opacity: 1
-}
-.justified-gallery img{
-  opacity: 1
-}
-</style></noscript><meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
-</head><body><div id="mobile-sidebar"><div id="menu_mask"></div><div id="mobile-sidebar-menus"><div class="mobile_author_icon"><img class="avatar-img" src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="mobile_post_data"><div class="mobile_data_item is-center"><div class="mobile_data_link"><a href="/archives/"><div class="headline">文章</div><div class="length_num">58</div></a></div></div><div class="mobile_data_item is-center">      <div class="mobile_data_link"><a href="/tags/"><div class="headline">标签</div><div class="length_num">19</div></a></div></div><div class="mobile_data_item is-center">     <div class="mobile_data_link"><a href="/categories/"><div class="headline">分类</div><div class="length_num">17</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div></div></div><i class="fa fa-arrow-right on" id="toggle-sidebar" aria-hidden="true">     </i><div id="sidebar"><div class="sidebar-toc"><div class="sidebar-toc__title">目录</div><div class="sidebar-toc__progress"><span class="progress-notice">你已经读了</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar">     </div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么？"><span class="toc-number">1.</span> <span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#下载安装"><span class="toc-number">2.</span> <span class="toc-text">下载安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令参数"><span class="toc-number">3.</span> <span class="toc-text">命令参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#服务端口"><span class="toc-number">4.</span> <span class="toc-text">服务端口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基础架构"><span class="toc-number">5.</span> <span class="toc-text">基础架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Agent的启动和停止"><span class="toc-number">6.</span> <span class="toc-text">Agent的启动和停止</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#注册和查询服务"><span class="toc-number">7.</span> <span class="toc-text">注册和查询服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#搭建集群"><span class="toc-number">8.</span> <span class="toc-text">搭建集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#启用WEB-UI"><span class="toc-number">9.</span> <span class="toc-text">启用WEB-UI</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#键值对存取"><span class="toc-number">10.</span> <span class="toc-text">键值对存取</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-number">11.</span> <span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-number">12.</span> <span class="toc-text">内容修订</span></a></li></ol></div></div></div><div id="body-wrap"><div class="post-bg" id="nav" style="background-image: url(/image/consul.png)"><div id="page-header"><span class="pull_left" id="blog_name"><a class="blog_title" id="site-name" href="/">学然后知不足</a></span><span class="pull_right menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fa fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-clock-o"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fa fa-user-circle-o"></i><span> 关于</span></a></div></div><span class="toggle-menu close"><a class="site-page"><i class="fa fa-bars fa-fw" aria-hidden="true"></i></a></span></span></div><div id="post-info"><div id="post-title"><div class="posttitle">Consul的基本使用</div></div><div id="post-meta"><div class="meta-firstline"><time class="post-meta__date"><span class="post-meta__date-created" title="发表于 2018-08-03 20:30:24"><i class="fa fa-calendar" aria-hidden="true"></i> 发表于 2018-08-03</span><span class="post-meta__separator">|</span><span class="post-meta__date-updated" title="更新于 2020-04-12 09:37:32"><i class="fa fa-history" aria-hidden="true"></i> 更新于 2020-04-12</span></time><span class="post-meta__categories"><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a><i class="fa fa-angle-right post-meta__separator" aria-hidden="true"></i><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/%E7%BC%96%E7%A8%8B/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></span></div><div class="meta-secondline"> </div><div class="meta-thirdline"><span class="post-meta-pv-cv"></span><span class="post-meta-commentcount"><i class="post-meta__icon fa fa-comment-o" aria-hidden="true"></i><span>评论数:</span><a href="/consul%E5%85%A5%E9%97%A8/#post-comment"><span class="gitalk-comment-count comment-count"></span></a></span></div></div></div></div><main class="layout_post" id="content-inner"><article id="post"><div id="article-container"><h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><ul>
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+  
+    <script src="/js/jquery.min.js"></script>
+  
+    <script src="/js/main.js"></script>
+  
+    <script src="/js/md5.min.js"></script>
+  
+    <script src="/js/highlight.min.js"></script>
+  
+  
+
+  <!-- 内部样式文件 -->
+  
+  
+    <link rel="stylesheet" href="/css/main.css">
+  
+    <link rel="stylesheet" href="/css/github.min.css">
+  
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="學然後知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">學然後知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/archives">文章存档</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/books">书籍推荐</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>Consul的基本使用</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-08-03 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><ul>
 <li>Consul 是 HashiCorp 公司推出的开源工具，用于实现分布式系统的服务发现与配置</li>
 <li>Consul 提供 服务注册与发现、分布一致性协议实现、健康检查、Key/Value存储、多数据中心等功能，而无需要依赖其它工具（比如ZooKeeper等），使用起来也较为简单</li>
 <li>Consul 使用Golang开发，具有天然的可移植性。其中安装包仅包含一个可执行文件，方便部署之余且和Docker能够无缝配合 </li>
@@ -92,11 +111,28 @@ function activateLightMode(){
 </blockquote>
 <p>consul是一个命令工具，上传linux或直接用wget下载，解压后将其mv到/bin目录即可</p>
 <p><img src="/consul%E5%85%A5%E9%97%A8/002.png" alt></p>
-<h2 id="命令参数"><a href="#命令参数" class="headerlink" title="命令参数"></a>命令参数</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">-advertise        通知展现地址用来改变我们给集群中的其他节点展现的地址，一般情况下-bind地址就是展现地址</span><br><span class="line">-bootstrap        用来控制一个server是否在bootstrap模式，在一个datacenter中只能有一个server处于bootstrap模式，当一个server处于bootstrap模式时，可以自己选举为raft leader。</span><br><span class="line">-bootstrap-expect 在数据中心中期望提供的server节点数目，当该值提供的时候，consul一直等到达到指定sever数目的时候才会引导整个集群，该标记不能和bootstrap公用</span><br><span class="line">-bind             该地址用来在集群内部的通讯，集群内的所有节点到地址都必须是可达的，默认是0.0.0.0</span><br><span class="line">-client           consul绑定的地址，这个地址提供HTTP、DNS、RPC等服务，默认是127.0.0.1</span><br><span class="line">-config-file      明确的指定要加载哪个配置文件</span><br><span class="line">-config-dir       配置文件目录，里面所有以.json结尾的文件都会被加载</span><br><span class="line">-data-dir         提供一个目录用来存放agent的状态，所有的agent允许都需要该目录，该目录必须是稳定的，系统重启后都继续存在</span><br><span class="line">-dc               该标记控制agent允许的datacenter的名称，默认是dc1</span><br><span class="line">-encrypt          指定secret key，使consul在通讯时进行加密，key可以通过consul keygen生成，同一个集群中的节点必须使用相同的key</span><br><span class="line">-join             加入一个已经启动的agent的ip地址，可以多次指定多个agent的地址。如果consul不能加入任何指定的地址中，则agent会启动失败，默认agent启动时不会加入任何节点。</span><br><span class="line">-retry-join       和join类似，但是允许你在第一次失败后进行尝试。</span><br><span class="line">-retry-interval   两次join之间的时间间隔，默认是30s</span><br><span class="line">-retry-max        尝试重复join的次数，默认是0，也就是无限次尝试</span><br><span class="line">-log-level        consul agent启动后显示的日志信息级别。默认是info，可选：trace、debug、info、warn、err。</span><br><span class="line">-node             节点在集群中的名称，在一个集群中必须是唯一的，默认是该节点的主机名</span><br><span class="line">-protocol         consul使用的协议版本</span><br><span class="line">-rejoin           使consul忽略先前的离开，在再次启动后仍旧尝试加入集群中。</span><br><span class="line">-server           定义agent运行在server模式，每个集群至少有一个server，建议每个集群的server不要超过5个</span><br><span class="line">-syslog           开启系统日志功能，只在linux&#x2F;osx上生效</span><br><span class="line">-ui-dir           提供存放web ui资源的路径，该目录必须是可读的</span><br><span class="line">-pid-file         提供一个路径来存放pid文件，可以使用该文件进行SIGINT&#x2F;SIGHUP(关闭&#x2F;更新)agent</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="服务端口"><a href="#服务端口" class="headerlink" title="服务端口"></a>服务端口</h2><table>
+<h2 id="命令参数"><a href="#命令参数" class="headerlink" title="命令参数"></a>命令参数</h2><pre><code>-advertise        通知展现地址用来改变我们给集群中的其他节点展现的地址，一般情况下-bind地址就是展现地址
+-bootstrap        用来控制一个server是否在bootstrap模式，在一个datacenter中只能有一个server处于bootstrap模式，当一个server处于bootstrap模式时，可以自己选举为raft leader。
+-bootstrap-expect 在数据中心中期望提供的server节点数目，当该值提供的时候，consul一直等到达到指定sever数目的时候才会引导整个集群，该标记不能和bootstrap公用
+-bind             该地址用来在集群内部的通讯，集群内的所有节点到地址都必须是可达的，默认是0.0.0.0
+-client           consul绑定的地址，这个地址提供HTTP、DNS、RPC等服务，默认是127.0.0.1
+-config-file      明确的指定要加载哪个配置文件
+-config-dir       配置文件目录，里面所有以.json结尾的文件都会被加载
+-data-dir         提供一个目录用来存放agent的状态，所有的agent允许都需要该目录，该目录必须是稳定的，系统重启后都继续存在
+-dc               该标记控制agent允许的datacenter的名称，默认是dc1
+-encrypt          指定secret key，使consul在通讯时进行加密，key可以通过consul keygen生成，同一个集群中的节点必须使用相同的key
+-join             加入一个已经启动的agent的ip地址，可以多次指定多个agent的地址。如果consul不能加入任何指定的地址中，则agent会启动失败，默认agent启动时不会加入任何节点。
+-retry-join       和join类似，但是允许你在第一次失败后进行尝试。
+-retry-interval   两次join之间的时间间隔，默认是30s
+-retry-max        尝试重复join的次数，默认是0，也就是无限次尝试
+-log-level        consul agent启动后显示的日志信息级别。默认是info，可选：trace、debug、info、warn、err。
+-node             节点在集群中的名称，在一个集群中必须是唯一的，默认是该节点的主机名
+-protocol         consul使用的协议版本
+-rejoin           使consul忽略先前的离开，在再次启动后仍旧尝试加入集群中。
+-server           定义agent运行在server模式，每个集群至少有一个server，建议每个集群的server不要超过5个
+-syslog           开启系统日志功能，只在linux/osx上生效
+-ui-dir           提供存放web ui资源的路径，该目录必须是可读的
+-pid-file         提供一个路径来存放pid文件，可以使用该文件进行SIGINT/SIGHUP(关闭/更新)agent</code></pre><h2 id="服务端口"><a href="#服务端口" class="headerlink" title="服务端口"></a>服务端口</h2><table>
 <thead>
 <tr>
 <th>端口</th>
@@ -143,8 +179,7 @@ function activateLightMode(){
 <h2 id="Agent的启动和停止"><a href="#Agent的启动和停止" class="headerlink" title="Agent的启动和停止"></a>Agent的启动和停止</h2><blockquote>
 <p>启动agent</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul agent -dev -node agent-01 -client 192.168.31.250</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ consul agent -dev -node agent-01 -client 192.168.31.250</code></pre>
 <ul>
 <li>-dev：开发模式启动。可以省略数据 bind 和 data_dir 配置</li>
 <li>-node：节点名称。默认为所在机器名称</li>
@@ -153,26 +188,42 @@ function activateLightMode(){
 <blockquote>
 <p>命令方式 - 查看集群成员</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul members -http-addr=192.168.31.250:8500</span><br><span class="line">Node      Address         Status  Type    Build  Protocol  DC   Segment</span><br><span class="line">agent-01  127.0.0.1:8301  alive   server  1.6.2  2         dc1  &lt;all&gt;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ consul members -http-addr=192.168.31.250:8500
+Node      Address         Status  Type    Build  Protocol  DC   Segment
+agent-01  127.0.0.1:8301  alive   server  1.6.2  2         dc1  &lt;all&gt;</code></pre>
 <ul>
 <li>-http-addr：对应agent启动时设置的 -client 值。默认为127.0.0.1:8500</li>
 </ul>
 <blockquote>
 <p>REST方式 - 查看集群成员</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl 192.168.31.250:8500/v1/catalog/nodes</span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        "ID": "dbdb33c2-8498-683e-bf4c-cfcb33bec3f7",</span><br><span class="line">        "Node": "agent-01",</span><br><span class="line">        "Address": "127.0.0.1",</span><br><span class="line">        "Datacenter": "dc1",</span><br><span class="line">        "TaggedAddresses": &#123;</span><br><span class="line">            "lan": "127.0.0.1",</span><br><span class="line">            "wan": "127.0.0.1"</span><br><span class="line">        &#125;,</span><br><span class="line">        "Meta": &#123;</span><br><span class="line">            "consul-network-segment": ""</span><br><span class="line">        &#125;,</span><br><span class="line">        "CreateIndex": 9,</span><br><span class="line">        "ModifyIndex": 10</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ curl 192.168.31.250:8500/v1/catalog/nodes
+[
+    {
+        &quot;ID&quot;: &quot;dbdb33c2-8498-683e-bf4c-cfcb33bec3f7&quot;,
+        &quot;Node&quot;: &quot;agent-01&quot;,
+        &quot;Address&quot;: &quot;127.0.0.1&quot;,
+        &quot;Datacenter&quot;: &quot;dc1&quot;,
+        &quot;TaggedAddresses&quot;: {
+            &quot;lan&quot;: &quot;127.0.0.1&quot;,
+            &quot;wan&quot;: &quot;127.0.0.1&quot;
+        },
+        &quot;Meta&quot;: {
+            &quot;consul-network-segment&quot;: &quot;&quot;
+        },
+        &quot;CreateIndex&quot;: 9,
+        &quot;ModifyIndex&quot;: 10
+    }
+]
+</code></pre>
 <blockquote>
 <p>停止agent</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul leave -http-addr=192.168.31.250:8500</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ consul leave -http-addr=192.168.31.250:8500</code></pre>
 <blockquote>
 <p>启动一个生产环境的Agent</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  apps consul agent -server -data-dir /tmp/consul -node=consul-01 -bind=192.168.31.250 -config-dir /etc/consul.d</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  apps consul agent -server -data-dir /tmp/consul -node=consul-01 -bind=192.168.31.250 -config-dir /etc/consul.d</code></pre>
 <ul>
 <li>-data-dir：保存Agent运行过程产生的数据</li>
 <li>-node：节点名称</li>
@@ -183,49 +234,88 @@ function activateLightMode(){
 <p>步骤1：手动注册一个服务</p>
 </blockquote>
 <p>需要手动创建文件和写入内容，文件名称一般和服务名称一样</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ mkdir /etc/consul.d</span><br><span class="line">➜  ~ echo '&#123;"service": &#123;"name": "web", "tags": ["rails"], "port": 80&#125;&#125;' &gt; /etc/consul.d/web.json</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ mkdir /etc/consul.d
+➜  ~ echo &#39;{&quot;service&quot;: {&quot;name&quot;: &quot;web&quot;, &quot;tags&quot;: [&quot;rails&quot;], &quot;port&quot;: 80}}&#39; &gt; /etc/consul.d/web.json</code></pre>
 <blockquote>
 <p>步骤2：启动agent并指定配置文件</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜ consul agent -dev -node=agent-01 -config-dir=/etc/consul.d</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜ consul agent -dev -node=agent-01 -config-dir=/etc/consul.d</code></pre>
 <blockquote>
 <p>步骤3：REST方式查询服务。可以追加 ?passing 表明只查询健康的服务</p>
 </blockquote>
 <p>查看指定服务</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl http://localhost:8500/v1/catalog/service/web</span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        "ID": "5486cbfa-c081-32c9-7e8d-8ad06855093f",</span><br><span class="line">        "Node": "agent-01",</span><br><span class="line">        "Address": "127.0.0.1",</span><br><span class="line">        "Datacenter": "dc1",</span><br><span class="line">        "TaggedAddresses": &#123;</span><br><span class="line">            "lan": "127.0.0.1",</span><br><span class="line">            "wan": "127.0.0.1"</span><br><span class="line">        &#125;,</span><br><span class="line">        "NodeMeta": &#123;</span><br><span class="line">            "consul-network-segment": ""</span><br><span class="line">        &#125;,</span><br><span class="line">        "ServiceKind": "",</span><br><span class="line">        "ServiceID": "web",</span><br><span class="line">        "ServiceName": "web",</span><br><span class="line">        "ServiceTags": [</span><br><span class="line">            "rails"</span><br><span class="line">        ],</span><br><span class="line">        "ServiceAddress": "",</span><br><span class="line">        "ServiceWeights": &#123;</span><br><span class="line">            "Passing": 1,</span><br><span class="line">            "Warning": 1</span><br><span class="line">        &#125;,</span><br><span class="line">        "ServiceMeta": &#123;&#125;,</span><br><span class="line">        "ServicePort": 80,</span><br><span class="line">        "ServiceEnableTagOverride": false,</span><br><span class="line">        "ServiceProxy": &#123;</span><br><span class="line">            "MeshGateway": &#123;&#125;,</span><br><span class="line">            "Expose": &#123;&#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        "ServiceConnect": &#123;&#125;,</span><br><span class="line">        "CreateIndex": 10,</span><br><span class="line">        "ModifyIndex": 10</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ curl http://localhost:8500/v1/catalog/service/web
+[
+    {
+        &quot;ID&quot;: &quot;5486cbfa-c081-32c9-7e8d-8ad06855093f&quot;,
+        &quot;Node&quot;: &quot;agent-01&quot;,
+        &quot;Address&quot;: &quot;127.0.0.1&quot;,
+        &quot;Datacenter&quot;: &quot;dc1&quot;,
+        &quot;TaggedAddresses&quot;: {
+            &quot;lan&quot;: &quot;127.0.0.1&quot;,
+            &quot;wan&quot;: &quot;127.0.0.1&quot;
+        },
+        &quot;NodeMeta&quot;: {
+            &quot;consul-network-segment&quot;: &quot;&quot;
+        },
+        &quot;ServiceKind&quot;: &quot;&quot;,
+        &quot;ServiceID&quot;: &quot;web&quot;,
+        &quot;ServiceName&quot;: &quot;web&quot;,
+        &quot;ServiceTags&quot;: [
+            &quot;rails&quot;
+        ],
+        &quot;ServiceAddress&quot;: &quot;&quot;,
+        &quot;ServiceWeights&quot;: {
+            &quot;Passing&quot;: 1,
+            &quot;Warning&quot;: 1
+        },
+        &quot;ServiceMeta&quot;: {},
+        &quot;ServicePort&quot;: 80,
+        &quot;ServiceEnableTagOverride&quot;: false,
+        &quot;ServiceProxy&quot;: {
+            &quot;MeshGateway&quot;: {},
+            &quot;Expose&quot;: {}
+        },
+        &quot;ServiceConnect&quot;: {},
+        &quot;CreateIndex&quot;: 10,
+        &quot;ModifyIndex&quot;: 10
+    }
+]</code></pre>
 <p>查看所有服务</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl http://localhost:8500/v1/catalog/services</span><br><span class="line">&#123;</span><br><span class="line">    "consul": [],</span><br><span class="line">    "my-service-name": [</span><br><span class="line">        "release=1",</span><br><span class="line">        "mytag=tandi"</span><br><span class="line">    ],</span><br><span class="line">    "web": [</span><br><span class="line">        "rails"</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ curl http://localhost:8500/v1/catalog/services
+{
+    &quot;consul&quot;: [],
+    &quot;my-service-name&quot;: [
+        &quot;release=1&quot;,
+        &quot;mytag=tandi&quot;
+    ],
+    &quot;web&quot;: [
+        &quot;rails&quot;
+    ]
+}</code></pre>
 <blockquote>
 <p>使用REST方式注册服务</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl -X PUT -H "Content-type:application/json" -d '&#123;"ID":"my-service-id","Name":"my-service-name","Tags":["release=1","mytag=tandi"],"Address":"192.168.4.120","Port":8888,"Meta":&#123;"my_version":"4.0"&#125;,"EnableTagOverride":false,"Check":&#123;"DeregisterCriticalServiceAfter":"90m","HTTP":"http://www.tandi.wiki/","Interval":"10s"&#125;&#125;' http://127.0.0.1:8500/v1/agent/service/register</span><br></pre></td></tr></table></figure>
-
-
-
+<pre><code class="shell">➜  ~ curl -X PUT -H &quot;Content-type:application/json&quot; -d &#39;{&quot;ID&quot;:&quot;my-service-id&quot;,&quot;Name&quot;:&quot;my-service-name&quot;,&quot;Tags&quot;:[&quot;release=1&quot;,&quot;mytag=tandi&quot;],&quot;Address&quot;:&quot;192.168.4.120&quot;,&quot;Port&quot;:8888,&quot;Meta&quot;:{&quot;my_version&quot;:&quot;4.0&quot;},&quot;EnableTagOverride&quot;:false,&quot;Check&quot;:{&quot;DeregisterCriticalServiceAfter&quot;:&quot;90m&quot;,&quot;HTTP&quot;:&quot;http://www.tandi.wiki/&quot;,&quot;Interval&quot;:&quot;10s&quot;}}&#39; http://127.0.0.1:8500/v1/agent/service/register</code></pre>
 <h2 id="搭建集群"><a href="#搭建集群" class="headerlink" title="搭建集群"></a>搭建集群</h2><blockquote>
 <p>环境说明：两台CentOS7虚拟机，简称cent01，cent02；其中cent02复制cent01（虚拟机复制要小心，特别要注意软件的配置文件和数据）</p>
 </blockquote>
 <p>SSH连接如下：</p>
 <p><img src="/consul%E5%85%A5%E9%97%A8/018.png" alt></p>
 <p><strong>步骤1：创建一个Server节点（cent01）</strong></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul agent -server -bootstrap-expect 1  -data-dir /tmp/consul -node=server-node -bind=192.168.4.157  -config-dir /etc/consul.d</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ consul agent -server -bootstrap-expect 1  -data-dir /tmp/consul -node=server-node -bind=192.168.4.157  -config-dir /etc/consul.d</code></pre>
 <p><strong>步骤2：创建一个Client节点（cent02）</strong></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul agent -data-dir /tmp/consul -node=client-node01 -bind=192.168.4.159 -config-dir /etc/consul.d</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ consul agent -data-dir /tmp/consul -node=client-node01 -bind=192.168.4.159 -config-dir /etc/consul.d</code></pre>
 <p><strong>步骤3：将client-node01节点加入到集群（cent02）</strong></p>
 <blockquote>
 <p>注意：在consul中，节点想要加入到集群中，只需要知道集群中的随便一个服务节点即可</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul join 192.168.4.157</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ consul join 192.168.4.157</code></pre>
 <p><strong>步骤4：查看consul集群信息</strong></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul members</span><br><span class="line">Node(节点名称)  Address(节点位置)    Status  Type    Build  Protocol  DC   Segment</span><br><span class="line">server-node    192.168.4.157:8301  alive   server  1.4.2  2         dc1  &lt;all&gt;</span><br><span class="line">client-node01  192.168.4.159:8301  alive   client  1.4.2  2         dc1  &lt;default&gt;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ consul members
+Node(节点名称)  Address(节点位置)    Status  Type    Build  Protocol  DC   Segment
+server-node    192.168.4.157:8301  alive   server  1.4.2  2         dc1  &lt;all&gt;
+client-node01  192.168.4.159:8301  alive   client  1.4.2  2         dc1  &lt;default&gt;</code></pre>
 <p><strong>集群中可能出现的问题</strong></p>
 <ul>
 <li><p>无法加入集群，因为nodeId冲突</p>
@@ -243,8 +333,8 @@ function activateLightMode(){
 <h2 id="启用WEB-UI"><a href="#启用WEB-UI" class="headerlink" title="启用WEB-UI"></a>启用WEB-UI</h2><blockquote>
 <p>本机访问指定 -ui 即可。非本机访问需要指定 -client 0.0.0.0 -ui</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul -bind 192.168.31.250 -config-dir /etc/consul.d  -client </span><br><span class="line">0.0.0.0 -ui</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul -bind 192.168.31.250 -config-dir /etc/consul.d  -client 
+0.0.0.0 -ui</code></pre>
 <blockquote>
 <p>访问：<a href="http://localhost:8500" target="_blank" rel="noopener">http://localhost:8500</a></p>
 </blockquote>
@@ -252,52 +342,98 @@ function activateLightMode(){
 <h2 id="键值对存取"><a href="#键值对存取" class="headerlink" title="键值对存取"></a>键值对存取</h2><blockquote>
 <p>保存 key - value</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 在kv（根）目录创建</span></span><br><span class="line">➜  ~ curl -X PUT -d '值' http://localhost:8500/v1/kv/键</span><br><span class="line"><span class="meta">#</span><span class="bash"> 在指定目录下创建</span></span><br><span class="line">➜  ~ curl -X PUT -d '值' http://localhost:8500/v1/kv/目录名称/键</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell"># 在kv（根）目录创建
+➜  ~ curl -X PUT -d &#39;值&#39; http://localhost:8500/v1/kv/键
+# 在指定目录下创建
+➜  ~ curl -X PUT -d &#39;值&#39; http://localhost:8500/v1/kv/目录名称/键</code></pre>
 <blockquote>
 <p>查看 key - value</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查询kv（根）目录下所有key-value</span></span><br><span class="line">➜  ~ curl http://localhost:8500/v1/kv/\?recurse</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查询指定key</span></span><br><span class="line">➜  ~ curl http://localhost:8500/v1/kv/键</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell"># 查询kv（根）目录下所有key-value
+➜  ~ curl http://localhost:8500/v1/kv/\?recurse
+# 查询指定key
+➜  ~ curl http://localhost:8500/v1/kv/键</code></pre>
 <blockquote>
 <p>更新 key - value</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl -X PUT -d '值' http://localhost:8500/v1/kv/键</span><br></pre></td></tr></table></figure>
-
+<pre><code class="shell">➜  ~ curl -X PUT -d &#39;值&#39; http://localhost:8500/v1/kv/键</code></pre>
 <blockquote>
 <p>删除 key - value</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl -X DELETE http://localhost:8500/v1/kv/键</span><br></pre></td></tr></table></figure>
-
-
-
-
-
+<pre><code class="shell">➜  ~ curl -X DELETE http://localhost:8500/v1/kv/键</code></pre>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://learn.hashicorp.com/consul" target="_blank" rel="noopener">HashiCorp Consul</a></li>
 </ul>
-<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2></div><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">TD</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://tandi.pub/consul%E5%85%A5%E9%97%A8/">https://tandi.pub/consul%E5%85%A5%E9%97%A8/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://tandi.pub" target="_blank">学然后知不足</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></div><div class="post_share"><div class="social-share" data-image="/image/orm.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"/><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js"></script></div></div><nav class="pagination_post" id="pagination"><div class="prev-post pull_left"><a href="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/"><img class="prev_cover" src="/image/springboot.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">SpringBoot基本的东西需要懂</div></div></a></div><div class="next-post pull_right"><a href="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/"><img class="next_cover" src="/image/docker.png" onerror="onerror=null;src='/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Docker的基本使用</div></div></a></div></nav><hr><div id="post-comment"><div class="comment_headling"><i class="fa fa-comments fa-fw" aria-hidden="true"></i><span> 评论</span></div><div id="gitalk-container"></div><script>var gitalk = new Gitalk({
-  clientID: '38b84fb92012be686d1c',
-  clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
-  repo: 'hexo-comments',
-  owner: 'oomgomgxx',
-  admin: ['oomgomgxx'],
-  id: md5(decodeURI(location.pathname)),
-  language: 'zh-CN',
-  perPage: 10,
-  distractionFreeMode: false,
-  pagerDirection: 'last',
-  createIssueManually: false,
-  updateCountCallback: commentCount
-})
-gitalk.render('gitalk-container')
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
 
-function commentCount(n){
-  try {
-    document.getElementsByClassName('gitalk-comment-count')[0].innerHTML= n
-  } catch (e) {
-    return false
-  }
-}</script></div></article></main><footer id="footer" style="background-image: url(/image/consul.png)" data-type="photo"><div id="footer-wrap"><div class="copyright">&copy;2020 TD</div></div></footer></div><section class="rightside" id="rightside"><div id="rightside-config-hide"><i class="fa fa-book" id="readmode" title="阅读模式"></i><i class="fa fa-plus" id="font_plus" title="放大字体"></i><i class="fa fa-minus" id="font_minus" title="缩小字体"></i><a class="translate_chn_to_cht" id="translateLink" href="javascript:translatePage();" title="简繁转换" target="_self">簡</a><i class="darkmode fa fa-moon-o" id="darkmode" title="夜间模式"></i></div><div id="rightside-config-show"><div id="rightside_config" title="设置"><i class="fa fa-cog" aria-hidden="true"></i></div><a id="to_comment" href="#post-comment" title="直达评论"><i class="scroll_to_comment fa fa-comments">  </i></a><i class="fa fa-list-ul close" id="mobile-toc-button" title="目录" aria-hidden="true"></i><i class="fa fa-arrow-up" id="go-up" title="回到顶部" aria-hidden="true"></i></div></section><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pangu/dist/browser/pangu.min.js"></script><script>document.addEventListener('DOMContentLoaded', function() {
-      pangu.spacingElementById('content-inner')
-})</script></body></html>
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: 
+    <a href="TanDi">
+      TanDi
+    </a> <br/>
+    文章链接: 
+    <a href="/consul%E5%85%A5%E9%97%A8/">
+      Consul的基本使用
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '',
+          clientSecret: '',
+          repo: '',
+          owner: '',
+          admin: [''],
+          id: md5('Consul的基本使用'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么？"><span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#下载安装"><span class="toc-text">下载安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令参数"><span class="toc-text">命令参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#服务端口"><span class="toc-text">服务端口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基础架构"><span class="toc-text">基础架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Agent的启动和停止"><span class="toc-text">Agent的启动和停止</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#注册和查询服务"><span class="toc-text">注册和查询服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#搭建集群"><span class="toc-text">搭建集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#启用WEB-UI"><span class="toc-text">启用WEB-UI</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#键值对存取"><span class="toc-text">键值对存取</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在細節中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">網站首頁</a>
+            <a id="bottom-totop" href="#">回到頂部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 外部依赖 -->
+<!-- <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+<script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script> -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>
