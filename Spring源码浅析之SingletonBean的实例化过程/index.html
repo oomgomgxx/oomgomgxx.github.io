@@ -164,10 +164,7 @@ public class JavaConfig {
 <li>国际化（MessageSource）</li>
 </ul>
 </li>
-<li><p>之间的关系：<strong>策略模式</strong></p>
-<blockquote>
-<p>可以将ApplicationContext看作是BeanFactory的扩展</p>
-</blockquote>
+<li><p>之间的关系如下，可以看到它们之间是组合的关系。Application是BeanFactory的扩展</p>
 <p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/002.png" alt></p>
 </li>
 </ul>
@@ -355,14 +352,16 @@ public void refresh() throws BeansException, IllegalStateException {
 
     // 实例化方案
 
-    // Supplier方式（Spring5开始支持Lambda）
+    // Supplier方式。Spring5开始支持Lambda注册bean，例如：
+    // context.registerBean(&quot;mySecondService&quot;, MyService.class, () -&gt; new MyService());
     Supplier&lt;?&gt; instanceSupplier = mbd.getInstanceSupplier();
     if (instanceSupplier != null) {
         return obtainFromSupplier(instanceSupplier, beanName);
     }
 
-    // 工厂方法方式
-    //【注意】@bean标注的方法就是使用该形式创建实例的
+    // 实例工厂方法或静态工厂方法
+    //【注意】@bean标注的方法就是使用该形式创建实例的,也就是说相当于一个工厂方法
+    // 而工厂方法所在的类就是一个FactoryBean
     if (mbd.getFactoryMethodName() != null) {
         return instantiateUsingFactoryMethod(beanName, mbd, args);
     }
@@ -379,7 +378,7 @@ public void refresh() throws BeansException, IllegalStateException {
         }
     }
 
-    // 构造器自动装配方式
+    // 构造器
     if (resolved) {
         if (autowireNecessary) { 
             return autowireConstructor(beanName, mbd, null, null);
@@ -452,8 +451,8 @@ public void refresh() throws BeansException, IllegalStateException {
 <p>无参构造器方式 - SimpleInstantiationStrategy#instantiate</p>
 <pre><code class="java">@Override
 public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
-    // Don&#39;t override the class with CGLIB if no overrides.
-    // 不存在重写方法时采用反射创建实例，反之使用Cglib
+    // 不存在MethodOverrides时采用反射创建实例，反之使用Cglib
+    // 注意,这里的MethodOverrides不是Java中的方法重载，而是Spring配置中的lookup-method和replace-method
     if (!bd.hasMethodOverrides()) {
         Constructor&lt;?&gt; constructorToUse;
         synchronized (bd.constructorArgumentLock) {
@@ -483,7 +482,7 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
 <pre><code class="java">@Override
 public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
                           final Constructor&lt;?&gt; ctor, Object... args) {
-    // 如果不存在重写则采用反射，反之采用Cglib
+    // 不存在MethodOverrides时采用反射创建实例，反之使用Cglib
     if (!bd.hasMethodOverrides()) {
         if (System.getSecurityManager() != null) {
             // use own privileged to change accessibility (when security is on)
@@ -541,7 +540,10 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
 
     PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
 
+    // 【注意】判断属性注入的模式
     int resolvedAutowireMode = mbd.getResolvedAutowireMode();
+    // 以下为 by name 和 by type
+    // 如果不是则可能有两种情况，1是当前Bean没有外部依赖，2是默认注入模式，既AUTOWIRE_CONSTRUCTOR 构造器注入
     if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
         MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
         // Add property values based on autowire by name if applicable.
