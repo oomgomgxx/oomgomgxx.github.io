@@ -1154,14 +1154,21 @@ AOF is valid # 表示当前aof文件是可用的</code></pre>
 <p>举个例子，根据id=nihao来获取对象信息，但数据库并没有id=nihao的对象，这时如果有人故意攻击，拿着一个不存在的id不断请求应用，这就会导致所有请求落在数据库上，从而间接导致缓存层失效; </p>
 <p>解决方法：</p>
 <ul>
-<li><p><strong>缓存空值：</strong>访问数据库时如果数据库没有数据，则返回一个null给缓存层，避免拿着不存在的值不停地访问应用从而造成压力。同时最好给这个空值设置超时时间，这个可以避免大量空值占用空间。</p>
+<li><strong>缓存空值：</strong><ul>
+<li>访问数据库时如果数据库没有数据，则返回一个null给缓存层，避免拿着不存在的值不停地访问应用从而造成压力。</li>
+<li>最好给这个空值设置超时时间，这个可以避免大量空值占用空间。</li>
+</ul>
 </li>
-<li><p><strong>BloomFilter(布隆过滤器)：</strong>基于比特向量。原理是先将数据的key（例如某个字段）通过哈希计算并保存到集合中。那么请求到来时先检查BloomFilter集合中是否<code>可能</code>存在该值。存在则查找数据库，不存在直接返回。但这里注意的是BloomFilter是<code>存在误判问题</code>的，即BloomFilter并非百分百准确，换句话来说BloomFilter只能减少无畏的数据库查询。在Google Guava工具库中提供了对BloomFilter的先关实现。</p>
-<p>BloomFilter原理展示：   <a href="https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/" target="_blank" rel="noopener">https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/</a> </p>
+<li><strong>BloomFilter(布隆过滤器)：</strong></li>
+<li>原理是先将数据的 key 通过哈希算法映射到 BloomFilter 的比特向量中。而请求时，然后查询时先到 BloomFilter 检查是否存当前查询缓存的映射，如果存在则访问，不存则直接返回。<ul>
+<li>注意 BloomFilter 使用的是哈希函数进行映射的，因此存在一定的误判性，即 BloomFilter 并非百分百准确。</li>
+<li>在 Google Guava 工具库中提供了对 BloomFilter 的相关实现</li>
+<li>BloomFilter 原理展示：<a href="https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/" target="_blank" rel="noopener">https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/</a> </li>
+</ul>
 </li>
 </ul>
-<h4 id="无底洞问题"><a href="#无底洞问题" class="headerlink" title="无底洞问题"></a>无底洞问题</h4><p>无底洞问题由Facebook所发现，当时Facebook的Memcache节点数已多达3000个，开发人员发现水平扩容节点不但没有得来想要的效果，反而降低了性能。</p>
-<p>其原因主要是key散乱在不同的缓存节点上导致了网络的开销。</p>
+<h4 id="无底洞问题"><a href="#无底洞问题" class="headerlink" title="无底洞问题"></a>无底洞问题</h4><p>无底洞问题由 Facebook 发现，指的是当时 Facebook 用的 Memcache 节点数已多达3000个，开发人员发现水平扩容节点不但没有得来想要的效果，反而降低了性能。</p>
+<p>其原因主要是 key 散乱在不同的缓存节点上导致了网络的开销。</p>
 <p>所以预防这个问题基本思想就是，<code>减少网络通讯的次数</code>和<code>让相关的key落在相同的节点上</code>。所以可以使用<code>管道</code>、mget、m* 这样的命令来解决。</p>
 <blockquote>
 <p>图片源自《Redis开发与运维》</p>
