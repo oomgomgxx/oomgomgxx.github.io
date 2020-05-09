@@ -908,7 +908,7 @@ testx:2:468332</code></pre><h2 id="问题配置"><a href="#问题配置" class="
 <li>生产者开启了重试功能，导致消息重复生产</li>
 <li>消费者处理消息的时间过长，导致发生分区再均衡（和第一种类似）</li>
 </ul>
-<p>其实在对于消息重复消费在消息系统层面是很难解决的，一般都是在程序代码成眠进行幂等操作处理才能够解决。</p>
+<p>其实对于消息重复消费而言，在消息系统层面是那以避免的，但这个问题可以通过对程序接口进行幂等处理来解决。</p>
 <h3 id="如何解决消息乱需问题"><a href="#如何解决消息乱需问题" class="headerlink" title="如何解决消息乱需问题"></a>如何解决消息乱需问题</h3><p>首先需要知道的是目前的 Kafka 并不支持全局（多个Partition之间）消息有序，只能保证单个 Partition 内是有序的。且当生产者开启重试功能后，Partition 内部也是可能发生乱序情况的。这时就需要将max.in.flight.requests.per.connection 设置为1来尽量降低乱序情况</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://stackoverflow.com/questions/48665257/why-kafka-index-files-use-memory-mapped-files-but-log-files-dont" target="_blank" rel="noopener">why kafka index files use memory mapped files ,but log files don’t?</a></li>
