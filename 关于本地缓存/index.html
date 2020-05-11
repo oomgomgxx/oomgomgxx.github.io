@@ -129,27 +129,26 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="什么是本地缓存？"><a href="#什么是本地缓存？" class="headerlink" title="什么是本地缓存？"></a>什么是本地缓存？</h2><p><code>本地缓存</code>又称为<code>进程缓存</code>，顾名思义本地缓存是与应用处于统一进程同一空间的，这就与分布式缓存形成了鲜明的区别;</p>
-<h2 id="缓存的意义"><a href="#缓存的意义" class="headerlink" title="缓存的意义"></a>缓存的意义</h2><p>不论是本地缓存还是分布式缓存，其主要目的都是为了减少不必要的数据库访问;</p>
-<p>因为从整个系统的角度来看，往往系统的瓶颈都来自数据库，因为数据库操作是最为耗时的，当大量并发操作都聚集在数据库时，数据库的<code>连接数上限</code>（受限于所在操作系统tcp最大连接数 ulimit -n）、<code>磁盘io操作</code>（优化sql索引解决）都会降低系统的性能;</p>
+  <h2 id="什么是本地缓存？"><a href="#什么是本地缓存？" class="headerlink" title="什么是本地缓存？"></a>什么是本地缓存？</h2><p>本地缓存又称为进程缓存，顾名思义本地缓存是与应用处于统一进程同一空间的。这点与分布式缓存形成了鲜明的对比。</p>
+<h2 id="缓存的意义"><a href="#缓存的意义" class="headerlink" title="缓存的意义"></a>缓存的意义</h2><p>不论是本地缓存还是分布式缓存，其主要目的都是为了减少不必要的数据库访问。因为从系统角度来看往往较早出现瓶颈的地方都是数据库。这么说的原因有两个，一是因为 JDBC 操作是阻塞式的，二是因为数据库存在大量的磁盘IO操作，而且连接数上也存在局限（受限于所在操作系统tcp最大连接数 ulimit -n）。那么从以上两点来看，降低数据库访问压力是势在必行的事情，而缓存就能有效地做到这点。</p>
 <h2 id="使用本地缓存需要注意的问题"><a href="#使用本地缓存需要注意的问题" class="headerlink" title="使用本地缓存需要注意的问题"></a>使用本地缓存需要注意的问题</h2><ul>
-<li><strong>缓存一致性问题：</strong>举个例子，假设现在系统使用Nginx进行反向代理实现负载均衡，既将原来的单个节点横向扩展成多个节点，那么这时对于本地缓存而言因为是线程独立的所以每个节点上的本地缓存内容就可能不一样，这也是使用本地缓存时需要注意的<code>缓存一致性问题</code>;</li>
-<li><strong>缓存对象的存活时间：</strong>使用本地缓存时为了避免缓存堆积进而占用内存，应该使用特定的缓存清空策略来去将”无用缓存“及时清除</li>
-<li><strong>微服务不建议使用本地缓存：</strong>因为本地缓存存在一致性问题，而且本地缓存会让节点带有状态，鉴于微服务的设计规范而言并不推荐使用</li>
+<li><strong>缓存一致性问题：</strong>举个例子，假设现在系统使用Nginx进行反向代理实现负载均衡，既将原来的单个节点横向扩展成多个节点，那么这时对于本地缓存而言因为它是线程独立的，所以每个节点上的本地缓存内容都可能不一样，这是使用本地缓存时要注意的</li>
+<li><strong>缓存对象的存活时间：</strong>使用本地缓存时要避免缓存堆积从而占用内存空间，因此应该使用特定的缓存清空策略来定期去除那些<code>无用缓存</code></li>
+<li><strong>微服务不建议使用本地缓存：</strong>因为本地缓存存在一致性问题，所以本地缓存会让微服务节点带上状态。鉴于微服务设计原则因此并不推荐在微服务中使用本地缓存（微服务应该是无状态的）</li>
 </ul>
 <h2 id="缓存驱逐策略"><a href="#缓存驱逐策略" class="headerlink" title="缓存驱逐策略"></a>缓存驱逐策略</h2><ul>
-<li><strong>FIFO(first in first out)</strong>：先进先出策略，通俗点来说就是将缓存池看成一个队列且有大小限制;如大小为3，现在队列中有a,b,c三个缓存对象（顺序），现在队列显然已经慢了，现在再添加d进队列，那么缓存列就生在d,a,b，而c因为超出队列限制的缘故被删除; 策略算法主要比较缓存元素的创建时间。<code>在数据实效性要求场景下可选择该类策略</code>，优先保障最新数据可用</li>
-<li><strong>LFU(less frequently used)</strong>：最少使用/<code>最少命中次数策略(着重次数)</code>，根据元素的被使用次数判断，清除使用次数较少的元素释放空间。策略算法主要比较元素的hitCount（命中次数）; <code>在保证高频数据（经常被访问的数据）有效性场景下，可选择这类策略</code></li>
-<li><strong>LRU(least recently used)</strong>：最近最少使用策略<code>(着重时间)</code>，通俗点来说就是删除距离某个时间（比较元素最近一次被get使用时间）点最远的缓存; <code>在热点数据（近段时间经常被访问的数据）场景下较适用，优先保证热点数据的有效性</code></li>
+<li><strong>FIFO(first in first out)</strong>：先进先出策略。通过一个带有长度限制的 FIFO 队列实现，当队列满了的时候再往队中添加缓存的话，那么队列头的缓存就会率先被剔除</li>
+<li><strong>LRU(least recently used)</strong>：最近最少使用策略(着重时间)。可以使用k-v节点形成固定长度的队列，再使用头插法将超出容量的尾部缓存剔除</li>
+<li><strong>LFU(less frequently used)</strong>：最少使用策略（着重次数，个人认为叫最少命中策略更加合适）。可以根据缓存的被使用次数来判断，通过清除哪些使用次数较少的缓存来释放内存空间</li>
 </ul>
-<h2 id="SpringBoot中本地缓存API应用"><a href="#SpringBoot中本地缓存API应用" class="headerlink" title="SpringBoot中本地缓存API应用"></a>SpringBoot中本地缓存API应用</h2><h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>启动本地缓存</p>
-<pre><code class="java">@EnableCaching
+<h2 id="SpringBoot本地缓存API"><a href="#SpringBoot本地缓存API" class="headerlink" title="SpringBoot本地缓存API"></a>SpringBoot本地缓存API</h2><h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>启动本地缓存</p>
+<pre><code class="java">@EnableCaching // 启用本地缓存
 @Configuration
 public class CacheConfig {
 }</code></pre>
 <p>操作注解</p>
-<pre><code class="java">// 默认会将方法参数做为保存缓存对象的key
-// 如可有多个参数也可以使用key参数来制定，不是的话会采用联合key，既合并作为key
+<pre><code class="java">// 默认会将方法参数列表作为缓存对象的key
+// 如可有多个参数的话，也可以使用key参数来指定
 // @Cacheable(cacheNames = &quot;findById&quot;, key=&quot;#id&quot;)
 @Cacheable(cacheNames = &quot;findById&quot;)
 public Optional&lt;Person&gt; findById(Long id) {
@@ -193,7 +192,7 @@ public void remove(Long id) {
 @CacheEvict(allEntries = true)
 public void cleanCache() {
 }</code></pre>
-<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>spring中本地缓存默认采用JDK动态代理来实现</p>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>Spring本地缓存默认采用JDK动态代理来实现</p>
 <pre><code class="java">@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -202,9 +201,9 @@ public @interface EnableCaching {
     // 采用的切面模式
     AdviceMode mode() default AdviceMode.PROXY;
 }</code></pre>
-<p>保存方式以key-value形式存储（SpringBoot默认情况下使用ConcurrentHashMap来缓存对象）</p>
+<p>保存方式是 key-value 形式（SpringBoot默认情况下会使用 ConcurrentHashMap 来保存缓存对象）</p>
 <p><img src="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/001.png" alt></p>
-<h2 id="常用的本地缓存"><a href="#常用的本地缓存" class="headerlink" title="常用的本地缓存"></a>常用的本地缓存</h2><h3 id="ConcurrentHashMap（SpringBoot默认）"><a href="#ConcurrentHashMap（SpringBoot默认）" class="headerlink" title="ConcurrentHashMap（SpringBoot默认）"></a>ConcurrentHashMap（SpringBoot默认）</h3><p>如果没有添加其他cache的依赖的话，默认SpringBoot启动SimpleCacheConfiguration进行初始化CacheManager</p>
+<h2 id="常用的本地缓存"><a href="#常用的本地缓存" class="headerlink" title="常用的本地缓存"></a>常用的本地缓存</h2><h3 id="ConcurrentHashMap（SpringBoot默认）"><a href="#ConcurrentHashMap（SpringBoot默认）" class="headerlink" title="ConcurrentHashMap（SpringBoot默认）"></a>ConcurrentHashMap（SpringBoot默认）</h3><p>如果没有添加第三方 Cache 依赖的话，SpringBoot 默认会启动 SimpleCacheConfiguration 来对CacheManager做初始化操作</p>
 <p><img src="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/002.png" alt></p>
 <pre><code class="java">@Configuration
 @ConditionalOnMissingBean(CacheManager.class)
@@ -228,8 +227,10 @@ class SimpleCacheConfiguration {
     }
 
 }</code></pre>
-<h3 id="EhCache"><a href="#EhCache" class="headerlink" title="EhCache"></a>EhCache</h3><p>Ehcache是现在最流行的纯Java开源缓存框架，配置简单、结构清晰、功能强大，是一个非常轻量级的缓存实现，我们常用的Hibernate里面就集成了相关缓存功能</p>
-<p><strong>SpringBoot中使用EhCache</strong></p>
+<h3 id="EhCache"><a href="#EhCache" class="headerlink" title="EhCache"></a>EhCache</h3><p>Ehcache是目前比较流行的纯 Java 开源缓存框架。它的特点主要体现在配置简单、结构清晰 和 功能强大。是一个非常轻量级的缓存实现。例如我们常使用的ORM框架 Hibernate 就默认使用EhCache来做二级缓存</p>
+<blockquote>
+<p>在SpringBoot中使用EhCache</p>
+</blockquote>
 <p>1）添加依赖并添加@EnableCaching</p>
 <pre><code class="xml">&lt;dependency&gt;
     &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
@@ -239,7 +240,7 @@ class SimpleCacheConfiguration {
     &lt;groupId&gt;net.sf.ehcache&lt;/groupId&gt;
     &lt;artifactId&gt;ehcache&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
-<p>2）在类路径下添加<code>ehcache.xml</code>配置文件</p>
+<p>2）在类路径下添加 ehcache.xml 配置文件</p>
 <pre><code class="xml">&lt;ehcache&gt;
 
 &lt;!-- 指定一个文件目录，当Ehcache把数据写到硬盘上时，将把数据写到这个文件目录下 --&gt;
@@ -292,25 +293,14 @@ public Optional&lt;Person&gt; findById(Long id) {
 public List&lt;Person&gt; findAll() {
     return personRepository.findAll();
 }</code></pre>
-<h3 id="Caffeine（推荐）"><a href="#Caffeine（推荐）" class="headerlink" title="Caffeine（推荐）"></a>Caffeine（推荐）</h3><p>事实上在SpringBoot1.x的时候，SpringBoot是提供Guava Cache的自动配置集成的，但是在SpringBoot2.x后就被移除了，取而代之的就是Caffeine（咖啡因）; 这里需要注意的是<code>Caffeine是Java 8重写的Guava Cache，取代了对Guava的支持</code>;</p>
-<blockquote>
-<p>拓展：关于guava cache</p>
-<p>Google Guava是一个开源的Java工具库，提供了很多实用的功能实现，因而得到广泛的应用，而Guava Cache只是Google Guava其中的一个功能，Guava Cache实现了LRU（最近最少使用）算法并支持多种缓存过期策略;</p>
-<p>Guava Cache使用推荐文章：</p>
-<p><a href="https://github.com/google/guava/wiki/CachesExplained" target="_blank" rel="noopener">https://github.com/google/guava/wiki/CachesExplained</a></p>
-<p><a href="https://segmentfault.com/a/1190000011105644" target="_blank" rel="noopener">https://segmentfault.com/a/1190000011105644</a></p>
+<h3 id="Caffeine（推荐）"><a href="#Caffeine（推荐）" class="headerlink" title="Caffeine（推荐）"></a>Caffeine（推荐）</h3><blockquote>
+<p>简介</p>
 </blockquote>
-<p>对于Caffeine的性能而言毋庸置疑是目前最高效的本地缓存，对于这点网上也有很多评测</p>
+<p>本质上来说 Caffeine 是用 Java 8 重写 Guava Cache 的产物。在性能方面 Caffeine 毋庸置疑是目前最高效的本地缓存实现。</p>
 <p><img src="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/003.png" alt></p>
-<p><code>Caffeine采用的驱逐策略：Window TinyLFU（LRU+LFU结合）</code></p>
-<p>关于Window TinyLFU通俗点来说，它采用一种叫CountMin Sketch的草图来把关（过滤器），先记录一些高命中的缓存对象，当 Sketch中的对象的命中次数高于正要被驱逐的缓存对象时才会真正被缓存，<code>这样做的原因是为了保证在缓存中的对象都是高命中的对象（热点数据）</code>;</p>
-<p>除了CountMin Sketch之外，Window TinyLFU还采用分段LRU(Segmented LRU)来存储缓存对象来达到长期缓存的效果</p>
+<p>Caffeine 采用一种名为 Window TinyLFU（LRU+LFU结合）的缓存驱逐策略来释放内存占用空间。它的基本原理是先用一种叫 CountMin Sketch 的机制过滤缓存（主要是记录下命中次数较高的缓存），然后当 Window TinyLFU 要剔除缓存时会先到 CountMin Sketch 中检查，看看 CountMin Sketch 中有没有命中次数高于当前正要剔除的缓存的缓存，如果有就将其纳入到正式缓存中（可以看到 CountMin Sketch 其实起着缓冲的作用）。这样做的好处是能够保证在缓存的对象都是高命中的热点数据。</p>
 <p><img src="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/004.png" alt></p>
-<p>如图所示，其中绿色的被称为<code>试用段（probationary segment）</code>，紫色的就是<code>CountMin Sketch</code>，而红色部分叫<code>保护段（protected segment）</code>，其中保护段的上限为Segmented LRU的80%; </p>
-<p>基本原理是，当处于probationary segment的缓存对象被连续访问，再经过CountMin Sketch的把关后达到晋升到protected segment的机会，而因为protected segment上限可以达到整个Segmented LRU的80%，因此在后续的访问中，就单个缓存对象而言，它会不断晋升，直到80%这个临界点，这时缓存对象可能因为不满足继续停留在protected segment（剩余的LRU空间）会被驱逐出Segmented LRU回到probationary segment，而有资格停留的缓存对象会继续晋升直到够条件被驱逐为止，<code>这样做的原因是确保保留具有最热的缓存数据，并且驱逐在Segmented LRU较冷的缓存数据</code></p>
-<blockquote>
-<p>上面的内容参考自文章：<a href="http://highscalability.com/blog/2016/1/25/design-of-a-modern-cache.html" target="_blank" rel="noopener">http://highscalability.com/blog/2016/1/25/design-of-a-modern-cache.html</a></p>
-</blockquote>
+<p>除了 CountMin Sketch 机制之外，Window TinyLFU 还用 Segmented LRU 来管理缓存。例如上图所示，绿色部分被称为试用段（probationary segment），紫色部分就是上面提到的 CountMin Sketch ，而红色部分叫保护段（protected segment）。其中保护段的上限为整个 Segmented LRU 的80%。当处于 probationary segment 的缓存对象被连续访问，它就会在 CountMin Sketch 得到晋升 protected segment 的机会，而因为 protected segment 上限可以达到整个 Segmented LRU 的80%，所以在后续的访问中缓存会被不断晋升直到80%这个临界点，这时缓存对象可能因为不满足继续停留就会被驱逐出 Segmented LRU 而回到 probationary segment中，而有资格停留的缓存对象则会继续晋升直到够条件被驱逐为止。这样做的原因是确保热点缓存长期驻留在 Segmented LRU 内，而将那么相对来说较为冷门的缓存驱逐出 Segmented LRU</p>
 <p><strong>SpringBoot中使用Caffeine</strong></p>
 <p>添加依赖</p>
 <pre><code class="xml">&lt;dependency&gt;
@@ -349,13 +339,10 @@ public List&lt;Person&gt; findAll() {
 <li>maximumSize和maximumWeight不可以同时使用</li>
 <li>weakValues和softValues不可以同时使用</li>
 </ul>
-<blockquote>
-<p>参数参考自：<a href="https://blog.csdn.net/xiaolyuh123/article/details/78794119" target="_blank" rel="noopener">https://blog.csdn.net/xiaolyuh123/article/details/78794119</a></p>
-<p>也可以参考：</p>
-<p>源码<code>com.github.benmanes.caffeine.cache.CaffeineSpec</code>中的配置</p>
-<p>github：<a href="https://github.com/ben-manes/caffeine/wiki" target="_blank" rel="noopener">https://github.com/ben-manes/caffeine/wiki</a></p>
-</blockquote>
-
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="http://highscalability.com/blog/2016/1/25/design-of-a-modern-cache.html" target="_blank" rel="noopener">Design Of A Modern Cache</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -397,7 +384,7 @@ public List&lt;Person&gt; findAll() {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是本地缓存？"><span class="toc-text">什么是本地缓存？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存的意义"><span class="toc-text">缓存的意义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用本地缓存需要注意的问题"><span class="toc-text">使用本地缓存需要注意的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存驱逐策略"><span class="toc-text">缓存驱逐策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot中本地缓存API应用"><span class="toc-text">SpringBoot中本地缓存API应用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用"><span class="toc-text">使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用的本地缓存"><span class="toc-text">常用的本地缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ConcurrentHashMap（SpringBoot默认）"><span class="toc-text">ConcurrentHashMap（SpringBoot默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EhCache"><span class="toc-text">EhCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Caffeine（推荐）"><span class="toc-text">Caffeine（推荐）</span></a></li></ol></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是本地缓存？"><span class="toc-text">什么是本地缓存？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存的意义"><span class="toc-text">缓存的意义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用本地缓存需要注意的问题"><span class="toc-text">使用本地缓存需要注意的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存驱逐策略"><span class="toc-text">缓存驱逐策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot本地缓存API"><span class="toc-text">SpringBoot本地缓存API</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用"><span class="toc-text">使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用的本地缓存"><span class="toc-text">常用的本地缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ConcurrentHashMap（SpringBoot默认）"><span class="toc-text">ConcurrentHashMap（SpringBoot默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EhCache"><span class="toc-text">EhCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Caffeine（推荐）"><span class="toc-text">Caffeine（推荐）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
