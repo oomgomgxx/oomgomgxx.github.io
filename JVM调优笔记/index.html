@@ -9,7 +9,7 @@
   <!-- 浏览器页签图标 -->
   <link rel="icon" href="/img/favicon.ico">
   <!-- 标题 -->
-  <title> JVM常用调优参数与垃圾回收器相关知识-学然后知不足 </title>
+  <title> JVM常用调优参数与垃圾回收器相关内容-学然后知不足 </title>
 
   <!-- 网站 seo 相关 -->
   
@@ -23,28 +23,43 @@
   <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
   <!-- baidu seo -->
   <meta name="baidu-site-verification" content="Kfp083TiDg" />
-
+  <!-- baidu auto commit -->
+  <script>
+    (function(){
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        }
+        else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+    
   <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
   <!-- 内部脚本 -->
   
-  
-    <script src="/js/jquery.min.js"></script>
-  
-    <script src="/js/main.js"></script>
-  
-    <script src="/js/md5.min.js"></script>
-  
-    <script src="/js/highlight.min.js"></script>
-  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
   
 
   <!-- 内部样式文件 -->
   
-  
-    <link rel="stylesheet" href="/css/main.css">
-  
-    <link rel="stylesheet" href="/css/github.min.css">
-  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
   
 
   <!-- 小图标 -->
@@ -53,6 +68,14 @@
   <link rel="stylesheet" href="/gitalk/gitalk.css" />
   <script src="/gitalk/gitalk.min.js"></script>
   <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+
 <meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="學然後知不足" type="application/atom+xml">
 </head>
 
@@ -93,7 +116,7 @@
 <article id="post">
 
   <!-- 文章标题 -->
-  <h1>JVM常用调优参数与垃圾回收器相关知识</h1>
+  <h1>JVM常用调优参数与垃圾回收器相关内容</h1>
 
   <!-- 文章元信息 -->
   <span class="post-metadata">
@@ -106,7 +129,7 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="JVM基础参数"><a href="#JVM基础参数" class="headerlink" title="JVM基础参数"></a>JVM基础参数</h2><p>基本说明<br>1）有-XX的为临时参数，可能会随着Java版本升级而改变或被删除<br>2）有-XX的参数如果赋值的时候需要使用=</p>
+  <h2 id="JVM常用配置参数"><a href="#JVM常用配置参数" class="headerlink" title="JVM常用配置参数"></a>JVM常用配置参数</h2><p>基本说明<br>1）有-XX的为临时参数，可能会随着Java版本升级而改变或被删除<br>2）有-XX的参数如果赋值的时候需要使用=</p>
 <table>
 <thead>
 <tr>
@@ -115,11 +138,11 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>-XX:+PrintGC/-XX:+Xlog:gc</td>
+<td>-XX:+PrintGC / -XX:+Xlog:gc</td>
 <td>打印GC信息</td>
 </tr>
 <tr>
-<td>-XX:+PrintGCDetails/-XX:+Xlog:gc*</td>
+<td>-XX:+PrintGCDetails / -XX:+Xlog:gc*</td>
 <td>打印GC详细信息</td>
 </tr>
 <tr>
@@ -127,24 +150,24 @@
 <td>将GC信息输出到指定文件（分析工具：GC Histo、GC viewer、GCeasy）</td>
 </tr>
 <tr>
-<td>-XX:+PrintReference</td>
-<td>打印对象引用类型</td>
-</tr>
-<tr>
-<td>-XX:+TraceClassLoading</td>
-<td>打印类加载</td>
-</tr>
-<tr>
-<td>-XX:+TraceClassUnLoading</td>
-<td>打印类卸载</td>
-</tr>
-<tr>
 <td>-XX:+PrintVMOptions</td>
-<td>印jvm的显式参数（启动时传入）</td>
+<td>打印JVM的显式接收到的参数（启动时传入）</td>
 </tr>
 <tr>
 <td>-XX:+PrintCommandLineFlags</td>
-<td>打印jvm的显式和隐式参数</td>
+<td>打印JVM的显式和隐式接收到的配置参数</td>
+</tr>
+<tr>
+<td>-XX:+PrintFlagsFinal</td>
+<td>打印JVM所有能够设置的配置参数</td>
+</tr>
+<tr>
+<td>-XX:+PrintGCApplicationConcurrentTime</td>
+<td>打印GC执行期间用户应用执行时间</td>
+</tr>
+<tr>
+<td>-XX:PrintGCApplicationStoppedTime</td>
+<td>打印GC执行期间用户应用停顿的时间</td>
 </tr>
 <tr>
 <td>-Xms</td>
@@ -218,6 +241,18 @@
 <td>-XX:TLABSize</td>
 <td>指定TLAB的内存大小</td>
 </tr>
+<tr>
+<td>-XX:-+DisableExplicitGC</td>
+<td>禁用程序的Runtime.getRuntime().gc()/System.gc()，因为该操作会触发Full GC</td>
+</tr>
+<tr>
+<td>-XX:MaxTenuringThreshold</td>
+<td>指定对象从新生代进入老年代的年龄，默认为15</td>
+</tr>
+<tr>
+<td>-XX:PretenureSizeThreshold</td>
+<td>指定大对象进入老年代的阀值</td>
+</tr>
 </tbody></table>
 <h2 id="即时编译器相关"><a href="#即时编译器相关" class="headerlink" title="即时编译器相关"></a>即时编译器相关</h2><h3 id="client模式"><a href="#client模式" class="headerlink" title="client模式"></a>client模式</h3><ul>
 <li><p>client编译器也称为c1编译器</p>
@@ -249,7 +284,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <li>完全c1编译代码</li>
 <li>c2编译代码</li>
 </ol>
-<p>Note：多数情况下方法的第一次编译都是3，但如果方法频繁被调用就会进行4</p>
+<p>注：多数情况下方法的第一次编译都是3，但如果方法频繁被调用就会进行4</p>
 <h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><p>修改jvm编译模式</p>
 <table>
 <thead>
@@ -296,139 +331,8 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <td>指定即时编译器代码缓存初始化大小</td>
 </tr>
 </tbody></table>
-<h2 id="垃圾收集器相关"><a href="#垃圾收集器相关" class="headerlink" title="垃圾收集器相关"></a>垃圾收集器相关</h2><h3 id="Serial垃圾收集器"><a href="#Serial垃圾收集器" class="headerlink" title="Serial垃圾收集器"></a>Serial垃圾收集器</h3><ul>
-<li>32位JVM默认</li>
-<li>单线程回收垃圾</li>
-<li>MinorGC和FullGC时所有应用线程停顿清理堆空间</li>
-<li>FullGC时会对老年代进行压缩整理</li>
-</ul>
-<h3 id="Throughput（Parallel）垃圾收集器"><a href="#Throughput（Parallel）垃圾收集器" class="headerlink" title="Throughput（Parallel）垃圾收集器"></a>Throughput（Parallel）垃圾收集器</h3><ul>
-<li>64位JVM默认</li>
-<li>着重于吞吐量（ParallelGC），因此提供了<code>尽力参数</code>，如尽量达到吞吐时间<code>-XX:+MaxGCPauseMillis</code></li>
-<li>多线程回收垃圾(代价是消耗更多CPU资源)</li>
-<li>MinorGC和FullGC时所有应用线程停顿清理堆空间</li>
-<li>FullGC时会对老年代进行压缩整理</li>
-<li>ParallelGC和ParNewGC一样是并行回收GC（回收垃圾），只不过ParallelGC着重程序吞吐量</li>
-</ul>
-<h3 id="CMS垃圾收集器"><a href="#CMS垃圾收集器" class="headerlink" title="CMS垃圾收集器"></a>CMS垃圾收集器</h3><ul>
-<li>高吞吐垃圾收集器，但需要充足的CPU资源</li>
-<li>MinorGC时所有应用线程停顿清理堆空间</li>
-<li>多线程并发回收垃圾(代价是消耗更多CPU资源)</li>
-<li>FullGC时不停顿应用线程，使用后台线程间歇对老年代进行扫描和回收</li>
-<li>进行垃圾回收时可以做到极地停顿时间</li>
-<li>不堆内存做压缩整理，因此会出现内存碎片化</li>
-<li>无法获取所需CPU资源 和 堆过度碎片化时，自动转为Serial垃圾收集器，停顿所有线程做垃圾回收并做内存压缩，然后再转回CMS</li>
-</ul>
-<h3 id="G1垃圾回收器"><a href="#G1垃圾回收器" class="headerlink" title="G1垃圾回收器"></a>G1垃圾回收器</h3><ul>
-<li>Java9默认</li>
-<li>针对4G以上的大堆</li>
-<li>新生代和老年代通用垃圾回收器</li>
-<li>将对划分为若干个区域</li>
-<li>MinorGC时所有应用线程停顿清理堆空间，存活对象复制到survivor区</li>
-<li>多线程回收垃圾(代价是消耗更多CPU资源)</li>
-<li>后台线程回收老年代垃圾大多无需停顿应用线程</li>
-<li>因为堆分为若干个区域，采用的是复制算法，因此可以做到内存压缩整理</li>
-<li>G1比CMS更不容易遭遇FullGC</li>
-</ul>
-<h3 id="GC选择参考"><a href="#GC选择参考" class="headerlink" title="GC选择参考"></a>GC选择参考</h3><ul>
-<li>单核CPU采用Serial</li>
-<li>多核CPU情况下，应用线程CPU使用率高则选择CMS（因为后台线程只是间歇运作），否则选择Parallel</li>
-<li>在CPU资源充足且要求高吞吐量时，选择CMS，且堆在4G以下（FullGC时不停顿应用线程）</li>
-<li>4G以上的大堆推荐使用G1（因为堆划分为若干个区域，回收效果更佳），且回收对象时CMS需要扫描整个堆，因此堆越大CMS性能越低</li>
-</ul>
-<h3 id="GC参数"><a href="#GC参数" class="headerlink" title="GC参数"></a>GC参数</h3><table>
-<thead>
-<tr>
-<th>参数</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>-XX:+UseSerialGC</td>
-<td>新生代和老年代同时使用串行垃圾收集器</td>
-</tr>
-<tr>
-<td>-XX:+UseParNewGC</td>
-<td>新生代采用ParNewGC（并行回收），老年代采用SerialOld垃圾收集器</td>
-</tr>
-<tr>
-<td>-XX:+UseParallelGC</td>
-<td>新生代采用ParallelGC，老年代采用串行垃圾收集器;ParallelGC和ParNewGC一样是并行回收GC，只不过ParallelGC着重程序吞吐量</td>
-</tr>
-<tr>
-<td>-XX:+UseParallelOldGC</td>
-<td>新生代和老年代都采用ParallelGC</td>
-</tr>
-<tr>
-<td>-XX:+MaxGCPauseMillis</td>
-<td>指定最大的垃圾回收时间的期望值(0以上值为整数)，如果GC回收时长不满足该配置则会自动调整堆参参数，如减少堆的大小来缩短回收时间</td>
-</tr>
-<tr>
-<td>-XX:+UseAdaptiveSizePolicy</td>
-<td>开启堆的自动调整功能（默认开启），配合-XX:+MaxGCPauseMillis使用来达到满足回收时间要求，但如果[堆初始化值和最大值一致，新生代始化值和最大值一致]则该配置自动关闭</td>
-</tr>
-<tr>
-<td>-XX:+GCTimeTatio</td>
-<td>指定吞吐量大小的期望值（0-100整数，默认19）</td>
-</tr>
-<tr>
-<td>-XX:+ParallelGCThreads</td>
-<td>指定回收垃圾时的工作线程数</td>
-</tr>
-<tr>
-<td>-XX:+UseConcMarkSweepGC</td>
-<td>新生代采用ParNewGC（并行回收），老年代采用CMS</td>
-</tr>
-<tr>
-<td>-XX:+ConcGCThreads</td>
-<td>指定CMS并发线程数</td>
-</tr>
-<tr>
-<td>-XX:CMSInitiatingOccupancyFraction</td>
-<td>指定CMS回收阀值（默认68），即当老年代内存使用率到达68%就会触发一次GC; 需要注意的时，如果老年代的内存使用率增长得过快，则CMS可能会回收失败，这时jvm会使用串行回收GC来回收</td>
-</tr>
-<tr>
-<td>-XX:UseCMSCompactAtFullCollection</td>
-<td>CMS回收过收过后进行内存碎片整理（CMS，标记清除算法），需要注意的是这个操作不是并发的</td>
-</tr>
-<tr>
-<td>-XX:CMSFullCGsBeforeCompaction</td>
-<td>指定多少次GC后进行一次内存碎片整理</td>
-</tr>
-<tr>
-<td>-XX:+CMSClassUnloadingEnabled</td>
-<td>指定CMS可以回收永久代中的类信息</td>
-</tr>
-<tr>
-<td>-XX:+UseG1GC</td>
-<td>使用G1垃圾回收器（JDK9默认）</td>
-</tr>
-<tr>
-<td>-XX:MaxGCPauseMillis</td>
-<td>指定最大停顿期望值</td>
-</tr>
-<tr>
-<td>-XX:+ParallelGCThreads</td>
-<td>指定回收时的工作线程数</td>
-</tr>
-<tr>
-<td>-XX:InitiatingHeapOccupancyPercent</td>
-<td>指定堆内存使用率阀值（默认45，即45%）触发并发标记周期</td>
-</tr>
-<tr>
-<td>-XX:-+DisableExplicitGC</td>
-<td>禁用程序的Runtime.getRuntime().gc()/System.gc()，因为该操作会触发Full GC</td>
-</tr>
-<tr>
-<td>-XX:MaxTenuringThreshold</td>
-<td>指定对象从新生代进入老年代的年龄，默认为15</td>
-</tr>
-<tr>
-<td>-XX:PretenureSizeThreshold</td>
-<td>指定大对象进入老年代的阀值</td>
-</tr>
-</tbody></table>
-<h3 id="Epsilon收集器（JDK11）"><a href="#Epsilon收集器（JDK11）" class="headerlink" title="Epsilon收集器（JDK11）"></a>Epsilon收集器（JDK11）</h3><ol>
+<h2 id="垃圾收集器相关"><a href="#垃圾收集器相关" class="headerlink" title="垃圾收集器相关"></a>垃圾收集器相关</h2><h3 id="常用GC配置和介绍"><a href="#常用GC配置和介绍" class="headerlink" title="常用GC配置和介绍"></a>常用GC配置和介绍</h3><p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/009.png" alt></p>
+<h3 id="其它较为新颖的GC"><a href="#其它较为新颖的GC" class="headerlink" title="其它较为新颖的GC"></a>其它较为新颖的GC</h3><h4 id="Epsilon收集器（JDK11）"><a href="#Epsilon收集器（JDK11）" class="headerlink" title="Epsilon收集器（JDK11）"></a>Epsilon收集器（JDK11）</h4><ol>
 <li>Epsilon垃圾回收器的目标是控制内存分配，但是不执行任何实际的垃圾回收工作。</li>
 <li>它提供一个完全消极的 GC 实现，分配有限的内存资源，最大限度的降低内存占用和内存吞吐延迟时间。</li>
 <li>用途：性能测试、内存压力测试、vm接口测试、极度短暂job任务、延时改进、吞吐量改进</li>
@@ -445,7 +349,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <td>启用Epsilon GC</td>
 </tr>
 </tbody></table>
-<h3 id="Shenandoah收集器（JDK12）"><a href="#Shenandoah收集器（JDK12）" class="headerlink" title="Shenandoah收集器（JDK12）"></a>Shenandoah收集器（JDK12）</h3><ol>
+<h4 id="Shenandoah收集器（JDK12）"><a href="#Shenandoah收集器（JDK12）" class="headerlink" title="Shenandoah收集器（JDK12）"></a>Shenandoah收集器（JDK12）</h4><ol>
 <li>着重停顿，处于实验阶段，和G1一样采用分区算法管理内存</li>
 <li>和G1一样与应用线程并发工作</li>
 <li>Shenandoah是Redhat开发的，在商用版JDK中并没有Shenandoah。换句话说Shenandoah只在开源版本中存在</li>
@@ -470,49 +374,12 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <td>提高大堆的性能，同时建议在Linu上使用</td>
 </tr>
 </tbody></table>
-<h3 id="手动触发FullGC方法"><a href="#手动触发FullGC方法" class="headerlink" title="手动触发FullGC方法"></a>手动触发FullGC方法</h3><ul>
+<h3 id="手动触发FullGC的方法"><a href="#手动触发FullGC的方法" class="headerlink" title="手动触发FullGC的方法"></a>手动触发FullGC的方法</h3><ul>
 <li>System.gc()</li>
 <li>jcmd 进程号 GC.run</li>
 <li>Jconsole内存面板“执行GC”按钮</li>
 </ul>
-<h2 id="JDK1-6h后堆Synchronized锁的优化"><a href="#JDK1-6h后堆Synchronized锁的优化" class="headerlink" title="JDK1.6h后堆Synchronized锁的优化"></a>JDK1.6h后堆Synchronized锁的优化</h2><h3 id="自旋锁"><a href="#自旋锁" class="headerlink" title="自旋锁"></a>自旋锁</h3><ol>
-<li>jdk1.4引入，jdk1.6默认开启</li>
-<li>所谓的自旋锁通俗点说就是尽量避免线程每次锁竞争锁失败都要挂起（对于线程和进程的调度是需要内核进行的，所以该操作需要切换到内核态。用户态和内核态之间的切换和线程/进程的调度对于应用来说会降低应用的执行效率）而采取循环尝试获取锁的操作</li>
-<li>适合使用自旋锁的条件：<code>预知线程持锁时间短，换句话就是业务代码简单不耗时</code></li>
-<li>从上面几点可以的出一个简单的结论，就是自旋锁是建立在预知线程持锁时间短的基础上，如果线程长时间不释放锁（如处理业务时间较长）的话在高并发的场景就会导致大量线程自旋，这样就会对CPU造成压力，因此而得不偿失。这时可以考虑关闭自旋锁功能<code>-XX:-UseSpinning</code> 和 <code>-XX:PreBlockSpin</code> 指定自选次数（默认10次，当有线程自旋超过10次，锁就会从轻量级升级为重量级）</li>
-<li>jdk1.6加入了自适应自旋，简单来说就是，根据上一条获取到锁的线程的等锁时间来做自旋次数的相应调整</li>
-</ol>
-<h3 id="锁消除"><a href="#锁消除" class="headerlink" title="锁消除"></a>锁消除</h3><ol>
-<li>锁消除是指JVM即时编译器检测到方法中有<code>不可能线程共享的资源</code>，然后消除该资源上的锁。</li>
-<li>锁消除的主要依据是通过逃逸分析进行判断，既资源如果不可能逃逸的话那么即时编译器就会认为这是线程独占的而无需加锁因此而讲锁消除</li>
-</ol>
-<h3 id="锁粗化"><a href="#锁粗化" class="headerlink" title="锁粗化"></a>锁粗化</h3><p>锁粗化指的是一段代码频繁对同一个锁对象进行加解锁操作的话那么就会通过锁粗化来减少加解锁操作的次数，例子如下</p>
-<pre><code class="java">StringBuffer sb = new StringBuffer();
-sb.append(&quot;1&quot;);
-sb.append(&quot;3&quot;);
-sb.append(&quot;2&quot;);</code></pre>
-<p>因为StringBuffer的线程同步的，且锁对象为sb，因此每次一append都会进行加解锁操作，那么锁粗化就是将锁的范围扩展到第1次append和最后1次append，这样就只需要加解锁一次当然这也是基于内存逃逸分析的基础上的</p>
-<h3 id="锁升级"><a href="#锁升级" class="headerlink" title="锁升级"></a>锁升级</h3><h4 id="锁模式-偏向锁"><a href="#锁模式-偏向锁" class="headerlink" title="锁模式-偏向锁"></a>锁模式-偏向锁</h4><ol>
-<li>（开启偏向锁功能后）第一条线程加锁后的状态，该状态下的锁有偏向性，通俗点说就是偏心与第一条获取到它（锁）的线程，偏向锁性能相当于没有加锁，因为这时JVM不会进行加解锁操作（没有竞争的前提下）</li>
-<li>当偏向锁有两条以上线程竞争时，锁对象会退出偏向锁模式（偏向失败）并退会无所状态再根据竞争情况升级为轻量级锁</li>
-<li>从上面可以得出结论，其实在高并发场景下偏向锁并不会带来实质的优化效果，因此在高并发环境下可以尝试禁用偏向锁以减少锁升级的开销</li>
-</ol>
-<h4 id="锁模式-轻量级锁"><a href="#锁模式-轻量级锁" class="headerlink" title="锁模式-轻量级锁"></a>锁模式-轻量级锁</h4><ol>
-<li>当锁偏向失败锁就会升级为轻量级锁，这时表示有两条以上的线程竞争同一把锁</li>
-<li>轻量级锁状态下，线程抢锁失败将会进入自旋操作（死循环获取锁），直到获取到锁或者是自旋次数超过<code>-XX:PreBlockSpin</code> 后升级为重量级锁（Monitor Lock）</li>
-<li>自旋的目的是避免线程抢锁失败后马上进入内核态从而被阻塞，这是因为频繁的用户态和内核态切换会造成系统资源开销从而导致应用程序阻塞时间加长后事务处理能力下降</li>
-<li>轻量级锁由 JVM 中一个叫 <code>BasicObjectLock</code> 的对象实现，该对象包含：一个<code>BasicLock</code>（锁对象）、一个持有该锁的 Java 对象指针（线程对象）; BasicObjectLock 对象存放在栈帧中，其中BasicLock锁对象又维护了一个<code>_displaced_header</code>字段用于备份BasicObjectLock对象头的Mark Word</li>
-<li>当一个线程持有轻量级锁时，它的对象头Mark Word 为：<ul>
-<li>[ptr  (轻量级锁的指针)| 00（轻量级锁模式的标记位值）] </li>
-</ul>
-</li>
-<li>因为 BasicObjectLock 对象存放在栈帧中，所以如果判断线程是否持有该对象锁只需要查看该对象锁是否存在于线程栈中即可</li>
-</ol>
-<h4 id="锁模式-重量级锁-膨胀锁"><a href="#锁模式-重量级锁-膨胀锁" class="headerlink" title="锁模式-重量级锁/膨胀锁"></a>锁模式-重量级锁/膨胀锁</h4><ol>
-<li>在轻量级锁状态下，如果有某条线程自旋次数超过<code>-XX:PreBlockSpin</code> 就会升级至重量级锁</li>
-<li>重量级锁的重在于需要进入内核态进行锁竞争，线程一旦竞争失败则会被挂起（不会释放资源，这是Thread的状态为BLOCKED），当持锁线程释放锁时又会被唤醒，所以这就是它重的原因，因为需要进行用户态和内核态切换并执行线程调度操作，这样会大大提高系统开销从而降低应用程序的事务处理能力</li>
-</ol>
-<h3 id="锁参数"><a href="#锁参数" class="headerlink" title="锁参数"></a>锁参数</h3><table>
+<h2 id="锁相关配置"><a href="#锁相关配置" class="headerlink" title="锁相关配置"></a>锁相关配置</h2><table>
 <thead>
 <tr>
 <th>参数</th>
@@ -1408,14 +1275,20 @@ ccstrlist OnOutOfMemoryError                        =                           
 java version &quot;1.8.0_231&quot;
 Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
 Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>《JVM G1源码分析和调优》</li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年5月11日 16:40:05 — 丰富垃圾回收器内容，以及迁移Synchronized锁优化内容</li>
+</ul>
+
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
     文章作者: TanDi <br/>
     文章链接: 
     <a href="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/">
-      JVM常用调优参数与垃圾回收器相关知识
+      JVM常用调优参数与垃圾回收器相关内容
     </a> <br/>
     版权声明: 转载请注明来自 
     <a href="https://tandi.pub">
@@ -1436,7 +1309,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
           admin: ['oomgomgxx'],
-          id: md5('JVM常用调优参数与垃圾回收器相关知识'),
+          id: md5('JVM常用调优参数与垃圾回收器相关内容'),
           distractionFreeMode: false
         })
         gitalk.render('gitalk-container')           
@@ -1450,7 +1323,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM基础参数"><span class="toc-text">JVM基础参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#即时编译器相关"><span class="toc-text">即时编译器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#client模式"><span class="toc-text">client模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#server模式"><span class="toc-text">server模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#混合模式"><span class="toc-text">混合模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他"><span class="toc-text">其他</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#垃圾收集器相关"><span class="toc-text">垃圾收集器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Serial垃圾收集器"><span class="toc-text">Serial垃圾收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Throughput（Parallel）垃圾收集器"><span class="toc-text">Throughput（Parallel）垃圾收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CMS垃圾收集器"><span class="toc-text">CMS垃圾收集器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#G1垃圾回收器"><span class="toc-text">G1垃圾回收器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GC选择参考"><span class="toc-text">GC选择参考</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GC参数"><span class="toc-text">GC参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Epsilon收集器（JDK11）"><span class="toc-text">Epsilon收集器（JDK11）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Shenandoah收集器（JDK12）"><span class="toc-text">Shenandoah收集器（JDK12）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动触发FullGC方法"><span class="toc-text">手动触发FullGC方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK1-6h后堆Synchronized锁的优化"><span class="toc-text">JDK1.6h后堆Synchronized锁的优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#自旋锁"><span class="toc-text">自旋锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁消除"><span class="toc-text">锁消除</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁粗化"><span class="toc-text">锁粗化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁升级"><span class="toc-text">锁升级</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#锁模式-偏向锁"><span class="toc-text">锁模式-偏向锁</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁模式-轻量级锁"><span class="toc-text">锁模式-轻量级锁</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁模式-重量级锁-膨胀锁"><span class="toc-text">锁模式-重量级锁&#x2F;膨胀锁</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁参数"><span class="toc-text">锁参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控工具"><span class="toc-text">监控工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#图形化工具"><span class="toc-text">图形化工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展：查看当前版本的JVM所支持的配置"><span class="toc-text">拓展：查看当前版本的JVM所支持的配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM常用配置参数"><span class="toc-text">JVM常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#即时编译器相关"><span class="toc-text">即时编译器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#client模式"><span class="toc-text">client模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#server模式"><span class="toc-text">server模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#混合模式"><span class="toc-text">混合模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他"><span class="toc-text">其他</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#垃圾收集器相关"><span class="toc-text">垃圾收集器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#常用GC配置和介绍"><span class="toc-text">常用GC配置和介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其它较为新颖的GC"><span class="toc-text">其它较为新颖的GC</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Epsilon收集器（JDK11）"><span class="toc-text">Epsilon收集器（JDK11）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Shenandoah收集器（JDK12）"><span class="toc-text">Shenandoah收集器（JDK12）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动触发FullGC的方法"><span class="toc-text">手动触发FullGC的方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#锁相关配置"><span class="toc-text">锁相关配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控工具"><span class="toc-text">监控工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#图形化工具"><span class="toc-text">图形化工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展：查看当前版本的JVM所支持的配置"><span class="toc-text">拓展：查看当前版本的JVM所支持的配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
