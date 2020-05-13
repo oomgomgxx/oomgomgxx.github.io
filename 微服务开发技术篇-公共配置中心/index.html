@@ -137,7 +137,7 @@
 <li>提供集中化外部(公共)配置</li>
 <li>支持配置推送</li>
 <li>提供配置加密功能</li>
-<li>支持配置的环境切换</li>
+<li>支持环境配置的切换</li>
 </ul>
 <blockquote>
 <p>常用配置中心</p>
@@ -157,7 +157,7 @@
 <h2 id="SpringCloud-Config"><a href="#SpringCloud-Config" class="headerlink" title="SpringCloud Config"></a>SpringCloud Config</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><ul>
 <li>SpringCloud Config主要分为两个角色：Config Server、Config Client</li>
 <li>SpringCloud Config默认采用Git库来存储外部配置。除此之外还支持Subversion、FileSystem、CredHub、JDBC等等</li>
-<li>Config Client 会在微服务启动是的环境初始化阶段向 Config Server 获取外部配置并添加到自己的环境中</li>
+<li>Config Client 会在微服务启动时的环境初始化阶段向 Config Server 获取外部配置并添加到自己的环境中</li>
 </ul>
 <h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="Config-Server"><a href="#Config-Server" class="headerlink" title="Config Server"></a>Config Server</h4><ul>
 <li>规范的做法是 Config Server 应该是一个独立的微服务</li>
@@ -168,8 +168,8 @@
 <ul>
 <li><p>步骤1：创建存储配置的库<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/002.png" alt></p>
 </li>
-<li><p>步骤2：上传微服务外置配置内容文件<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/003.png" alt></p>
-<p>各个文件内容如下（实际开发根据自己的需求来抽取配置）：</p>
+<li><p>步骤2：上传微服务外部公共配置文件<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/003.png" alt></p>
+<p>各个文件的内容如下：</p>
 <pre><code class="yaml"># msa-config-client-default.yml
 info:
   desc: default
@@ -186,12 +186,11 @@ info:
 # msa-config-client-pro.yml
 info:
   desc: pro</code></pre>
-<p>关于外置配置文件的命名规则：</p>
+<p>关于外部公共配置文件的命名规则：</p>
 <ul>
 <li>格式：<code>微服务名称-环境</code>。文件可以是yaml或者properties</li>
-<li>微服务名称可以表示为application。环境则可以表示为profile</li>
-<li>例如，msa-config-client-test.yml。其中 application 就是 msa-config-client，而 profile 则是 test</li>
-<li>需要强调的是，微服务中的 spring.application.name 必须和外置配置文件名称的application部分对应，否则无法获取到外置配置。换句话就是 spring.application.name 必须和 外置配置文件名称的 application 一致</li>
+<li>微服务名称为application。环境为profile。例如，msa-config-client-test.yml。其中 application 就是 msa-config-client，而 profile 则是 test</li>
+<li>需要强调的是，微服务配置 spring.application.name 必须和外部公共配置文件名称中的application 部分对应，否则无法获取到外置配置。</li>
 </ul>
 </li>
 </ul>
@@ -237,7 +236,7 @@ info:
 <blockquote>
 <p>配置 - bootstrap.yml</p>
 </blockquote>
-<pre><code class="yaml"># 方便查看这里暴露所有信息端点
+<pre><code class="yaml"># 方便查看，这里暴露所有端点
 management:
   endpoints:
     web:
@@ -258,7 +257,7 @@ spring:
           # 只读操作无需密码
           # username:
           # password:
-          clone-on-start: true # 启动时克隆配置文件。否则需要等到有Config Client请求才加载
+          clone-on-start: true # 指定当前服务启动时就克隆公共配置文件到本地，否则会等到有Config Client请求才克隆
           basedir: C:/Users/admin/Desktop/git # 保存克隆库的文件夹。默认在系统的临时文件夹中
           refresh-rate: 300 # 配置刷新频率。默认为0，表示接收到Client请求才刷新
 
@@ -282,7 +281,7 @@ public class MsaConfigServerApplication {
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/004.png" alt></p>
 <p>关于获取配置信息的请求URI格式：</p>
-<pre><code class="properties"># {}表示必须的，[]标识可选的
+<pre><code class="properties"># {}为必须的，[]为可选的
 格式1：/{application}/{profile}[/{label}]
 格式2：/{application}-{profile}.后缀名
 格式3：/{label}/{application}-{profile}.后缀名</code></pre>
@@ -369,7 +368,7 @@ server:
 <p>启用功能</p>
 </blockquote>
 <pre><code class="java">// @EnableEurekaClient 
-// 在Config Client中配置了服务发现后后无需显示配置注解。参考：DiscoveryClientConfigServiceBootstrapConfiguration
+// 在Config Client中配置了服务发现后无需再显示配置注解。参考：DiscoveryClientConfigServiceBootstrapConfiguration
 @SpringBootApplication
 public class MsaConfigClientApplication {
     public static void main(String[] args) {
@@ -377,18 +376,18 @@ public class MsaConfigClientApplication {
     }
 }</code></pre>
 <ul>
-<li>特别注意，如果 Config Server 在 Config Client 之后启动的话，Config Client会因为初始化阶段无法获取到配置会报找不到配置中心的出错误。即使 Config Server 随后启动，Config Client也无法主动获取到外部配置。解决方案如下：<ul>
+<li>特别注意，如果 Config Server 在 Config Client 之后启动的话，Config Client会因为初始化阶段无法获取到配置，会报找不到配置中心的错误。即使 Config Server 随后启动，Config Client也无法再主动获取外部配置。解决方案如下：<ul>
 <li>通过服务编排来设置 Config Server 和 Config Client 的启动顺序</li>
-<li>手动刷新 Config Client 让其重新获取外部配置（前提是Config Server成功启动提供服务），但前提是没有开启 fail-fast </li>
+<li>手动刷新 Config Client 配置，让其重新获取外部配置（前提是 Config Server 成功启动并提供服务），而这时不能开启 fail-fast 功能 </li>
 </ul>
 </li>
 </ul>
 <blockquote>
-<p>测试以下是否能获取到配置中心的配置内容</p>
+<p>测试一下是否能获取到配置中心的配置内容</p>
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/006.png" alt></p>
 <h4 id="修改外部配置"><a href="#修改外部配置" class="headerlink" title="修改外部配置"></a>修改外部配置</h4><blockquote>
-<p>模拟修改外部配置后刷新Config Client让其获取最近状态的配置</p>
+<p>模拟修改外部配置，然后刷新Config Client让其获取最新版本的配置文件信息</p>
 </blockquote>
 <ul>
 <li><p>修改外部配置<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/007.png" alt></p>
@@ -402,13 +401,13 @@ public class MsaConfigClientApplication {
 </li>
 </ul>
 <h3 id="源码浅析"><a href="#源码浅析" class="headerlink" title="源码浅析"></a>源码浅析</h3><h4 id="Config-Server-1"><a href="#Config-Server-1" class="headerlink" title="Config Server"></a>Config Server</h4><ul>
-<li>默认情况下 SpringCloud Conofig 采用Git库来存储外部配置</li>
-<li>对Git的操作使用的是第三方开源类库 <a href="https://www.eclipse.org/jgit/" target="_blank" rel="noopener">Eclipse JGit</a></li>
+<li>默认情况下 SpringCloud Config 采用Git库来存储外部配置</li>
+<li>SpringCloud Config 使用第三方开源类库 <a href="https://www.eclipse.org/jgit/" target="_blank" rel="noopener">Eclipse JGit</a> 来完成 Git 操作</li>
 </ul>
-<h5 id="如何获取库中的配置？"><a href="#如何获取库中的配置？" class="headerlink" title="如何获取库中的配置？"></a>如何获取库中的配置？</h5><blockquote>
+<h5 id="获取Git库中的配置"><a href="#获取Git库中的配置" class="headerlink" title="获取Git库中的配置"></a>获取Git库中的配置</h5><blockquote>
 <p>参考自动配置类 ConfigServerAutoConfiguration</p>
 </blockquote>
-<pre><code class="java">// 启用ConfigServerProperties来获取配置中的信息
+<pre><code class="java">// 启用 ConfigServerProperties 获取配置中心配置信息
 @EnableConfigurationProperties(ConfigServerProperties.class)
 @Import({ EnvironmentRepositoryConfiguration.class, // 先看本地环境库配置
          CompositeConfiguration.class,
@@ -420,7 +419,7 @@ public class ConfigServerAutoConfiguration {
 <blockquote>
 <p>进入 EnvironmentRepositoryConfiguration</p>
 </blockquote>
-<pre><code class="java">// 以下是Spring Cloud Config支持的外置库类型
+<pre><code class="java">// 以下是 Spring Cloud Config 支持的外置库类型
 @Import({ CompositeRepositoryConfiguration.class, JdbcRepositoryConfiguration.class,
         VaultConfiguration.class, 
          VaultRepositoryConfiguration.class,
@@ -436,7 +435,7 @@ public class EnvironmentRepositoryConfiguration {
         public MultipleJGitEnvironmentRepository defaultEnvironmentRepository(
             MultipleJGitEnvironmentRepositoryFactory gitEnvironmentRepositoryFactory,
             MultipleJGitEnvironmentProperties environmentProperties) throws Exception {    
-            // 默认采用Git，传入environmentProperties构建
+            // 默认采用Git，传入 environmentProperties 构建
             return gitEnvironmentRepositoryFactory.build(environmentProperties);
         }
     }
@@ -455,12 +454,12 @@ public class EnvironmentRepositoryConfiguration {
 
 <p>克隆远程库过程</p>
 <ul>
-<li><p>这里将配置设置成 <code>clone-on-start: true</code> 。表示让Config Server启动后边去获取配置文件。过程如下：</p>
-<pre><code class="java">public class JGitEnvironmentRepository /**/ {
+<li><p>这里将配置设置成 <code>clone-on-start: true</code> 。表示让 Config Server 启动后就到Git库进行克操作，如下：</p>
+<pre><code class="java">public class JGitEnvironmentRepository {
     @Override
     public synchronized void afterPropertiesSet() throws Exception {
         initialize();
-        // 如果配置了clone-on-start:true则马上克隆库
+        // 如果配置了 clone-on-start:true 则马上克隆库
         if (this.cloneOnStart) { 
             initClonedRepository();
         }
@@ -468,8 +467,7 @@ public class EnvironmentRepositoryConfiguration {
 
     private void initClonedRepository() throws GitAPIException, IOException {
         if (!getUri().startsWith(FILE_URI_PREFIX)) {
-            // 如果已经存在则先删除BaseDir目录
-            // BaseDir可以在配置中指定。默认位于temp/tmp临时文件夹下
+            // 如果本地已经存在该库，则先删除（BaseDir目录）
             deleteBaseDirIfExists();
             // 克隆远程库到本地库
             Git git = cloneToBasedir();
@@ -488,22 +486,16 @@ public class MultipleJGitEnvironmentRepository extends JGitEnvironmentRepository
             repo.setEnvironment(getEnvironment());
             // ...
             // 设置配置数据
-            // ...
             repo.afterPropertiesSet();
         }
     }
 }</code></pre>
-<blockquote>
-<p>拓展：</p>
-<p>afterPropertiesSet() 方法位于 org.springframework.beans.factory.InitializingBean 接口中。InitializingBean 接口是SpringBean生命周期接口，即会在Spring容器初始化Bean是调用。</p>
-</blockquote>
 </li>
 </ul>
 <h5 id="获取配置的REST控制器"><a href="#获取配置的REST控制器" class="headerlink" title="获取配置的REST控制器"></a>获取配置的REST控制器</h5><blockquote>
 <p>自动配置类 ConfigServerAutoConfiguration</p>
 </blockquote>
-<pre><code class="java">//...
-ConfigServerMvcConfiguration.class }) // 控制器配置
+<pre><code class="java">ConfigServerMvcConfiguration.class }) // 控制器配置
 public class ConfigServerAutoConfiguration { }</code></pre>
 <blockquote>
 <p>ConfigServerMvcConfiguration</p>
@@ -515,8 +507,8 @@ public class ConfigServerMvcConfiguration extends WebMvcConfigurerAdapter {
     private EnvironmentEncryptor environmentEncryptor;
     @Autowired(required = false)
     private ObjectMapper objectMapper = new ObjectMapper();
-    // ...
 
+    // EnvironmentController
     @Bean
     public EnvironmentController environmentController(
             EnvironmentRepository envRepository, ConfigServerProperties server) {
@@ -527,6 +519,7 @@ public class ConfigServerMvcConfiguration extends WebMvcConfigurerAdapter {
         return controller;
     }
 
+    // ResourceController
     @Bean
     @ConditionalOnBean(ResourceRepository.class)
     public ResourceController resourceController(ResourceRepository repository,
@@ -536,13 +529,7 @@ public class ConfigServerMvcConfiguration extends WebMvcConfigurerAdapter {
         return controller;
     }
 
-    private EnvironmentRepository encrypted(EnvironmentRepository envRepository,
-            ConfigServerProperties server) {
-        EnvironmentEncryptorEnvironmentRepository encrypted = new EnvironmentEncryptorEnvironmentRepository(
-                envRepository, this.environmentEncryptor);
-        encrypted.setOverrides(server.getOverrides());
-        return encrypted;
-    }
+    //...
 }</code></pre>
 <blockquote>
 <p>EnvironmentController</p>
@@ -739,7 +726,7 @@ public class ConfigServiceBootstrapConfiguration {
 <blockquote>
 <p>进入 ConfigServicePropertySourceLocator</p>
 </blockquote>
-<pre><code class="java">@Order(0) // 最高优先级别(Order值最小优先级别越高)
+<pre><code class="java">@Order(0) // 最高优先级别(Order值越小优先级别越高)
 public class ConfigServicePropertySourceLocator implements PropertySourceLocator {
     private RestTemplate restTemplate;
     private ConfigClientProperties defaultProperties;
@@ -756,7 +743,7 @@ public class ConfigServicePropertySourceLocator implements PropertySourceLocator
         try {
             // ...
             for (String label : labels) {
-                // 获取远程配置
+                // 获取远程配置（Config Server）
                 Environment result = getRemoteEnvironment(restTemplate, properties,label.trim(), state);
                 if (result != null) {
                     if (result.getPropertySources() != null) {
@@ -792,10 +779,6 @@ public class ConfigServicePropertySourceLocator implements PropertySourceLocator
         String profile = properties.getProfile();
         String token = properties.getToken();
         int noOfUrls = properties.getUri().length;
-
-        if (noOfUrls &gt; 1) {
-            logger.info(&quot;Multiple Config Server Urls found listed.&quot;);
-        }
 
         Object[] args = new String[] { name, profile };
         if (StringUtils.hasText(label)) {
@@ -848,10 +831,11 @@ public class ConfigServicePropertySourceLocator implements PropertySourceLocator
 
     }
 }</code></pre>
-<h5 id="SpringBoot是如何刷新配置？"><a href="#SpringBoot是如何刷新配置？" class="headerlink" title="SpringBoot是如何刷新配置？"></a>SpringBoot是如何刷新配置？</h5><blockquote>
+<h5 id="SpringBoot是如何刷新配置的？"><a href="#SpringBoot是如何刷新配置的？" class="headerlink" title="SpringBoot是如何刷新配置的？"></a>SpringBoot是如何刷新配置的？</h5><blockquote>
 <p>SpringBoot Actuator 的 refresh 端点</p>
 </blockquote>
-<p>在快如入门中我们已经尝试过当配置被修改后如何刷新配置，就是使用 SpringBoot Actuator 提供的端点操作 <code>/refresh</code> 来实现。以下为 refresh 端点源码：</p>
+<p>在快如入门中我们已经演示过当配置被修改后Config Client是如何刷新配置的。</p>
+<p>就是通过使用 SpringBoot Actuator 提供的端点 <code>/refresh</code> 来实现的。以下为 refresh 端点源码：</p>
 <pre><code class="java">@Endpoint(id = &quot;refresh&quot;)
 public class RefreshEndpoint {
     // 上下文刷新器
@@ -868,15 +852,13 @@ public class RefreshEndpoint {
     }
 }</code></pre>
 <ul>
-<li>可以看到，当请求 <code>/refresh</code>端点的时候实质就是使用 ContextRefresher 来刷新配置的</li>
-<li>现在得知的信息是 ContextRefresher 可以刷新 SpringBoot 的配置。那么ContextRefresher 是怎么创建的呢？</li>
+<li>可以看到，当请求 <code>/refresh</code>端点后，实质是使用 ContextRefresher 来刷新配置的</li>
 </ul>
 <blockquote>
-<p>进入 refresh端点 的自动配置类 RefreshEndpointAutoConfiguration</p>
+<p>进入 refresh 端点的自动配置类 RefreshEndpointAutoConfiguration</p>
 </blockquote>
-<pre><code class="java">// ...
-@AutoConfigureAfter({ LifecycleMvcEndpointAutoConfiguration.class,
-                     RefreshAutoConfiguration.class }) // 要求在RefreshAutoConfiguration之后
+<pre><code class="java">@AutoConfigureAfter({ LifecycleMvcEndpointAutoConfiguration.class,
+                     RefreshAutoConfiguration.class }) 
 public class RefreshEndpointAutoConfiguration {
     //...
     @Configuration
@@ -896,14 +878,13 @@ public class RefreshEndpointAutoConfiguration {
 <blockquote>
 <p>进入 RefreshAutoConfiguration</p>
 </blockquote>
-<pre><code class="java">// ...
-@Configuration
+<pre><code class="java">@Configuration
 @ConditionalOnClass(RefreshScope.class) 
 public class RefreshAutoConfiguration {
-    // 要求Bean的socpe为refresh
+    // 要求Bean的socpe为refresh（能够刷新状态的Bean应该是refresh域的）
     public static final String REFRESH_SCOPE_NAME = &quot;refresh&quot;;
 
-    // RefreshScope：负责被@Scope(&#39;refresh&#39;)标注的Bean的刷新操作
+    // RefreshScope：负责被@Scope(&#39;refresh&#39;)注解标注的Bean的刷新工作
     @Bean
     @ConditionalOnMissingBean(RefreshScope.class)
     public static RefreshScope refreshScope() {
@@ -927,10 +908,12 @@ public class RefreshAutoConfiguration {
 }</code></pre>
 <ul>
 <li>@RefreshScope（@Scope(‘refresh’)） 是 spring-cloud-context 对 spring-framework-content Scope 功能的扩展</li>
-<li>需要注意的是如果使用了<code>服务注册</code>，那么当发生刷新操作时 RefreshScope  会使用 ApplicationContext 发布一个 RefreshScopeRefreshedEvent 事件，而 EurekaClientConfigurationRefresher 就是监听者之一。EurekaClientConfigurationRefresher 会将当前服务在注册中心下线然后再上线，用着中方法来达到注册中心中的服务信息刷新</li>
+<li>注意，如果使用了服务注册发现，那么当发生刷新操作时 RefreshScope  会使用 ApplicationContext 发布一个 RefreshScopeRefreshedEvent 事件，而 EurekaClientConfigurationRefresher 就是监听者之一。EurekaClientConfigurationRefresher 会先将当前服务在注册中心下线，然后再上线。这样做的用意是刷新服务注册中心中当前服务的元信息。除此之外你还应该意识到 这个动作会让服务发生短暂不可用</li>
 </ul>
 <blockquote>
-<p>现在我们知道了刷新操作实质就是 ContextRefresher.refresh() 。也了解到 RefreshScope 负责@RefreshScope Bean刷新。那么我们进入 ContextRefresher 来研究一下源码</p>
+<p>现在我们已经知道刷新操作实质是通过 ContextRefresher.refresh() 完成的 。</p>
+<p>也了解了 RefreshScope 负责@ RefreshScope Bean 的刷新。</p>
+<p>那么我们进入 ContextRefresher 来研究一下源码</p>
 </blockquote>
 <pre><code class="java">public class ContextRefresher {
     private static final String REFRESH_ARGS_PROPERTY_SOURCE = &quot;refreshArgs&quot;;
@@ -983,7 +966,7 @@ public class RefreshAutoConfiguration {
             // 获取当前环境（只包含DEFAULT_PROPERTY_SOURCES）
             StandardEnvironment environment = copyEnvironment(this.context.getEnvironment());
 
-            /**** 核心思想:创建一个新的SpringBoot来重新加载一遍配置(从另外角度来看这是个重量级操作) ****/
+            /**** 刷新配置的核心思想:创建一个新的SpringBoot来重新加载新配置 ****/
 
             // 获取一个SpringBoot应用构建者
             SpringApplicationBuilder builder = new SpringApplicationBuilder(Empty.class)
@@ -1033,11 +1016,11 @@ public class RefreshAutoConfiguration {
 <blockquote>
 <p>org.springframework.cloud.context.scope.refresh.RefreshScope#refreshAll</p>
 </blockquote>
-<pre><code class="java">// 大概意思是，处理当前范围的Bean，让其下次操作时达到刷新的效果
+<pre><code class="java">// 大概意思是处理当前范围的Bean，让其下次操作时达到刷新的效果
 @ManagedOperation(description = &quot;Dispose of the current instance of all beans in this scope and force a refresh on next method execution.&quot;)
 public void refreshAll() {
-    super.destroy(); // 清楚 ScopeCache
-    // 发布刷新域已成功刷新事件，以广播给监听者做对应处理
+    super.destroy(); // 清除ScopeCache
+    // 发布刷新域已成功刷新的事件，以广播给监听者做对应处理
     this.context.publishEvent(new RefreshScopeRefreshedEvent());
 }</code></pre>
 <ul>
@@ -1076,8 +1059,8 @@ protected static class EurekaClientConfigurationRefresher
 </ul>
 <p><strong>配置刷新总结：</strong></p>
 <ul>
-<li>如果一个Bean依赖环境中的配置，应该使用 <code>@Scope(&#39;refresh&#39;)</code> 或  <code>@RefreshScope</code> 标注，只有这样Bean才可以感知到配置刷新。原因是 SpringCloud 会将被 @RefreshScope 标注的Bean打包成 BeanLifecycleWrapper 存放到 ScopeCache 中（ConcurrentHashMap）作为操作上限文使用的Bean，当刷新操作触发时就会将 ScopeCache 的内容删除，这样一来下次使用Bean时就会重新打包 BeanLifecycleWrapper 以达到刷新效果</li>
-<li>@RefreshScope不一定要使用了配合中心才可以使用。手动修改了配置都可以使用端点来刷新配置</li>
+<li>如果一个 Bean 依赖实时的环境配置，那么应该使用 <code>@Scope(&#39;refresh&#39;)</code> 或  <code>@RefreshScope</code> 标注，只有这样 Bean 才可以感知到配置刷新操作。原因是 SpringCloud 会将被 @RefreshScope 标注的 Bean 打包成 BeanLifecycleWrapper 存放到 ScopeCache 中（ConcurrentHashMap）作为当前操作上限文使用的Bean，当刷新操作触发时就会将 ScopeCache 的内容删除，这样一来下次使用Bean时就会重新打包 BeanLifecycleWrapper ，这样就达到了配置刷新效果</li>
+<li>@RefreshScope 不一定使用配合中心才可以使用，例如有手动修改配置的需求，也是可以使用端点来刷的</li>
 <li>如果想手动实现刷新，则可以参考 RefreshEndpoint 使用 ContextRefresher 来实现</li>
 </ul>
 <h3 id="其他功能"><a href="#其他功能" class="headerlink" title="其他功能"></a>其他功能</h3><h4 id="单库多文件夹配置"><a href="#单库多文件夹配置" class="headerlink" title="单库多文件夹配置"></a>单库多文件夹配置</h4><blockquote>
@@ -1211,7 +1194,7 @@ curl http://localhost:8808/decrypt -d 密文</code></pre>
         service-id: MSA-CONFIG-SERVER
       profile: dev
       label: master</code></pre>
-<h2 id="Consul作公共配置中心案例"><a href="#Consul作公共配置中心案例" class="headerlink" title="Consul作公共配置中心案例"></a>Consul作公共配置中心案例</h2><h3 id="快速入门-1"><a href="#快速入门-1" class="headerlink" title="快速入门"></a>快速入门</h3><blockquote>
+<h2 id="使用Consul做配置中心"><a href="#使用Consul做配置中心" class="headerlink" title="使用Consul做配置中心"></a>使用Consul做配置中心</h2><h3 id="快速入门-1"><a href="#快速入门-1" class="headerlink" title="快速入门"></a>快速入门</h3><blockquote>
 <p>依赖</p>
 </blockquote>
 <pre><code class="xml">&lt;parent&gt;
@@ -1247,10 +1230,12 @@ curl http://localhost:8808/decrypt -d 密文</code></pre>
         &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
         &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
     &lt;/dependency&gt;
+    &lt;!-- consul配置中心 --&gt;
     &lt;dependency&gt;
         &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
         &lt;artifactId&gt;spring-cloud-starter-consul-config&lt;/artifactId&gt;
     &lt;/dependency&gt;
+    &lt;!-- consul服务注册发现 --&gt;
     &lt;dependency&gt;
         &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
         &lt;artifactId&gt;spring-cloud-starter-consul-discovery&lt;/artifactId&gt;
@@ -1282,7 +1267,7 @@ curl http://localhost:8808/decrypt -d 密文</code></pre>
         prefix: msa-consul-config
         enabled: true
         format: YAML
-        data-key: data # 默认data值，对用consul中的key叫data
+        data-key: data # 默认data值，对应着consul中的key叫data
         watch:
           delay: 5000
 
@@ -1315,7 +1300,7 @@ public class MsaConsulConfigApplication {
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/016.png" alt></p>
 <h3 id="是如何实现自动刷新配置的？"><a href="#是如何实现自动刷新配置的？" class="headerlink" title="是如何实现自动刷新配置的？"></a>是如何实现自动刷新配置的？</h3><blockquote>
-<p>如果像要开启自动配置需要设置如下属性</p>
+<p>如果想要开启自动功能，需要设置如下属性</p>
 </blockquote>
 <pre><code class="yaml">spring:
   application:
@@ -1328,10 +1313,9 @@ public class MsaConsulConfigApplication {
       port: 8500
       config:
         watch:
-          delay: 5000 
-          # 执行实际：上次任务结束的时间+delay</code></pre>
+          delay: 5000 # 延时5秒自动刷新</code></pre>
 <blockquote>
-<p>那它是如何实现的呢？我们查看一下consul config自动配置类</p>
+<p>那它是如何实现的呢？看一下consul config自动配置类</p>
 </blockquote>
 <pre><code class="java">public class ConsulConfigAutoConfiguration {
     public static final String CONFIG_WATCH_TASK_SCHEDULER_NAME = &quot;configWatchTaskScheduler&quot;;
@@ -1360,10 +1344,7 @@ public class MsaConsulConfigApplication {
 <p>先看一下 ThreadPoolTaskScheduler</p>
 </blockquote>
 <pre><code class="java">/**
- * 官方注释：
- * Implementation of Spring&#39;s {@link TaskScheduler} interface, wrapping
- * a native {@link java.util.concurrent.ScheduledThreadPoolExecutor}.
- * 可以到这个定时任务是用ScheduledThreadPoolExecutor实现的
+ * 可以看到这个定时任务是用ScheduledThreadPoolExecutor实现的
  */
 @SuppressWarnings(&quot;serial&quot;)
 public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
@@ -1407,7 +1388,6 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
         // 任务是否处于开启状态
         if (this.running.get()) { 
             for (String context : this.consulIndexes.keySet()) {
-                //...
                 // 获取Consul上的KV值
                 Response&lt;List&lt;GetValue&gt;&gt; response = this.consul.getKVValues(context,
                         aclToken,
@@ -1418,7 +1398,7 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
                     Long newIndex = response.getConsulIndex();
                     // 是否有配置？
                     if (newIndex != null &amp;&amp; !newIndex.equals(currentIndex)) {
-                        // 是不是新值？
+                        // 是不是有新值？
                         if (!this.consulIndexes.containsValue(newIndex) &amp;&amp; !currentIndex.equals(-1L)) {
                             //【重】发布刷新配置事件，要求RefreshEvent的监听者进行刷新操作
                             RefreshEventData data = new RefreshEventData(context,currentIndex, newIndex);
@@ -1431,7 +1411,7 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
     }    
 }</code></pre>
 <blockquote>
-<p>查看一下RefreshEvent的监听者 RefreshEventListener</p>
+<p>查看一下 RefreshEvent 的监听者 RefreshEventListener</p>
 </blockquote>
 <pre><code class="java">public class RefreshEventListener implements SmartApplicationListener {
     private ContextRefresher refresh;
@@ -1449,8 +1429,8 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
     public void handle(RefreshEvent event) {
         if (this.ready.get()) {
             log.debug(&quot;Event received &quot; + event.getEventDesc());
-            // 【重】使用ContextRefresher刷新配置
-            // 即新建一个SpringBoot加载配置然后设置到当前环境中
+            // 【重】使用 ContextRefresher 刷新配置
+            // 即新建一个 SpringBoot 加载配置然后设置到当前环境中
             // 并主动下线注册中心的服务然后再重新注册
             Set&lt;String&gt; keys = this.refresh.refresh();
             log.info(&quot;Refresh keys changed: &quot; + keys);
@@ -1505,7 +1485,7 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#公共配置中心介绍"><span class="toc-text">公共配置中心介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#bootstrap-yml和application-yml区别"><span class="toc-text">bootstrap.yml和application.yml区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringCloud-Config"><span class="toc-text">SpringCloud Config</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Server"><span class="toc-text">Config Server</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Client"><span class="toc-text">Config Client</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#修改外部配置"><span class="toc-text">修改外部配置</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Server-1"><span class="toc-text">Config Server</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#如何获取库中的配置？"><span class="toc-text">如何获取库中的配置？</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#获取配置的REST控制器"><span class="toc-text">获取配置的REST控制器</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Client-1"><span class="toc-text">Config Client</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#启动时是如何获取外部配置的？"><span class="toc-text">启动时是如何获取外部配置的？</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#SpringBoot是如何刷新配置？"><span class="toc-text">SpringBoot是如何刷新配置？</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他功能"><span class="toc-text">其他功能</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#单库多文件夹配置"><span class="toc-text">单库多文件夹配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务端添加登录访问限制"><span class="toc-text">服务端添加登录访问限制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#对配置进行非对称加密"><span class="toc-text">对配置进行非对称加密</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#客户端重试获取配置"><span class="toc-text">客户端重试获取配置</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Consul作公共配置中心案例"><span class="toc-text">Consul作公共配置中心案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门-1"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#是如何实现自动刷新配置的？"><span class="toc-text">是如何实现自动刷新配置的？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#公共配置中心介绍"><span class="toc-text">公共配置中心介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#bootstrap-yml和application-yml区别"><span class="toc-text">bootstrap.yml和application.yml区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringCloud-Config"><span class="toc-text">SpringCloud Config</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Server"><span class="toc-text">Config Server</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Client"><span class="toc-text">Config Client</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#修改外部配置"><span class="toc-text">修改外部配置</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Server-1"><span class="toc-text">Config Server</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#获取Git库中的配置"><span class="toc-text">获取Git库中的配置</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#获取配置的REST控制器"><span class="toc-text">获取配置的REST控制器</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Config-Client-1"><span class="toc-text">Config Client</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#启动时是如何获取外部配置的？"><span class="toc-text">启动时是如何获取外部配置的？</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#SpringBoot是如何刷新配置的？"><span class="toc-text">SpringBoot是如何刷新配置的？</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他功能"><span class="toc-text">其他功能</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#单库多文件夹配置"><span class="toc-text">单库多文件夹配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务端添加登录访问限制"><span class="toc-text">服务端添加登录访问限制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#对配置进行非对称加密"><span class="toc-text">对配置进行非对称加密</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#客户端重试获取配置"><span class="toc-text">客户端重试获取配置</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用Consul做配置中心"><span class="toc-text">使用Consul做配置中心</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门-1"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#是如何实现自动刷新配置的？"><span class="toc-text">是如何实现自动刷新配置的？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>

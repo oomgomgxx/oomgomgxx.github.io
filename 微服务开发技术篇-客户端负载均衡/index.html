@@ -129,58 +129,55 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="什么是客户端负载均衡？"><a href="#什么是客户端负载均衡？" class="headerlink" title="什么是客户端负载均衡？"></a>什么是客户端负载均衡？</h2><p>&emsp;&emsp;作为一个后端开发人员，看到负载均衡首先想到的是Nginx。Nginx是一个代理服务器，提供正反两种模式的代理服务。其中负载均衡就是基于反向代理来实现的，这一种负载均衡方式可以理解为后端负载均衡，即客户端请求到来后Nginx以反向代理的身份来将该请求分发到那台服务器上处理。如下：</p>
+  <h2 id="什么是客户端负载均衡"><a href="#什么是客户端负载均衡" class="headerlink" title="什么是客户端负载均衡"></a>什么是客户端负载均衡</h2><p>看到负载均衡很多人首先想到的是Nginx。Nginx是一个代理服务器，提供正反两种模式的代理服务。其中负载均衡就是基于反向代理来实现的，这种负载均衡方式可以理解为<code>后端负载均衡</code>，即客户端请求到来后Nginx以反向代理的身份来处理客户端请求</p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/001.png" alt></p>
-<p>可以从图中看出，负载均衡算法是在反向代理服务器上实现的。而本文要谈的是<code>客户端负载均衡</code>，即实质就是在客户端在发出请求前预先进行负载均衡。这里需要注意的是，客户端负载均衡和后端负载均衡是互不冲突的，因为客户端负载均衡一般使用在内部调用上，而后端负载均衡针对的是用户请求。如下：</p>
+<p>从上图不难看出看出负载均衡算法是在反向代理服务器上实现的。而本文要谈的是<code>客户端负载均衡</code>，它是在客户端上实现的。客户端负载均衡和后端负载均衡是互不冲突的</p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/002.png" alt></p>
-<h2 id="模拟常见负载均衡算法"><a href="#模拟常见负载均衡算法" class="headerlink" title="模拟常见负载均衡算法"></a>模拟常见负载均衡算法</h2><blockquote>
+<h2 id="模拟常见负载均衡策略"><a href="#模拟常见负载均衡策略" class="headerlink" title="模拟常见负载均衡策略"></a>模拟常见负载均衡策略</h2><blockquote>
 <p>以下代码并不严禁，仅用于理解</p>
 </blockquote>
-<h3 id="随机算法"><a href="#随机算法" class="headerlink" title="随机算法"></a>随机算法</h3><pre><code class="java">public class T6 {
+<h3 id="随机算法"><a href="#随机算法" class="headerlink" title="随机算法"></a>随机算法</h3><pre><code class="java">public class Test {
 
     private static Random random = null;
     private static List&lt;String&gt; userServices = null;
 
     static {
         random = new Random();
+        // 服务列表
         userServices = List.of(&quot;192.168.31.100&quot;, &quot;192.168.31.102&quot;, &quot;192.168.31.103&quot;);
     }
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i &lt;50 ; i++) {
             int index = random.nextInt(userServices.size());
+            // 随机在服务列表中选择
             String userService = userServices.get(index);
-            System.out.println(&quot;负载均衡调用：&quot; + userService);
         }
     }
 
 }</code></pre>
-<h3 id="权重随机算法"><a href="#权重随机算法" class="headerlink" title="权重随机算法"></a>权重随机算法</h3><pre><code class="java">public class T5 {
-
+<h3 id="权重随机算法"><a href="#权重随机算法" class="headerlink" title="权重随机算法"></a>权重随机算法</h3><pre><code class="java">public class Test {
     private static Random random = null;
     private static List&lt;String&gt; userServices = null;
     private static Map&lt;String, Integer&gt; weightMap = null;
 
     static {
-
         random = new Random();
-        // 用于存放加权后的服务列表
-        userServices = new ArrayList&lt;&gt;();
 
-        // 设置权重。权重大调用率就大
+        // 设置权重（权重大的话被调用的几率就大）
         weightMap = new TreeMap&lt;&gt;();
         weightMap.put(&quot;192.168.31.100&quot;, 2);
         weightMap.put(&quot;192.168.31.102&quot;, 1);
         weightMap.put(&quot;192.168.31.103&quot;, 4);
 
+        // 用于存放加权后的服务列表
+        userServices = new ArrayList&lt;&gt;();
         Iterator&lt;Map.Entry&lt;String, Integer&gt;&gt; iterator = weightMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry&lt;String, Integer&gt; next = iterator.next();
             Integer count = next.getValue();
-            if(count &lt;= 0){
-                count = 1;
-            }
-            for (int i = 0; i &lt; count; i++) {
+            if(count &lt;= 0) count = 1;
+            for (int i = 0; i &lt; count; i++) { // 加权操作
                 userServices.add(next.getKey());
             }
         }
@@ -189,6 +186,7 @@
     public static void main(String[] args) throws Exception {
         for (int i = 0; i &lt;10 ; i++) {
             int index = random.nextInt(userServices.size());
+            // 加权随机调用
             String userService = userServices.get(index);
             System.out.println(&quot;负载均衡调用：&quot; + userService);
         }
@@ -208,7 +206,7 @@
          */
     }
 }</code></pre>
-<h3 id="轮询算法"><a href="#轮询算法" class="headerlink" title="轮询算法"></a>轮询算法</h3><pre><code class="java">public class T5 {
+<h3 id="轮询算法"><a href="#轮询算法" class="headerlink" title="轮询算法"></a>轮询算法</h3><pre><code class="java">public class Test {
 
     private static List&lt;String&gt; userServices = null;
     private static int position = 0;
@@ -244,7 +242,7 @@
 }</code></pre>
 <h3 id="权重轮询算法"><a href="#权重轮询算法" class="headerlink" title="权重轮询算法"></a>权重轮询算法</h3><pre><code class="java">import java.util.*;
 
-public class T5 {
+public class Test {
 
     private static List&lt;String&gt; userServices = null;
     private static Map&lt;String, Integer&gt; weightMap = null;
@@ -252,14 +250,14 @@ public class T5 {
 
     static {
 
-        userServices = new ArrayList&lt;&gt;();
-
-        // 设置权重。权重大调用率就大
+        // 设置服务器的权重
         weightMap = new TreeMap&lt;&gt;();
         weightMap.put(&quot;192.168.31.100&quot;, 2);
         weightMap.put(&quot;192.168.31.102&quot;, 1);
         weightMap.put(&quot;192.168.31.103&quot;, 4);
 
+        // 加权后的服务列表
+        userServices = new ArrayList&lt;&gt;();
         Iterator&lt;Map.Entry&lt;String, Integer&gt;&gt; iterator = weightMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry&lt;String, Integer&gt; next = iterator.next();
@@ -304,21 +302,22 @@ public class T5 {
 <pre><code class="java">// Lombok
 @NoArgsConstructor
 @Data
-public class Connect {  
+public class Connect {  // 连接对象
     private String serviceName;
     private String ip;
-    private volatile AtomicInteger count = new AtomicInteger(0);
+    private volatile AtomicInteger; // 连接数
     public Connect(String serviceName, String ip) {
         this.serviceName = serviceName;
         this.ip = ip;
+        this.count = new AtomicInteger(0);
     }
 }</code></pre>
 <blockquote>
 <p>算法实现</p>
 </blockquote>
-<pre><code class="java">public class T5 implements Runnable {
+<pre><code class="java">public class Test implements Runnable {
     private List&lt;Connect&gt; connects = null;
-    public T5(List&lt;Connect&gt; connects) {
+    public Test(List&lt;Connect&gt; connects) {
         this.connects = connects;
     }
 
@@ -343,7 +342,7 @@ public class Connect {
 
     // 获取连接
     public synchronized Connect getConnect() {
-        // 获取前先按照调用次数排序 - 冒泡算法
+        // 获取连接前先按照连接次数排序（冒泡算法），找出最少连接的服务
         for (int i = 0; i &lt; connects.size() - 1; i++) {
             for (int j = 0; j &lt; connects.size()-i-1; j++) {
                 Connect connect = connects.get(j);
@@ -356,28 +355,28 @@ public class Connect {
         }
         Connect conn = connects.get(0);
         conn.getCount().incrementAndGet();
-        System.out.println(&quot;负载均衡调用:&quot; + conn.getIp() + &quot;,当前调用数:&quot; + conn.getCount().get());
         return conn;
     }
 
     public static void main(String[] args) {
+        // 服务列表
         List&lt;Connect&gt; list = new ArrayList&lt;&gt;();
         list.add(new Connect(&quot;user-service&quot;, &quot;192.168.31.101&quot;));
         list.add(new Connect(&quot;user-service&quot;, &quot;192.168.31.102&quot;));
         list.add(new Connect(&quot;user-service&quot;, &quot;192.168.31.103&quot;));
 
+        // 50个请求
         ExecutorService service = Executors.newFixedThreadPool(20);
         T5 task = new T5(list);
-        // 50个连接
         for (int i = 0; i &lt;50 ; i++) {
             service.submit(task);
         }
 
     }
 }</code></pre>
-<h3 id="IP哈希取模算法"><a href="#IP哈希取模算法" class="headerlink" title="IP哈希取模算法"></a>IP哈希取模算法</h3><pre><code class="java">public class T6 {
-    private static String[] userServices;
-    private static String[] clients;
+<h3 id="IP哈希取模算法"><a href="#IP哈希取模算法" class="headerlink" title="IP哈希取模算法"></a>IP哈希取模算法</h3><pre><code class="java">public class Test {
+    private static String[] userServices; // 服务列表
+    private static String[] clients; // 客户端列表
 
     static {
         clients = new String[]{&quot;12.4.55.13&quot;, &quot;192.168.31.102&quot;, &quot;16.6.3.2&quot;, &quot;123.454.33.77&quot;, &quot;2.2.2.2&quot;};
@@ -390,20 +389,13 @@ public class Connect {
             for (String client : clients) {
                 // ip哈希取模
                 int index = client.hashCode() % userServices.length;
-
-                StringBuffer sb = new StringBuffer();
-                String log = sb.append(&quot;[&quot;)
-                        .append(client)
-                        .append(&quot;] =&gt; [&quot;)
-                        .append(userServices[index])
-                        .append(&quot;]&quot;)
-                        .toString();
-                System.out.println(log);
+                  // 获取服务
+                String server = userServices[index]
             }
         }
     }
 }</code></pre>
-<h3 id="一致性哈希"><a href="#一致性哈希" class="headerlink" title="一致性哈希"></a>一致性哈希</h3><pre><code class="java">public class T7 {
+<h3 id="一致性哈希"><a href="#一致性哈希" class="headerlink" title="一致性哈希"></a>一致性哈希</h3><pre><code class="java">public class Test {
 
     /**
      * 简易版一致性哈希
@@ -413,7 +405,7 @@ public class Connect {
      */
     public static String getService(String client, String[] serviceNode) {
 
-        // 预先将节点放在哈希环上（这里的环使用TreeMap来实现）
+        // 预先将服务节点固定在哈希环上（这里使用TreeMap来实现哈希环）
         TreeMap&lt;Integer, String&gt; treeMap = new TreeMap&lt;&gt;();
         for (int i = 0; i &lt; serviceNode.length; i++) {
             String service = serviceNode[i];
@@ -421,7 +413,7 @@ public class Connect {
             treeMap.put(service.hashCode() * (i+1), service);
         }
 
-        // 获取等于大于client.hashCode()的节点
+        // 获取等于或大于 client.hashCode() 的服务节点
         SortedMap&lt;Integer, String&gt; sm = treeMap.tailMap(client.hashCode());
         try {
             return treeMap.get(sm.firstKey());
@@ -465,9 +457,9 @@ public class Connect {
     }
 }</code></pre>
 <ul>
-<li>Google Guava中的Hashing类也提供了一致性哈希的实现，使用页十分简单</li>
+<li>Google Guava 中有个 Hashing 类也提供了一致性哈希的实现，使用也十分简单</li>
 </ul>
-<h2 id="Netflix-Ribbon"><a href="#Netflix-Ribbon" class="headerlink" title="Netflix Ribbon"></a>Netflix Ribbon</h2><p>&emsp;&emsp;Ribbon是Netflix开源的客户端负载均衡器，亦是 SpringCloud 目前默认的客户端负载均衡器。</p>
+<h2 id="Netflix-Ribbon"><a href="#Netflix-Ribbon" class="headerlink" title="Netflix Ribbon"></a>Netflix Ribbon</h2><p>Ribbon是Netflix开源的客户端负载均衡器，亦是 SpringCloud 目前默认的客户端负载均衡器。</p>
 <h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><blockquote>
 <p>依赖（Eureka和Consul默认导入）</p>
 </blockquote>
@@ -486,6 +478,7 @@ public class Connect {
 &lt;dependencies&gt;
 
     &lt;!-- SpringnCloud Netflix Eureka Client --&gt;
+    &lt;!-- Eureka已经依赖了ribbon --&gt;
     &lt;dependency&gt;
         &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
         &lt;artifactId&gt;spring-cloud-starter-netflix-eureka-client&lt;/artifactId&gt;
@@ -502,23 +495,20 @@ public class Connect {
     &lt;/dependency&gt;
 &lt;/dependencies&gt;</code></pre>
 <blockquote>
-<p>使用</p>
+<p>使用ribbon</p>
 </blockquote>
 <pre><code class="java">@Configuration
 public class RestConfig {
     @Autowired
     private RestTemplateBuilder builder;
 
-    @LoadBalanced
+    @LoadBalanced // 开启客户端负载均衡（服务发现）
     @Bean
     public RestTemplate restTemplate() {
         return builder.build();
     }
 }</code></pre>
-<h3 id="了解负载均衡器"><a href="#了解负载均衡器" class="headerlink" title="了解负载均衡器"></a>了解负载均衡器</h3><blockquote>
-<p>是什么？</p>
-</blockquote>
-<p>&emsp;&emsp;Spring Cloud中定义了 LoadBalancerClient 作为负载均衡的通用接口，且提供了Ribbon或Consul的实例，但这只是表面的，实质操作的是  ILoadBalancer 。</p>
+<h3 id="了解负载均衡器"><a href="#了解负载均衡器" class="headerlink" title="了解负载均衡器"></a>了解负载均衡器</h3><p>Spring Cloud 中定义了 LoadBalancerClient 作为客户端负载均衡的通用接口（可以用@Autowired获取该依赖），并且提供了 Ribbon 或 Consul 两种实例。</p>
 <pre><code class="java">public ServiceInstance choose(String serviceId, Object hint) {
     // 获取负载均衡后的服务
     Server server = getServer(getLoadBalancer(serviceId), hint);
@@ -526,7 +516,7 @@ public class RestConfig {
                             server, 
                             isSecure(server, serviceId),serverIntrospector(serviceId).getMetadata(server));
 }
-// 实际操作
+
 protected Server getServer(ILoadBalancer loadBalancer, Object hint) {
     return loadBalancer.chooseServer(hint != null ? hint : &quot;default&quot;);
 }</code></pre>
@@ -538,35 +528,35 @@ protected Server getServer(ILoadBalancer loadBalancer, Object hint) {
     public void addServers(List&lt;Server&gt; newServers);
     // 获取负载均衡后的服务
     public Server chooseServer(Object key);
-    // 通知特定服务已失效
+    // 通知服务已失效
     public void markServerDown(Server server);
-    // 获取正常可访问的服务列表
+    // 获取健康的服务列表
     public List&lt;Server&gt; getReachableServers();
-    // 获取服务列表
+    // 获取所有服务列表
     public List&lt;Server&gt; getAllServers();
 }</code></pre>
-<blockquote>
-<p>负载均衡器接口实现树</p>
-</blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/007.png" alt></p>
-<p>AbstractLoadBalancer</p>
+<blockquote>
+<p>AbstractLoadBalancer 源码</p>
+</blockquote>
+<p>负载均衡器抽象</p>
 <pre><code class="java">public abstract class AbstractLoadBalancer implements ILoadBalancer {
     public enum ServerGroup{
         ALL, // 所有服务
-        STATUS_UP, // 能正常访问的服务
-        STATUS_NOT_UP // 停止的服务
+        STATUS_UP, // 健康的服务
+        STATUS_NOT_UP // 没有启动的服务
     }
-    // 按照条件获取服务列表
+    // 获取服务列表
     public abstract List&lt;Server&gt; getServerList(ServerGroup serverGroup);
     // 获取负载均衡统计
     public abstract LoadBalancerStats getLoadBalancerStats();    
 }</code></pre>
-<p>BaseLoadBalancer</p>
-<ul>
-<li>BaseLoadBalancer是Ribbon的负载均衡器基础实现</li>
-</ul>
-<pre><code class="java">public class BaseLoadBalancer extends AbstractLoadBalancer /**/{
-    // 集成默认负载均衡策略 RoundRobinRule
+<blockquote>
+<p>BaseLoadBalancer 源码</p>
+</blockquote>
+<p>BaseLoadBalancer 是 Ribbon 负载均衡器基础实现</p>
+<pre><code class="java">public class BaseLoadBalancer extends AbstractLoadBalancer {
+    // 默认负载均衡策略RoundRobinRule
     private final static IRule DEFAULT_RULE = new RoundRobinRule();
     protected IRule rule = DEFAULT_RULE;
 
@@ -574,7 +564,7 @@ protected Server getServer(ILoadBalancer loadBalancer, Object hint) {
     @Monitor(name = PREFIX + &quot;AllServerList&quot;, type = DataSourceType.INFORMATIONAL)
     protected volatile List&lt;Server&gt; allServerList = Collections
             .synchronizedList(new ArrayList&lt;Server&gt;());
-    // 正常可用服务
+    // 健康服务
     @Monitor(name = PREFIX + &quot;UpServerList&quot;, type = DataSourceType.INFORMATIONAL)
     protected volatile List&lt;Server&gt; upServerList = Collections
             .synchronizedList(new ArrayList&lt;Server&gt;());
@@ -598,7 +588,7 @@ protected Server getServer(ILoadBalancer loadBalancer, Object hint) {
             new Pinger(pingStrategy).runPinger();
         }
     }
-    // 获取负载均衡后的服务
+    // 获取负载均衡后的服务地址
     public String choose(Object key) {
         Server svr = rule.choose(key);
         return ((svr == null) ? null : svr.getId());
@@ -611,7 +601,7 @@ protected Server getServer(ILoadBalancer loadBalancer, Object hint) {
        counter.increment();
        return rule.choose(key);
     }
-    // 添加到服务列表
+    // 添加服务到服务列表
     public void addServer(Server newServer) {
         ArrayList&lt;Server&gt; newList = new ArrayList&lt;Server&gt;();
         newList.addAll(allServerList);
@@ -620,20 +610,17 @@ protected Server getServer(ILoadBalancer loadBalancer, Object hint) {
         setServersList(newList);
     }
 }</code></pre>
-<p>DynamicServerListLoadBalancer</p>
+<blockquote>
+<p>DynamicServerListLoadBalancer 源码</p>
+</blockquote>
 <ul>
-<li>继承自BaseLoadBalancer，是LoadBalancer的扩展</li>
-<li>实现了运行期间动态更新服务的功能</li>
-<li>与服务发现客户端配合</li>
+<li>继承自BaseLoadBalancer</li>
+<li>支持运行期间动态更新服务</li>
+<li>一般会结合服务发现客户端使用</li>
 </ul>
-<pre><code class="java">public interface ServerList&lt;T extends Server&gt; {
-    public List&lt;T&gt; getInitialListOfServers();
-    public List&lt;T&gt; getUpdatedListOfServers();   
-}
-
-@Configuration
+<pre><code class="java">@Configuration
 public class EurekaRibbonClientConfiguration {
-    // 创建 ping任务实现
+    // 创建ping任务
     @Bean
     @ConditionalOnMissingBean
     public IPing ribbonPing(IClientConfig config) {
@@ -641,77 +628,78 @@ public class EurekaRibbonClientConfiguration {
         ping.initWithNiwsConfig(config);
         return ping;
     }
-    // 创建 ServerList
+    // 创建ServerList
     @Bean
     @ConditionalOnMissingBean
     public ServerList&lt;?&gt; ribbonServerList(/**/) {
-        // ...
-        DomainExtractingServerList serverList = new DomainExtractingServerList(discoveryServerList, config, this.approximateZoneFromHostname);
+        DomainExtractingServerList serverList = 
+            new DomainExtractingServerList(discoveryServerList, config, this.approximateZoneFromHostname);
         return serverList;
     }
-    // 创建 Server拦截器
+    // 创建Server拦截器
     @Bean
     public ServerIntrospector serverIntrospector() {
         return new EurekaServerIntrospector();
     }
 }
 
+// 服务更新器
 public interface ServerListUpdater {
     public interface UpdateAction {
         void doUpdate();
     }
-    // 启动ServerList更新器
+    // 启动更新器
     void start(UpdateAction updateAction);
-    // 停止ServerList更新器
+    // 停止更新器
     void stop();
     // 获取核心线程数
     int getCoreThreads();
-    // 时间错相关
+
     String getLastUpdate();
     long getDurationSinceLastUpdateMs();
     int getNumberMissedCycles();
 }
 
 public class DynamicServerListLoadBalancer&lt;T extends Server&gt; extends BaseLoadBalancer {
-    // ServerList
+    // 服务列表
     volatile ServerList&lt;T&gt; serverListImpl;
-    // ServerList过滤器
+    // 服务列表过滤器
     volatile ServerListFilter&lt;T&gt; filter;
-    // ServerList更新实现
-    protected final ServerListUpdater.UpdateAction updateAction = new ServerListUpdater.UpdateAction() {
+    // 更新服务列表
+    protected final ServerListUpdater.UpdateAction updateAction 
+        = new ServerListUpdater.UpdateAction() {
         @Override
         public void doUpdate() {
             updateListOfServers();
         }
     };    
-    // ServerList更新器
+    // 服务列表更新器
     protected volatile ServerListUpdater serverListUpdater;
-    // 启动ServerList更新器
+    // 启动服务列表更新器
     public void enableAndInitLearnNewServersFeature() {
         serverListUpdater.start(updateAction);
     }
-    // 停止ServerList更新器
+    // 停止服务列表更新器
     public void stopServerListRefreshing() {
         if (serverListUpdater != null) {
             serverListUpdater.stop();
         }
     }
-    // 获取ServerList更新器核心线程数
+    // 获取服务列表更新器核心线程数
     @Monitor(name=&quot;NumThreads&quot;, type=DataSourceType.GAUGE)
     public int getCoreThreads() {
         return serverListUpdater.getCoreThreads();
     }
-    // ServerList更新实现
+    // 更新服务列表
     @VisibleForTesting
     public void updateListOfServers() {
         List&lt;T&gt; servers = new ArrayList&lt;T&gt;();
-        // 获取需要更新的Servers
+        // 获取需要更新的服务列表
         servers = serverListImpl.getUpdatedListOfServers();
-        // 对其进行过滤
+        // 进行过滤
         servers = filter.getFilteredListOfServers(servers);
         updateAllServerList(servers);
     }
-    // 更新
     protected void updateAllServerList(List&lt;T&gt; ls) {
         if (serverListUpdateInProgress.compareAndSet(false, true)) {
             try {
@@ -727,11 +715,13 @@ public class DynamicServerListLoadBalancer&lt;T extends Server&gt; extends BaseL
         }
     }
 }</code></pre>
-<p>ZoneAwareLoadBalancer</p>
+<blockquote>
+<p>ZoneAwareLoadBalancer 源码</p>
+</blockquote>
 <ul>
 <li>继承自 DynamicServerListLoadBalancer</li>
-<li>引入Zone来划分服务的概念</li>
-<li>重写了 setRule 方法 （DynamicServerListLoadBalancer 默认使用 BaseLoadBalancer中的 RoundRobinRule）</li>
+<li>引入了 Zone 来划分服务</li>
+<li>重写了 setRule 方法 （DynamicServerListLoadBalancer 默认使用 BaseLoadBalancer 中的 RoundRobinRule）</li>
 </ul>
 <pre><code class="java">public class ZoneAwareLoadBalancer&lt;T extends Server&gt; extends DynamicServerListLoadBalancer&lt;T&gt; {
     // String：Zone
@@ -765,7 +755,8 @@ public class DynamicServerListLoadBalancer&lt;T extends Server&gt; extends BaseL
         } 
         return loadBalancer;        
     }
-    // 获取Server
+
+    // 获取负载均衡后的服务
     @Override
     public Server chooseServer(Object key) {
         Server server = null;
@@ -775,7 +766,7 @@ public class DynamicServerListLoadBalancer&lt;T extends Server&gt; extends BaseL
             // 获取可用的zone
             Set&lt;String&gt; availableZones = ZoneAvoidanceRule.getAvailableZones(zoneSnapshot, triggeringLoad.get(), triggeringBlackoutPercentage.get());
             if (availableZones != null &amp;&amp;  availableZones.size() &lt; zoneSnapshot.keySet().size()) {
-                // 随机算着一个Zone
+                // 在可用zone中随机选择一个
                 String zone = ZoneAvoidanceRule.randomChooseZone(zoneSnapshot, availableZones);
                 if (zone != null) {
                     // 获取该zone的负载均衡器
@@ -784,45 +775,38 @@ public class DynamicServerListLoadBalancer&lt;T extends Server&gt; extends BaseL
                     server = zoneLoadBalancer.chooseServer(key);
                 }
             }
-        } catch (Exception e) {
-            logger.error(&quot;Error choosing server using zone aware logic for load balancer={}&quot;, name, e);
-        }
-        if (server != null) {
-            return server;
-        } else {
-            logger.debug(&quot;Zone avoidance logic is not invoked.&quot;);
-            return super.chooseServer(key);
-        }
+        } 
+        return server;
     }
 }</code></pre>
 <h3 id="常用负载均衡策略"><a href="#常用负载均衡策略" class="headerlink" title="常用负载均衡策略"></a>常用负载均衡策略</h3><blockquote>
-<p>RandomRule：随机</p>
+<p>RandomRule：随机策略</p>
 </blockquote>
 <pre><code class="java">// 获取随机下标
 protected int chooseRandomInt(int serverCount) {
     return ThreadLocalRandom.current().nextInt(serverCount);
 }
-// 返回负载均衡后的服务对象
+// 返回负载均衡后的服务
 @Override
 public Server choose(Object key) {
     return choose(getLoadBalancer(), key);
 }
-// 获取服务
+// 获取服务过程
 public Server choose(ILoadBalancer lb, Object key) {
     Server server = null;
-    while (server == null) {
+    while (server == null) { // 死循环获取直到不为null
         if (Thread.interrupted()) {
             return null;
         }
-        List&lt;Server&gt; upList = lb.getReachableServers();
-        List&lt;Server&gt; allList = lb.getAllServers();
+        List&lt;Server&gt; upList = lb.getReachableServers(); // 可用服务列表
+        List&lt;Server&gt; allList = lb.getAllServers(); // 所有服务
         int serverCount = allList.size();
         if (serverCount == 0) {
             return null;
         }
         // 获取随机下标
         int index = chooseRandomInt(serverCount);
-        server = upList.get(index);
+        server = upList.get(index); // 从可用服务列表中获取
         if (server.isAlive()) {
             return (server);
         }
@@ -830,7 +814,7 @@ public Server choose(ILoadBalancer lb, Object key) {
     return server;
 }</code></pre>
 <blockquote>
-<p>RoundRibbonRule：轮询</p>
+<p>RoundRibbonRule：轮询策略</p>
 </blockquote>
 <pre><code class="java">// 获取服务
 public Server choose(ILoadBalancer lb, Object key) {
@@ -883,7 +867,7 @@ public Server choose(ILoadBalancer lb, Object key) {
     return answer;
 }</code></pre>
 <blockquote>
-<p>AvailabilityFilteringRule：可用轮询</p>
+<p>AvailabilityFilteringRule：可用轮询策略</p>
 </blockquote>
 <p>AvailabilityPredicate</p>
 <pre><code class="java">// 过滤方法
@@ -952,28 +936,8 @@ public Server choose(Object key) {
     return super.choose(key);
 }</code></pre>
 <blockquote>
-<p>ZoneAvoidanceRule（默认） ：优质服务轮询</p>
+<p>ZoneAvoidanceRule（默认） ：优质服务轮询策略</p>
 </blockquote>
-<p>ZoneAvoidancePredicate</p>
-<pre><code class="java">// 过滤方法
-@Override
-public boolean apply(@Nullable PredicateKey input) {
-    if (!ENABLED.get()) return true;
-    String serverZone = input.getServer().getZone();
-    if (serverZone == null) return true;
-    LoadBalancerStats lbStats = getLBStats();
-    if (lbStats == null) return true;
-    if (lbStats.getAvailableZones().size() &lt;= 1) return true;
-    Map&lt;String, ZoneSnapshot&gt; zoneSnapshot = ZoneAvoidanceRule.createSnapshot(lbStats);
-    if (!zoneSnapshot.keySet().contains(serverZone)) return true;
-    Set&lt;String&gt; availableZones = ZoneAvoidanceRule.getAvailableZones(zoneSnapshot, triggeringLoad.get(), triggeringBlackoutPercentage.get());
-    if (availableZones != null) {
-        return availableZones.contains(input.getServer().getZone());
-    } else {
-        return false;
-    }
-}</code></pre>
-<p>ZoneAvoidanceRule</p>
 <pre><code class="java">// 复合过滤
 private CompositePredicate compositePredicate;
 @Override
@@ -1043,7 +1007,7 @@ public static Set&lt;String&gt; getAvailableZones(
 @Override
 public Server choose(Object key) {
     ILoadBalancer lb = getLoadBalancer();
-    // 筛选轮询
+    // 过滤之后轮询获取服务
     Optional&lt;Server&gt; server = getPredicate().chooseRoundRobinAfterFiltering(lb.getAllServers(), key);
     if (server.isPresent()) {
         return server.get();
@@ -1051,10 +1015,10 @@ public Server choose(Object key) {
         return null;
     }       
 }</code></pre>
-<h3 id="从源码中学习Ribbon使用"><a href="#从源码中学习Ribbon使用" class="headerlink" title="从源码中学习Ribbon使用"></a>从源码中学习Ribbon使用</h3><h4 id="自动配置相关"><a href="#自动配置相关" class="headerlink" title="自动配置相关"></a>自动配置相关</h4><blockquote>
-<p>自动配置类 RibbonAutoConfiguration</p>
+<h3 id="从源码中学习Ribbon使用"><a href="#从源码中学习Ribbon使用" class="headerlink" title="从源码中学习Ribbon使用"></a>从源码中学习Ribbon使用</h3><h4 id="自动配置"><a href="#自动配置" class="headerlink" title="自动配置"></a>自动配置</h4><blockquote>
+<p>RibbonAutoConfiguration</p>
 </blockquote>
-<pre><code class="java">// Spring客户端工厂
+<pre><code class="java">// 客户端工厂
 @Bean
 public SpringClientFactory springClientFactory() {
     SpringClientFactory factory = new SpringClientFactory();
@@ -1062,38 +1026,34 @@ public SpringClientFactory springClientFactory() {
     return factory;
 }</code></pre>
 <blockquote>
-<p>点进 SpringClientFactory</p>
+<p>SpringClientFactory</p>
 </blockquote>
 <pre><code class="java">public class SpringClientFactory extends NamedContextFactory&lt;RibbonClientSpecification&gt; {
     static final String NAMESPACE = &quot;ribbon&quot;;
     public SpringClientFactory() {
-        // 这里传入了一个RibbonClientConfiguration来协助实例化
+        // 这里传入了一个 RibbonClientConfiguration 来协助实例化
         super(RibbonClientConfiguration.class, NAMESPACE, &quot;ribbon.client.name&quot;);
     }
 }</code></pre>
 <blockquote>
-<p>点进 RibbonClientConfiguration</p>
+<p>RibbonClientConfiguration</p>
 </blockquote>
-<pre><code class="java">// 默认情况下Ribbon会使用HttpClient
+<pre><code class="java">// 默认情况下Ribbon会使用HttpClient做HTTP请求
 @Import({ HttpClientConfiguration.class, 
          OkHttpRibbonConfiguration.class,
-        RestClientRibbonConfiguration.class, HttpClientRibbonConfiguration.class }) // 基于HttpClient的Ribbo配置
+        RestClientRibbonConfiguration.class, HttpClientRibbonConfiguration.class }) 
 public class RibbonClientConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public IRule ribbonRule(IClientConfig config) {
-        // 默认负载均衡策略
+        // 默认负载均衡策略是优质服务轮询策略
         ZoneAvoidanceRule rule = new ZoneAvoidanceRule();
         rule.initWithNiwsConfig(config);
         return rule;
     }
 }</code></pre>
-<ul>
-<li>默认负载均衡策略 ZoneAvoidanceRule</li>
-<li>ZoneAvoidanceRule 继承了 ClientConfigEnabledRoundRobinRule，点进去可以看到实质用的是RoundRobinRule，即默认采用 RoundRobinRule</li>
-</ul>
 <blockquote>
-<p>点进 HttpClientRibbonConfiguration</p>
+<p>HttpClientRibbonConfiguration</p>
 </blockquote>
 <pre><code class="java">@Bean
 public RibbonLoadBalancingHttpClient ribbonLoadBalancingHttpClient(
@@ -1102,7 +1062,7 @@ public RibbonLoadBalancingHttpClient ribbonLoadBalancingHttpClient(
     ILoadBalancer loadBalancer, 
     RetryHandler retryHandler,
     CloseableHttpClient httpClient) {
-    // 创建一个HttpClient包装类RibbonLoadBalancingHttpClient
+    // 创建一个HttpClient包装类
     RibbonLoadBalancingHttpClient client = new RibbonLoadBalancingHttpClient(
         httpClient, // httpClient请求工具
         config, 
@@ -1112,7 +1072,7 @@ public RibbonLoadBalancingHttpClient ribbonLoadBalancingHttpClient(
     return client;
 }</code></pre>
 <blockquote>
-<p>点进 RibbonLoadBalancingHttpClient </p>
+<p>RibbonLoadBalancingHttpClient </p>
 </blockquote>
 <pre><code class="java">public class RibbonLoadBalancerClient implements LoadBalancerClient {
     private SpringClientFactory clientFactory;
@@ -1124,7 +1084,6 @@ public RibbonLoadBalancingHttpClient ribbonLoadBalancingHttpClient(
     @Override
     public ServiceInstance choose(String serviceId) {
         Server server = this.getLoadBalancer().chooseServer(serviceId);
-        // 返回一个已经负载均衡的服务实例
         return new RibbonLoadBalancerClient.RibbonServer(serviceId, server);
     }
 }</code></pre>
@@ -1143,7 +1102,7 @@ static class LoadBalancerInterceptorConfig {
         return new LoadBalancerInterceptor(loadBalancerClient, requestFactory);
     }
 
-    // 将负载均衡拦截器添加到 RestTemplate 中
+    // 将负载均衡拦截器添加到RestTemplate中
     @Bean
     @ConditionalOnMissingBean
     public RestTemplateCustomizer restTemplateCustomizer(
@@ -1163,10 +1122,7 @@ static class LoadBalancerInterceptorConfig {
 <p>为什么 RestTemplate 可以添加拦截器？</p>
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/004.png" alt></p>
-<ul>
-<li>可以看到，RestTemplate继承了 Http请求拦截器访问器 InterceptingHttpAccessor </li>
-</ul>
-<p>那么 InterceptingHttpAccessor 是什么时候注入到 RestTemplate 的呢？继续回看自动配置类 RibbonAutoConfiguration </p>
+<p>可以看到 RestTemplate 继承了 InterceptingHttpAccessor 。那么 InterceptingHttpAccessor 是什么时候注入到 RestTemplate 的呢？继续回看自动配置类 RibbonAutoConfiguration </p>
 <pre><code class="java">@Configuration
 @ConditionalOnClass(HttpRequest.class)
 @ConditionalOnRibbonRestClient
@@ -1182,7 +1138,7 @@ protected static class RibbonClientHttpRequestFactoryConfiguration {
     }
 
     // 将 RibbonClientHttpRequestFactory 注入到 RestTemplate 中
-    // 而重要的是，RibbonClientHttpRequestFactory是实现了 ClientHttpRequestFactory 接口的
+    // 而重要的是 RibbonClientHttpRequestFactory 实现了 ClientHttpRequestFactory 接口的
     @Bean
     public RestTemplateCustomizer restTemplateCustomizer(
         final RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory) {
@@ -1197,31 +1153,31 @@ protected static class RibbonClientHttpRequestFactoryConfiguration {
 <p>RibbonLoadBalancerClient</p>
 <pre><code class="java">public &lt;T&gt; T execute(String serviceId, LoadBalancerRequest&lt;T&gt; request, Object hint)
     throws IOException {
-    // 获取负载均衡操作类
+    // 获取负载均衡器
     ILoadBalancer loadBalancer = getLoadBalancer(serviceId);
-    // 负载均衡操作获取服务
+    // 获取经过负载均衡的服务
     Server server = getServer(loadBalancer, hint);
-    // 封装服务
+    // 封装成Ribbon服务
     RibbonServer ribbonServer = new RibbonServer(
         serviceId, 
         server,
         isSecure(server, serviceId),
         serverIntrospector(serviceId).getMetadata(server));
-
+    // 执行HTTP请求
     return execute(serviceId, ribbonServer, request);
 }
 
-// 执行已经选择好负载均衡对象服务的请求
+// 执行HTTP请求
 @Override
 public &lt;T&gt; T execute(String serviceId, ServiceInstance serviceInstance,
                      LoadBalancerRequest&lt;T&gt; request) throws IOException {
     Server server = null;
     if (serviceInstance instanceof RibbonServer) {
-        // 获取调用目标服务
+        // 获取RibbonServer中的目标服务实例（已经经过负载均衡）
         server = ((RibbonServer) serviceInstance).getServer();
     }
-    //...
-    T returnVal = request.apply(serviceInstance); // 发起请求
+    // 发起请求
+    T returnVal = request.apply(serviceInstance); 
     statsRecorder.recordStats(returnVal);
     return returnVal;
 }</code></pre>
@@ -1310,7 +1266,7 @@ public class RibbonConfig {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是客户端负载均衡？"><span class="toc-text">什么是客户端负载均衡？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#模拟常见负载均衡算法"><span class="toc-text">模拟常见负载均衡算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#随机算法"><span class="toc-text">随机算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#权重随机算法"><span class="toc-text">权重随机算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#轮询算法"><span class="toc-text">轮询算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#权重轮询算法"><span class="toc-text">权重轮询算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最少连接数算法"><span class="toc-text">最少连接数算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IP哈希取模算法"><span class="toc-text">IP哈希取模算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#一致性哈希"><span class="toc-text">一致性哈希</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Ribbon"><span class="toc-text">Netflix Ribbon</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#了解负载均衡器"><span class="toc-text">了解负载均衡器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用负载均衡策略"><span class="toc-text">常用负载均衡策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#从源码中学习Ribbon使用"><span class="toc-text">从源码中学习Ribbon使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动配置相关"><span class="toc-text">自动配置相关</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求拦截"><span class="toc-text">请求拦截</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自定义负载均衡规则"><span class="toc-text">自定义负载均衡规则</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是客户端负载均衡"><span class="toc-text">什么是客户端负载均衡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#模拟常见负载均衡策略"><span class="toc-text">模拟常见负载均衡策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#随机算法"><span class="toc-text">随机算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#权重随机算法"><span class="toc-text">权重随机算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#轮询算法"><span class="toc-text">轮询算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#权重轮询算法"><span class="toc-text">权重轮询算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最少连接数算法"><span class="toc-text">最少连接数算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IP哈希取模算法"><span class="toc-text">IP哈希取模算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#一致性哈希"><span class="toc-text">一致性哈希</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Ribbon"><span class="toc-text">Netflix Ribbon</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#了解负载均衡器"><span class="toc-text">了解负载均衡器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用负载均衡策略"><span class="toc-text">常用负载均衡策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#从源码中学习Ribbon使用"><span class="toc-text">从源码中学习Ribbon使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动配置"><span class="toc-text">自动配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求拦截"><span class="toc-text">请求拦截</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自定义负载均衡规则"><span class="toc-text">自定义负载均衡规则</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>

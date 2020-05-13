@@ -9,7 +9,7 @@
   <!-- 浏览器页签图标 -->
   <link rel="icon" href="/img/favicon.ico">
   <!-- 标题 -->
-  <title> 微服务开发技术篇-接口故障应对方案-学然后知不足 </title>
+  <title> 微服务开发技术篇-服务容错-学然后知不足 </title>
 
   <!-- 网站 seo 相关 -->
   
@@ -116,7 +116,7 @@
 <article id="post">
 
   <!-- 文章标题 -->
-  <h1>微服务开发技术篇-接口故障应对方案</h1>
+  <h1>微服务开发技术篇-服务容错</h1>
 
   <!-- 文章元信息 -->
   <span class="post-metadata">
@@ -129,51 +129,57 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="关于接口故障的应对方案"><a href="#关于接口故障的应对方案" class="headerlink" title="关于接口故障的应对方案"></a>关于接口故障的应对方案</h2><h3 id="降级"><a href="#降级" class="headerlink" title="降级"></a>降级</h3><p>&emsp;&emsp;降级指的是在系统出现过载现象和功能不可用时的应对方式。例如对服务或者功能进行优先等级划分，当系统出现过载时可以采用优先策略原则进行丢车保帅手段以保持核心服务的可用性。个人理解降级大体可以划分为两种：服务降级 和 功能降级。</p>
-<p>&emsp;&emsp;服务降级，通俗点来说就是当系统出现过载时，为了保证核心服务的可用性而削减非核心功能的可用性以求达到为“丢车保帅”。例如博客系统发现系统过载，将博客服务降级为只能读博客而不能写博客，有或者像淘宝这样的大流量电商平台在双十一抢购时可能会暂时先屏蔽不太重要的服务以提高核心服务的可用性等。</p>
-<p>&emsp;&emsp;功能降级，当非核心功能不可用时采取备用处理方案。例如电商系统在下单成功后需要发送手机短信通知买家，但由于手机短信服务不可用且重试数次后还是失败，那么就可以进入降级操作，这时可以由原本发送手机短信改为发送邮件，如果发送邮件都不可行则舍弃通知操作。</p>
-<p>&emsp;&emsp;功能降级 和 服务降级 的区别在于，功能降级的触发点是服务不可用而不是系统资源短缺。例如，调用A服务时发生了服务熔断，这时就可以采用B服务来代替A服务，又或者进行回退操作。显然这时并不是系统资源短缺，而是服务不可用导致服务质量降低。</p>
+  <h2 id="分布式分区容错性应对方案"><a href="#分布式分区容错性应对方案" class="headerlink" title="分布式分区容错性应对方案"></a>分布式分区容错性应对方案</h2><h3 id="降级"><a href="#降级" class="headerlink" title="降级"></a>降级</h3><p>&emsp;&emsp;降级是一种系统出现过载或服务不可用时的应对方案。例如我们可以先对服务进行等级划分，当系统出现过载时就可以根据服务的优先级别来进行<code>丢车保帅</code>操作，既通过关闭非核心服务来保持核心服务的可用性。又或者当A服务不可用时就需要B服务来代替。例如电商系统在下单成功后需要发送手机短信来通知买家，但由于手机短信服务不可用，那么这时可以由原来的发送手机短信改为发送邮件（如果发送邮件都不可行则直接放弃通知操作）</p>
 <blockquote>
 <p>常见的降级手段</p>
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/001.png" alt></p>
-<h3 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h3><p>&emsp;&emsp;容错，从字面意思就很容易理解，就是容许发生错误。通俗点说就是系统能够化解运行时发生的某些错误。容错其实是一种能力，即能够化解多种错误就意味着容错能力较强，反之则较弱。例如接下来要说的 Hystrix 就提供熔断机制来实现系统中服务间调用的容错性。 Hystrix的基本思想是对被调用服务进行可用性评估来判断是否需要开启断路器，断路器的作用是让服务调用能够做到快速失败。所以简单点说就是如果Hystrix认为服务a不可用，那么接下来调用服务a的操作都会快速失败。通过快速失败操作可以避免服务雪崩现象。</p>
-<h3 id="限流"><a href="#限流" class="headerlink" title="限流"></a>限流</h3><p>&emsp;&emsp;如果说降级是<code>从系统</code>功能优先级的角度考虑如何应对故障和过载，那么限流则是<code>从用户</code>访问压力的角度来考虑如何应对故障和过载。</p>
-<p>&emsp;&emsp;限流指的是只允许系统能够承受的访问量限度内进来请求处理，超出系统访问能力的请求将<br>被丢弃。限流的主要手动可以划分为两种，分别是 <code>基于请求的限流</code> 和  <code>基于资源的限流</code> </p>
+<h3 id="容错"><a href="#容错" class="headerlink" title="容错"></a>容错</h3><p>&emsp;&emsp;指的是系统在运行过程中容许发生错误。容错其实是一种能力，即能够化解多种错误就可以说容错能力较强，反之则较弱。例如接下来要说的 Hystrix 就供熔断机制来解决服务间调用时发生的异常问题。</p>
+<p>&emsp;&emsp; Hystrix 的基本思想是对被调用服务进行可用性评估来判断是否需要开启断路器。断路器的作用是让服务调用能够做到快速失败。例如 Hystrix 认为服务A不可用，那么开启断路器后接下来调用服务A的操作就会快速失败，这样做可以减少无畏的等待以及可以避免服务雪崩现象。</p>
+<h3 id="限流"><a href="#限流" class="headerlink" title="限流"></a>限流</h3><p>&emsp;&emsp;如果说降级是<code>从服务</code>优先级的角度来考虑应对故障和过载，那么限流则是<code>从用户</code>访问压力的角度来考虑应对故障和过载。</p>
+<p>&emsp;&emsp;限流指的是只允许系统能够承受的访问量限度内进来请求处理，超出系统访问能力范围的请求将<br>被直接丢弃。限流的手动可以划分为两种</p>
 <ul>
 <li><p>基于请求限流：请求阈值、请求频率、接口调用频率</p>
 </li>
 <li><p>基于资源限流：线程数 、数据库连接数、请求队列长度</p>
 </li>
 </ul>
-<h3 id="请求排队"><a href="#请求排队" class="headerlink" title="请求排队"></a>请求排队</h3><p>&emsp;&emsp;请求排队其实是对限流的不同，因为限流会将系统承受范围之外的请求直接拒绝掉，但是在某些场景请求是不允许丢失的，例如经常被人谈论的 秒杀系统 就使用到请求排队来缓解请求处理压力。请求排队可以将请求暂时缓存起来再处理，可以做到 <code>流量削峰</code> 和<code>增大请求处理吞吐量</code> 等效果。例如消息系统Kafka就提供消息持久化功能。但需要注意的是请求排队其实是一种降低系统可用性的操作，因为请求并不会被马上处理，所以用户并不会马上得到处理结果。</p>
-<h2 id="关于服务雪崩与断路器"><a href="#关于服务雪崩与断路器" class="headerlink" title="关于服务雪崩与断路器"></a>关于服务雪崩与断路器</h2><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/002.png" style="zoom:50%;">
+<h3 id="请求排队"><a href="#请求排队" class="headerlink" title="请求排队"></a>请求排队</h3><p>&emsp;&emsp;限流操作会将系统承受范围之外的请求直接拒绝，但是在某些场景请求是不允许丢失的。例如经常被人谈论的 秒杀系统就可以使用<code>请求排队</code>来缓解请求处理压力。请求排队可以将请求暂时缓存起来，做到 <code>流量削峰</code> 和<code>增大请求处理吞吐量</code> 的效果。例如消息系统 Kafka 就有消息持久化能力。但要注意，请求排队其实是一种降低系统可用性的操作，因为请求并不会马上处理，所以这时用户并不能马上得知自己的请求结果。</p>
+<h2 id="关于服务雪崩和断路器"><a href="#关于服务雪崩和断路器" class="headerlink" title="关于服务雪崩和断路器"></a>关于服务雪崩和断路器</h2><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/002.png" style="zoom:50%;">
 
-<p>&emsp;&emsp;如图所示，服务雪崩其实是一种正反馈。指的是在调用链中因为某个服务的不可用而导致级联不可用，最后甚至导致整个系统不可用的现象。</p>
-<p>&emsp;&emsp;那么如何避险服务雪崩呢？最简单的方法就是引入<code>调用超时机制</code>，即做到尽早地放弃调用从而释放连接资源，以免资源因为长时间等待而耗尽。除了超时机制之外还可以引入<code>断路器</code>，所谓的断路器其实就是熔断的实现，即一旦发现服务不可用，则阻断该服务被调用从而避免不必要的资源消耗。</p>
+<p>&emsp;&emsp;如图所示，服务雪崩其实是一种正反馈。指的是在调用链中因为某个服务不可用而导致级联不可用，最后甚至导致整个系统不可用的现象。</p>
+<p>&emsp;&emsp;那么如何避险服务雪崩呢？最简单的方法就是引入<code>调用超时机制</code>，即尽早地放弃调用从而释放连接资源，以免资源因为长时间被占用而耗尽。除了超时机制之外就是<code>断路器</code>了，所谓的断路器其实就是熔断的实现，它的原理和家里的电闸保险丝一样，即一旦发现服务不可用，断路器就会根据状态评估来阻断依赖该服务的调用者，主要是让调用快速失败来避免不必要的资源消耗。</p>
 <blockquote>
 <p>图解断路器</p>
 </blockquote>
 <p>城池 Server C 被大魔王攻陷。</p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/003.png" alt></p>
-<p>从Server C来到Server A、Server B必须经一条桥。勇者M挺身而出将桥砍断，以免大魔王进一步的侵略。勇者M驻守在桥的一端待事态平静再考虑把桥修复。</p>
+<p>而想要从 <code>Server C</code> 来到 <code>Server A</code>、<code>Server B</code> 必须要经过唯一的一座桥。<code>勇者M</code>挺身而出将桥砍断以免大魔王进一步侵略。除了之外 <code>勇者M</code> 还驻守在桥的一端来等待事态回复平静后再考虑要不要重新修建这座桥来恢复贸易。</p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/004.png" alt></p>
-<p>在小故事中，勇者M就是断路器，Server C 就是已被发现的不可用服务。断路器可以阻断 Server A 、Server B 对 Service C 的调用，让其在调用时快速失败来避免不必要的资源消耗。</p>
-<h2 id="Netflix-Hystrix"><a href="#Netflix-Hystrix" class="headerlink" title="Netflix Hystrix"></a>Netflix Hystrix</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>&emsp;&emsp;Hystrix是Netflix开源的分布式服务容错框架，提供：超时控制、断路器、资源隔离、降级、请求缓存和合并 等功能。</p>
-<h3 id="命令模式实践"><a href="#命令模式实践" class="headerlink" title="命令模式实践"></a>命令模式实践</h3><ul>
-<li>Hystrix操作采用的是命令模式，既将调用者和执行者进行解耦，因此可以解决依赖服务之间的级联故障。</li>
+<p>在小故事中，<code>勇者M</code>就扮演者<code>断路器</code>的角色，而 <code>Server C</code> 就是被发现不可用服务。断路器可以阻断 Server A 、Server B 和 Service C 之间的来往，让 Server A 、Server B 调用 Service C 时快速失败来避免资源消耗。</p>
+<h2 id="Netflix-Hystrix"><a href="#Netflix-Hystrix" class="headerlink" title="Netflix Hystrix"></a>Netflix Hystrix</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>Hystrix是Netflix开源的分布式服务容错框架。Hystrix主要为分布式服务提供以下功能：</p>
+<ul>
+<li>超时控制</li>
+<li>断路器</li>
+<li>资源隔离</li>
+<li>降级操作</li>
+<li>请求缓存 和 请求合并</li>
 </ul>
-<p><strong>Hystrix命令模式实现断路器</strong></p>
-<p>在没有使用命令模式之前：</p>
+<h3 id="命令模式实践"><a href="#命令模式实践" class="headerlink" title="命令模式实践"></a>命令模式实践</h3><p>Hystrix的功能实现采用命令模式来实现，命令模式可以将服务调用者和任务执行者解耦。Hystrix采用这用方式来解决服务之间的级联故障问题。</p>
+<blockquote>
+<p>没使用命令模式的情况下</p>
+</blockquote>
 <img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/005.png" style="zoom:67%;">
 
-<p>可以看到，直接调用依赖服务的话，只要有一个依赖服务不可用就导致整个用户请求失败。在极端情况下还会引起服务雪崩，如下图：</p>
+<p>可以看到，直接调用依赖服务的话，只要有一个服务不可用就会导致整个用户请求处理流程失败。在极端情况下还可能会引发服务雪崩，如下：</p>
 <img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/006.png" style="zoom:67%;">
 
-<p>使用命令模式将调用者和执行者解耦：</p>
+<blockquote>
+<p>使用命令模式后</p>
+</blockquote>
 <img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/007.png" style="zoom:67%;">
 
-<p>对于 Hystrix 使用命令模式除了解耦之外还可以更好地实现 超时机制 、拒绝服务 、依赖服务隔离 等等功能。</p>
+<p>Hystrix 使用命令模式解耦服务间的关联关系之外，还依靠命令模式实现了 <code>超时机制</code> 、<code>拒绝服务</code> 、<code>依赖服务隔离</code> 等功能。</p>
 <h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="非SpringBoot"><a href="#非SpringBoot" class="headerlink" title="非SpringBoot"></a>非SpringBoot</h4><p>依赖</p>
 <pre><code class="xml">&lt;dependency&gt;
     &lt;groupId&gt;com.netflix.hystrix&lt;/groupId&gt;
@@ -1299,7 +1305,7 @@ public class MsaHystrixTurbineApplication {
     文章作者: TanDi <br/>
     文章链接: 
     <a href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/">
-      微服务开发技术篇-接口故障应对方案
+      微服务开发技术篇-服务容错
     </a> <br/>
     版权声明: 转载请注明来自 
     <a href="https://tandi.pub">
@@ -1320,7 +1326,7 @@ public class MsaHystrixTurbineApplication {
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
           admin: ['oomgomgxx'],
-          id: md5('微服务开发技术篇-接口故障应对方案'),
+          id: md5('微服务开发技术篇-服务容错'),
           distractionFreeMode: false
         })
         gitalk.render('gitalk-container')           
@@ -1334,7 +1340,7 @@ public class MsaHystrixTurbineApplication {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#关于接口故障的应对方案"><span class="toc-text">关于接口故障的应对方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#降级"><span class="toc-text">降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#容错"><span class="toc-text">容错</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#限流"><span class="toc-text">限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求排队"><span class="toc-text">请求排队</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于服务雪崩与断路器"><span class="toc-text">关于服务雪崩与断路器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Hystrix"><span class="toc-text">Netflix Hystrix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#命令模式实践"><span class="toc-text">命令模式实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#非SpringBoot"><span class="toc-text">非SpringBoot</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot"><span class="toc-text">SpringBoot</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#快速入门命令模式"><span class="toc-text">快速入门命令模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix工作流程图"><span class="toc-text">Hystrix工作流程图</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器工作原理"><span class="toc-text">断路器工作原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#调用隔离"><span class="toc-text">调用隔离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求合并"><span class="toc-text">请求合并</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求缓存"><span class="toc-text">请求缓存</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代码浅析"><span class="toc-text">代码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#如何触发fallback？"><span class="toc-text">如何触发fallback？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器"><span class="toc-text">断路器</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详细使用"><span class="toc-text">详细使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#相关注解"><span class="toc-text">相关注解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCommand"><span class="toc-text">@HystrixCommand</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCollapser"><span class="toc-text">@HystrixCollapser</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixProperty"><span class="toc-text">@HystrixProperty</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCommand属性"><span class="toc-text">常用HystrixCommand属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCollapser属性"><span class="toc-text">常用HystrixCollapser属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixThreadPool属性"><span class="toc-text">常用HystrixThreadPool属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Feign中使用Hystrix"><span class="toc-text">Feign中使用Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Command缓存使用"><span class="toc-text">Command缓存使用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix监控"><span class="toc-text">Hystrix监控</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Hystrix-Dashboard"><span class="toc-text">Hystrix Dashboard</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Turbine-Stream-Aggregator-Hystrix-Dashboard"><span class="toc-text">Turbine Stream Aggregator + Hystrix Dashboard</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式分区容错性应对方案"><span class="toc-text">分布式分区容错性应对方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#降级"><span class="toc-text">降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#容错"><span class="toc-text">容错</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#限流"><span class="toc-text">限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求排队"><span class="toc-text">请求排队</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于服务雪崩和断路器"><span class="toc-text">关于服务雪崩和断路器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Hystrix"><span class="toc-text">Netflix Hystrix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#命令模式实践"><span class="toc-text">命令模式实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#非SpringBoot"><span class="toc-text">非SpringBoot</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot"><span class="toc-text">SpringBoot</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#快速入门命令模式"><span class="toc-text">快速入门命令模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix工作流程图"><span class="toc-text">Hystrix工作流程图</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器工作原理"><span class="toc-text">断路器工作原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#调用隔离"><span class="toc-text">调用隔离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求合并"><span class="toc-text">请求合并</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求缓存"><span class="toc-text">请求缓存</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代码浅析"><span class="toc-text">代码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#如何触发fallback？"><span class="toc-text">如何触发fallback？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器"><span class="toc-text">断路器</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详细使用"><span class="toc-text">详细使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#相关注解"><span class="toc-text">相关注解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCommand"><span class="toc-text">@HystrixCommand</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCollapser"><span class="toc-text">@HystrixCollapser</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixProperty"><span class="toc-text">@HystrixProperty</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCommand属性"><span class="toc-text">常用HystrixCommand属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCollapser属性"><span class="toc-text">常用HystrixCollapser属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixThreadPool属性"><span class="toc-text">常用HystrixThreadPool属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Feign中使用Hystrix"><span class="toc-text">Feign中使用Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Command缓存使用"><span class="toc-text">Command缓存使用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix监控"><span class="toc-text">Hystrix监控</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Hystrix-Dashboard"><span class="toc-text">Hystrix Dashboard</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Turbine-Stream-Aggregator-Hystrix-Dashboard"><span class="toc-text">Turbine Stream Aggregator + Hystrix Dashboard</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
