@@ -179,8 +179,7 @@
 </blockquote>
 <img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/007.png" style="zoom:67%;">
 
-<p>Hystrix 使用命令模式解耦服务间的关联关系之外，还依靠命令模式实现了 <code>超时机制</code> 、<code>拒绝服务</code> 、<code>依赖服务隔离</code> 等功能。</p>
-<h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="非SpringBoot"><a href="#非SpringBoot" class="headerlink" title="非SpringBoot"></a>非SpringBoot</h4><p>依赖</p>
+<h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="非SpringBoot案例"><a href="#非SpringBoot案例" class="headerlink" title="非SpringBoot案例"></a>非SpringBoot案例</h4><p>依赖</p>
 <pre><code class="xml">&lt;dependency&gt;
     &lt;groupId&gt;com.netflix.hystrix&lt;/groupId&gt;
     &lt;artifactId&gt;hystrix-core&lt;/artifactId&gt;
@@ -268,7 +267,7 @@
          */
     }
 }</code></pre>
-<h4 id="SpringBoot"><a href="#SpringBoot" class="headerlink" title="SpringBoot"></a>SpringBoot</h4><h5 id="服务提供者"><a href="#服务提供者" class="headerlink" title="服务提供者"></a>服务提供者</h5><pre><code class="java">@RequestMapping(&quot;/user&quot;)
+<h4 id="SpringBoot案例"><a href="#SpringBoot案例" class="headerlink" title="SpringBoot案例"></a>SpringBoot案例</h4><h5 id="服务提供者"><a href="#服务提供者" class="headerlink" title="服务提供者"></a>服务提供者</h5><pre><code class="java">@RequestMapping(&quot;/user&quot;)
 @RestController
 public class UserController {
 
@@ -357,16 +356,20 @@ public class MsaEurekaComsumer01Application {
         SpringApplication.run(MsaEurekaComsumer01Application.class, args);
     }
 }</code></pre>
-<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><h4 id="快速入门命令模式"><a href="#快速入门命令模式" class="headerlink" title="快速入门命令模式"></a>快速入门命令模式</h4><blockquote>
-<p>模拟老师向学生下达命令</p>
-</blockquote>
-<p>模拟过程有以下命令</p>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><h4 id="命令模式快速入门"><a href="#命令模式快速入门" class="headerlink" title="命令模式快速入门"></a>命令模式快速入门</h4><p>模拟老师向学生下达命令</p>
+<ul>
+<li>模拟过程有以下命令</li>
+</ul>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/008.png" alt></p>
-<p>Command接口</p>
+<ul>
+<li>Command接口</li>
+</ul>
 <pre><code class="java">public interface Command {
     void execute();
 }</code></pre>
-<p>Command实现 - DancingCommand</p>
+<ul>
+<li>Command实现 - DancingCommand</li>
+</ul>
 <pre><code class="java">@AllArgsConstructor // Lombok
 public class DancingCommand implements Command {
     private Student student;
@@ -375,7 +378,9 @@ public class DancingCommand implements Command {
         student.dancing();
     }
 }</code></pre>
-<p>Command实现 - SingingCommand</p>
+<ul>
+<li>Command实现 - SingingCommand</li>
+</ul>
 <pre><code class="java">@AllArgsConstructor // Lombok
 public class SingingCommand implements Command {
     private Student student;
@@ -384,7 +389,9 @@ public class SingingCommand implements Command {
         student.dancing();
     }
 }</code></pre>
-<p>执行者 Student</p>
+<ul>
+<li>执行者 Student</li>
+</ul>
 <pre><code class="java">@AllArgsConstructor // Lombok
 public class Student {
     private String name;
@@ -397,7 +404,9 @@ public class Student {
         System.out.println(this.name + &quot;正在唱歌&quot;);
     }
 }</code></pre>
-<p>调用者 Staff</p>
+<ul>
+<li>调用者 Staff</li>
+</ul>
 <pre><code class="java">public class Staff {
     private List&lt;Command&gt; commands = new ArrayList&lt;&gt;();
 
@@ -411,9 +420,9 @@ public class Student {
         });
     }
 }</code></pre>
-<blockquote>
-<p>模拟测试</p>
-</blockquote>
+<ul>
+<li>测试</li>
+</ul>
 <pre><code class="java">public class Main {
     public static void main(String[] args) {
 
@@ -436,9 +445,7 @@ public class Student {
          */
     }
 }</code></pre>
-<blockquote>
 <p>命令模式优缺点</p>
-</blockquote>
 <ul>
 <li>可做到调用者和执行者解耦。（CQRC架构就基于命令模式，而这里的Student就是聚合对象）</li>
 <li>扩展新命令容易</li>
@@ -446,97 +453,85 @@ public class Student {
 </ul>
 <h4 id="Hystrix工作流程图"><a href="#Hystrix工作流程图" class="headerlink" title="Hystrix工作流程图"></a>Hystrix工作流程图</h4><p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/009.png" alt></p>
 <ol>
-<li>接收到请求后构建command。command通常有以下两种：<ul>
+<li>接收到请求后构建command。command有以下两种：<ul>
 <li>HystrixCommand：依赖的服务返回单个操作结果<ul>
 <li>execute()：同步执行</li>
 <li>queue()：异步执行</li>
 </ul>
 </li>
 <li>HystrixObservableCommand：依赖的服务返回多个操作结果<ul>
-<li>observe()：返回一个可监听对象Observable， 表了操作的多个结果，但属于Hot Observable，即只能监听到部分</li>
-<li>toObservable() ：功能和observe()类似，但属于Cold Observable，即全部监听</li>
-<li>需要说的是Observable不是JDK中的，而是RxJava中的，RxJava是一个响应式框架</li>
+<li>observe()：返回一个可监听对象Observable。可以接收多个返回结果，属于Hot Observable，即只能监听部分行为</li>
+<li>toObservable() ：功能和 observe() 类似，但属于Cold Observable，即可以监听全部行为</li>
+<li>需要说的是 Observable 并不是JDK中的那个，而是 RxJava 中的，RxJava 是一个响应式框架</li>
 </ul>
 </li>
 </ul>
 </li>
-<li>判断是否开启了command的缓存功能，如果有则直接返回上一次command的响应结果。否则进入下一阶段</li>
-<li>判断是否开启了断路器，如果断路器被打开则直接触发fallback操作。如果断路器没有开启，则判断<code>线程池</code>或<code>信号量</code>是否已经到达预先设置的阈值，如果已经到达阈值则使command直接失败进入fallback操作，反之执行命令</li>
-<li>执行任务时，需要检测调用的依赖服务是否发生异常或是否出现调用超时。如果存在异常或超时，则通知断路器来统计信息以判断是否有必要开启断路器来阻断后面对该服务的调用，随后进入fallback操作。反之返回最终结果</li>
-<li>其中执行fallback操作时也可能会失败，失败则会抛出异常。</li>
+<li>判断是否有开启 command 的缓存功能，如果有则直接返回上一次 command 的响应结果。否则进入下一阶段</li>
+<li>判断断路器是否有开启。如果有则直接触发 fallback 操作，否则接着判断<code>线程池</code>或<code>信号量</code>是否已经到达预先设置的阈值，如果已达阈值就使 command 直接失败并进入 fallback 操作，反之继续执行命令</li>
+<li>执行命令过程中需要监控调用依赖服务时是否有发生<code>调用异常</code>或<code>调用超时</code>。如果有就通知<code>断路器</code>统计信息判断是否有必要开启断路器</li>
+<li>断路器开启时执行 fallback 操作也是可能会失败的，当失 fallback 操作失败将会直接会抛出异常。</li>
 </ol>
 <h4 id="断路器工作原理"><a href="#断路器工作原理" class="headerlink" title="断路器工作原理"></a>断路器工作原理</h4><blockquote>
-<p>在Hystrix中断路器有三种状态： </p>
-<ul>
-<li>CLOSED ：关闭，可以直接请求调用依赖服务</li>
-<li>OPEN ：开启，请求调用依赖服务会被快速失败</li>
-<li>HALF-OPEN ：半开启，允许尝试性的请求调用依赖服务</li>
-</ul>
+<p>断路器的三种状态</p>
 </blockquote>
+<ul>
+<li>CLOSED ：关闭，可以正常调用依赖服务</li>
+<li>OPEN ：开启，请求调用依赖服务会被快速失败</li>
+<li>HALF-OPEN ：半开启，允许尝试性地调用已经熔断了的依赖服务</li>
+</ul>
 <img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/010.png" style="zoom:67%;">
 
-<ul>
-<li>关于滑动窗口可以参考另一篇文章：<a href="[https://www.tandi.wiki/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/](https://www.tandi.wiki/关于系统的限流问题/)">关于系统的限流问题</a></li>
-</ul>
 <blockquote>
 <p>断路器状态切换</p>
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/011.png" alt></p>
-<h4 id="调用隔离"><a href="#调用隔离" class="headerlink" title="调用隔离"></a>调用隔离</h4><p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/012.png" alt></p>
-<p>&emsp;&emsp;如图所示，Hystrix可以为每个调用依赖服务分配独立的线程池来做到依赖服务之间互相隔离。这种操作也被称为“船舱隔离”。</p>
+<h4 id="调用隔离"><a href="#调用隔离" class="headerlink" title="调用隔离"></a>调用隔离</h4><blockquote>
+<p>船舱隔离</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/012.png" alt></p>
+<p>如图所示，Hystrix 可以将用户请求分配到特定的线程池中进行隔离处理，这种操作也被称为<code>船舱隔离</code>。</p>
 <blockquote>
-<p>基于 船舱隔离 的思路Hystrix完成以下操作</p>
+<p>船舱隔离在 Hystrix 中的应用</p>
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/013.png" alt></p>
-<p>线程隔离和信号量隔离的优缺点：</p>
+<p>Hystrix中的2种请求处理隔离策略</p>
 <ul>
 <li>线程池隔离：<ol>
 <li>数量可控且受保护，不受客户端恶意调用影响</li>
-<li>待命线程能够加速请求速度</li>
-<li>提供内置的并发性 </li>
-<li>多线程都有的问题，就是调度和上下文切换到最后增加计算机开销</li>
+<li>待命线程能够提高请求处理效率</li>
+<li>提供内部并发性 </li>
+<li>多线程存在上下文切换问题，会增加系统资源开销</li>
 </ol>
 </li>
 <li>信号量隔离：<ol>
-<li>信号量实质就是个计数器，比线程池开销要低</li>
+<li>信号量实质就是个计数器，比线程池开销低</li>
 <li>不支持超时和退出 </li>
 </ol>
 </li>
 </ul>
-<p>在Hystrix中，提供 <code>execution.isolation.strategy</code> 属性来设置隔离策略。</p>
+<p>在 Hystrix 中提供了 <code>execution.isolation.strategy</code> 属性来设置隔离策略。</p>
 <h4 id="请求合并"><a href="#请求合并" class="headerlink" title="请求合并"></a>请求合并</h4><p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/014.png" alt></p>
-<ul>
-<li>Hystrix提供了相同command请求合并的功能</li>
-<li>使用请求合并可以有效地减少请求连接，降低负载</li>
-</ul>
+<p>Hystrix提供了这对相同 command 的请求合并功能。请求合并可以有效地减少网络连接开销</p>
 <h4 id="请求缓存"><a href="#请求缓存" class="headerlink" title="请求缓存"></a>请求缓存</h4><p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/015.png" alt></p>
 <ul>
-<li>请求缓存可以在command相同时，返回上一次的响应内容（成功的）</li>
-<li>从图中可以看到，<code>缓存采用ThreadLoad实现</code>。ThreadLoad为线程变量，即只符合单个请求范围内的操作<ol>
-<li>例如请x中有a、b、c三个请求都是相同command，且是有序的（a-&gt;b-&gt;c）</li>
-<li>那么请求缓存会将第一个成功的a返回结果保存到ThreadLoad</li>
-<li>接下来的请求会到ThreadLoad中判断是否为相同的command，如果是则直接返回缓存</li>
-</ol>
+<li><p>请求缓存可以在 command 相同时，返回上一次的依赖服务的响应成功的结果，这样可以避免重复操作</p>
 </li>
-<li>请求缓存可以杜绝重复操作</li>
-<li>使用缓存必然存在一致性问题，所以需要注意使用</li>
-</ul>
-<blockquote>
-<p>Hystrix提供了清楚缓存的方法，在有必要时可以用于清楚缓存</p>
+<li><p>从图中可以看到，缓存采用 ThreadLoacl 实现，而ThreadLoacl 是一个线程变量，所以Hystrix的请求缓存范围是在单个请求内才起作用的</p>
+</li>
+<li><p>一旦引入缓存就可能出现缓存一致性问题，所以需要注意。在这方面 Hystrix 提供了清除缓存的方法，在有必要时可以用来清除缓存</p>
 <pre><code class="java">HystrixRequestCache.getInstance(GETTER_KEY, HystrixConcurrencyStrategyDefault.getInstance()).clear(&quot;commandKey&quot;);</code></pre>
-</blockquote>
-<h3 id="代码浅析"><a href="#代码浅析" class="headerlink" title="代码浅析"></a>代码浅析</h3><ul>
-<li>基于SpringBoot</li>
+</li>
 </ul>
-<h4 id="如何触发fallback？"><a href="#如何触发fallback？" class="headerlink" title="如何触发fallback？"></a>如何触发fallback？</h4><blockquote>
-<p>HystrixCommand 类图</p>
+<h3 id="源码浅析"><a href="#源码浅析" class="headerlink" title="源码浅析"></a>源码浅析</h3><blockquote>
+<p>基于 SpringBoot</p>
 </blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/016.png" alt></p>
+<h4 id="断路器是如何触发-fallback-的"><a href="#断路器是如何触发-fallback-的" class="headerlink" title="断路器是如何触发 fallback 的"></a>断路器是如何触发 fallback 的</h4><p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/016.png" alt></p>
 <blockquote>
-<p>自动配置类 HystrixAutoConfiguration</p>
+<p>HystrixAutoConfiguration 源码</p>
 </blockquote>
 <pre><code class="java">public class HystrixAutoConfiguration {
-    // 开启健康指示器。用于收集打开的断路器信息
+    // 开启健康指示器（用于收集和统计服务调用时出现的问题数据）
     @Bean
     @ConditionalOnEnabledHealthIndicator(&quot;hystrix&quot;)
     public HystrixHealthIndicator hystrixHealthIndicator() {
@@ -545,7 +540,7 @@ public class Student {
 
     @Configuration
     @ConditionalOnWebApplication(type = SERVLET)
-    @ConditionalOnBean(HystrixCommandAspect.class) // 【重点】Command切面类
+    @ConditionalOnBean(HystrixCommandAspect.class) // 【重点】Command 切面类
     @ConditionalOnClass({ HystrixMetricsStreamServlet.class })
     @EnableConfigurationProperties(HystrixProperties.class)
     protected static class HystrixServletAutoConfiguration {
@@ -553,38 +548,33 @@ public class Student {
     }
 }</code></pre>
 <blockquote>
-<p>进入 HystrixCommandAspect</p>
+<p>HystrixCommandAspect 源码</p>
 </blockquote>
-<p>基础设置</p>
-<pre><code class="java">private static final Map&lt;HystrixPointcutType, MetaHolderFactory&gt; META_HOLDER_FACTORY_MAP;
-static {
-    META_HOLDER_FACTORY_MAP = ImmutableMap.&lt;HystrixPointcutType, MetaHolderFactory&gt;builder()
-        .put(HystrixPointcutType.COMMAND, new CommandMetaHolderFactory())
-        .put(HystrixPointcutType.COLLAPSER, new CollapserMetaHolderFactory())
-        .build();
-}
-
-// 拦截注解用的切入点表达式
+<p>切入点表达式</p>
+<pre><code class="java">// 拦截 HystrixCommand 注解
 @Pointcut(&quot;@annotation(com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand)&quot;)
 public void hystrixCommandAnnotationPointcut() {
 }
+// 拦截 HystrixCollapser 注解
 @Pointcut(&quot;@annotation(com.netflix.hystrix.contrib.javanica.annotation.HystrixCollapser)&quot;)
 public void hystrixCollapserAnnotationPointcut() {
 }</code></pre>
 <p>切面方法 - methodsAnnotatedWithHystrixCommand</p>
-<pre><code class="java">// HystrixCommand环绕织入
+<pre><code class="java">// HystrixCommand 环绕织入
 @Around(&quot;hystrixCommandAnnotationPointcut() || hystrixCollapserAnnotationPointcut()&quot;)
 public Object methodsAnnotatedWithHystrixCommand(final ProceedingJoinPoint joinPoint) throws Throwable {
     // 反射获取到目标方法
     Method method = getMethodFromTarget(joinPoint);
 
-    // 方法不能同时被HystrixCommand和HystrixCollapser标识
+    // 方法不能同时被 HystrixCommand、HystrixCollapser 两个注解标注
     if (method.isAnnotationPresent(HystrixCommand.class) {}
 
     MetaHolderFactory metaHolderFactory = META_HOLDER_FACTORY_MAP.get(HystrixPointcutType.of(method));
+
     // 从工厂中获取元数据持有者
     MetaHolder metaHolder = metaHolderFactory.create(joinPoint);
-    // 【重】可调用对象，包含fallback和普通command的execute
+
+    // 【重】可调用对象，包含fallback和普通command的execute方法
     HystrixInvokable invokable = HystrixCommandFactory.getInstance().create(metaHolder);
     ExecutionType executionType = metaHolder.isCollapserAnnotationPresent() ?
             metaHolder.getCollapserExecutionType() : metaHolder.getExecutionType();
@@ -598,7 +588,7 @@ public Object methodsAnnotatedWithHystrixCommand(final ProceedingJoinPoint joinP
     return result;
 }</code></pre>
 <p>HystrixCommandFactory.getInstance().create(metaHolder)</p>
-<pre><code class="java">// 这里的HystrixInvokable实质就是GenericCommand
+<pre><code class="java">// 这里的 HystrixInvokable 实质是一个 GenericCommand
 public HystrixInvokable create(MetaHolder metaHolder) {
     HystrixInvokable executable;
     if (metaHolder.isCollapserAnnotationPresent()) { // 是否合并
@@ -606,12 +596,12 @@ public HystrixInvokable create(MetaHolder metaHolder) {
     } else if (metaHolder.isObservable()) { // 是否可观察
         executable = new GenericObservableCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));
     } else { // 普通command
-        //【重】这里传入了MetaHolder用来创建了一个GenericCommand
+        //【重】这里传入了 MetaHolder 用来创建了一个 GenericCommand
         executable = new GenericCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));
     }
     return executable;
 }</code></pre>
-<p>先看看GenericCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));</p>
+<p>先看看 GenericCommand(HystrixCommandBuilderFactory.getInstance().create(metaHolder));</p>
 <pre><code class="java">public &lt;ResponseType&gt; HystrixCommandBuilder create(/**/) {
     return HystrixCommandBuilder.builder()
             .setterBuilder(createGenericSetterBuilder(metaHolder)) // 属性配置器
@@ -671,7 +661,7 @@ public HystrixInvokable create(MetaHolder metaHolder) {
         switch (executionType) {
             case SYNCHRONOUS: { // 同步执行
                 // 转换成可执行状态
-                // 执行HystrixCommand的execute()方法
+                // 执行 HystrixCommand 的execute()方法
                 return castToExecutable(invokable, executionType).execute();
             }
             case ASYNCHRONOUS: { // 异步执行
@@ -692,7 +682,7 @@ public HystrixInvokable create(MetaHolder metaHolder) {
     }</code></pre>
 <p>HystrixCommand的execute()方法</p>
 <pre><code class="java">// Result of {@link #run()} execution or a fallback from {@link #getFallback()} if the command fails for any reason.
-// 当execute()执行失败则执行run()或者从getFallback()返回结果
+// 当execute()执行失败后会执行run()或者getFallback()
 public R execute() {
     try {
         return queue().get();
@@ -816,12 +806,12 @@ public R execute() {
     protected final HystrixCommandProperties properties;</code></pre>
 <h3 id="详细使用"><a href="#详细使用" class="headerlink" title="详细使用"></a>详细使用</h3><h4 id="相关注解"><a href="#相关注解" class="headerlink" title="相关注解"></a>相关注解</h4><h5 id="HystrixCommand"><a href="#HystrixCommand" class="headerlink" title="@HystrixCommand"></a>@HystrixCommand</h5><ul>
 <li>commandKey ：命令标识</li>
-<li>groupKey ：命令集合标识</li>
+<li>groupKey ：命令组标识</li>
 <li>commandProperties ：命令属性</li>
 <li>threadPoolKey ：线程池标识</li>
 <li>threadPoolProperties ：线程池属性</li>
-<li>fallbackMethod ：降级（备用）方法</li>
-<li>defaultFallback ：默认降级方法，和fallbackMethod一样但方法不能有参数</li>
+<li>fallbackMethod ：回退方法</li>
+<li>defaultFallback ：默认回退方法，和fallbackMethod一样但方法不能有参数</li>
 <li>ignoreExceptions ：忽略异常（不触发fallback）</li>
 <li>observableExecutionMode ：执行RxJava的Observabl执行模式，默认 ObservableExecutionMode.EAGER标识马上执行，而LAZY则是有订阅者时才执行</li>
 </ul>
@@ -835,7 +825,7 @@ public R execute() {
 <li>name：属性名称</li>
 <li>value：属性值</li>
 </ul>
-<h4 id="常用HystrixCommand属性"><a href="#常用HystrixCommand属性" class="headerlink" title="常用HystrixCommand属性"></a>常用HystrixCommand属性</h4><blockquote>
+<h4 id="常用HystrixCommand配置属性"><a href="#常用HystrixCommand配置属性" class="headerlink" title="常用HystrixCommand配置属性"></a>常用HystrixCommand配置属性</h4><blockquote>
 <p>如果在yaml中配置，驼峰法使用”:”隔开</p>
 </blockquote>
 <table>
@@ -932,7 +922,7 @@ public R execute() {
 <td>10</td>
 </tr>
 </tbody></table>
-<h4 id="常用HystrixCollapser属性"><a href="#常用HystrixCollapser属性" class="headerlink" title="常用HystrixCollapser属性"></a>常用HystrixCollapser属性</h4><blockquote>
+<h4 id="常用HystrixCollapser配置属性"><a href="#常用HystrixCollapser配置属性" class="headerlink" title="常用HystrixCollapser配置属性"></a>常用HystrixCollapser配置属性</h4><blockquote>
 <p>如果在yaml中配置，驼峰法使用”:”隔开</p>
 </blockquote>
 <table>
@@ -955,7 +945,7 @@ public R execute() {
 <td>是否开启请求缓存</td>
 </tr>
 </tbody></table>
-<h4 id="常用HystrixThreadPool属性"><a href="#常用HystrixThreadPool属性" class="headerlink" title="常用HystrixThreadPool属性"></a>常用HystrixThreadPool属性</h4><blockquote>
+<h4 id="常用HystrixThreadPool配置属性"><a href="#常用HystrixThreadPool配置属性" class="headerlink" title="常用HystrixThreadPool配置属性"></a>常用HystrixThreadPool配置属性</h4><blockquote>
 <p>如果在yaml中配置，驼峰法使用”:”隔开</p>
 </blockquote>
 <table>
@@ -1004,10 +994,10 @@ public R execute() {
 <li>value：服务名称</li>
 <li>name：与value功能一致</li>
 <li>qualifier：FeignClient限定名称。在多个同类型FeignClient时以作区别</li>
-<li>decode404：404解码，例如解码信息成json</li>
-<li>configuration：执行FeignClient独立配置类，相同配置下会覆盖全局配置。可以自定义Encoder、Decoder、LogLevel、Contract</li>
-<li>fallback ：指定降级类，降级类需要实现对应的FeignClient</li>
-<li>fallbackFactory：指定降级工厂，功能与fallback一样，但可以获取回退原因，需要实现FallbackFactory接口</li>
+<li>decode404：404解码，例如信息解码成json</li>
+<li>configuration：FeignClient独立配置类，会覆盖全局配置。可以自定义Encoder、Decoder、LogLevel、Contract</li>
+<li>fallback ：指定回退类，需要实现FeignClient</li>
+<li>fallbackFactory：指定回退工厂类，功能与fallback一样，但可以获取回退原因，需要实现FallbackFactory接口</li>
 </ul>
 <blockquote>
 <p>在Feign中开启Hystrix功能</p>
@@ -1277,7 +1267,7 @@ public class MsaHystrixTurbineApplication {
 <p>2）在Dashboard中输入Turbine地址：<a href="http://localhost:9091/turbine.stream" target="_blank" rel="noopener">http://localhost:9091/turbine.stream</a></p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/022.png" alt></p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><p><a href="https://github.com/Netflix" target="_blank" rel="noopener">Netflix</a>/<strong><a href="https://github.com/Netflix/Hystrix" target="_blank" rel="noopener">Hystrix</a></strong></p>
+<li><p><a href="https://github.com/Netflix/Hystrix" target="_blank" rel="noopener">Netflix Hystrix</a></p>
 </li>
 <li><p><a href="https://juejin.im/post/5c009ff6f265da614b11b84d" target="_blank" rel="noopener">Hystrix都停更了，我为什么还要学？</a></p>
 </li>
@@ -1340,7 +1330,7 @@ public class MsaHystrixTurbineApplication {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式分区容错性应对方案"><span class="toc-text">分布式分区容错性应对方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#降级"><span class="toc-text">降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#容错"><span class="toc-text">容错</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#限流"><span class="toc-text">限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求排队"><span class="toc-text">请求排队</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于服务雪崩和断路器"><span class="toc-text">关于服务雪崩和断路器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Hystrix"><span class="toc-text">Netflix Hystrix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#命令模式实践"><span class="toc-text">命令模式实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#非SpringBoot"><span class="toc-text">非SpringBoot</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot"><span class="toc-text">SpringBoot</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#快速入门命令模式"><span class="toc-text">快速入门命令模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix工作流程图"><span class="toc-text">Hystrix工作流程图</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器工作原理"><span class="toc-text">断路器工作原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#调用隔离"><span class="toc-text">调用隔离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求合并"><span class="toc-text">请求合并</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求缓存"><span class="toc-text">请求缓存</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代码浅析"><span class="toc-text">代码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#如何触发fallback？"><span class="toc-text">如何触发fallback？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器"><span class="toc-text">断路器</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详细使用"><span class="toc-text">详细使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#相关注解"><span class="toc-text">相关注解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCommand"><span class="toc-text">@HystrixCommand</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCollapser"><span class="toc-text">@HystrixCollapser</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixProperty"><span class="toc-text">@HystrixProperty</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCommand属性"><span class="toc-text">常用HystrixCommand属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCollapser属性"><span class="toc-text">常用HystrixCollapser属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixThreadPool属性"><span class="toc-text">常用HystrixThreadPool属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Feign中使用Hystrix"><span class="toc-text">Feign中使用Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Command缓存使用"><span class="toc-text">Command缓存使用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix监控"><span class="toc-text">Hystrix监控</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Hystrix-Dashboard"><span class="toc-text">Hystrix Dashboard</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Turbine-Stream-Aggregator-Hystrix-Dashboard"><span class="toc-text">Turbine Stream Aggregator + Hystrix Dashboard</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式分区容错性应对方案"><span class="toc-text">分布式分区容错性应对方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#降级"><span class="toc-text">降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#容错"><span class="toc-text">容错</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#限流"><span class="toc-text">限流</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求排队"><span class="toc-text">请求排队</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于服务雪崩和断路器"><span class="toc-text">关于服务雪崩和断路器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Hystrix"><span class="toc-text">Netflix Hystrix</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#命令模式实践"><span class="toc-text">命令模式实践</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#非SpringBoot案例"><span class="toc-text">非SpringBoot案例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot案例"><span class="toc-text">SpringBoot案例</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#命令模式快速入门"><span class="toc-text">命令模式快速入门</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix工作流程图"><span class="toc-text">Hystrix工作流程图</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器工作原理"><span class="toc-text">断路器工作原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#调用隔离"><span class="toc-text">调用隔离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求合并"><span class="toc-text">请求合并</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#请求缓存"><span class="toc-text">请求缓存</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器是如何触发-fallback-的"><span class="toc-text">断路器是如何触发 fallback 的</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#断路器"><span class="toc-text">断路器</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#详细使用"><span class="toc-text">详细使用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#相关注解"><span class="toc-text">相关注解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCommand"><span class="toc-text">@HystrixCommand</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixCollapser"><span class="toc-text">@HystrixCollapser</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#HystrixProperty"><span class="toc-text">@HystrixProperty</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCommand配置属性"><span class="toc-text">常用HystrixCommand配置属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixCollapser配置属性"><span class="toc-text">常用HystrixCollapser配置属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#常用HystrixThreadPool配置属性"><span class="toc-text">常用HystrixThreadPool配置属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Feign中使用Hystrix"><span class="toc-text">Feign中使用Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Command缓存使用"><span class="toc-text">Command缓存使用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix监控"><span class="toc-text">Hystrix监控</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Hystrix-Dashboard"><span class="toc-text">Hystrix Dashboard</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Turbine-Stream-Aggregator-Hystrix-Dashboard"><span class="toc-text">Turbine Stream Aggregator + Hystrix Dashboard</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
