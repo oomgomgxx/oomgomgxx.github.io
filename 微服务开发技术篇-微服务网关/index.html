@@ -124,8 +124,8 @@
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/001.png" alt></p>
 <ul>
 <li>客户端需要维护众多服务的地址</li>
-<li>权限验证时，每个服务都需要对客户端进行鉴权操作</li>
-<li>跨域请求（浏览器）操作变得复杂</li>
+<li>每个服务都需要对客户端请求做权限验证</li>
+<li>跨域请求处理变得复杂</li>
 <li>拦截请求责任落在服务上领到服务变得沉重</li>
 <li>对用户数据采集不方便</li>
 </ul>
@@ -194,7 +194,7 @@ spring:
     gateway:
       routes:
       - id: helloworld-route # 路由唯一id，自定义唯一即可，建议使用服务名称
-        predicates: # 断言，触发路由的条件
+        predicates: # 谓语（触发路由的条件）
           - Path=/springcloud-gateway
           # -Path= 表示当访问localhost:3333/springcloud-gateway 路由到  http://www.baidu.com/springcloud-gateway
         uri: http://www.baidu.com # 路由地址</code></pre>
@@ -229,11 +229,9 @@ public class MsaGatewayApplication {
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/006.png" alt></p>
 <h3 id="Predicate-Factories"><a href="#Predicate-Factories" class="headerlink" title="Predicate Factories"></a>Predicate Factories</h3><blockquote>
-<p>predicates结合使用属于&amp;&amp;操作</p>
+<p>predicates结合使用时属于&amp;&amp;操作</p>
 </blockquote>
-<h4 id="After"><a href="#After" class="headerlink" title="After"></a>After</h4><blockquote>
-<p>必须是某个时间点之后的请求，否则返回404</p>
-</blockquote>
+<h4 id="After"><a href="#After" class="headerlink" title="After"></a>After</h4><p>必须是某个时间点之后的请求，否则返回404</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -242,9 +240,7 @@ public class MsaGatewayApplication {
         predicates:
           - After=2033-08-20T06:06:06+08:00[Asia/Shanghai]
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="Before"><a href="#Before" class="headerlink" title="Before"></a>Before</h4><blockquote>
-<p>必须是某个时间点之前的请求，否则返回404</p>
-</blockquote>
+<h4 id="Before"><a href="#Before" class="headerlink" title="Before"></a>Before</h4><p>必须是某个时间点之前的请求，否则返回404</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -253,9 +249,7 @@ public class MsaGatewayApplication {
         predicates:
           - Before=2033-08-20T06:06:06+08:00[Asia/Shanghai]
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="Between"><a href="#Between" class="headerlink" title="Between"></a>Between</h4><blockquote>
-<p>必须是某两个时间点之间的请求，否则返回404</p>
-</blockquote>
+<h4 id="Between"><a href="#Between" class="headerlink" title="Between"></a>Between</h4><p>必须是某两个时间点之间的请求，否则返回404</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -264,9 +258,7 @@ public class MsaGatewayApplication {
         predicates:
           - Between=2033-08-20T06:06:06+08:00[Asia/Shanghai],2033-08-20T06:06:06+08:00[Asia/Shanghai]
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="Path"><a href="#Path" class="headerlink" title="Path"></a>Path</h4><blockquote>
-<p>必须带有指定URI后缀。例如：localhost:3333/gateway 则路由到 <a href="http://www.baidu.com/gateway" target="_blank" rel="noopener">www.baidu.com/gateway</a></p>
-</blockquote>
+<h4 id="Path"><a href="#Path" class="headerlink" title="Path"></a>Path</h4><p>必须带有指定URL后缀。例如：localhost:3333/gateway</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -275,9 +267,7 @@ public class MsaGatewayApplication {
         predicates:
           - Path=/gateway, /test
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="Cookie"><a href="#Cookie" class="headerlink" title="Cookie"></a>Cookie</h4><blockquote>
-<p>请求必须带有某个指定名称的cookie</p>
-</blockquote>
+<h4 id="Cookie"><a href="#Cookie" class="headerlink" title="Cookie"></a>Cookie</h4><p>请求必须带有某个指定名称的cookie</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -288,16 +278,14 @@ public class MsaGatewayApplication {
           # 格式：cookie名称, 值的正则表达式
           - Cookie=test, he.*
         uri: http://www.tandi.wiki</code></pre>
-<p>代码编写</p>
+<p>编程式配置</p>
 <pre><code class="java">@Bean
 public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
     return builder.routes().route(&quot;test&quot;, r -&gt; {
         return r.path(&quot;/&quot;).and().cookie(&quot;name&quot;, &quot;t.*&quot;).uri(&quot;http://localhost:8080&quot;);
     }).build();
 }</code></pre>
-<h4 id="Header"><a href="#Header" class="headerlink" title="Header"></a>Header</h4><blockquote>
-<p>请求必须带有某个指定名称的请求头</p>
-</blockquote>
+<h4 id="Header"><a href="#Header" class="headerlink" title="Header"></a>Header</h4><p>请求必须带有某个指定名称的请求头</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -308,9 +296,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           # 格式：Header名称, 值的正则表达式
           - Header=Charset, utf.*
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="Host"><a href="#Host" class="headerlink" title="Host"></a>Host</h4><blockquote>
-<p>请求头中的Host必须是指定的值</p>
-</blockquote>
+<h4 id="Host"><a href="#Host" class="headerlink" title="Host"></a>Host</h4><p>请求头中的Host必须是指定值</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -321,9 +307,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           # 测试：curl http://localhost:3333 -H &quot;Host:www.test3.org&quot;
           - Host=**.test.org,**.test2.org
         uri: https://www.tandi.wiki</code></pre>
-<h4 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h4><blockquote>
-<p>必须是指定的请求方法</p>
-</blockquote>
+<h4 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h4><p>必须是指定的请求方法</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -332,9 +316,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
         predicates:
           - Method=GET
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="Qurey"><a href="#Qurey" class="headerlink" title="Qurey"></a>Qurey</h4><blockquote>
-<p>请求必须带有指定的参数</p>
-</blockquote>
+<h4 id="Qurey"><a href="#Qurey" class="headerlink" title="Qurey"></a>Qurey</h4><p>请求必须带有指定的参数</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -346,9 +328,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           - Query=name, h.*
           #- Query=name # 也可以单独配置名称
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="RemoteAddr"><a href="#RemoteAddr" class="headerlink" title="RemoteAddr"></a>RemoteAddr</h4><blockquote>
-<p>请求必须来自某个ip</p>
-</blockquote>
+<h4 id="RemoteAddr"><a href="#RemoteAddr" class="headerlink" title="RemoteAddr"></a>RemoteAddr</h4><p>请求必须来自某个ip</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -358,9 +338,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           # 测试: curl 192.168.31.70:3333, 192.168.31.70为当前网关主机
           - RemoteAddr=192.168.31.250/24
         uri: http://www.tandi.wiki</code></pre>
-<h4 id="Weight"><a href="#Weight" class="headerlink" title="Weight"></a>Weight</h4><blockquote>
-<p>权重优先</p>
-</blockquote>
+<h4 id="Weight"><a href="#Weight" class="headerlink" title="Weight"></a>Weight</h4><p>权重优先</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -374,9 +352,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           uri: http://www.google.com
           predicates:
             - Weight=group1, 10</code></pre>
-<h3 id="GatewayFilter-Factories"><a href="#GatewayFilter-Factories" class="headerlink" title="GatewayFilter Factories"></a>GatewayFilter Factories</h3><h4 id="AddRequestHeader"><a href="#AddRequestHeader" class="headerlink" title="AddRequestHeader"></a>AddRequestHeader</h4><blockquote>
-<p>添加请求头</p>
-</blockquote>
+<h3 id="GatewayFilter-Factories"><a href="#GatewayFilter-Factories" class="headerlink" title="GatewayFilter Factories"></a>GatewayFilter Factories</h3><h4 id="AddRequestHeader"><a href="#AddRequestHeader" class="headerlink" title="AddRequestHeader"></a>AddRequestHeader</h4><p>添加请求头</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -388,9 +364,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           filters:
           - AddRequestHeader=Charset,GBK, Content-Type,text/html
           - AddRequestHeader=Content-Type,text/html</code></pre>
-<h4 id="AddRequestParameter"><a href="#AddRequestParameter" class="headerlink" title="AddRequestParameter"></a>AddRequestParameter</h4><blockquote>
-<p>添加请求参数</p>
-</blockquote>
+<h4 id="AddRequestParameter"><a href="#AddRequestParameter" class="headerlink" title="AddRequestParameter"></a>AddRequestParameter</h4><p>添加请求参数</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -411,9 +385,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
 #        - Host: {segment}.myhost.org
 #        filters:
 #        - AddRequestParameter=foo, bar-{segment}</code></pre>
-<h4 id="AddResponseHeader"><a href="#AddResponseHeader" class="headerlink" title="AddResponseHeader"></a>AddResponseHeader</h4><blockquote>
-<p>添加响应头</p>
-</blockquote>
+<h4 id="AddResponseHeader"><a href="#AddResponseHeader" class="headerlink" title="AddResponseHeader"></a>AddResponseHeader</h4><p>添加响应头</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -425,9 +397,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           # 测试：curl localhost:3333 -v
           filters:
           - AddResponseHeader=Charset, GB2312</code></pre>
-<h4 id="DedupeResponseHeader"><a href="#DedupeResponseHeader" class="headerlink" title="DedupeResponseHeader"></a>DedupeResponseHeader</h4><blockquote>
-<p>去除重复Header的值。例如gateway和service都设置了跨域就会导致有两个值</p>
-</blockquote>
+<h4 id="DedupeResponseHeader"><a href="#DedupeResponseHeader" class="headerlink" title="DedupeResponseHeader"></a>DedupeResponseHeader</h4><p>去除重复Header的值。例如gateway和service都设置了跨域就会导致有两个值</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -462,9 +432,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
         uri: https://example.org
         filters:
         - CircuitBreaker=myCircuitBreaker</code></pre>
-<h4 id="PrefixPath"><a href="#PrefixPath" class="headerlink" title="PrefixPath"></a>PrefixPath</h4><blockquote>
-<p>给下游请求添加Path断言请求前缀</p>
-</blockquote>
+<h4 id="PrefixPath"><a href="#PrefixPath" class="headerlink" title="PrefixPath"></a>PrefixPath</h4><p>给下游请求添加Path断言请求前缀</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -476,9 +444,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
           filters:
           # localhost:3333 转 http://localhost:8080/hello/
           - PrefixPath=/hello</code></pre>
-<h4 id="SetPath"><a href="#SetPath" class="headerlink" title="SetPath"></a>SetPath</h4><blockquote>
-<p>设置下游请求路径</p>
-</blockquote>
+<h4 id="SetPath"><a href="#SetPath" class="headerlink" title="SetPath"></a>SetPath</h4><p>设置下游请求路径</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -502,9 +468,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
 <li>RateLimiter ：限流算法实现</li>
 <li>目前两个接口只分别提供了 PrincipalNameKeyResolver、RedisRateLimiter 实现。官方文档中表示，在未来版本将有不同的KeyResolver和RateLimiter实现</li>
 </ul>
-<blockquote>
 <p>如果自定义，配置方法如下</p>
-</blockquote>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -516,10 +480,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) throws Exception {
               args:
                   KeyResolver参数名称：#{@myKeyResolver} # KeyResolver的Bean名
                 RedisRateLimiter参数名称: 值</code></pre>
-<blockquote>
-<p>【例子】 - RedisRateLimiter 令牌桶算法限流例子</p>
-<p>需要添加 spring-boot-starter-data-redis-reactive 依赖和Redis支持</p>
-</blockquote>
+<p>【例子】 - RedisRateLimiter 令牌桶算法限流例子。需要添加 spring-boot-starter-data-redis-reactive 依赖和Redis支持</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -555,9 +516,7 @@ public class KeyResolverConfiguration {
 <ul>
 <li>以上的意思是，用户每秒最大请求<code>速率</code>为10，允许最大请求数为20，但下一秒只有10个请求可用。 </li>
 </ul>
-<h4 id="RedirectTo"><a href="#RedirectTo" class="headerlink" title="RedirectTo"></a>RedirectTo</h4><blockquote>
-<p>重定向</p>
-</blockquote>
+<h4 id="RedirectTo"><a href="#RedirectTo" class="headerlink" title="RedirectTo"></a>RedirectTo</h4><p>重定向</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -569,9 +528,7 @@ public class KeyResolverConfiguration {
           filters:
               # 让用户重定向到百度
             - RedirectTo=302, http://www.baidu.com</code></pre>
-<h4 id="RemoveRequestHeader"><a href="#RemoveRequestHeader" class="headerlink" title="RemoveRequestHeader"></a>RemoveRequestHeader</h4><blockquote>
-<p>删除请求头</p>
-</blockquote>
+<h4 id="RemoveRequestHeader"><a href="#RemoveRequestHeader" class="headerlink" title="RemoveRequestHeader"></a>RemoveRequestHeader</h4><p>删除请求头</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -583,9 +540,7 @@ public class KeyResolverConfiguration {
           filters:
               # 测试：curl localhost:3333 -H &quot;Charset:GBK&quot;
             - RemoveRequestHeader=Charset</code></pre>
-<h4 id="RemoveResponseHeader"><a href="#RemoveResponseHeader" class="headerlink" title="RemoveResponseHeader"></a>RemoveResponseHeader</h4><blockquote>
-<p>移除响应头</p>
-</blockquote>
+<h4 id="RemoveResponseHeader"><a href="#RemoveResponseHeader" class="headerlink" title="RemoveResponseHeader"></a>RemoveResponseHeader</h4><p>移除响应头</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -596,9 +551,7 @@ public class KeyResolverConfiguration {
             - Path=/
           filters:
             - RemoveResponseHeader=Charset</code></pre>
-<h4 id="RemoveRequestParameter"><a href="#RemoveRequestParameter" class="headerlink" title="RemoveRequestParameter"></a>RemoveRequestParameter</h4><blockquote>
-<p>移除请求参数</p>
-</blockquote>
+<h4 id="RemoveRequestParameter"><a href="#RemoveRequestParameter" class="headerlink" title="RemoveRequestParameter"></a>RemoveRequestParameter</h4><p>移除请求参数</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -609,12 +562,14 @@ public class KeyResolverConfiguration {
             - Path=/
           filters:
             - RemoveRequestParameter=name</code></pre>
-<h4 id="RewriteResponseHeader"><a href="#RewriteResponseHeader" class="headerlink" title="RewriteResponseHeader"></a>RewriteResponseHeader</h4><blockquote>
-<p>重写响应头</p>
-</blockquote>
-<p>服务端</p>
+<h4 id="RewriteResponseHeader"><a href="#RewriteResponseHeader" class="headerlink" title="RewriteResponseHeader"></a>RewriteResponseHeader</h4><p>重写响应头</p>
+<ul>
+<li>服务端</li>
+</ul>
 <pre><code class="java">response.setHeader(&quot;X-Response-Test&quot;, &quot;name=td&amp;password=123456&quot;);</code></pre>
-<p>网关配置</p>
+<ul>
+<li>网关配置</li>
+</ul>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -625,7 +580,9 @@ public class KeyResolverConfiguration {
             - Path=/
           filters:
             - RewriteResponseHeader=X-Response-Test, password=[^&amp;]+, password=666</code></pre>
-<p>客户端收到结果</p>
+<ul>
+<li>客户端收到结果</li>
+</ul>
 <pre><code class="shell">C:\Users\tandi&gt;curl localhost:3333 -H &quot;Charset:GBK&quot; -v
 *   Trying ::1:3333...
 * TCP_NODELAY set
@@ -643,9 +600,7 @@ public class KeyResolverConfiguration {
 &lt; Content-Length: 5
 &lt; Date: Wed, 27 Nov 2019 01:35:50 GMT
 &lt; X-Response-Test: name=td&amp;password=666</code></pre>
-<h4 id="SetRequestHeader"><a href="#SetRequestHeader" class="headerlink" title="SetRequestHeader"></a>SetRequestHeader</h4><blockquote>
-<p>设置请求头</p>
-</blockquote>
+<h4 id="SetRequestHeader"><a href="#SetRequestHeader" class="headerlink" title="SetRequestHeader"></a>SetRequestHeader</h4><p>设置请求头</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -658,9 +613,7 @@ public class KeyResolverConfiguration {
             # 测试：curl localhost:3333 -H &quot;Charset:GBK&quot;
             - SetRequestHeader=X-Request-name, td # 设置
             - SetRequestHeader=Charset, UTF-8 # 修改</code></pre>
-<h4 id="SetResponseHeader"><a href="#SetResponseHeader" class="headerlink" title="SetResponseHeader"></a>SetResponseHeader</h4><blockquote>
-<p>设置响应头</p>
-</blockquote>
+<h4 id="SetResponseHeader"><a href="#SetResponseHeader" class="headerlink" title="SetResponseHeader"></a>SetResponseHeader</h4><p>设置响应头</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -673,9 +626,7 @@ public class KeyResolverConfiguration {
             # 测试：curl localhost:3333 -H &quot;Charset:GBK&quot;
             - SetResponseHeader=X-Response-name, zhangsan
             - SetResponseHeader=Charset, ISO-8859-1</code></pre>
-<h4 id="SetStatus"><a href="#SetStatus" class="headerlink" title="SetStatus"></a>SetStatus</h4><blockquote>
-<p>响应码</p>
-</blockquote>
+<h4 id="SetStatus"><a href="#SetStatus" class="headerlink" title="SetStatus"></a>SetStatus</h4><p>响应码</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -686,9 +637,7 @@ public class KeyResolverConfiguration {
             - Path=/
           filters:
             - SetStatus=403</code></pre>
-<h4 id="StripPrefix"><a href="#StripPrefix" class="headerlink" title="StripPrefix"></a>StripPrefix</h4><blockquote>
-<p>出处URI前N节</p>
-</blockquote>
+<h4 id="StripPrefix"><a href="#StripPrefix" class="headerlink" title="StripPrefix"></a>StripPrefix</h4><p>出处URI前N节</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -703,9 +652,7 @@ public class KeyResolverConfiguration {
 <li>客户端请求：localhost：3333/1/2/hello</li>
 <li>网关往下游发出请求：localhost:8080/hello</li>
 </ul>
-<h4 id="Retry"><a href="#Retry" class="headerlink" title="Retry"></a>Retry</h4><blockquote>
-<p>失败重试</p>
-</blockquote>
+<h4 id="Retry"><a href="#Retry" class="headerlink" title="Retry"></a>Retry</h4><p>失败重试</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -725,9 +672,7 @@ public class KeyResolverConfiguration {
                 factor: 2 # 迭代因子
                 # 第一次重试在：firstBackoff * (factor ^ n) 之后执行，其中n为迭代次数retries
                 # 即失败后80ms后进行重试，重试时间限制在maxBackoff</code></pre>
-<h4 id="RequestSize"><a href="#RequestSize" class="headerlink" title="RequestSize"></a>RequestSize</h4><blockquote>
-<p>请求大小限制</p>
-</blockquote>
+<h4 id="RequestSize"><a href="#RequestSize" class="headerlink" title="RequestSize"></a>RequestSize</h4><p>请求大小限制</p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
@@ -740,9 +685,7 @@ public class KeyResolverConfiguration {
           - name: RequestSize
             args:
               maxSize: 5000000 # 字节</code></pre>
-<h4 id="ModifyRequestBody"><a href="#ModifyRequestBody" class="headerlink" title="ModifyRequestBody"></a>ModifyRequestBody</h4><blockquote>
-<p>修改请求体</p>
-</blockquote>
+<h4 id="ModifyRequestBody"><a href="#ModifyRequestBody" class="headerlink" title="ModifyRequestBody"></a>ModifyRequestBody</h4><p>修改请求体</p>
 <ul>
 <li>文档中提到该拦截器是bate版，后续版本可能会修改</li>
 <li>ModifyRequestBody拦截器不支持配置文件配置，只能通过Java配置</li>
@@ -782,9 +725,7 @@ public class MsaGatewayApplication {
         }
     }
 }</code></pre>
-<h4 id="ModifyResponseBody"><a href="#ModifyResponseBody" class="headerlink" title="ModifyResponseBody"></a>ModifyResponseBody</h4><blockquote>
-<p>修改响应体</p>
-</blockquote>
+<h4 id="ModifyResponseBody"><a href="#ModifyResponseBody" class="headerlink" title="ModifyResponseBody"></a>ModifyResponseBody</h4><p>修改响应体</p>
 <pre><code class="java">@SpringBootApplication
 public class MsaGatewayApplication {
     public static void main(String[] args) {
@@ -841,18 +782,14 @@ public class MsaGatewayApplication {
     }
 }</code></pre>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/007.png" alt></p>
-<h4 id="Default-Filters（实现全局CORS）"><a href="#Default-Filters（实现全局CORS）" class="headerlink" title="Default Filters（实现全局CORS）"></a>Default Filters（实现全局CORS）</h4><blockquote>
-<p>默认过滤器</p>
-<p>跨域参考：<a href="https://github.com/spring-cloud/spring-cloud-gateway/pull/866/files/a4bb1f2e84b01b95d9b702ab1c0191f2bb317cc2#diff-ba643e8c24ec85979f9a588ad58c8514" target="_blank" rel="noopener">Dedupe response header filter #866</a></p>
-</blockquote>
+<h4 id="Default-Filters（实现全局CORS）"><a href="#Default-Filters（实现全局CORS）" class="headerlink" title="Default Filters（实现全局CORS）"></a>Default Filters（实现全局CORS）</h4><p>默认过滤器。跨域参考：<a href="https://github.com/spring-cloud/spring-cloud-gateway/pull/866/files/a4bb1f2e84b01b95d9b702ab1c0191f2bb317cc2#diff-ba643e8c24ec85979f9a588ad58c8514" target="_blank" rel="noopener">Dedupe response header filter #866</a></p>
 <pre><code class="yaml">spring:
   cloud:
     gateway:
       default-filters:
         - AddResponseHeader=Access-Control-Allow-Credentials, true
         - AddResponseHeader=Access-Control-Allow-Origin, *</code></pre>
-<h4 id="Java-Routers-Api例子"><a href="#Java-Routers-Api例子" class="headerlink" title="Java Routers Api例子"></a>Java Routers Api例子</h4><pre><code class="java">// static imports from GatewayFilters and RoutePredicates
-@Bean
+<h4 id="Java-API-Routers-编程式配置-例子"><a href="#Java-API-Routers-编程式配置-例子" class="headerlink" title="Java API Routers (编程式配置)例子"></a>Java API Routers (编程式配置)例子</h4><pre><code class="java">@Bean
 public RouteLocator customRouteLocator(RouteLocatorBuilder builder, ThrottleGatewayFilterFactory throttle) {
     return builder.routes()
             .route(r -&gt; r.host(&quot;**.abc.org&quot;).and().path(&quot;/image/png&quot;)
@@ -1015,7 +952,7 @@ public class UserController {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么需要网关"><span class="toc-text">为什么需要网关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#微服务网关和Nginx有什么区别？"><span class="toc-text">微服务网关和Nginx有什么区别？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringCloud-Gateway入门"><span class="toc-text">SpringCloud Gateway入门</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基础概念和处理流程"><span class="toc-text">基础概念和处理流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Predicate-Factories"><span class="toc-text">Predicate Factories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#After"><span class="toc-text">After</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Before"><span class="toc-text">Before</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Between"><span class="toc-text">Between</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Path"><span class="toc-text">Path</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Cookie"><span class="toc-text">Cookie</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Header"><span class="toc-text">Header</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Host"><span class="toc-text">Host</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Method"><span class="toc-text">Method</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Qurey"><span class="toc-text">Qurey</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoteAddr"><span class="toc-text">RemoteAddr</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Weight"><span class="toc-text">Weight</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GatewayFilter-Factories"><span class="toc-text">GatewayFilter Factories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#AddRequestHeader"><span class="toc-text">AddRequestHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AddRequestParameter"><span class="toc-text">AddRequestParameter</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AddResponseHeader"><span class="toc-text">AddResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#DedupeResponseHeader"><span class="toc-text">DedupeResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix"><span class="toc-text">Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#CircuitBreaker"><span class="toc-text">CircuitBreaker</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PrefixPath"><span class="toc-text">PrefixPath</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetPath"><span class="toc-text">SetPath</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RequestRateLimiter（目前需要借助Redis实现）"><span class="toc-text">RequestRateLimiter（目前需要借助Redis实现）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RedirectTo"><span class="toc-text">RedirectTo</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoveRequestHeader"><span class="toc-text">RemoveRequestHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoveResponseHeader"><span class="toc-text">RemoveResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoveRequestParameter"><span class="toc-text">RemoveRequestParameter</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RewriteResponseHeader"><span class="toc-text">RewriteResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetRequestHeader"><span class="toc-text">SetRequestHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetResponseHeader"><span class="toc-text">SetResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetStatus"><span class="toc-text">SetStatus</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#StripPrefix"><span class="toc-text">StripPrefix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Retry"><span class="toc-text">Retry</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RequestSize"><span class="toc-text">RequestSize</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ModifyRequestBody"><span class="toc-text">ModifyRequestBody</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ModifyResponseBody"><span class="toc-text">ModifyResponseBody</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Default-Filters（实现全局CORS）"><span class="toc-text">Default Filters（实现全局CORS）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java-Routers-Api例子"><span class="toc-text">Java Routers Api例子</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#整合Hystrix和注册中心"><span class="toc-text">整合Hystrix和注册中心</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么需要网关"><span class="toc-text">为什么需要网关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#微服务网关和Nginx有什么区别？"><span class="toc-text">微服务网关和Nginx有什么区别？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringCloud-Gateway入门"><span class="toc-text">SpringCloud Gateway入门</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基础概念和处理流程"><span class="toc-text">基础概念和处理流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Predicate-Factories"><span class="toc-text">Predicate Factories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#After"><span class="toc-text">After</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Before"><span class="toc-text">Before</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Between"><span class="toc-text">Between</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Path"><span class="toc-text">Path</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Cookie"><span class="toc-text">Cookie</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Header"><span class="toc-text">Header</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Host"><span class="toc-text">Host</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Method"><span class="toc-text">Method</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Qurey"><span class="toc-text">Qurey</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoteAddr"><span class="toc-text">RemoteAddr</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Weight"><span class="toc-text">Weight</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GatewayFilter-Factories"><span class="toc-text">GatewayFilter Factories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#AddRequestHeader"><span class="toc-text">AddRequestHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AddRequestParameter"><span class="toc-text">AddRequestParameter</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AddResponseHeader"><span class="toc-text">AddResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#DedupeResponseHeader"><span class="toc-text">DedupeResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix"><span class="toc-text">Hystrix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#CircuitBreaker"><span class="toc-text">CircuitBreaker</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PrefixPath"><span class="toc-text">PrefixPath</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetPath"><span class="toc-text">SetPath</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RequestRateLimiter（目前需要借助Redis实现）"><span class="toc-text">RequestRateLimiter（目前需要借助Redis实现）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RedirectTo"><span class="toc-text">RedirectTo</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoveRequestHeader"><span class="toc-text">RemoveRequestHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoveResponseHeader"><span class="toc-text">RemoveResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RemoveRequestParameter"><span class="toc-text">RemoveRequestParameter</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RewriteResponseHeader"><span class="toc-text">RewriteResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetRequestHeader"><span class="toc-text">SetRequestHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetResponseHeader"><span class="toc-text">SetResponseHeader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SetStatus"><span class="toc-text">SetStatus</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#StripPrefix"><span class="toc-text">StripPrefix</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Retry"><span class="toc-text">Retry</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RequestSize"><span class="toc-text">RequestSize</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ModifyRequestBody"><span class="toc-text">ModifyRequestBody</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ModifyResponseBody"><span class="toc-text">ModifyResponseBody</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Default-Filters（实现全局CORS）"><span class="toc-text">Default Filters（实现全局CORS）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java-API-Routers-编程式配置-例子"><span class="toc-text">Java API Routers (编程式配置)例子</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#整合Hystrix和注册中心"><span class="toc-text">整合Hystrix和注册中心</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
