@@ -11,6 +11,10 @@
   <!-- 标题 -->
   <title> JVM常用调优参数与垃圾回收器相关内容-学然后知不足 </title>
 
+  <!-- 自适应 -->
+  <!-- 未编写手机端导航栏 -->
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+
   <!-- 网站 seo 相关 -->
   
     <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
@@ -23,21 +27,6 @@
   <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
   <!-- baidu seo -->
   <meta name="baidu-site-verification" content="Kfp083TiDg" />
-  <!-- baidu auto commit -->
-  <script>
-    (function(){
-        var bp = document.createElement('script');
-        var curProtocol = window.location.protocol.split(':')[0];
-        if (curProtocol === 'https') {
-            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
-        }
-        else {
-            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
-        }
-        var s = document.getElementsByTagName("script")[0];
-        s.parentNode.insertBefore(bp, s);
-    })();
-  </script>
     
   <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
   <!-- 内部脚本 -->
@@ -416,17 +405,17 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 </tr>
 </tbody></table>
 <h2 id="监控工具"><a href="#监控工具" class="headerlink" title="监控工具"></a>监控工具</h2><h3 id="命令行工具"><a href="#命令行工具" class="headerlink" title="命令行工具"></a>命令行工具</h3><p><strong>jps：</strong></p>
-<p>查看当前系统中正在运行的 Java 进程</p>
+<p>查看正在运行的 JVM 进程</p>
 <pre><code class="bash">$ jps -l
 2112
 11476 jdk.jcmd/sun.tools.jps.Jps
 14840 org.jetbrains.jps.cmdline.Launcher</code></pre>
 <p><strong>jstat：</strong></p>
-<p>根据 PID 输出指定Java进程的虚拟机运行时信息</p>
+<p>根据 PID 输出<code>虚拟机运行时信息</code></p>
 <ul>
-<li>jstat -class -t PID [定时检测时间ms]：显示指定 PID 程序的类加载的相关信息</li>
-<li>jstat -gcutil PID [定时检测时间ms]：显示指定 PID 程序的 GC 的相关信息</li>
-<li>jstat -compiler PID [定时检测时间ms]：显示指定 PID 程序的 JIT 编译的相关信息</li>
+<li>jstat -class -t PID [定时检测时间ms]：显示指定 PID 程序的<code>类加载相关信息</code></li>
+<li>jstat -gcutil PID [定时检测时间ms]：显示指定 PID 程序的<code>GC相关信息</code></li>
+<li>jstat -compiler PID [定时检测时间ms]：显示指定 PID 程序的 <code>JIT 编译相关信息</code></li>
 </ul>
 <blockquote>
 <p>例子：以下表示每隔 1s 查询一次</p>
@@ -444,13 +433,13 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <p>FGCT：Full GC 所消耗的时间</p>
 <p>CGT：GC操作总共消耗的时间</p>
 <p><strong>jstack：</strong></p>
-<p>根据 PID 输出线程栈信息（线程状态，如死锁信息）。</p>
+<p>根据 PID 输出<code>线程栈信息</code>（线程状态，如死锁信息）。</p>
 <ul>
 <li>jstack -l PID</li>
 </ul>
 <p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/006.png" alt></p>
 <p><strong>jinfo：</strong></p>
-<p>根据 PID 输出当前 JVM 进程的配置信息</p>
+<p>根据 PID 输出当前<code>JVM配置信息</code></p>
 <ul>
 <li>jinfo PID：包含 环境变量参数、JVM flags、JVM 参数 <ul>
 <li>环境变量参数：JVM通过系统环境变量读取到的配置</li>
@@ -461,8 +450,8 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <li>jinfo -flags PID：单纯当前 PID 进程所显示指定的 JVM 配置项</li>
 <li>jinfo -flag 配置项 PID：动态修改或添加 JVM 配置项，例如 <img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/007.png" alt></li>
 </ul>
-<p><strong>jmap（注意该命令经常变动）：</strong></p>
-<p>查根据 PID 输出当前 JVM 进程的堆信息</p>
+<p><strong>jmap：</strong></p>
+<p>查根据 PID 输出<code>堆信息</code></p>
 <ul>
 <li><p>jmap -heap PID：打印指定 PID 程序的堆信息（JDK1.8）</p>
 <pre><code class="bash">$ ./jmap -heap 14840
