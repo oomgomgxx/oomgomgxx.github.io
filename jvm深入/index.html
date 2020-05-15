@@ -110,7 +110,7 @@
   <!-- 文章元信息 -->
   <span class="post-metadata">
     <!-- 文章日期 -->
-    <i class="fa fa-calendar"></i>&thinsp;2019-06-22 &ensp;
+    <i class="fa fa-calendar"></i>&thinsp;2019-02-20 &ensp;
     <!-- 文章作者 -->
     作者: TanDi
   </span>
@@ -550,23 +550,18 @@ Constant pool:
 </ul>
 </li>
 </ol>
-<h2 id="JVM是如何给对象分配内存的"><a href="#JVM是如何给对象分配内存的" class="headerlink" title="JVM是如何给对象分配内存的"></a>JVM是如何给对象分配内存的</h2><p><strong>JVM是什么时候得知对象的大小？</strong></p>
-<p>对象所需的内存大小在类加载过程完成后就可以得知</p>
-<p><strong>关于指针碰撞和空闲列表的概念</strong></p>
-<p><strong>指针碰撞：</strong>使用”分界点指示器”记录指针位置，通过挪动指针来分配内存，这种分配方式分配出来的空间是规整的，即有规律的分配方式</p>
+<h2 id="JVM是如何给对象分配内存的"><a href="#JVM是如何给对象分配内存的" class="headerlink" title="JVM是如何给对象分配内存的"></a>JVM是如何给对象分配内存的</h2><h3 id="JVM是什么时候得知对象的大小？"><a href="#JVM是什么时候得知对象的大小？" class="headerlink" title="JVM是什么时候得知对象的大小？"></a>JVM是什么时候得知对象的大小？</h3><p>对象所需的内存大小在类加载过程完成后就可以得知</p>
+<h3 id="关于指针碰撞和空闲列表的概念"><a href="#关于指针碰撞和空闲列表的概念" class="headerlink" title="关于指针碰撞和空闲列表的概念"></a>关于指针碰撞和空闲列表的概念</h3><p><strong>指针碰撞：</strong>使用<code>分界点指示器</code>记录指针位置，通过挪动指针来分配内存。这种分配方式分配出来的空间是规整的，即有规律的分配方式</p>
 <p><strong>空闲列表：</strong>jvm通过维护一个空间列表来去分配内存，这个空闲列表记录了哪些内存是可用的，在分配空间时，在这个列表种选出一块足够大的内存分配给对象即可，这种分配方式分配的内存时不规整的，即已用内存和空闲内存相互交错</p>
-<p><strong>堆中的内存是如何分配给对象的？</strong></p>
-<p>在jvm中存在两种分配方式：指针碰撞、空闲列表</p>
-<p>而采用哪种方式，取决于使用的GC收集器是否有压缩整理功能，，有则使用 ”指针碰撞“ 没有则使用 ”空闲列表“</p>
-<p><strong>关于虚拟机分配内存的线程安全问题</strong></p>
-<p>首先虚拟机分配内存这个动作并不是线程安全的；例如使用<strong>指针碰撞</strong>方法分配内存的情况下，正当要给A对象调节指针位置给其分配内存时，调节指针位置可能会被其他对象抢先一步，这样就会出先问题了</p>
+<h3 id="堆中的内存是如何分配给对象的？"><a href="#堆中的内存是如何分配给对象的？" class="headerlink" title="堆中的内存是如何分配给对象的？"></a>堆中的内存是如何分配给对象的？</h3><p>在jvm中存在两种分配方式：指针碰撞、空闲列表</p>
+<p>而采用哪种方式取决于使用的 GC 收集器是否有压缩整理功能，如果有则使用 ”指针碰撞“ 没有则使用 ”空闲列表“</p>
+<h3 id="关于虚拟机分配内存的线程安全问题"><a href="#关于虚拟机分配内存的线程安全问题" class="headerlink" title="关于虚拟机分配内存的线程安全问题"></a>关于虚拟机分配内存的线程安全问题</h3><p>首先虚拟机分配内存这个动作并不是线程安全的；例如使用<strong>指针碰撞</strong>方法分配内存的情况下，正当要给A对象调节指针位置给其分配内存时，调节指针位置可能会被其他对象抢先一步，这样就会出先问题了</p>
 <p>针对上面的问题，JVM有两种方法解决：</p>
 <ol>
 <li>堆分配内存的整合动作进行同步（通过CAS加失败重试）</li>
 <li>使用TLAB（线程本地分配缓冲区，位于Eden区），即预先分配一小块内存给线程，当线程中有创建对象的动作时，就在这一小块内存中进行内存分配。如果TLAB不够内存则可以有两种选择：1）回收当前TLAB再分配一块足够的内存区域。2）直接在堆上分配，保留当前TLAB区。是否使用TLAB可以通过设置参数<code>-XX:+UseTLAB</code>来开启，<strong>默认是开启的</strong></li>
 </ol>
-<p><strong>关于内存逃逸分析</strong></p>
-<blockquote>
+<h3 id="关于内存逃逸分析"><a href="#关于内存逃逸分析" class="headerlink" title="关于内存逃逸分析"></a>关于内存逃逸分析</h3><blockquote>
 <p>参考文章：<a href="http://www.hollischuang.com/archives/2398" target="_blank" rel="noopener">http://www.hollischuang.com/archives/2398</a></p>
 </blockquote>
 <ol>
@@ -687,20 +682,19 @@ Constant pool:
 <li>还有一种情况新生代中的对象会进入老年代，就是当s1（to）没有足够空间容纳复制过来的对象时且对象的使用率高于<code>-XX:TargetSurvivorRatio</code>值，这时并不会理会<code>+XX:MaxTenuringThreshold</code></li>
 </ul>
 <p><strong>为什么需要2块survivor内存？</strong></p>
-<p>这个问题我自己的理解是为了<strong>提高内存的使用效率</strong>（原为复制算法是1:1的现在是8:1:1）和<strong>减少Full GC（会造成stop the world现象，对新生代，老年代，方法区（方法区满发起的FullGC）一起回收）的发生频率</strong>，为什么呢？如上面提到的老年代中存放的都是长寿的对象，现在假设有这么一种情况，老年代就快要满了但还没到达Full GC的条件，这时新生代有些顽强对象经过15次GC都杀不死，就要转移到老年代了，这个时候，JVM是需要进行<strong>空间分配担保</strong>操作，通俗点说就是通过分析查看老年代所剩下的空间来判断是否能够容纳即将到来的对象，如果不能容纳，即担保失败，就会发生Full GC来腾出空间；那么通过2块survivor内存的来回复制，可以让Eden区腾出更大的空间，因为如果只有Eden和1块survivor的话，survivor经过Minor GC后但又没够转移到老年代的条件，那么就会将存活的对象重新复制到Eden，这样Eden的空间就变少了，就降低了Eden内存的使用使用效率; 那么当Eden内存效率提高了survivor区就不会那么快满，从而减少了对象进入老年代的几率再从而减少Full GC的发生</p>
+<p>&emsp; &emsp;这个问题我自己的理解是为了<strong>提高内存的使用效率</strong>（原为复制算法是1:1的现在是8:1:1）和<strong>减少Full GC（会造成stop the world现象，对新生代，老年代，方法区（方法区满发起的FullGC）一起回收）的发生频率</strong>，为什么呢？如上面提到的老年代中存放的都是长寿的对象，现在假设有这么一种情况，老年代就快要满了但还没到达Full GC的条件，这时新生代有些顽强对象经过15次GC都杀不死，就要转移到老年代了，这个时候，JVM是需要进行<strong>空间分配担保</strong>操作，通俗点说就是通过分析查看老年代所剩下的空间来判断是否能够容纳即将到来的对象，如果不能容纳，即担保失败，就会发生Full GC来腾出空间；那么通过2块survivor内存的来回复制，可以让Eden区腾出更大的空间，因为如果只有Eden和1块survivor的话，survivor经过Minor GC后但又没够转移到老年代的条件，那么就会将存活的对象重新复制到Eden，这样Eden的空间就变少了，就降低了Eden内存的使用使用效率; 那么当Eden内存效率提高了survivor区就不会那么快满，从而减少了对象进入老年代的几率再从而减少Full GC的发生</p>
 <p><strong>什么情况会出发Full GC？</strong></p>
 <ul>
-<li>老年代被写满</li>
-<li>方法区被写满</li>
-<li>程序主动调用System.gc()生效(主动Full GC)</li>
-<li>调整永久代/元空间大小（因为要重新加载类）</li>
+<li>无法分配对象空间，例如 老年代被写满 或 方法区被写满</li>
+<li>程序主动调用 System.gc() 生效(主动Full GC)</li>
+<li>调整永久代/元空间大小</li>
 </ul>
 <h3 id="老年代"><a href="#老年代" class="headerlink" title="老年代"></a>老年代</h3><ul>
 <li>用于存放大岁数的对象和一些大对象（Eden无法容纳，例如连续内存的数组对象）</li>
 <li>因为老年代中存放的对象都是些长寿对象，即出现垃圾的机会是远小于新生代的，所以一般采用带内存压缩整理的算法</li>
 <li>当老年代要满时则会触发<code>Full GC</code></li>
 </ul>
-<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2019年10月23日22:53:01 — 删除即时编译器和GC相关内容（迁移到新文章）</li>
 </ul>
 
@@ -745,7 +739,7 @@ Constant pool:
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK都包含些什么"><span class="toc-text">JDK都包含些什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的基本结构"><span class="toc-text">类的基本结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的加载过程"><span class="toc-text">类的加载过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于类加载器"><span class="toc-text">关于类加载器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#了解JVM"><span class="toc-text">了解JVM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM运行时数据区域"><span class="toc-text">JVM运行时数据区域</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM是如何给对象分配内存的"><span class="toc-text">JVM是如何给对象分配内存的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于什么是“垃圾”和垃圾回收算法"><span class="toc-text">关于什么是“垃圾”和垃圾回收算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是垃圾"><span class="toc-text">什么是垃圾</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于对象引用问题"><span class="toc-text">关于对象引用问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对象的自我拯救"><span class="toc-text">对象的自我拯救</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#垃圾回收算法"><span class="toc-text">垃圾回收算法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#堆内存的划分"><span class="toc-text">堆内存的划分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#新生代"><span class="toc-text">新生代</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#老年代"><span class="toc-text">老年代</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK都包含些什么"><span class="toc-text">JDK都包含些什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的基本结构"><span class="toc-text">类的基本结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的加载过程"><span class="toc-text">类的加载过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于类加载器"><span class="toc-text">关于类加载器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#了解JVM"><span class="toc-text">了解JVM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM运行时数据区域"><span class="toc-text">JVM运行时数据区域</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM是如何给对象分配内存的"><span class="toc-text">JVM是如何给对象分配内存的</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM是什么时候得知对象的大小？"><span class="toc-text">JVM是什么时候得知对象的大小？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于指针碰撞和空闲列表的概念"><span class="toc-text">关于指针碰撞和空闲列表的概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#堆中的内存是如何分配给对象的？"><span class="toc-text">堆中的内存是如何分配给对象的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于虚拟机分配内存的线程安全问题"><span class="toc-text">关于虚拟机分配内存的线程安全问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于内存逃逸分析"><span class="toc-text">关于内存逃逸分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于什么是“垃圾”和垃圾回收算法"><span class="toc-text">关于什么是“垃圾”和垃圾回收算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是垃圾"><span class="toc-text">什么是垃圾</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于对象引用问题"><span class="toc-text">关于对象引用问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对象的自我拯救"><span class="toc-text">对象的自我拯救</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#垃圾回收算法"><span class="toc-text">垃圾回收算法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#堆内存的划分"><span class="toc-text">堆内存的划分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#新生代"><span class="toc-text">新生代</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#老年代"><span class="toc-text">老年代</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>

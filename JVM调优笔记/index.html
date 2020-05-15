@@ -274,7 +274,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <li>c2编译代码</li>
 </ol>
 <p>注：多数情况下方法的第一次编译都是3，但如果方法频繁被调用就会进行4</p>
-<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><p>修改jvm编译模式</p>
+<h3 id="配置项"><a href="#配置项" class="headerlink" title="配置项"></a>配置项</h3><p>修改jvm编译模式</p>
 <table>
 <thead>
 <tr>
@@ -320,7 +320,69 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <td>指定即时编译器代码缓存初始化大小</td>
 </tr>
 </tbody></table>
-<h2 id="垃圾收集器相关"><a href="#垃圾收集器相关" class="headerlink" title="垃圾收集器相关"></a>垃圾收集器相关</h2><h3 id="常用GC配置和介绍"><a href="#常用GC配置和介绍" class="headerlink" title="常用GC配置和介绍"></a>常用GC配置和介绍</h3><p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/009.png" alt></p>
+<h2 id="垃圾收集器相关"><a href="#垃圾收集器相关" class="headerlink" title="垃圾收集器相关"></a>垃圾收集器相关</h2><h3 id="垃圾回收前置知识"><a href="#垃圾回收前置知识" class="headerlink" title="垃圾回收前置知识"></a>垃圾回收前置知识</h3><h4 id="根节点枚举"><a href="#根节点枚举" class="headerlink" title="根节点枚举"></a>根节点枚举</h4><ul>
+<li>查找出用于可达性分析的 GC Root 集合</li>
+<li>哪些引用能够做 GC Root<ul>
+<li><code>全局对象</code><ul>
+<li>常量实例</li>
+<li>类静态成员</li>
+<li>Class Loader对象</li>
+</ul>
+</li>
+<li><code>JNI对象</code></li>
+<li><code>栈帧局部变量表中引用的对象</code></li>
+</ul>
+</li>
+<li>该过程会发生短暂的 STW</li>
+</ul>
+<h4 id="安全点"><a href="#安全点" class="headerlink" title="安全点"></a>安全点</h4><ul>
+<li>用户线程需要达到某个点才回停下来让 GC 回收，该点被称为安全点</li>
+<li>常见安全点有哪些<ul>
+<li>方法调用时</li>
+<li>循环调转时</li>
+<li>异常跳转时</li>
+</ul>
+</li>
+<li>线程停中断的方式<ul>
+<li>抢占式中断：系统控制所有用户线程到达安全点后停下</li>
+<li>主动式中断（Java使用）：设置中断标识。用户线程运行时需要不断检查该标识来判断是否需要主动中断</li>
+</ul>
+</li>
+</ul>
+<h4 id="记忆集（RS）"><a href="#记忆集（RS）" class="headerlink" title="记忆集（RS）"></a>记忆集（RS）</h4><ul>
+<li>用于记录从非收集区域指向当前收集区域的指针集合的抽象数据结构</li>
+<li>Java中的记忆集实现为<code>卡表</code>，例如在G1中每一个Region都维护着一个卡表</li>
+</ul>
+<h4 id="三色标记"><a href="#三色标记" class="headerlink" title="三色标记"></a>三色标记</h4><ul>
+<li>实现并发的可达性分析<ul>
+<li>白色：表示当前对象还没被GC访问过，但如果分析结束对象还是白色则表示该对象不可达</li>
+<li>黑色：表示当前对象以及其所有引用都已经被GC访问过了，这种对象是绝对存活的对象，因此无需再进行第二次扫描</li>
+<li>灰色：表示当前对象已经被GC访问过，但其引用还没被GC扫描</li>
+</ul>
+</li>
+<li><code>三色标记会存在漏标的问题</code>，漏标发生后会导致对象<code>被消失</code>。会出现漏标的情况有以下2种：<ul>
+<li>受到用户线程<code>并发插入引用</code></li>
+<li>受到用户线程<code>并发删除引用</code></li>
+</ul>
+</li>
+<li>漏标问题解决方案<ul>
+<li>增量更新（针对黑色对象）：在扫描对象引用的同时，记录下被用户线程<code>并发插入</code>的引用，然后等分析过后再重新从新增了引用的黑色节点开始扫描。例如 CMS 的 remark 阶段</li>
+<li>原始快照 snapshot-at-the-beginning （针对灰色对象）：在扫描对象引用的同时，记录下被用户线程<code>并发删除</code>的引用，然后等分析过后再重新从删除了引用的灰色节点开始扫描。例如 G1 的 remark 阶段</li>
+</ul>
+</li>
+</ul>
+<h3 id="常用GC配置和介绍"><a href="#常用GC配置和介绍" class="headerlink" title="常用GC配置和介绍"></a>常用GC配置和介绍</h3><blockquote>
+<p>基本介绍和相关调优参数</p>
+</blockquote>
+<p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/009.png" alt></p>
+<blockquote>
+<p>CMS 收集过程</p>
+</blockquote>
+<p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/010.png" alt></p>
+<blockquote>
+<p>G1 收集过程</p>
+</blockquote>
+<p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/011.png" alt></p>
 <h3 id="其它较为新颖的GC"><a href="#其它较为新颖的GC" class="headerlink" title="其它较为新颖的GC"></a>其它较为新颖的GC</h3><h4 id="Epsilon收集器（JDK11）"><a href="#Epsilon收集器（JDK11）" class="headerlink" title="Epsilon收集器（JDK11）"></a>Epsilon收集器（JDK11）</h4><ol>
 <li>Epsilon垃圾回收器的目标是控制内存分配，但是不执行任何实际的垃圾回收工作。</li>
 <li>它提供一个完全消极的 GC 实现，分配有限的内存资源，最大限度的降低内存占用和内存吞吐延迟时间。</li>
@@ -1185,6 +1247,7 @@ Java(TM) SE Runtime Environment 18.9 (build 11.0.5+10-LTS)
 Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.5+10-LTS, mixed mode)</code></pre>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li>《JVM G1源码分析和调优》</li>
+<li>《深入理解Java虚拟机》</li>
 </ul>
 <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2020年5月11日 16:40:05 — 丰富垃圾回收器内容，以及迁移Synchronized锁优化内容</li>
@@ -1231,7 +1294,7 @@ Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.5+10-LTS, mixed mode)</code><
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM常用配置参数"><span class="toc-text">JVM常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#即时编译器相关"><span class="toc-text">即时编译器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#client模式"><span class="toc-text">client模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#server模式"><span class="toc-text">server模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#混合模式"><span class="toc-text">混合模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他"><span class="toc-text">其他</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#垃圾收集器相关"><span class="toc-text">垃圾收集器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#常用GC配置和介绍"><span class="toc-text">常用GC配置和介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其它较为新颖的GC"><span class="toc-text">其它较为新颖的GC</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Epsilon收集器（JDK11）"><span class="toc-text">Epsilon收集器（JDK11）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Shenandoah收集器（JDK12）"><span class="toc-text">Shenandoah收集器（JDK12）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动触发FullGC的方法"><span class="toc-text">手动触发FullGC的方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#锁相关配置"><span class="toc-text">锁相关配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控工具"><span class="toc-text">监控工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#图形化工具"><span class="toc-text">图形化工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展：查看当前版本的JVM所支持的配置"><span class="toc-text">拓展：查看当前版本的JVM所支持的配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM常用配置参数"><span class="toc-text">JVM常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#即时编译器相关"><span class="toc-text">即时编译器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#client模式"><span class="toc-text">client模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#server模式"><span class="toc-text">server模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#混合模式"><span class="toc-text">混合模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#配置项"><span class="toc-text">配置项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#垃圾收集器相关"><span class="toc-text">垃圾收集器相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#垃圾回收前置知识"><span class="toc-text">垃圾回收前置知识</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#根节点枚举"><span class="toc-text">根节点枚举</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#安全点"><span class="toc-text">安全点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#记忆集（RS）"><span class="toc-text">记忆集（RS）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#三色标记"><span class="toc-text">三色标记</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用GC配置和介绍"><span class="toc-text">常用GC配置和介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其它较为新颖的GC"><span class="toc-text">其它较为新颖的GC</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Epsilon收集器（JDK11）"><span class="toc-text">Epsilon收集器（JDK11）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Shenandoah收集器（JDK12）"><span class="toc-text">Shenandoah收集器（JDK12）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动触发FullGC的方法"><span class="toc-text">手动触发FullGC的方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#锁相关配置"><span class="toc-text">锁相关配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控工具"><span class="toc-text">监控工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#图形化工具"><span class="toc-text">图形化工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展：查看当前版本的JVM所支持的配置"><span class="toc-text">拓展：查看当前版本的JVM所支持的配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
