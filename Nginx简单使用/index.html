@@ -1102,24 +1102,22 @@ add_header Cache-Control no-store;
 <p><strong>图解：</strong></p>
 <p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/026.png" alt></p>
 <h3 id="正向代理配置例子"><a href="#正向代理配置例子" class="headerlink" title="正向代理配置例子"></a>正向代理配置例子</h3><blockquote>
-<p>以下配置按照正反代理概念的话，即可称为正向代理也可称为反向代理</p>
+<p>以下配置按照正反代理概念，即可称为正向代理也可称为反向代理</p>
 <p>正向代理：因为客户端无法直接访问机器2，这时机器1代理客户端访问机器2，相当充当于vpn角色</p>
-<p>反向代理：机器2不对外提供服务，机器2代理机器1对外提供服务</p>
+<p>反向代理：机器2不对外提供服务，机器1代理机器2对外提供服务</p>
 </blockquote>
 <p><strong>机器1：</strong></p>
-<blockquote>
-<p>处理以下配置方法还可以使用$http_x_forwarded_for</p>
-</blockquote>
 <pre><code>server {
     listen       80;
     server_name  nginx.tandi.cc;
     # 配置dns服务器的目的是，用于域名解析
     #resolver 8.8.8.8；
+
     location / {
-        # 代理来自客户端的请求来访问http://192.168.1.100
+        # 代理来自客户端的请求
         # 当前nginx服务器相当于vpn
-        proxy_pass http://192.168.1.100;
-        #proxy_pass http://$http_host$request_uri;
+        # proxy_pass http://192.168.1.100;
+        proxy_pass http://$http_host$request_uri;
     }
 
     error_page   404 500 502 503 504  /50x.html;

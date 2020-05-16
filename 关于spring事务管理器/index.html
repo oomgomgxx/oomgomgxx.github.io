@@ -890,7 +890,7 @@ public void save(Person person){
 <p><strong>与2PC的区别</strong></p>
 <p>ChainedTransactionManager 并不能做到2pc的效果，它只能做到在事务链中某个节点事务回滚后位于该阶段后的事务都不会继续提交。</p>
 <h2 id="导致事务失效的几种情况"><a href="#导致事务失效的几种情况" class="headerlink" title="导致事务失效的几种情况"></a>导致事务失效的几种情况</h2><h3 id="Transactional注解标注在非public修饰的方法上"><a href="#Transactional注解标注在非public修饰的方法上" class="headerlink" title="@Transactional注解标注在非public修饰的方法上"></a>@Transactional注解标注在非public修饰的方法上</h3><ul>
-<li><p>在上面的源码分析的 <strong>”回过头看看到底是如何获取 Advisors 的“</strong> 小节中我们得知了如何返回当前拦截方法的所有 Advisors 。大概过程就是先找到上前上下文的所有 Advisors 然后再通过切入点表达式进行匹配出符合的 Advisors。而在这个匹配过程中有一个潜在条件，如下图：</p>
+<li><p>在上面的源码分析 《回过头看看到底是如何获取 Advisors 的》小节中我们得知了如何返回当前拦截方法的所有 Advisors 。大概过程就是先找到上前上下文的所有 Advisors 然后再通过切入点表达式进行匹配出符合的 Advisors。而在这个匹配过程中有一个潜在条件，如下图：</p>
 <p><img src="/%E5%85%B3%E4%BA%8Espring%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8/26.png" alt></p>
 </li>
 <li><p>@Transactional 除了可以添加在类方法中还可以定义在 类上、接口上、枚举上。以下是@Transactional源码：</p>
@@ -961,14 +961,14 @@ public void Test{
     }
 }</code></pre>
 <ul>
-<li><p>以上操作无法回滚是因为 Spring AOP 织入的事务操作时同过设置回滚标记（TransactionStatus#setRollbackOnly）进行回滚的，而又因为 Spring AOP 在执行代理方法时已经添加了异常捕获操作来设置回滚点。换言之如果开发者自己捕获异常的话， Spring AOP 定义操作捕获操作就不起作用了</p>
+<li><p>以上操作无法回滚是因为 Spring AOP 织入的事务是通过回滚标记（TransactionStatus#setRollbackOnly）来实现回滚操作的，而又因为 Spring AOP 在代理方法中已经添加了异常捕获操作来设置回滚点，所以如果开发者自己捕获了异常，就会导致 Spring AOP 定义捕获操作失效从而没法设置事务回滚标识</p>
 </li>
 <li><p>解决方法有2种：</p>
 <ul>
 <li><p>使用 throws Exception 抛出异常而不是 catch</p>
 </li>
 <li><p>在 catch 设置 TransactionStatus#setRollbackOnly ，如下：</p>
-<pre><code class="java">// 必须保留当前代理类，@EnableAspectJAutoProxy(exposeProxy = true)
+<pre><code class="java">// 必须暴露当前代理类，@EnableAspectJAutoProxy(exposeProxy = true)
 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();</code></pre>
 </li>
 </ul>
