@@ -129,6 +129,7 @@
 <li>基于内存</li>
 <li>单线程</li>
 <li>支持多种数据类型</li>
+<li>基于 epoll 的多路复用IO模型</li>
 <li>跨平台且支持多种语言客户端</li>
 </ul>
 <h2 id="入门案例"><a href="#入门案例" class="headerlink" title="入门案例"></a>入门案例</h2><h3 id="下载和安装"><a href="#下载和安装" class="headerlink" title="下载和安装"></a>下载和安装</h3><blockquote>
@@ -1032,7 +1033,7 @@ QUEUED
 </ul>
 <p><code>手动触发</code></p>
 <p>save命令：阻塞当前服务线程后持久化内存中快照，直到持久化完成。</p>
-<p>bgsave命令：当前服务线程 Fork 出一条子线程(轻量级进程)来做持久化操作。但需要注意的是，Fork 操作是阻塞的，但相对于 save 来说 bgsave效率更高。</p>
+<p>bgsave命令：当前服务线程 Fork 出一条子线程来做持久化操作。但要注意，Fork 操作是阻塞的，但相对于 save 来说 bgsave 效率更高。</p>
 <p><code>自动触发</code></p>
 <p>情况1：满足服务端配置的 save 属性条件后会自动触发</p>
 <pre><code class="shell">save 900 1 # 表示900s内触发1次修改，则自动触发bgsave
@@ -1086,7 +1087,7 @@ appendfsync everysec # 每1秒从缓存中fsync一次
 
 </li>
 </ul>
-<p>可以看出，主线程会对比上一次系统执行 fsync 操作的时间，如果发现上一次 fsync 操作花费时间超过2秒的话，主线程就会阻塞服务，以便腾出时间给系统执行 fsync 操作，这样做是为了使 fsync 赶上客户端执行的命令速度，避免大量 fsync 操作延迟导致命令没有切实写入到硬盘。</p>
+<p>可以看出，主线程会对比上一次系统执行 fsync 操作的时间，如果发现上一次 fsync 操作花费时间超过2秒的话，主线程就会阻塞服务，以便腾出时间给系统执行 fsync 操作，这样做是为了让 fsync 冲刷操作赶上客户端执行的命令速度，避免大量 fsync 操作延迟导致而命令没有切实写入到硬盘，这样会加载丢失数据的风险。</p>
 <p><strong>关于aof重写</strong></p>
 <p>随着时间的推移 aof 文件会变得非常大，因此 Redis 提供了<code>aof重写</code>操作以缩减 aof 备份数据文件的大小。做法是：去除无效命令、命令合并、去除超时数据 等操作</p>
 <p>aof重写触发条件：</p>
