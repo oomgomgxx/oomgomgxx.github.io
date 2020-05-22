@@ -1,0 +1,303 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> IDEA性能调优小记-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  <!-- 未编写手机端导航栏 -->
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="學然後知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">學然後知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/archives">文章存档</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/books">书籍阅读</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>IDEA性能调优小记</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2020-05-22 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>&emsp;&emsp;前段时间将 IDEA 升级到了 2020 版本，而最近使用发现经常出现卡顿的现象。虽然笔者的机器是15年买的已经有点历史了（CPU双核4线程、8G内存），但也不至于卡成这样，所以打算针对 IDEA 的 JVM 进行一次调优来舒缓一下卡顿感。而个人认为 JVM 调优是一件非常矛盾的事情，因为调优的核心思想就是在有限资源的情况下让应用运行得更顺畅（所以网上哪些连机器配置都不提就开始谈调优的人是非常不靠谱的）。直白点说就是如果你的机器配资足够高的话是根本不需要考虑调优的。 </p>
+<p>造成 JVM 应用卡顿的原因大体有以下几种：</p>
+<ol>
+<li>GC 回收导致 STW</li>
+<li>内存分配不合理导致（资源缺乏）频繁 GC </li>
+<li>CPU 使用率过高导致 JVM 线程执行效率降低</li>
+</ol>
+<p>虽然以上1点看起来很明确，但是要平衡它们却不是件容易的事儿。例如你可以增加 GC 线程让垃圾回收进行得更加迅速，但线程多了 CPU 使用率就会上升（特别是自用机器肯定会有有其它应用并行的情况出现），这也导致卡顿。又或者你可以增加 JVM 的内存容量来减少 GC 的次数（因为有足够的内存是不会触发 GC 的），但这样又会加重 GC 线程的回收负担从而让 GC 过程更加长，最后亦可能导致卡顿感加重。这就是上面为什么说 JVM 调优其实是件非常矛盾的事情。</p>
+<h2 id="JVM参数调优说明"><a href="#JVM参数调优说明" class="headerlink" title="JVM参数调优说明"></a>JVM参数调优说明</h2><p>调优目标：<code>舒缓IDEA启动及运行过程的卡顿感</code><br>环境配置：</p>
+<ul>
+<li>双核四线程CPU</li>
+<li>8G内存</li>
+<li>JRE 11</li>
+<li>CMS垃圾回收器</li>
+</ul>
+<blockquote>
+<p>注：</p>
+<p>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将大内存划分为若干个 Region 区来细化管理。如果能够为应用分配大于 4G 的堆内存，那么 G1 是要比以前的 GC 要高效的（和用户并发角度来看）。但小于 4G 的话就和 CMS 差不多了，甚至可能不如 CMS。原因是因为 CMS 和 G1 一样有并发标记操作，而且 STW 时间更短。除此之外 IDEA 默认的 GC 就是 CMS，那么它为什么不用 G1 呢？原因很简单，第一是小内存 CMS 更高效，第二是提供商无法保证 IDEA 用户机器都是高配置的（这点可以从 IDEA 默认堆内存大小看出来），因此最好的选择就是 CMS 了。</p>
+</blockquote>
+<p>优化过后的配置如下：</p>
+<pre><code>-server
+-Xverify:none
+-Xms1024m
+-Xmx1536m
+-Xmn512m
+-XX:+UseConcMarkSweepGC
+-XX:ParallelGCThreads=4
+-XX:ConcGCThreads=2
+-XX:CMSInitiatingOccupancyFraction=75
+-XX:CICompilerCount=2
+-XX:MaxTenuringThreshold=5
+-XX:ReservedCodeCacheSize=500m</code></pre><p>配置说明：</p>
+<p>-server</p>
+<ul>
+<li>使用 C2 编译器</li>
+<li>编译时间更长但出来的机器码更高效，换句话就是运行得更加顺畅</li>
+</ul>
+<p>-Xverify:none</p>
+<ul>
+<li>不对加载的类进行字节码校验</li>
+<li>能够一定程度提升类加载过程的速度</li>
+</ul>
+<p>-Xms1024m</p>
+<ul>
+<li>启动时堆的初始化大小</li>
+<li>设置为 1G</li>
+</ul>
+<p>-Xmx1536m</p>
+<ul>
+<li>堆的最大值</li>
+<li>设置为 1.5 G</li>
+<li>通常该值如果是项目服务器的话，为了减少内存扩容带来的开销是会和 Xms 保持一致的。但当前调优是针对自用机器的，所以能少占内存就少占内存</li>
+</ul>
+<p>-Xmn512m</p>
+<ul>
+<li>新生代内存大小</li>
+<li>该内存要特别主要，虽然 Young GC 速度快（因为用的是标记复制算法）但频率也高，所以如果内存设置得越大的话，还是会给 GC 线程带来回收压力的。例如频繁 Young GC 导致 CPU 使用率上升也可能会出现卡顿</li>
+</ul>
+<p>-XX:+UseConcMarkSweepGC</p>
+<ul>
+<li>老年代使用 CMS，新生代使用 ParNew</li>
+</ul>
+<p>-XX:ParallelGCThreads=4</p>
+<ul>
+<li>GC 回收时的并行线程数</li>
+<li>设置为 4</li>
+</ul>
+<p>-XX:ConcGCThreads=2</p>
+<ul>
+<li>并发标记线程数。默认值为 （ParallelGCThreads + 3）/4</li>
+<li>设置为 2</li>
+</ul>
+<p>-XX:CMSInitiatingOccupancyFraction=75</p>
+<ul>
+<li>触发并发标记的内存使用阈值，默认为92，即老年代使用率92%时触发</li>
+<li>设置为 75 是我根据 HashMap 的扩容因子值来设置的，它的理念是即能提高效率也不浪费空间，是一个折中值</li>
+<li>建议该值不建议设置的过大。因为触发并发标记后如果预留的空间不足以分配内存给它对象实例的话就会出现<code>并发失败</code>的情况，这时会使用 Serial 进行串行 STW 执行回收（这样会提升卡顿感）</li>
+</ul>
+<p>-XX:-CMSClassUnloadingEnabled</p>
+<ul>
+<li>禁止 CMS 卸载类。因为 JDK 1.8 开始元空间彻底代替了永久代，所以并不需要节省这点空间也不用担心OOM</li>
+</ul>
+<p>-XX:CICompilerCount=2 </p>
+<ul>
+<li>JIT 编译线程数</li>
+<li>设置为 2</li>
+<li>建议该线程数在自用机器上不要过大，因为在 IDEA 启动时会伴随大量的 JIT 编译 和多次 Young GC 出现，因此CPU 非常容易到达100%，这是 IDEA 启动时卡顿的关键点所在（因为考虑到运行过程的 GC 效率，所以 ParallelGCThreads 不能少，所以只能降低 CICompilerCount 来舒缓 CPU 使用率了。当然 2 条线程其实也足够了，不至于会有卡顿）</li>
+</ul>
+<p>-XX:MaxTenuringThreshold=5</p>
+<ul>
+<li>对象晋升老年代的岁数。默认值为15，即对象经历15次 GC 都没被回收的话就会晋升到老年代</li>
+<li>设置为 5 是因为经过我自己的观察老年代其实并不缺乏内存，而已 CMS 并发标记可以有效地减少 Full GC ，所以对象尽早进入老年代就可以减少新生代对象数，换言之就是提高 Young GC 回收效率</li>
+</ul>
+<p>-XX:ReservedCodeCacheSize=500m</p>
+<ul>
+<li>存放 JIT 编译内容的缓存大小</li>
+<li>注意该值在 64bit server 模式下默认为240m。如果编译内容到达该阈值的话 JIT 就不会再编译了，这样会降低 IDEA 代码的执行效率，直白点说就是会提高卡顿感</li>
+</ul>
+<blockquote>
+<p>调优过后的情况如下</p>
+</blockquote>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/001.png" alt></p>
+<ul>
+<li>因为一天没关电脑的缘故，所以看到 IDEA 应运行了 25 个小时有多</li>
+</ul>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/002.png" alt></p>
+<ul>
+<li>Young GC 执行了 285 次，耗时 11.5 秒</li>
+<li>Full GC 执行了 21 次，耗时 21 秒（因为 IDEA 运行了 25 个小时，相当于每小时1次 Full GC 不超过 1 秒）</li>
+</ul>
+<h2 id="IDEA设置优化"><a href="#IDEA设置优化" class="headerlink" title="IDEA设置优化"></a>IDEA设置优化</h2><p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/003.png" alt></p>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/004.png" alt></p>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/005.png" alt></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/">
+      IDEA性能调优小记
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('IDEA性能调优小记'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#背景"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM参数调优说明"><span class="toc-text">JVM参数调优说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IDEA设置优化"><span class="toc-text">IDEA设置优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在細節中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">網站首頁</a>
+            <a id="bottom-totop" href="#">回到頂部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 外部依赖 -->
+<!-- <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/github.min.css">
+<script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script> -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>
