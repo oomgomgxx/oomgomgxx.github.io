@@ -65,10 +65,15 @@ $(function() {
         } else if (num > max_page_num ) {
             window.location.href = "/page/" + max_page_num
         }
-
         // 保存状态
         sessionStorage.setItem("page_current", num)
     }
+
+    inkeyup = function (max_page_num) {
+        console.info(max_page_num)
+        inclick(max_page_num)
+    }
+
 
     // 清除状态
     $('#paginator .page-number, #paginator .extend, #menu-a').click(function() {
@@ -78,12 +83,37 @@ $(function() {
 });
 
 
-// 给文章下的标题添加标记提升阅读
-// $(function(){
-//     $('#post h2').prepend("<font color='#FF5151'>##&thinsp;</font>")
-//     $('#post h3').prepend("<font color='#FF5151'>###&thinsp;</font>")
-//     $('#post h4').prepend("<font color='#FF5151'>####&thinsp;</font>")
-//     $('#post h5').prepend("<font color='#FF5151'>#####&thinsp;</font>")
-// });
+// 滑动时隐藏和显示小屏导航栏
+$(function(){
 
+    $("#min-menu-outer").hide()
 
+    // 记录高度
+    var temp_height = 0
+
+    // 页面滑动事件
+    $(window).scroll(function(){
+        
+        // 页面高度
+        var page_height = $(document).height()
+        // 页面宽度
+        var page_width = $(document).width()
+
+        // 显示和隐藏小屏幕导航栏
+        if( page_width < 768){
+
+            // 当前高度
+            var current_height = $(document).scrollTop();
+            
+            if (current_height > temp_height){ // 往下滑
+                $("#min-menu-outer").slideDown("slow");
+            } else { // 往上滑
+                $("#min-menu-outer").slideUp("slow");
+            }
+
+            // 记录高度
+            temp_height = current_height
+        }
+    });
+
+});
