@@ -139,7 +139,7 @@
 <ul>
 <li>双核四线程CPU</li>
 <li>8G内存</li>
-<li>JRE 11</li>
+<li>JRE 11 （可以使用 IDEA 的 choose runtime 插件来查看）</li>
 <li>CMS垃圾回收器</li>
 </ul>
 <blockquote>
@@ -147,18 +147,23 @@
 <p>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将大内存划分为若干个 Region 区来细化管理。如果能够为应用分配大于 4G 的堆内存，那么 G1 是要比以前的 GC 要高效的（和用户并发角度来看）。但小于 4G 的话就和 CMS 差不多了，甚至可能不如 CMS。原因是因为 CMS 和 G1 一样有并发标记操作，而且 STW 时间更短。除此之外 IDEA 默认的 GC 就是 CMS，那么它为什么不用 G1 呢？原因很简单，第一是小内存 CMS 更高效，第二是提供商无法保证 IDEA 用户机器都是高配置的（这点可以从 IDEA 默认堆内存大小看出来），因此最好的选择就是 CMS 了。</p>
 </blockquote>
 <p>优化过后的配置如下：</p>
-<pre><code>-server
+<pre><code class="properties">-server
 -Xverify:none
--Xms1024m
+-Xms1536m
 -Xmx1536m
 -Xmn512m
+-XX:MetaspaceSize=512m
+-XX:MaxMetaspaceSize=512m
 -XX:+UseConcMarkSweepGC
 -XX:ParallelGCThreads=4
 -XX:ConcGCThreads=2
 -XX:CMSInitiatingOccupancyFraction=75
+-XX:-CMSClassUnloadingEnabled
 -XX:CICompilerCount=2
--XX:MaxTenuringThreshold=5
--XX:ReservedCodeCacheSize=500m</code></pre><p>配置说明：</p>
+-XX:MaxTenuringThreshold=10
+-XX:ReservedCodeCacheSize=500m
+-XX:+AlwaysPreTouch</code></pre>
+<p>配置说明：</p>
 <p>-server</p>
 <ul>
 <li>使用 C2 编译器</li>
@@ -169,21 +174,28 @@
 <li>不对加载的类进行字节码校验</li>
 <li>能够一定程度提升类加载过程的速度</li>
 </ul>
-<p>-Xms1024m</p>
+<p>-Xms1536m</p>
 <ul>
 <li>启动时堆的初始化大小</li>
-<li>设置为 1G</li>
+<li>设置为 1.5 G</li>
 </ul>
 <p>-Xmx1536m</p>
 <ul>
 <li>堆的最大值</li>
 <li>设置为 1.5 G</li>
-<li>通常该值如果是项目服务器的话，为了减少内存扩容带来的开销是会和 Xms 保持一致的。但当前调优是针对自用机器的，所以能少占内存就少占内存</li>
+<li>该值和如 -Xms 最好一直，这样可以减少内存扩容带来的开销</li>
+</ul>
+<p>-XX:MetaspaceSize 和 -XX:MaxMetaspaceSize</p>
+<ul>
+<li>指定元空间大小</li>
+<li>两个配置最好一致，原因同上</li>
+<li>注意，最好是显式指定元空间大小，因为一旦 MetaspaceSize（默认 20 多兆，非常小）被填满就会触发 Full GC 。例如不配置的话可能会在 JVM 启动期间就连续执行多次 Full GC 的情况。因此在系统类定义较多的情况下最好预留充足的空间给元空间这样可以有效地减少 Full GC 的次数。</li>
 </ul>
 <p>-Xmn512m</p>
 <ul>
 <li>新生代内存大小</li>
-<li>该内存要特别主要，虽然 Young GC 速度快（因为用的是标记复制算法）但频率也高，所以如果内存设置得越大的话，还是会给 GC 线程带来回收压力的。例如频繁 Young GC 导致 CPU 使用率上升也可能会出现卡顿</li>
+<li>该内存要特别主要，虽然 Young GC 速度快（因为用的是标记复制算法）但频率也高，所以如果内存设置得很大的话还是会给 GC 线程带来回收压力的。例如频繁 Young GC 导致 CPU 使用率上升同样会造成卡顿</li>
+<li>如果有充足的内存分配给新生代，例如 1.5G 以上，个人建议这时可以适当地将幸存者区域内存增大，这样做可以提升 标记-复制 算法的内存使用率</li>
 </ul>
 <p>-XX:+UseConcMarkSweepGC</p>
 <ul>
@@ -207,7 +219,10 @@
 </ul>
 <p>-XX:-CMSClassUnloadingEnabled</p>
 <ul>
-<li>禁止 CMS 卸载类。因为 JDK 1.8 开始元空间彻底代替了永久代，所以并不需要节省这点空间也不用担心OOM</li>
+<li>禁止 CMS 卸载类</li>
+<li>因为 JDK 1.8 开始元空间彻底代替了永久代，元空间默认情况下只受物理内存大小限制，因此出现 OOM 的几率大大降低</li>
+<li>这里禁止卸载类是为了减少类加载带来的开销，当开启该配置的前提是元空间的内存足够充裕，否则会出现频繁 Full GC 的现象</li>
+<li>如果 JDK 是 1.7 之前的版本，那么开启 <code>-XX:+CMSClassUnloadingEnabled</code> 配置可以有效地降低永久代 OOM 的几率</li>
 </ul>
 <p>-XX:CICompilerCount=2 </p>
 <ul>
@@ -215,7 +230,7 @@
 <li>设置为 2</li>
 <li>建议该线程数在自用机器上不要过大，因为在 IDEA 启动时会伴随大量的 JIT 编译 和多次 Young GC 出现，因此CPU 非常容易到达100%，这是 IDEA 启动时卡顿的关键点所在（因为考虑到运行过程的 GC 效率，所以 ParallelGCThreads 不能少，所以只能降低 CICompilerCount 来舒缓 CPU 使用率了。当然 2 条线程其实也足够了，不至于会有卡顿）</li>
 </ul>
-<p>-XX:MaxTenuringThreshold=5</p>
+<p>-XX:MaxTenuringThreshold=10</p>
 <ul>
 <li>对象晋升老年代的岁数。默认值为15，即对象经历15次 GC 都没被回收的话就会晋升到老年代</li>
 <li>设置为 5 是因为经过我自己的观察老年代其实并不缺乏内存，而已 CMS 并发标记可以有效地减少 Full GC ，所以对象尽早进入老年代就可以减少新生代对象数，换言之就是提高 Young GC 回收效率</li>
@@ -225,17 +240,20 @@
 <li>存放 JIT 编译内容的缓存大小</li>
 <li>注意该值在 64bit server 模式下默认为240m。如果编译内容到达该阈值的话 JIT 就不会再编译了，这样会降低 IDEA 代码的执行效率，直白点说就是会提高卡顿感</li>
 </ul>
+<p>-XX:+AlwaysPreTouch</p>
+<ul>
+<li>在 Java 进程启动时就获取所有的内存（-Xmx），而不是等到访问才获取</li>
+<li>该配置可以有效地提升程序运行期间的性能，因为 JVM 不再需要被动分配内存</li>
+<li>注意，如果堆内存比较大的话该配置会带来一定的启动消耗，例如启动速度延长。但个人依然建议开启该配置，特别是针对 IDE 的调优，因为内存不大所以并没多大区别</li>
+</ul>
 <blockquote>
 <p>调优过后的情况如下</p>
 </blockquote>
-<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/001.png" alt></p>
-<ul>
-<li>因为一天没关电脑的缘故，所以可以看到 IDEA 已经运行了 25 个小时有多</li>
-</ul>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/002.png" alt></p>
 <ul>
-<li>Young GC 执行了 285 次，耗时 11.5 秒</li>
-<li>Full GC 执行了 21 次，耗时 21 秒（因为 IDEA 运行了 25 个小时，相当于每小时1次 Full GC 但每次不超过 1 秒）</li>
+<li>启动期间的卡顿感明显降低，因此调优目的已达到</li>
+<li>Full GC 是不可能避免的，因为 Full GC 是一个有效地防止 OOM 的机制。换句话来说 JVM 的内存越小的话，那么触发 Full GC 的几率就越大。除此之外 Full GC 还和程序执行的任务有关，例如程序产生了大量长期驻留在内存的对象，或者出现内存泄露问题，这都会导致频繁 Full GC 的出现</li>
+<li>最后多说一句，如果系统流量确实很大而且出现内存长期居高不下情况，这时也可以巧妙地利用 Full GC 来清理内存以避免 OOM 。例如在系统流量较低的时间段定时定候地触发 Full GC（System.gc()）。例如 Tomcat 有个防止内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 也是这种操作（该方式也适合用与主动释放 Direct 内存）。同时还可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code> 配置提高 Full GC 的并发效率。但如果你想禁止这种手动触发 Full GC 的操作的话则可以添加 <code>-XX:+DisableExplicitGC</code> 将其禁掉即可</li>
 </ul>
 <h2 id="IDEA设置优化"><a href="#IDEA设置优化" class="headerlink" title="IDEA设置优化"></a>IDEA设置优化</h2><p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/003.png" alt></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/004.png" alt></p>
