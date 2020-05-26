@@ -43,8 +43,8 @@ function wrapImageWithFancyBox() {
       afterLoad : function( instance, slide ) {
             if ( slide.type === 'image' ) {
                 if ( slide.height > 2500 ) {
-                    slide.width  = slide.width  * 0.5;
-                    slide.height = slide.height * 0.5;
+                    slide.width  = slide.width  * 0.6;
+                    slide.height = slide.height * 0.6;
                 }
             }
         }

@@ -78,3 +78,12 @@ $(function() {
 });
 
 
+// 给文章下的标题添加标记提升阅读
+// $(function(){
+//     $('#post h2').prepend("<font color='#FF5151'>##&thinsp;</font>")
+//     $('#post h3').prepend("<font color='#FF5151'>###&thinsp;</font>")
+//     $('#post h4').prepend("<font color='#FF5151'>####&thinsp;</font>")
+//     $('#post h5').prepend("<font color='#FF5151'>#####&thinsp;</font>")
+// });
+
+
