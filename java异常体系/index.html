@@ -1,0 +1,902 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 异常体系-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>异常体系</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2019-03-15 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="throwable"><a href="#throwable" class="headerlink" title="throwable"></a>throwable</h2><h3 id="简单了解"><a href="#简单了解" class="headerlink" title="简单了解"></a>简单了解</h3><ul>
+<li>throwable是java中所有<strong>错误（Error）</strong>和<strong>异常（Exception）</strong>的超类</li>
+<li>包含了一些<strong>错误（Error）</strong>和<strong>异常（Exception）</strong>的基本操作</li>
+</ul>
+<h3 id="Throwable类源码浅析"><a href="#Throwable类源码浅析" class="headerlink" title="Throwable类源码浅析"></a>Throwable类源码浅析</h3><pre><code class="java">package java.lang;
+import  java.io.*;
+import  java.util.*;
+
+public class Throwable implements Serializable {
+    private static final long serialVersionUID = -3042686055658047285L;
+
+    /**
+     * Native code saves some indication of the stack backtrace in this slot.
+     */
+    private transient Object backtrace;
+
+    // 指定当前关于错误(Throwable)的信息
+    // 获取detailMessage的方法，getMessage(); getLocalizedMessage();
+    private String detailMessage;
+
+    /**
+     * Holder class to defer initializing sentinel objects only used for serialization.
+     * 参考下面的代码看出，SentinelHolder实质用于创建一个immutable的StackTrace，用于将StackTrace输出到流的时候防止StackTrace为null的情况
+     * 
+     * 从下面的定义可以看出，所以为跟踪栈，指的就是StackTraceElement对象数组，栈元素就是每一个StackTraceElement
+     */
+    private static class SentinelHolder {
+         /**
+         *  StackTraceElement参数：
+         *  String declaringClass 错误所在类的全名称
+         *  String methodName 错误所在方法
+         *  String fileName 错误所在文件
+         *  int lineNumber 错误所在行数
+         * */
+        public static final StackTraceElement STACK_TRACE_ELEMENT_SENTINEL = new StackTraceElement(&quot;&quot;, &quot;&quot;, null, Integer.MIN_VALUE);
+
+        public static final StackTraceElement[] STACK_TRACE_SENTINEL = new StackTraceElement[] {STACK_TRACE_ELEMENT_SENTINEL};
+    }
+
+    // 初始化stackTrace对象数组
+    private static final StackTraceElement[] UNASSIGNED_STACK = new StackTraceElement[0];
+
+    // 注意：这时一个重要的属性，表示造成异常的目标对象，即罪恶的根源所在地
+    // Throwable cause = this，表示Throwable从诞生开始本身就是个错误
+    // 所以有些东西有些事情，本身就不应该发生，因此为人处世一定要小心谨慎，免得一失足成千古恨，吃亏的还是自己。
+    // 还要注意的是，cause也是Throwable，也就是说Throwable内有Throwable，因此形成了一条链
+    private Throwable cause = this;
+
+    // 初始化跟踪栈信息
+    // 注意：这里使用了一个immutable的空对象数组来初始化stackTrace
+    private StackTraceElement[] stackTrace = UNASSIGNED_STACK;
+
+    // Setting this static field introduces an acceptable
+    // initialization dependency on a few java.util classes.
+    private static final List&lt;Throwable&gt; SUPPRESSED_SENTINEL = Collections.unmodifiableList(new ArrayList&lt;Throwable&gt;(0));
+
+    // 用于保存被压制的Exception
+    private List&lt;Throwable&gt; suppressedExceptions = SUPPRESSED_SENTINEL;
+
+    /** 提示消息 */
+    /** Message for trying to suppress a null exception. */
+    private static final String NULL_CAUSE_MESSAGE = &quot;Cannot suppress a null exception.&quot;;
+    /** Message for trying to suppress oneself. */
+    private static final String SELF_SUPPRESSION_MESSAGE = &quot;Self-suppression not permitted&quot;;
+    /** Caption  for labeling causative exception stack traces */
+    private static final String CAUSE_CAPTION = &quot;Caused by: &quot;;
+    /** Caption for labeling suppressed exception stack traces */
+    private static final String SUPPRESSED_CAPTION = &quot;Suppressed: &quot;;
+
+    // 注意：在Throwable的构造方法中都使用了fillInStackTrace()来填充跟踪栈来初始化Throwable
+    public Throwable() {
+        fillInStackTrace();
+    }
+
+    public Throwable(String message) {
+        fillInStackTrace();
+        detailMessage = message;
+    }
+
+    public Throwable(String message, Throwable cause) {
+        fillInStackTrace();
+        detailMessage = message;
+        this.cause = cause;
+    }
+
+    public Throwable(Throwable cause) {
+        fillInStackTrace();
+        detailMessage = (cause==null ? null : cause.toString());
+        this.cause = cause;
+    }
+
+    /**
+     * -----------&gt; protected修饰的构造方法
+     * 
+     * @param 详细的Throwable信息
+     * @param 错误原因
+     * @param 是否启用Suppression功能
+     * @param stackTrace是否可写
+     *
+     * @see OutOfMemoryError
+     * @see NullPointerException
+     * @see ArithmeticException
+     * @since 1.7
+     */
+    protected Throwable(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        if (writableStackTrace) { // true
+            fillInStackTrace();
+        } else { // false
+            stackTrace = null;
+        }
+        detailMessage = message;
+        this.cause = cause;
+        if (!enableSuppression)
+            suppressedExceptions = null;
+    }
+
+    public String getMessage() {
+        return detailMessage;
+    }
+
+    public String getLocalizedMessage() {
+        return getMessage();
+    }
+
+    public synchronized Throwable getCause() {
+        return (cause==this ? null : cause);
+    }
+
+    /**
+     * 初始化因果关系，实质就是设置错误的原因
+     * @param  cause the cause (which is saved for later retrieval by the
+     *         {@link #getCause()} method).  (A {@code null} value is
+     *         permitted, and indicates that the cause is nonexistent or
+     *         unknown.)
+     * @return  a reference to this {@code Throwable} instance.
+     * @throws IllegalArgumentException if {@code cause} is this
+     *         throwable.  (A throwable cannot be its own cause.)
+     * @throws IllegalStateException if this throwable was
+     *         created with {@link #Throwable(Throwable)} or
+     *         {@link #Throwable(String,Throwable)}, or this method has already
+     *         been called on this throwable.
+     * @since  1.4
+     */
+    public synchronized Throwable initCause(Throwable cause) {
+
+        // new Throwable()时，this.cause == this
+        // 表示Throwable从诞生开始本身就是个错误
+        if (this.cause != this) 
+            throw new IllegalStateException(&quot;Can&#39;t overwrite cause with &quot; + Objects.toString(cause, &quot;a null&quot;), this);
+
+        // 不允许的因果关系
+        if (cause == this)
+            throw new IllegalArgumentException(&quot;Self-causation not permitted&quot;, this);
+
+        this.cause = cause;
+        return this;
+    }
+
+    public String toString() {
+        String s = getClass().getName();
+        String message = getLocalizedMessage();
+        return (message != null) ? (s + &quot;: &quot; + message) : s;
+    }
+
+    // 打印跟踪栈信息
+    public void printStackTrace() {
+        printStackTrace(System.err);
+    }
+
+    public void printStackTrace(PrintStream s) {
+        printStackTrace(new WrappedPrintStream(s));
+    }
+
+    private void printStackTrace(PrintStreamOrWriter s) {
+        // Guard against malicious overrides of Throwable.equals by
+        // using a Set with identity equality semantics.
+        Set&lt;Throwable&gt; dejaVu = Collections.newSetFromMap(new IdentityHashMap&lt;Throwable, Boolean&gt;());
+        dejaVu.add(this);
+
+        // 打印跟踪栈信息
+        synchronized (s.lock()) {
+            // Print our stack trace
+            s.println(this);
+            StackTraceElement[] trace = getOurStackTrace();
+
+            for (StackTraceElement traceElement : trace)
+                s.println(&quot;\tat &quot; + traceElement);
+
+            // Print suppressed exceptions, if any
+            for (Throwable se : getSuppressed())
+                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, &quot;\t&quot;, dejaVu);
+
+            // Print cause, if any
+            Throwable ourCause = getCause();
+            if (ourCause != null)
+                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, &quot;&quot;, dejaVu);
+        }
+    }
+
+    private void printEnclosedStackTrace(PrintStreamOrWriter s,
+                                         StackTraceElement[] enclosingTrace,
+                                         String caption,
+                                         String prefix,
+                                         Set&lt;Throwable&gt; dejaVu) {
+        assert Thread.holdsLock(s.lock());
+        if (dejaVu.contains(this)) {
+            s.println(&quot;\t[CIRCULAR REFERENCE:&quot; + this + &quot;]&quot;);
+        } else {
+            dejaVu.add(this);
+            // Compute number of frames in common between this and enclosing trace
+            StackTraceElement[] trace = getOurStackTrace();
+            int m = trace.length - 1;
+            int n = enclosingTrace.length - 1;
+            while (m &gt;= 0 &amp;&amp; n &gt;=0 &amp;&amp; trace[m].equals(enclosingTrace[n])) {
+                m--; n--;
+            }
+            int framesInCommon = trace.length - 1 - m;
+
+            // Print our stack trace
+            s.println(prefix + caption + this);
+            for (int i = 0; i &lt;= m; i++)
+                s.println(prefix + &quot;\tat &quot; + trace[i]);
+            if (framesInCommon != 0)
+                s.println(prefix + &quot;\t... &quot; + framesInCommon + &quot; more&quot;);
+
+            // Print suppressed exceptions, if any
+            for (Throwable se : getSuppressed())
+                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION,
+                                           prefix +&quot;\t&quot;, dejaVu);
+
+            // Print cause, if any
+            Throwable ourCause = getCause();
+            if (ourCause != null)
+                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, prefix, dejaVu);
+        }
+    }
+
+    public void printStackTrace(PrintWriter s) {
+        printStackTrace(new WrappedPrintWriter(s));
+    }
+
+    private abstract static class PrintStreamOrWriter {
+        /** Returns the object to be locked when using this StreamOrWriter */
+        abstract Object lock();
+
+        /** Prints the specified string as a line on this StreamOrWriter */
+        abstract void println(Object o);
+    }
+
+    private static class WrappedPrintStream extends PrintStreamOrWriter {
+        private final PrintStream printStream;
+
+        WrappedPrintStream(PrintStream printStream) {
+            this.printStream = printStream;
+        }
+
+        Object lock() {
+            return printStream;
+        }
+
+        void println(Object o) {
+            printStream.println(o);
+        }
+    }
+
+    private static class WrappedPrintWriter extends PrintStreamOrWriter {
+        private final PrintWriter printWriter;
+
+        WrappedPrintWriter(PrintWriter printWriter) {
+            this.printWriter = printWriter;
+        }
+
+        Object lock() {
+            return printWriter;
+        }
+
+        void println(Object o) {
+            printWriter.println(o);
+        }
+    }
+
+    /**
+     * 功能：填充跟踪栈，用于记当前Throwable对象在当前线程的栈帧中的对象状态信息
+     * @see     java.lang.Throwable#printStackTrace()
+     */
+    public synchronized Throwable fillInStackTrace() {
+
+        if (stackTrace != null || backtrace != null /* Out of protocol state */ ) { 
+            fillInStackTrace(0);
+            stackTrace = UNASSIGNED_STACK;
+        }
+
+        return this;
+    }
+
+    // 注意：native修饰符表示当前方法由底层实现
+    private native Throwable fillInStackTrace(int dummy);
+
+    public StackTraceElement[] getStackTrace() {
+        return getOurStackTrace().clone();
+    }
+
+    private synchronized StackTraceElement[] getOurStackTrace() {
+        // Initialize stack trace field with information from
+        // backtrace if this is the first call to this method
+        if (stackTrace == UNASSIGNED_STACK ||
+            (stackTrace == null &amp;&amp; backtrace != null) /* Out of protocol state */) {
+            int depth = getStackTraceDepth();
+            stackTrace = new StackTraceElement[depth];
+            for (int i=0; i &lt; depth; i++)
+                stackTrace[i] = getStackTraceElement(i);
+        } else if (stackTrace == null) {
+            return UNASSIGNED_STACK;
+        }
+        return stackTrace;
+    }
+
+    // 设置跟踪栈
+    public void setStackTrace(StackTraceElement[] stackTrace) {
+        // Validate argument
+        StackTraceElement[] defensiveCopy = stackTrace.clone();
+        for (int i = 0; i &lt; defensiveCopy.length; i++) {
+            if (defensiveCopy[i] == null)
+                throw new NullPointerException(&quot;stackTrace[&quot; + i + &quot;]&quot;);
+        }
+
+        synchronized (this) {
+            if (this.stackTrace == null &amp;&amp; // Immutable stack
+                backtrace == null) // Test for out of protocol state
+                return;
+            this.stackTrace = defensiveCopy;
+        }
+    }
+
+    /**
+     * Returns the number of elements in the stack trace (or 0 if the stack
+     * trace is unavailable).
+     *
+     * package-protection for use by SharedSecrets.
+     */
+    native int getStackTraceDepth();
+
+    /**
+     * Returns the specified element of the stack trace.
+     *
+     * package-protection for use by SharedSecrets.
+     *
+     * @param index index of the element to return.
+     * @throws IndexOutOfBoundsException if {@code index &lt; 0 ||
+     *         index &gt;= getStackTraceDepth() }
+     */
+    native StackTraceElement getStackTraceElement(int index);
+
+    private void readObject(ObjectInputStream s)
+        throws IOException, ClassNotFoundException {
+        s.defaultReadObject();     // read in all fields
+        if (suppressedExceptions != null) {
+            List&lt;Throwable&gt; suppressed = null;
+            if (suppressedExceptions.isEmpty()) {
+                // Use the sentinel for a zero-length list
+                suppressed = SUPPRESSED_SENTINEL;
+            } else { // Copy Throwables to new list
+                suppressed = new ArrayList&lt;&gt;(1);
+                for (Throwable t : suppressedExceptions) {
+                    // Enforce constraints on suppressed exceptions in
+                    // case of corrupt or malicious stream.
+                    if (t == null)
+                        throw new NullPointerException(NULL_CAUSE_MESSAGE);
+                    if (t == this)
+                        throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE);
+                    suppressed.add(t);
+                }
+            }
+            suppressedExceptions = suppressed;
+        } // else a null suppressedExceptions field remains null
+
+        /*
+         * For zero-length stack traces, use a clone of
+         * UNASSIGNED_STACK rather than UNASSIGNED_STACK itself to
+         * allow identity comparison against UNASSIGNED_STACK in
+         * getOurStackTrace.  The identity of UNASSIGNED_STACK in
+         * stackTrace indicates to the getOurStackTrace method that
+         * the stackTrace needs to be constructed from the information
+         * in backtrace.
+         */
+        if (stackTrace != null) {
+
+            // 表示目前来说stackTrace什么都没有
+            if (stackTrace.length == 0) { 
+                stackTrace = UNASSIGNED_STACK.clone();
+
+            // 表示目前来说stackTrace有东西，当这个东西只是充当摆设的
+            }  else if (stackTrace.length == 1 &amp;&amp; 
+                        // Check for the marker of an immutable stack trace
+                        SentinelHolder.STACK_TRACE_ELEMENT_SENTINEL.equals(stackTrace[0])) {
+                stackTrace = null;
+
+            // stackTrace中有东西
+            } else { 
+                for(StackTraceElement ste : stackTrace) {
+                    // 表示StackTraceElement中的每一个位置都不能为null，表示不管你什么原因，因果连不能断掉，断掉的话整个跟踪栈就没有意义了
+                    if (ste == null)
+                        throw new NullPointerException(&quot;null StackTraceElement in serial stream. &quot;);
+                }
+            }
+        } else {
+            // 表示你在没有错误就调用了打印方法，就给你返回一个没有意义的stackTrace给你，满足一下你的好奇心
+            stackTrace = UNASSIGNED_STACK.clone();
+        }
+    }
+
+    /**
+     * Write a {@code Throwable} object to a stream.
+     *
+     * A {@code null} stack trace field is represented in the serial
+     * form as a one-element array whose element is equal to {@code
+     * new StackTraceElement(&quot;&quot;, &quot;&quot;, null, Integer.MIN_VALUE)}.
+     */
+    private synchronized void writeObject(ObjectOutputStream s)
+        throws IOException {
+        // Ensure that the stackTrace field is initialized to a
+        // non-null value, if appropriate.  As of JDK 7, a null stack
+        // trace field is a valid value indicating the stack trace
+        // should not be set.
+        getOurStackTrace();
+
+        StackTraceElement[] oldStackTrace = stackTrace;
+        try {
+            if (stackTrace == null)
+                stackTrace = SentinelHolder.STACK_TRACE_SENTINEL;
+            s.defaultWriteObject();
+        } finally {
+            stackTrace = oldStackTrace;
+        }
+    }
+
+    /**
+     * 有些异常可能会被其他异常掩盖，如果不想特定的异常被掩盖，就可以将制定的异常添加到容器中保存起来
+     * @param exception the exception to be added to the list of suppressed exceptions
+     * @throws IllegalArgumentException if {@code exception} is this throwable; a throwable cannot suppress itself.
+     * @throws NullPointerException if {@code exception} is {@code null}
+     * @since 1.7
+     */
+    public final synchronized void addSuppressed(Throwable exception) {
+
+        // 不能将自己添加到suppressedExceptions中，估计为了防止死循环
+        if (exception == this)
+            throw new IllegalArgumentException(SELF_SUPPRESSION_MESSAGE, exception);
+
+        if (exception == null)
+            throw new NullPointerException(NULL_CAUSE_MESSAGE);
+
+        // 会到这地步的原因是Suppressed功能给禁用掉了，即没有开启，参考构造方法
+        if (suppressedExceptions == null) // Suppressed exceptions not recorded
+            return;
+
+        if (suppressedExceptions == SUPPRESSED_SENTINEL)
+            suppressedExceptions = new ArrayList&lt;&gt;(1);
+
+        suppressedExceptions.add(exception);
+    }
+
+    private static final Throwable[] EMPTY_THROWABLE_ARRAY = new Throwable[0];
+
+    public final synchronized Throwable[] getSuppressed() {
+        if (suppressedExceptions == SUPPRESSED_SENTINEL ||
+            suppressedExceptions == null)
+            return EMPTY_THROWABLE_ARRAY;
+        else
+            return suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
+    }
+}</code></pre>
+<h3 id="在java中throwable有哪些类型和关系？"><a href="#在java中throwable有哪些类型和关系？" class="headerlink" title="在java中throwable有哪些类型和关系？"></a>在java中throwable有哪些类型和关系？</h3><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/001.png" alt></p>
+<h3 id="使用throwable模拟产生一个跟踪栈"><a href="#使用throwable模拟产生一个跟踪栈" class="headerlink" title="使用throwable模拟产生一个跟踪栈"></a>使用throwable模拟产生一个跟踪栈</h3><pre><code class="java">package com.test;
+public class A {
+    public static void main(String[] args) {
+
+        StackTraceElement[] stes = new StackTraceElement[2];
+        /*
+        StackTraceElement参数：
+        *  String declaringClass 错误所在类的全名称
+        *  String methodName 错误所在方法
+        *  String fileName 错误所在文件
+        *  int lineNumber 错误所在行数
+        * */
+        // 注意：栈 -&gt; 后进先出
+        stes[0] = new StackTraceElement(&quot;com.td.Test&quot;, &quot;test()&quot;, &quot;Test.java&quot;, 20);
+        stes[1] = new StackTraceElement(&quot;com.td.Test2&quot;, &quot;test2()&quot;, &quot;Test2.java&quot;, 1);
+
+        // new Throwable(&quot;错误的信息&quot;)
+        Throwable throwable = new Throwable(&quot;我是模拟异常throwable，错误原因是我在模拟异常，科科科&quot;);
+        // 注意：new StackTraceElement[2]数组的空间必须全部使用，否则抛出NullPointerException
+        // 因为跟踪栈信息，必须紧密连接
+        throwable.setStackTrace(stes);
+
+
+        // 打印Throwable的detailMessage(错误描述信息)
+        System.out.println(&quot;message = &quot; + throwable.getMessage());
+        System.out.println(&quot;localizedMessage = &quot; + throwable.getLocalizedMessage());
+
+        // 打印追踪栈信息
+        // 没有设置initCause之前
+        throwable.printStackTrace();
+        /**
+         * output:
+         *
+         * java.lang.Throwable: 我是模拟异常throwable，错误原因是我在模拟异常，科科科
+         *      at com.td.Test.test()(Test.java:20)
+         *      at com.td.Test2.test2()(Test2.java:1)
+         */
+
+        // 设置出现Throwable的原因，也就是平时看到的 Caused by:xxxxxx
+        Throwable throwable_plus = new Throwable().initCause(throwable);
+        // 将 Caused by 显示到首行
+//        Throwable throwable_plus = new Throwable(throwable);
+        // 设置了initCause之后
+        throwable_plus.printStackTrace();
+        /**
+         * output:
+         *
+         * java.lang.Throwable
+         *      at com.test.A.main(A.java:49)
+         * Caused by: java.lang.Throwable: 我是模拟异常throwable，错误原因是我在模拟异常，科科科
+         *      at com.td.Test.test()(Test.java:20)
+         *      at com.td.Test2.test2()(Test2.java:1)
+         */}
+}</code></pre>
+<h2 id="error"><a href="#error" class="headerlink" title="error"></a>error</h2><h3 id="Error类源码"><a href="#Error类源码" class="headerlink" title="Error类源码"></a>Error类源码</h3><pre><code class="java">package java.lang;
+
+public class Error extends Throwable {
+    static final long serialVersionUID = 4980196508277280342L;
+
+    public Error() {
+        super();
+    }
+
+    public Error(String message) {
+        super(message);
+    }
+
+    public Error(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public Error(Throwable cause) {
+        super(cause);
+    }
+
+    protected Error(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
+}</code></pre>
+<h3 id="Error类体系"><a href="#Error类体系" class="headerlink" title="Error类体系"></a>Error类体系</h3><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/002.png" alt></p>
+<h3 id="VirtualMachineError-虚拟机相关"><a href="#VirtualMachineError-虚拟机相关" class="headerlink" title="VirtualMachineError-虚拟机相关"></a>VirtualMachineError-虚拟机相关</h3><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/005.png" alt></p>
+<h4 id="StackOverflowError（栈溢出）"><a href="#StackOverflowError（栈溢出）" class="headerlink" title="StackOverflowError（栈溢出）"></a>StackOverflowError（栈溢出）</h4><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/006.png" alt></p>
+<h4 id="OutOfMemoryError（内存溢出）"><a href="#OutOfMemoryError（内存溢出）" class="headerlink" title="OutOfMemoryError（内存溢出）"></a>OutOfMemoryError（内存溢出）</h4><h5 id="java-heap溢出"><a href="#java-heap溢出" class="headerlink" title="java heap溢出"></a>java heap溢出</h5><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/007.png" alt></p>
+<h5 id="PermGen溢出（jdk1-7及以下）"><a href="#PermGen溢出（jdk1-7及以下）" class="headerlink" title="PermGen溢出（jdk1.7及以下）"></a>PermGen溢出（jdk1.7及以下）</h5><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/008.png" alt></p>
+<p><strong>同样一段代码在jdk1.8下运行</strong></p>
+<ol>
+<li>原因是在jdk1.8中，PermGen（永久代）已经被移除，被metaspace（元空间）替代；原来的PermGen实质是堆内存中的一部分，也叫no heap，用于存储：class元信息、方法信息、静态变量、常量池等等</li>
+<li>metaspace用于存储class元信息，而相对于PermGen的其他内容将存储到堆中</li>
+<li>metaspace位于物理内存，所以受限制于物理内存</li>
+</ol>
+<p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/009.png" alt></p>
+<h5 id="Metaspace溢出（jdk1-8）"><a href="#Metaspace溢出（jdk1-8）" class="headerlink" title="Metaspace溢出（jdk1.8）"></a>Metaspace溢出（jdk1.8）</h5><blockquote>
+<p>使用 -XX:MaxMetaspaceSize=64m 限制元空间大小，否者会一直消耗物理内存</p>
+</blockquote>
+<p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/010.png" alt></p>
+<h2 id="exception"><a href="#exception" class="headerlink" title="exception"></a>exception</h2><h3 id="Exception类源码"><a href="#Exception类源码" class="headerlink" title="Exception类源码"></a>Exception类源码</h3><pre><code class="java">package java.lang;
+
+public class Exception extends Throwable {
+    static final long serialVersionUID = -3387516993124229948L;
+
+    public Exception() {
+        super();
+    }
+
+    public Exception(String message) {
+        super(message);
+    }
+
+    public Exception(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public Exception(Throwable cause) {
+        super(cause);
+    }
+
+    protected Exception(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
+}</code></pre>
+<h3 id="Exception体系"><a href="#Exception体系" class="headerlink" title="Exception体系"></a>Exception体系</h3><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/003.png" alt></p>
+<h3 id="RuntimeException体系"><a href="#RuntimeException体系" class="headerlink" title="RuntimeException体系"></a>RuntimeException体系</h3><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/004.png" alt></p>
+<h3 id="自定义异常"><a href="#自定义异常" class="headerlink" title="自定义异常"></a>自定义异常</h3><pre><code class="java">package com.exception;
+
+/**
+ * @Auther: tandi
+ * @Date: 2019/3/17 01:43
+ * @Description:
+ */
+public class Main {
+    public static void main(String[] args){
+
+        try {
+            new Person(&quot;谭迪&quot;, 200);
+
+            // 捕获以下我们自定义的异常
+        } catch (PersonException e) {
+            // 打印跟踪栈信息
+            e.printStackTrace();
+            /*
+             * output:
+             * Exception in thread &quot;main&quot; com.exception.PersonException: person的岁组不能操作100岁.
+             *   at com.exception.Person.&lt;init&gt;(Main.java:28)
+             *   at com.exception.Main.main(Main.java:11)
+             * */
+
+            // 获取以下出现该错误的person的名称
+            System.out.println(&quot;出错的person是：&quot; + e.getPersonName());
+            /*
+            * output: 
+            * 
+            * 出错的person是：谭迪
+            * */ 
+        }
+    }
+}
+
+class Person {
+    private String name;
+    private int age;
+
+    public Person(String name, int age) {
+        this.name = name;
+
+        // 使用自定义异常
+        if (age &gt; 100) {
+            throw new PersonException(&quot;person的岁组不能操作100岁.&quot;, name);
+        }
+
+        this.age = age;
+    }
+}
+
+class PersonException extends RuntimeException {
+
+    private String personName;
+
+    public PersonException(String message, String personName) {
+        super(message);
+        this.personName = personName;
+    }
+
+    public String getPersonName() {
+        return personName;
+    }
+
+    public void setPersonName(String personName) {
+        this.personName = personName;
+    }
+}</code></pre>
+<h2 id="异常记载"><a href="#异常记载" class="headerlink" title="异常记载"></a>异常记载</h2><h3 id="ClassNotFoundException"><a href="#ClassNotFoundException" class="headerlink" title="ClassNotFoundException"></a>ClassNotFoundException</h3><p>程序通过以下方法加载类，但是没有找到具有指定名称的类的定义：</p>
+<ul>
+<li><code>Class</code> 类中的 <code>forName</code> 方法。  </li>
+<li><code>ClassLoader</code> 类中的 <code>findSystemClass</code> 方法。  </li>
+<li><code>ClassLoader</code> 类中的 <code>loadClass</code> 方法。 </li>
+</ul>
+<p><strong>源码（注意抛出的异常）：</strong></p>
+<pre><code class="java">@CallerSensitive
+public static Class&lt;?&gt; forName(String className) throws ClassNotFoundException {
+    Class&lt;?&gt; caller = Reflection.getCallerClass();
+    return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
+}</code></pre>
+<pre><code class="java">protected final Class&lt;?&gt; findSystemClass(String name) throws ClassNotFoundException {
+    ClassLoader system = getSystemClassLoader();
+    if (system == null) {
+        if (!checkName(name))
+            throw new ClassNotFoundException(name);
+        Class&lt;?&gt; cls = findBootstrapClass(name);
+        if (cls == null) {
+            throw new ClassNotFoundException(name);
+        }
+        return cls;
+    }
+    return system.loadClass(name);
+}</code></pre>
+<pre><code class="java">public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {
+    return loadClass(name, false);
+}</code></pre>
+<h3 id="NoClassDefFoundError"><a href="#NoClassDefFoundError" class="headerlink" title="NoClassDefFoundError"></a>NoClassDefFoundError</h3><p>当 Java 虚拟机或 <code>ClassLoader</code> 实例试图在类的定义中加载，但无法找到该类的定义时，抛出此异常。  </p>
+<p>（Java虚拟机在编译时能找到合适的类，而在运行时不能找到合适的类导致的错误）</p>
+<p><strong>模拟错误：</strong></p>
+<ol>
+<li>创建一个Person.java类，如public class Person{} 即可</li>
+<li>创建一个Main.java类，在main方法中new Person();</li>
+<li>javac编译Person.java生成Person.class</li>
+<li>javac编译Main.java生成Main.class</li>
+<li>将Person.class删除</li>
+<li>java Main运行Main类，出现如下异常</li>
+</ol>
+<p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/011.png" alt></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/">
+      异常体系
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('异常体系'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#throwable"><span class="toc-text">throwable</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简单了解"><span class="toc-text">简单了解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Throwable类源码浅析"><span class="toc-text">Throwable类源码浅析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在java中throwable有哪些类型和关系？"><span class="toc-text">在java中throwable有哪些类型和关系？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用throwable模拟产生一个跟踪栈"><span class="toc-text">使用throwable模拟产生一个跟踪栈</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#error"><span class="toc-text">error</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Error类源码"><span class="toc-text">Error类源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Error类体系"><span class="toc-text">Error类体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VirtualMachineError-虚拟机相关"><span class="toc-text">VirtualMachineError-虚拟机相关</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#StackOverflowError（栈溢出）"><span class="toc-text">StackOverflowError（栈溢出）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#OutOfMemoryError（内存溢出）"><span class="toc-text">OutOfMemoryError（内存溢出）</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#java-heap溢出"><span class="toc-text">java heap溢出</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#PermGen溢出（jdk1-7及以下）"><span class="toc-text">PermGen溢出（jdk1.7及以下）</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Metaspace溢出（jdk1-8）"><span class="toc-text">Metaspace溢出（jdk1.8）</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exception"><span class="toc-text">exception</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Exception类源码"><span class="toc-text">Exception类源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Exception体系"><span class="toc-text">Exception体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RuntimeException体系"><span class="toc-text">RuntimeException体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义异常"><span class="toc-text">自定义异常</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#异常记载"><span class="toc-text">异常记载</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ClassNotFoundException"><span class="toc-text">ClassNotFoundException</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NoClassDefFoundError"><span class="toc-text">NoClassDefFoundError</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

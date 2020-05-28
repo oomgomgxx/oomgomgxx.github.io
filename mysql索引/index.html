@@ -1,0 +1,361 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> MySQL索引闲记-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>MySQL索引闲记</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2019-06-16 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="什么是索引？"><a href="#什么是索引？" class="headerlink" title="什么是索引？"></a>什么是索引？</h2><ol>
+<li>使用目录来去理解索引是最好的方法</li>
+<li>不同类型的索引实现方式不同</li>
+<li>就算是相同类型的索引在不同的存储引擎中实现方式也可能有所不同</li>
+</ol>
+<h2 id="什么情况需要添加索引？"><a href="#什么情况需要添加索引？" class="headerlink" title="什么情况需要添加索引？"></a>什么情况需要添加索引？</h2><ol>
+<li>当表的数据量越来越大时，有人建议超过300条记录就该加上索引了</li>
+<li>频繁被用作条件查询、表连接条件、分组、排序的字段</li>
+<li>索引性高的字段，通俗点说就是重复性小的字段，最好是唯一字段</li>
+</ol>
+<h2 id="索引是不是越多越好和那些字段不适合用索引？"><a href="#索引是不是越多越好和那些字段不适合用索引？" class="headerlink" title="索引是不是越多越好和那些字段不适合用索引？"></a>索引是不是越多越好和那些字段不适合用索引？</h2><ol>
+<li>答案是否定的。原因是索引是独立的数据结构，需要花费额外的时间和磁盘空间来维护</li>
+<li>频繁进行修改的字段不适合做索引，原因同上</li>
+<li>值较大的字段不适合作为索引，上面已经提到索引是需要额外的磁盘空间存放的，所以如果字段值大且如果表的记录较多的时，索引所占的磁盘空间就会急速增加</li>
+<li>离散度低的字段不适合</li>
+</ol>
+<h2 id="索引类型"><a href="#索引类型" class="headerlink" title="索引类型"></a>索引类型</h2><p><img src="/mysql%E7%B4%A2%E5%BC%95/8.png" alt></p>
+<h2 id="常见索引数据结构"><a href="#常见索引数据结构" class="headerlink" title="常见索引数据结构"></a>常见索引数据结构</h2><h3 id="散列表"><a href="#散列表" class="headerlink" title="散列表"></a>散列表</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/3.png" alt></p>
+<ul>
+<li>散列表数据结构由 数组 和 链表 组成，通过对关键字段 key 进行哈希计算后再用其计算出数组的下标值以确立存储位置。</li>
+<li>散列表最理想的查询时间复杂度是O(1)，即没有任何的哈希冲突，且表示存储的数据离散度非常高（如身份证号码），此时散列表优势明显。但如果存储时出现哈希冲突，就需要使用<code>拉链法</code>来形成链表解决冲突，而因为链表查找需要一个个遍历，因此这时查询复杂度将退化为O（n）。</li>
+<li>使用散列表做为索引数据结构时需要注意其以下特性：<ul>
+<li>散列表并不支持多列（联合）索引的<code>最佳左前缀</code>原则，因为在计算数组下标时会将多个索引列一同计算以达到尽可能离散</li>
+<li>散列表因为采用哈希算法来确立数组下标，因此是没有顺序可言的，所以散列表并不支持<code>区间操作</code>和<code>排序</code></li>
+<li>散列表只<code>适合简单的等值操作</code>，而其他操作并不能发挥散列表的特性，因此在使用前应考虑场合</li>
+</ul>
+</li>
+</ul>
+<h3 id="有序数组"><a href="#有序数组" class="headerlink" title="有序数组"></a>有序数组</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/4.png" alt></p>
+<ul>
+<li>有序数组的特点是内存连续，所以在<code>等值查询</code>和<code>区间查询</code>上效率是非常高的</li>
+<li>但需要意识到的是，有序数组因为要求内存连续的特性，所以在进行增删操作时需要挪动后续的数据以保持连续性，因此有序数组会随着数据量的增大，效率会逐渐降低</li>
+<li>因此，从上可以得出结论就是，有序数组比较适用于<code>读多写少</code>的场景</li>
+</ul>
+<h3 id="二叉查找树、平衡二叉查找树"><a href="#二叉查找树、平衡二叉查找树" class="headerlink" title="二叉查找树、平衡二叉查找树"></a>二叉查找树、平衡二叉查找树</h3><blockquote>
+<p> 图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/5.png" alt></p>
+<ul>
+<li><p>二叉查找树的特点是左边子节点小于右边子节点，因此除了<code>有序</code>之外还可以使用<code>二分查找</code>的高效检索方法</p>
+</li>
+<li><p>虽然二叉查找树从综合性来看效率不错，但是也存在一些隐患，例如极端情况下如果数据呈递增表现，那么就会出现数据结构退化的现象，即二叉树退化为链表，从时间复杂度O（logn）退化成O（n），因此会影响检索数据的效率</p>
+</li>
+<li><p>对于二叉树数据结构退化这种现象可以通过使用平衡版二叉查找来解决。所谓的平衡二叉树指的是根节点到叶节点的路径长度一样（绝对平衡）。例如插入数据时，平衡二叉树判断到路径长度不一致就会触发节点自旋操作以恢复到平衡以确保数据查询的时间复杂度。但平衡二叉树并不是十全十美的，因为如果发生大量修改节点操作的话就会出大量的自旋操作导致性能下降</p>
+</li>
+<li><p>以个人目前的观察，其实直接使用二叉树数和绝对平衡二叉树来做存储结果的系统甚少，用的较多的都是红黑树，因为红黑树首先它是平衡二叉查找树，但并非绝对平衡，因为红黑树只要求左右子节点的黑色节点数量相等即可，所以光看这个特性就可以得出结论，红黑树可以降低绝对平衡二叉树的大自旋操作和普通二叉树可能会退化成链表的隐患，因此红黑树其实是 二叉查找树和绝对平衡二叉树的折中选项</p>
+</li>
+</ul>
+<h3 id="B-树"><a href="#B-树" class="headerlink" title="B+树"></a>B+树</h3><blockquote>
+<p>图片源自网络 </p>
+</blockquote>
+<img src="/mysql%E7%B4%A2%E5%BC%95/7.png" style="zoom:67%;">
+
+<ul>
+<li><p>B+树的B是balance的意思，即B+Tree也是平衡树，且是棵多叉树，一般树高保持在3-4左右，即通常一次查找只需3-4次IO即可</p>
+</li>
+<li><p>B+树的特点是普通节点不记录数据，而数据全部位于叶子节点上，即所谓的聚簇索引，而且B+树的叶子节点的数据呈有序递增之余每个叶子节点都包含左右两边叶子节点的引用，因此天然支持区间和排序等操作</p>
+</li>
+<li><p>首先是 B+树 和 普通二叉查找树、平衡二叉树的对比。B+树 因为是平衡树所以不存在数据结退化的现象，而且 B+树 一般高度比较小因此在效率和自旋等方面都要比 普通二叉查找树和平衡二叉树 稳定和高效</p>
+</li>
+<li><p>还有需要谨记的一件事就是，B+树思想是希望普通节点尽可能记录多些自己子节点的信息。如在MySQL中，MySQL默认的内存页大小是16k，因此如果每个节点都只保存左右子节点的信息的话实在是浪费内存，也可以说1次IO操作查询到的数据就变少了，因此 B+树 普通节点并没有拿来存储当前节点的数据，而是存储了多个子节点的引用信息以减少IO操作来提高操作效率。B+树这种做法其实就是空间换时间，也因此现在的关系型数据库如果不是有特别场景的话都是用的B+树来实现索引的</p>
+</li>
+<li><p>最后聊一聊B树，B树是B+树的前身，数据结构如下</p>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/9.png" alt></p>
+</li>
+<li><p>从上面的图可以看出B树的数据和一般二叉查找数一样是存储在每个节点上的</p>
+</li>
+<li><p>在先前已经提到过，B+树 是希望节点多存储些子节点的信息以此来降低IO的检索次数来提高效率。那么不禁地有个这样的问题，就是B+树这么好，那么B树还有存在的意义吗？答案是肯定的，以本人了解，在NoSQL的MongoDB中就采用B+树来存储数据，主要的原因是MongoDB是一种文档存储类型的NoSQL，而且操作的都是半结构化数据（数据结构可以变动），因此数据呈聚合型。所以如果数据不存储在节点上的话就需要更多的额外操作来将数据聚合，因此会效率低下，所以B树就成为了B+数之下的首选</p>
+</li>
+</ul>
+<blockquote>
+<p>小知识：</p>
+<ul>
+<li>聚簇索引指数据和索引顺序是一致的，且保存在一起。 聚簇索引并不是索引类型，而是一种数据的存储方式</li>
+<li>MySQL存储引擎InnoDB的主键就是聚簇索引，而二级索引（也有人叫辅助索引）虽然也是使用B+树实现，但是二级索引的叶子节点中保存的只是主键索引的引用，所以如果使用二级索引去检索记录的步骤是，先根据二级索引查找的主键索引，然后根据主键索引引用进行<code>回表查询</code></li>
+</ul>
+</blockquote>
+<h2 id="关于索引和约束"><a href="#关于索引和约束" class="headerlink" title="关于索引和约束"></a>关于索引和约束</h2><ul>
+<li><p>当添加primary key时，会自动创建<code>主键索引</code>且同时添加<code>unique</code>和<code>not null</code>两个约束</p>
+</li>
+<li><p>当添加foreign key时，则处理添加<code>外键约束</code>之外，同时还会创建<code>普通索引</code>（原因是避免死锁）</p>
+</li>
+<li><p>当添加unique key时，会自动添加<code>唯一约束</code>且同时创建<code>普通索引</code></p>
+</li>
+</ul>
+<blockquote>
+<p>例子</p>
+</blockquote>
+<pre><code class="sql">CREATE TABLE address(
+    a_id INT PRIMARY KEY auto_increment,
+    a_addr VARCHAR(100)
+)ENGINE=INNODB DEFAULT CHARSET=utf8
+
+CREATE TABLE person(
+    p_id int PRIMARY KEY auto_increment, -- 主键（默认约束 unique 和 not null）
+    p_id_card VARCHAR(18) UNIQUE, -- 方法1: 添加唯一约束且创建唯一索引
+    p_name VARCHAR(10), 
+    p_addr VARCHAR(100) UNIQUE,
+    p_age INT,
+    UNIQUE KEY uindex_age (p_age), -- 方法2: 添加唯一约束且创建唯一索引
+    -- CONSTRAINT uindex_age UNIQUE KEY (p_age), -- 方法3: 添加唯一约束且创建唯一索引
+    CONSTRAINT fk_addr_address_a_addr FOREIGN KEY(p_addr) references test.address(a_addr)  -- 添加外键约束且创建一个普通索引
+)ENGINE=INNODB DEFAULT CHARSET=utf8</code></pre>
+<p><strong>拓展小知识：</strong></p>
+<ul>
+<li><p>首先外键是一个跨表关联机制，外键字段的操作表现为，可以为null和可以重复，但是外键字段的值不能超出所关联的表的字段值。例如 student.tid 外键引用了 teacher.id，那么 student.tid 的值就不能超出 teacher.id 的返回，例如设置一个 teacher.id 不存在的值，这是可以的。</p>
+</li>
+<li><p>那么为什么说外键如果不加索引的话就可能会死锁呢？如上所述外键是一种约束机制，控制着子表（student）的值不能超过父表（teacher）字段值的范围。那么如何做到在增删改父表期间又能保证不破坏约束呢？答案就是加锁，通过悲观锁进行互斥从而避免同步问题。但如果外键没有建立索引，在操作父表时就不能准确地知道子表的那条记录引用了自己，因此而不能进行行级别的加锁而被迫对整个表进行加锁，而这就是导致死锁的根源。案例如下（旧版本oracle的外键是不加索引的）：</p>
+<pre><code class="sql">-- oracle默认隔离级别:读已提交
+-- session-1
+delete from student where id=1; // student加行锁
+delete from teacher where id=1; // teacher加行锁，并请求往student加表锁
+-- session-2 
+delete from student where id=2; // student加行锁
+delete from teacher where id=2; // teacher加行锁，并请求往student加表锁</code></pre>
+</li>
+<li><p>死锁指的是在并发时，持有锁的一方因为某些原因而导致未能释放锁从而造成其他想要获取该锁的线程或事物一致处于阻塞状态</p>
+</li>
+<li><p><strong>分析案例：</strong>当session-1请求往student加表锁时，因为此时session-2持有student的行锁，所以session-1会阻塞等待session-2释放行锁，但由于session-2的事物还没提交所以session-2并不会释放锁。<br>此时同样的理由，session-2在删除id为2的teacher记录是也会申请往student加表锁，但session-1已经处于阻塞状态所以不可能释放锁，从而导致session-1和session-2交叉等待，导致死锁的发生。但如果此时外键有索引的话，那么session-1和session-2都不需要互相等待其释放锁，因为行锁粒度小，所以session-1和session-2要不是操作同一条记录的话是不需要等待对方释放锁的，从而也降低了死锁出现的记录。</p>
+</li>
+<li><p>需要多说一句的是，锁的粒度越大的话其实发生死锁的记录就越少，如案例中一开始就加表锁的话是不可能存在两个会话同时持有锁的情况的（悲观锁），所以就不会有交叉等待的情况。但表锁会降低事务并发的吞吐量，这点需要明白</p>
+</li>
+</ul>
+<h2 id="索引是不是越多越好"><a href="#索引是不是越多越好" class="headerlink" title="索引是不是越多越好"></a>索引是不是越多越好</h2><ul>
+<li>索引本身不属于我们存储的数据的一部分，而是从中独立出来的一个’目录’，所以索引越多的话就会占据越多的磁盘空间</li>
+<li>当我们往表中插入数据时，数据库需要额外的操作来维护索引结构，因此如果索引越多的话，数据库消耗的额外操作就越多，从而导致性能的损耗</li>
+</ul>
+<h2 id="什么是覆盖索引"><a href="#什么是覆盖索引" class="headerlink" title="什么是覆盖索引"></a>什么是覆盖索引</h2><ul>
+<li>覆盖索引和聚簇索引一样都不是索引的类型，覆盖索引准确点说其实是一种现象。通俗点说就是通过索引字段查找就能直接得到结果的查询，所以覆盖索引的效率是非常高的，例如使用主键来查询，因为上面我们已经分析过B+数，在B+数中主键为聚簇索引，所以可以直接在其叶子节点中获取到整条记录</li>
+<li>因为覆盖索引效率非常高，所以网上经常有人建议尽量少用<code>select *</code>其实大体有以下两个原因：<ul>
+<li>在实际工作中很多情况下其实都不需要一次查询所有字段，所以<code>select *</code>就返回了与本次业务无关的冗余数据，同时也增加了数据的传输开销</li>
+<li>减少覆盖索引的出现。例如使用二级索引需来查询记录的id值，又或者用组合索引的左前缀查找右边的字段等这些操作都是覆盖索引，但如果使用<code>select *</code>的话因为是二级索引，所以叶子节点不可能存储了整条记录的数据，因此肯定是需要进行回表查询的</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>小结</p>
+</blockquote>
+<ul>
+<li>如果想要提高覆盖索引的出现，就应该少用<code>select *</code>，即能不用就不用</li>
+<li>如果某几个字段经常被查询或者组合使用，则应该建立组合索引，而字段的顺序可以由字段的使用频率从高到底由左往右排来组成组合索引</li>
+</ul>
+<h2 id="什么情况下索引会失效"><a href="#什么情况下索引会失效" class="headerlink" title="什么情况下索引会失效"></a>什么情况下索引会失效</h2><ul>
+<li>索引值类型为<code>字符型</code>时，使用<code>值</code>进行运算以及<code>不使用&#39;&#39;包裹</code>都会导致索引失效</li>
+<li>索引值类型为<code>字符型</code>或者索引类型为<code>组合索引</code>时，使用 <code>!=</code>和 <code>&lt;&gt;</code>会导致索引失效</li>
+<li><code>索引列</code>上使用<code>函数</code>或进行<code>运算</code>会导致索引失效。注意这里不是指值，而是索引列，例如 left(‘empId’, 5) = 100</li>
+<li>索引值类型为<code>字符型</code>时，使<code>用了左模糊匹配</code>，既 like ‘%索引列’ 会导致索引失效。如果值类型为<code>数值型</code>则使用<code>模糊查询</code>会直接使<code>索引失效</code>。</li>
+<li>使用<code>组合索引</code>时失效情况：<ul>
+<li><code>没有遵循最佳左前缀</code></li>
+<li>使用 <code>!=</code>和 <code>&lt;&gt;</code>操作，即使符合最佳左前缀也会导致索引失效</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年7月1日11:01:51 — 丰富索引数据结构概念，删减多余内容</li>
+</ul>
+
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/mysql%E7%B4%A2%E5%BC%95/">
+      MySQL索引闲记
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('MySQL索引闲记'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是索引？"><span class="toc-text">什么是索引？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么情况需要添加索引？"><span class="toc-text">什么情况需要添加索引？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#索引是不是越多越好和那些字段不适合用索引？"><span class="toc-text">索引是不是越多越好和那些字段不适合用索引？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#索引类型"><span class="toc-text">索引类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见索引数据结构"><span class="toc-text">常见索引数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#散列表"><span class="toc-text">散列表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#有序数组"><span class="toc-text">有序数组</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二叉查找树、平衡二叉查找树"><span class="toc-text">二叉查找树、平衡二叉查找树</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-树"><span class="toc-text">B+树</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于索引和约束"><span class="toc-text">关于索引和约束</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#索引是不是越多越好"><span class="toc-text">索引是不是越多越好</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是覆盖索引"><span class="toc-text">什么是覆盖索引</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么情况下索引会失效"><span class="toc-text">什么情况下索引会失效</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

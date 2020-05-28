@@ -1,0 +1,473 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 从ConcurrentModificationException分析ArrayList迭代器-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>从ConcurrentModificationException分析ArrayList迭代器</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-02-11 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>&emsp;&emsp;最近突然想起刚毕业那会找工作时面试被问了个这样的问题。就是“使用增强for循环遍历ArrayList（List集合）时删除其中的元素是否会出现异常？”。说实话当时真把我愣住了，我当时的回答是：<code>ArrayList内部使用的是Object数组，所以在增删时会自动挪动下标，而且对于数组而言长度是固定的，没有元素的位置会用null填充，虽然我没试过但我觉得不会抛异常。</code> </p>
+<p>&emsp;&emsp;现在想起这件事自己都觉得有些搞笑，哈哈，经验少也是没办法。现在回想既然面试官问得出这样的问题肯定是会抛出异常的，这个拿大腿都能想到，但是为什么呢？今天就这个问题来分析一下源码到底是怎么一回事。</p>
+<p>&emsp;&emsp;文章分为两部分。首先是了解<code>迭代器设计模式</code>，然后再拿ArrayList作为例子进行源码分析。</p>
+<h2 id="迭代器模式"><a href="#迭代器模式" class="headerlink" title="迭代器模式"></a>迭代器模式</h2><h3 id="用途"><a href="#用途" class="headerlink" title="用途"></a>用途</h3><ul>
+<li>遍历集合中的元素</li>
+<li>优点是无需暴露集合内部信息，且迭代器可以为不同结构集合指定统一接口</li>
+<li>缺点是每一个迭代器实现只对应一个特定结构的集合，也就是说如果集合类型繁多就增加迭代器的实现的个数</li>
+</ul>
+<h3 id="自定义迭代器"><a href="#自定义迭代器" class="headerlink" title="自定义迭代器"></a>自定义迭代器</h3><ul>
+<li>迭代器模式其实也很简单，主要角色有：<code>自定义集合</code>、<code>迭代器接口</code>、<code>迭代器实现</code>3个</li>
+<li>以下例子并不严谨，只作为了解迭代器的参考</li>
+</ul>
+<h4 id="自定义集合"><a href="#自定义集合" class="headerlink" title="自定义集合"></a>自定义集合</h4><blockquote>
+<p>以数组作为内部存储结构（模仿ArrayList）</p>
+</blockquote>
+<pre><code class="java">public class MyList&lt;T&gt; {
+    private Object[] list;
+    private int savePosition;
+    private int size;
+
+    public MyList() {
+        list = new Object[10];
+    }
+
+    public void add(T t) {
+
+        if (savePosition &gt;= list.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+
+        this.list[savePosition++] = t;
+        size ++ ;
+    }
+
+    public T get(int position) {
+
+        if (position &gt;= list.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+
+        return (T) this.list[position];
+    }
+
+    // 返回实质存储的元素个数
+    public int size() {
+        return this.size;
+    }
+
+    // 返回迭代器
+    public Iterator iterator() {
+        return new MyListIterator(this.list, size);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(&quot;[&quot;);
+        for (int i = 0; i &lt; list.length; i++) {
+            if (list[i] != null) {
+                builder.append(list[i]);
+                if ((i+1) &lt; list.length &amp;&amp; list[i+1] != null) {
+                    builder.append(&quot;, &quot;);
+                }
+            }
+        }
+        builder.append(&quot;]&quot;);
+        return builder.toString();
+    }
+}</code></pre>
+<h4 id="迭代器接口"><a href="#迭代器接口" class="headerlink" title="迭代器接口"></a>迭代器接口</h4><pre><code class="java">public interface Iterator&lt;E&gt; {
+
+    boolean hasNext();
+
+    E next();
+
+    default void remove() {
+        throw new UnsupportedOperationException(&quot;remove&quot;);
+    }
+
+    default void forEachRemaining(Consumer&lt;? super E&gt; action) {
+        Objects.requireNonNull(action);
+        while (hasNext())
+            action.accept(next());
+    }
+}</code></pre>
+<h4 id="迭代器实现"><a href="#迭代器实现" class="headerlink" title="迭代器实现"></a>迭代器实现</h4><pre><code class="java">import java.util.Iterator;
+
+public class MyListIterator&lt;T&gt; implements Iterator {
+
+    private Object[] list;
+    private int position;
+
+    public MyListIterator(Object[] ts, int size) {
+        this.list = new Object[size];
+        int index = 0;
+        for (int i = 0; i &lt;ts.length ; i++) {
+            if (ts[i] != null) {
+                list[index++] = ts[i];
+            }
+        }
+    }
+
+    @Override
+    public T next() {
+        return (T) list[position++];
+    }
+
+    @Override
+    public boolean hasNext() {
+        return position != list.length;
+    }
+}</code></pre>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><ul>
+<li>迭代器的本质就是用来遍历某个时间点集合中的元素</li>
+<li>在上面的例子中，MyListIterator 相当于在 MyList.iterator() 时copy了一份 MyList 的元素然后进行遍历</li>
+<li>结合上面这个简单的例子可以得出结论，在迭代器迭代元素过程中，源集合序列是否允许被修改。上面例子我并没有做任何处理，所以在迭代器迭代元素过程中源集合序列是可以被修改。但这样就存在问题了，就是并发操作时迭代的元素序列可能会与源集合序列不一致。那为什么要引出这个问题呢？这是为了响应文章开头讨论的问题。即为什么增强for循环遍历List集合时删除元素会抛出异常，原因有以下两个：<ul>
+<li>增强for循环使用迭代器实现（可以通过Debug观察）</li>
+<li>在JDK中集合的迭代器实现是不允许在迭代元素过程中源集合序列被修改的，即为了保证迭代元素序列和源元素序列的一致性。</li>
+</ul>
+</li>
+</ul>
+<h2 id="ArrayList迭代器浅析"><a href="#ArrayList迭代器浅析" class="headerlink" title="ArrayList迭代器浅析"></a>ArrayList迭代器浅析</h2><blockquote>
+<p>异常问题</p>
+</blockquote>
+<pre><code class="java">public class Main {
+    public static void main(String[] args) {
+
+//        List&lt;String&gt; list = new LinkedList&lt;&gt;();
+        List&lt;String&gt; list = new ArrayList&lt;&gt;();
+        list.add(&quot;1&quot;);
+        list.add(&quot;2&quot;);
+        list.add(&quot;3&quot;);
+
+        Iterator&lt;String&gt; iterator = list.iterator();
+
+        for (String s : list) {
+            if (&quot;1&quot;.equals(s)) {
+                list.remove(s);
+            }
+        }
+
+        /**
+         * 输出结果：
+         * Exception in thread &quot;main&quot; java.util.ConcurrentModificationException
+         *     at java.util.ArrayList$Itr.checkForComodification(ArrayList.java:909)
+         *     at java.util.ArrayList$Itr.next(ArrayList.java:859)
+         *     at wiki.td.Main.main(Main.java:16)
+         */
+    }
+}</code></pre>
+<ul>
+<li>可以看到在增强for循环遍历过程中如果删除一个元素会抛出 ConcurrentModificationException 。该异常的用意是并发修改是不允许的（说明源自 ConcurrentModificationException 类注释）。</li>
+<li>从异常中可以看到问题出自 ArrayList$Itr.next 方法，该方法中触发了 ArrayList$Itr.checkForComodification 导致了异常的发生</li>
+</ul>
+<blockquote>
+<p>ArrayList$Itr （迭代器实现）源码</p>
+</blockquote>
+<pre><code class="java">private class Itr implements Iterator&lt;E&gt; {
+    int cursor;       // index of next element to return
+    int lastRet = -1; // index of last element returned; -1 if no such
+
+    // 【重】modCount是源集合序列（即List）中的成员变量
+    // modCount代表着源集合序列的操作次数。即在List返回Iterator时
+    // 就会实例化1个Iterator，这时expectedModCount就固定了值为modCount
+    // 所以一旦在增强for循环（迭代器）迭代元素过程中源集合序列被修改，就会导致
+    // expectedModCount 不等于 modCount，因此被视为并发问题导致集合序列不一致
+    // 随即就会抛出 ConcurrentModificationException
+    int expectedModCount = modCount;
+
+    Itr() {}
+
+    // 是否有下一个元素
+    public boolean hasNext() {
+        return cursor != size;
+    }
+
+    // 获取下一个元素
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public E next() {
+
+        // 迭代获取下一个元素之前检查一下源集合序列是否有被修改
+        // 如果有则抛异常
+        checkForComodification();
+
+        int i = cursor;
+        if (i &gt;= size)
+            throw new NoSuchElementException();
+
+        Object[] elementData = ArrayList.this.elementData;
+        if (i &gt;= elementData.length)
+            throw new ConcurrentModificationException();
+
+        cursor = i + 1;
+        return (E) elementData[lastRet = i];
+    }
+
+    // 移除当前遍历到的元素
+    // 【重】如果想要在迭代器迭代过程中删除元素，只能通过Iterator的remove方法实现
+    // Iterator.remove方法之所以不会抛出异常是因为迭代器remove后随即重新赋值了expectedModCount的值，因此checkForComodification()不会抛异常
+    // 那么我们可以得出这么一个结论，就是为什么增强for循环中删除元素会抛异常，是因为删除了元素之后没有重新修改迭代器中的expectedModCount值
+    public void remove() {
+        if (lastRet &lt; 0)
+            throw new IllegalStateException();
+        checkForComodification();
+
+        try {
+            // 调用当前实例的外部类ArrayList的remove方法删除当前遍历到的元素
+            ArrayList.this.remove(lastRet);
+            cursor = lastRet;
+            lastRet = -1;
+            // 重新设置expectedModCount值
+            expectedModCount = modCount;
+        } catch (IndexOutOfBoundsException ex) {
+            throw new ConcurrentModificationException();
+        }
+    }
+
+    // JDK 1.8 新方法，用于支持函数式编程
+    // 即无需再手动写while或者for操作迭代器，可以直接Iterator.forEachRemaining使用Lambda传入Consumer消费（迭代）元素
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public void forEachRemaining(Consumer&lt;? super E&gt; consumer) {
+        Objects.requireNonNull(consumer);
+        final int size = ArrayList.this.size;
+        int i = cursor;
+        if (i &gt;= size) {
+            return;
+        }
+        final Object[] elementData = ArrayList.this.elementData;
+        if (i &gt;= elementData.length) {
+            throw new ConcurrentModificationException();
+        }
+        while (i != size &amp;&amp; modCount == expectedModCount) {
+            consumer.accept((E) elementData[i++]);
+        }
+        // update once at end of iteration to reduce heap write traffic
+        cursor = i;
+        lastRet = i - 1;
+        checkForComodification();
+    }
+
+    // 检测源集合序列在迭代器迭代过程中是否有被修改
+    final void checkForComodification() {
+        if (modCount != expectedModCount)
+            throw new ConcurrentModificationException();
+    }
+}</code></pre>
+<ul>
+<li>可以在源码中看到 next 方法中会先触发 checkForComodification 来检测源集合序列是否被修改，没有被修改才会继续操作，否则抛出异常。但我们想深一层，next 和 checkForComodification 两个方法其实都不是线程安全的，因此在多线程并发过程中并不能保证一致性。那么为什么需要 checkForComodification 呢？或者问 checkForComodification 的意义何在？其实这种操常被人叫做 <code>fail-fast 机制</code>，即快速失败。大概的用意是，如果不满足条件就没必要继续执行了，这时可以是跳过操作（比如continue和break），或者是抛出异常等等。这操作好比如我们在执行逻辑前会先判断传入的参数是否为null，如果为null则抛异常，道理是一样的。</li>
+</ul>
+<h2 id="增强for循环中删除元素是不是一定抛异常？"><a href="#增强for循环中删除元素是不是一定抛异常？" class="headerlink" title="增强for循环中删除元素是不是一定抛异常？"></a>增强for循环中删除元素是不是一定抛异常？</h2><p>&emsp;&emsp;答案是否定的。原因是增强for循环本质是 Iterator 。而 Iterator 的操作步骤是先 hasNext 判断有没有下一个元素(<code>判断的依据是源集合的size变量</code>)。然后如果 hasNext 返回 true 才可以进行 next 操作。</p>
+<p>&emsp;&emsp;所以什么情况下在增强for循环中删除元素不会抛出 ConcurrentModificationException 异常呢？答案就是，删除元素后（导致源集合序列的size减1）hasNext 正好返回false就不会抛出异常（删除的元素正好是倒数第2个）。因为返回false就不会触发 next  方法的 checkForComodification 操作。</p>
+<p>例子如下：</p>
+<pre><code class="java">List&lt;String&gt; list = new ArrayList&lt;&gt;();
+list.add(&quot;1&quot;);
+list.add(&quot;2&quot;);
+list.add(&quot;3&quot;); 
+
+Iterator&lt;String&gt; iterator = list.iterator();
+
+for (String s : list) {
+    // 删除的元素正好是倒数第2个时就不会抛出异常
+    // 删除元素后导致list的size-1，但因为hasNext依据是size
+    // 所以size-1后hasNext返回false导致迭代直接结束所以不会触发next抛出异常
+    if (&quot;2&quot;.equals(s)) { 
+        list.remove(s); 
+    }
+}</code></pre>
+<p>hasNext方法：</p>
+<pre><code class="java">public boolean hasNext() {
+    // cursor记录的是将要返回的元素的下标值
+    // 即删除倒数第2个元素，导致size-1后触发hasNext导致了cursor等于size退出迭代
+    return cursor != size;
+}</code></pre>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/%E4%BB%8EConcurrentModificationException%E5%88%86%E6%9E%90ArrayList%E8%BF%AD%E4%BB%A3%E5%99%A8/">
+      从ConcurrentModificationException分析ArrayList迭代器
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('从ConcurrentModificationException分析ArrayList迭代器'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#迭代器模式"><span class="toc-text">迭代器模式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#用途"><span class="toc-text">用途</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义迭代器"><span class="toc-text">自定义迭代器</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自定义集合"><span class="toc-text">自定义集合</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#迭代器接口"><span class="toc-text">迭代器接口</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#迭代器实现"><span class="toc-text">迭代器实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#小结"><span class="toc-text">小结</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ArrayList迭代器浅析"><span class="toc-text">ArrayList迭代器浅析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#增强for循环中删除元素是不是一定抛异常？"><span class="toc-text">增强for循环中删除元素是不是一定抛异常？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

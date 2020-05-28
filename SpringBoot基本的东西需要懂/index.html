@@ -1,0 +1,930 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> SpringBoot基本的东西需要懂-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>SpringBoot基本的东西需要懂</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-08-07 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="SpringBoot自动配置的基本原理"><a href="#SpringBoot自动配置的基本原理" class="headerlink" title="SpringBoot自动配置的基本原理"></a>SpringBoot自动配置的基本原理</h2><h3 id="初始化自动配置信息"><a href="#初始化自动配置信息" class="headerlink" title="初始化自动配置信息"></a>初始化自动配置信息</h3><p>以下为一个简单的springboot启动类</p>
+<pre><code class="java">@SpringBootApplication
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}</code></pre>
+<p>跟中代码到<code>SpringApplication构造函数</code></p>
+<pre><code class="java">public SpringApplication(ResourceLoader resourceLoader, Class&lt;?&gt;... primarySources) {
+  this.resourceLoader = resourceLoader;
+  this.primarySources = new LinkedHashSet&lt;&gt;(Arrays.asList(primarySources));
+
+  // 当前应用的类型：none、servlet、reactive
+  // 默认为none、添加web模块后为servlet、添加webflux模块后为reactive
+  this.webApplicationType = WebApplicationType.deduceFromClasspath();
+
+  // 设置初始化器
+ setInitializers((Collection)getSpringFactoriesInstances(ApplicationContextInitializer.class));
+
+  // 设置监听器
+ setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+
+  // 设置当前springboot应用的主类，即当前的 DemoApplication.class
+ this.mainApplicationClass = deduceMainApplicationClass();
+}</code></pre>
+<p>可以注意到，其中 <code>设置初始化器</code> 和 <code>设置监听器</code> 调用的是同一个方法 <code>getSpringFactoriesInstances</code>，从方法的名称大概可以得知该方法和获取spring工厂实例有关，方法如下</p>
+<pre><code class="java">private &lt;T&gt; Collection&lt;T&gt; getSpringFactoriesInstances(Class&lt;T&gt; type, Class&lt;?&gt;[] parameterTypes, Object... args) {
+  // 获取类加载器
+  ClassLoader classLoader = getClassLoader();
+
+  // 获取命名（名称）配置
+  // Use names and ensure unique to protect against duplicates
+  Set&lt;String&gt; names = new LinkedHashSet&lt;&gt;(SpringFactoriesLoader.loadFactoryNames(type, classLoader));
+
+  // 根据名称创建实例
+  List&lt;T&gt; instances = createSpringFactoriesInstances(type, parameterTypes, classLoader, args, names);
+  AnnotationAwareOrderComparator.sort(instances);
+  return instances;
+}
+</code></pre>
+<p>根据上面的方法，进一步追中方法 <code>SpringFactoriesLoader.loadFactoryNames(type, classLoader)</code>,以下为主要代码</p>
+<pre><code class="java">public static List&lt;String&gt; loadFactoryNames(Class&lt;?&gt; factoryClass, @Nullable ClassLoader classLoader) {
+  String factoryClassName = factoryClass.getName();
+  return loadSpringFactories(classLoader).getOrDefault(factoryClassName,      Collections.emptyList());
+}    
+
+private static Map&lt;String, List&lt;String&gt;&gt; loadSpringFactories(@Nullable ClassLoader classLoader) {
+    // 省略...
+
+  try {
+    // 可以看到这里加载了类路径`META-INF`下的`spring.factories`文件
+    // public static final String FACTORIES_RESOURCE_LOCATION = &quot;META-INF/spring.factories&quot;;
+    Enumeration&lt;URL&gt; urls = (classLoader != null ?
+                             classLoader.getResources(FACTORIES_RESOURCE_LOCATION) :
+                             ClassLoader.getSystemResources(FACTORIES_RESOURCE_LOCATION));
+    result = new LinkedMultiValueMap&lt;&gt;();
+    while (urls.hasMoreElements()) {
+     // 省略...
+    }
+    cache.put(classLoader, result);
+    return result;
+  }
+}</code></pre>
+<p>从上面源码可以得知springboot在启动时会到类路径中加载 <code>spring.factories</code>文件，而spring.factories文件在应用中最少有2个，1个位于<code>spring-boot.jar</code>，另1个位于<code>spring-boot-autoconfigure.jar</code></p>
+<p><strong>spring-boot-2.1.6.RELEASE.jar!/META-INF/spring.factories</strong></p>
+<pre><code class="properties"># PropertySource Loaders
+org.springframework.boot.env.PropertySourceLoader=\
+org.springframework.boot.env.PropertiesPropertySourceLoader,\
+org.springframework.boot.env.YamlPropertySourceLoader
+# Run Listeners
+org.springframework.boot.SpringApplicationRunListener=\
+org.springframework.boot.context.event.EventPublishingRunListener
+# Error Reporters
+org.springframework.boot.SpringBootExceptionReporter=\
+org.springframework.boot.diagnostics.FailureAnalyzers
+# Application Context Initializers
+org.springframework.context.ApplicationContextInitializer=\
+org.springframework.boot.context.ConfigurationWarningsApplicationContextInitializer,\
+org.springframework.boot.context.ContextIdApplicationContextInitializer,\
+org.springframework.boot.context.config.DelegatingApplicationContextInitializer,\
+org.springframework.boot.web.context.ServerPortInfoApplicationContextInitializer
+# Application Listeners
+org.springframework.context.ApplicationListener=\
+org.springframework.boot.ClearCachesApplicationListener,\
+org.springframework.boot.builder.ParentContextCloserApplicationListener,\
+org.springframework.boot.context.FileEncodingApplicationListener,\
+org.springframework.boot.context.config.AnsiOutputApplicationListener,\
+org.springframework.boot.context.config.ConfigFileApplicationListener,\
+org.springframework.boot.context.config.DelegatingApplicationListener,\
+org.springframework.boot.context.logging.ClasspathLoggingApplicationListener,\
+org.springframework.boot.context.logging.LoggingApplicationListener,\
+org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+# Environment Post Processors
+org.springframework.boot.env.EnvironmentPostProcessor=\
+org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor,\
+org.springframework.boot.env.SpringApplicationJsonEnvironmentPostProcessor,\
+org.springframework.boot.env.SystemEnvironmentPropertySourceEnvironmentPostProcessor
+# Failure Analyzers
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+org.springframework.boot.diagnostics.analyzer.BeanCurrentlyInCreationFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.BeanDefinitionOverrideFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.BeanNotOfRequiredTypeFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.BindFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.BindValidationFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.UnboundConfigurationPropertyFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.ConnectorStartFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.NoSuchMethodFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.NoUniqueBeanDefinitionFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.PortInUseFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.ValidationExceptionFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyNameFailureAnalyzer,\
+org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyValueFailureAnalyzer
+# FailureAnalysisReporters
+org.springframework.boot.diagnostics.FailureAnalysisReporter=\
+org.springframework.boot.diagnostics.LoggingFailureAnalysisReporter</code></pre>
+<p><strong>spring-boot-autoconfigure-2.1.6.RELEASE.jar!/META-INF/spring.factories</strong></p>
+<pre><code class="properties"># Initializers
+org.springframework.context.ApplicationContextInitializer=\
+org.springframework.boot.autoconfigure.SharedMetadataReaderFactoryContextInitializer,\
+org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener
+# Application Listeners
+org.springframework.context.ApplicationListener=\
+org.springframework.boot.autoconfigure.BackgroundPreinitializer
+# Auto Configuration Import Listeners
+org.springframework.boot.autoconfigure.AutoConfigurationImportListener=\
+org.springframework.boot.autoconfigure.condition.ConditionEvaluationReportAutoConfigurationImportListener
+# Auto Configuration Import Filters
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+org.springframework.boot.autoconfigure.condition.OnBeanCondition,\
+org.springframework.boot.autoconfigure.condition.OnClassCondition,\
+org.springframework.boot.autoconfigure.condition.OnWebApplicationCondition
+# Auto Configure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\
+org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
+org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,\
+org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration,\
+org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration,\
+org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration,\
+org.springframework.boot.autoconfigure.cloud.CloudServiceConnectorsAutoConfiguration,\
+org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration,\
+org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration,\
+org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration,\
+org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration,\
+org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.cassandra.CassandraRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.couchbase.CouchbaseDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.couchbase.CouchbaseRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.ldap.LdapRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.mongo.MongoReactiveRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.neo4j.Neo4jRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.solr.SolrRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.rest.RepositoryRestMvcAutoConfiguration,\
+org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration,\
+org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration,\
+org.springframework.boot.autoconfigure.elasticsearch.rest.RestClientAutoConfiguration,\
+org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,\
+org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration,\
+org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration,\
+org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration,\
+org.springframework.boot.autoconfigure.hateoas.HypermediaAutoConfiguration,\
+org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration,\
+org.springframework.boot.autoconfigure.hazelcast.HazelcastJpaDependencyAutoConfiguration,\
+org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration,\
+org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration,\
+org.springframework.boot.autoconfigure.influx.InfluxDbAutoConfiguration,\
+org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration,\
+org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration,\
+org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration,\
+org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,\
+org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,\
+org.springframework.boot.autoconfigure.jdbc.JndiDataSourceAutoConfiguration,\
+org.springframework.boot.autoconfigure.jdbc.XADataSourceAutoConfiguration,\
+org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,\
+org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration,\
+org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration,\
+org.springframework.boot.autoconfigure.jms.JndiConnectionFactoryAutoConfiguration,\
+org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration,\
+org.springframework.boot.autoconfigure.jms.artemis.ArtemisAutoConfiguration,\
+org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAutoConfiguration,\
+org.springframework.boot.autoconfigure.jersey.JerseyAutoConfiguration,\
+org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration,\
+org.springframework.boot.autoconfigure.jsonb.JsonbAutoConfiguration,\
+org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration,\
+org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapAutoConfiguration,\
+org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration,\
+org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration,\
+org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration,\
+org.springframework.boot.autoconfigure.mail.MailSenderValidatorAutoConfiguration,\
+org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration,\
+org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,\
+org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration,\
+org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration,\
+org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,\
+org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration,\
+org.springframework.boot.autoconfigure.reactor.core.ReactorCoreAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.servlet.SecurityRequestMatcherProviderAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration,\
+org.springframework.boot.autoconfigure.sendgrid.SendGridAutoConfiguration,\
+org.springframework.boot.autoconfigure.session.SessionAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,\
+org.springframework.boot.autoconfigure.security.oauth2.resource.reactive.ReactiveOAuth2ResourceServerAutoConfiguration,\
+org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration,\
+org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration,\
+org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration,\
+org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration,\
+org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration,\
+org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfiguration,\
+org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.embedded.EmbeddedWebServerFactoryCustomizerAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.reactive.HttpHandlerAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.reactive.ReactiveWebServerFactoryAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.reactive.error.ErrorWebFluxAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration,\
+org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration,\
+org.springframework.boot.autoconfigure.websocket.reactive.WebSocketReactiveAutoConfiguration,\
+org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration,\
+org.springframework.boot.autoconfigure.websocket.servlet.WebSocketMessagingAutoConfiguration,\
+org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration,\
+org.springframework.boot.autoconfigure.webservices.client.WebServiceTemplateAutoConfiguration
+# Failure analyzers
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+org.springframework.boot.autoconfigure.diagnostics.analyzer.NoSuchBeanDefinitionFailureAnalyzer,\
+org.springframework.boot.autoconfigure.jdbc.DataSourceBeanCreationFailureAnalyzer,\
+org.springframework.boot.autoconfigure.jdbc.HikariDriverConfigurationFailureAnalyzer,\
+org.springframework.boot.autoconfigure.session.NonUniqueSessionRepositoryFailureAnalyzer
+# Template availability providers
+org.springframework.boot.autoconfigure.template.TemplateAvailabilityProvider=\
+org.springframework.boot.autoconfigure.freemarker.FreeMarkerTemplateAvailabilityProvider,\
+org.springframework.boot.autoconfigure.mustache.MustacheTemplateAvailabilityProvider,\
+org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAvailabilityProvider,\
+org.springframework.boot.autoconfigure.thymeleaf.ThymeleafTemplateAvailabilityProvider,\
+org.springframework.boot.autoconfigure.web.servlet.JspTemplateAvailabilityProvider</code></pre>
+<p>至此springboot就将自动配置的相关内容加载到内存中了</p>
+<h3 id="启动SpringBoot应用"><a href="#启动SpringBoot应用" class="headerlink" title="启动SpringBoot应用"></a>启动SpringBoot应用</h3><p>SpringApplication.run()方法</p>
+<pre><code class="java">    public ConfigurableApplicationContext run(String... args) {
+        // 省略...
+    // 获取构造方法中初始化的所有listener
+    // 这时Run Listener其实只有一个，就是spring.factories中的EventPublishingRunListener
+        SpringApplicationRunListeners listeners = getRunListeners(args);
+        listeners.starting(); // 发布应用【准备启动】事件
+
+        try {
+            ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+      // 处理所有环境配置
+            ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+
+            // 省略...
+      // 创建上下文对象：AnnotationConfigApplicationContext(默认)
+      // 这个之前已经提到，根据导入的模块来决定上下文的类型
+            context = createApplicationContext();
+            exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
+                    new Class[] { ConfigurableApplicationContext.class }, context);
+            prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+
+
+      // 刷新上下文对象
+      // 注意：这里会根据目前得到的信息进行初始化配置
+      // 其中就会执行@EnableAutoConfiguration注解中导入的配置类AutoConfigurationImportSelector.class
+      // AutoConfigurationImportSelector主要工作是筛选和过滤自动配置类
+            refreshContext(context); 
+
+
+            afterRefresh(context, applicationArguments);
+            stopWatch.stop();
+            // 省略...
+            listeners.started(context); // 发布应用【即将运行】事件，这时应用上下文已经刷新
+            callRunners(context, applicationArguments);
+        }
+        // 省略...
+        try {
+            listeners.running(context); // 发布应用【正在运行】事件，这时run方法即将执行完成
+        }
+        // 省略...
+        return context;
+    }</code></pre>
+<h3 id="如何判断是否需要手动配置"><a href="#如何判断是否需要手动配置" class="headerlink" title="如何判断是否需要手动配置"></a>如何判断是否需要手动配置</h3><p>以自动配置类<code>org.springframework.boot.autoconfigure.aop.AopAutoConfiguration</code>为例子</p>
+<pre><code class="java">@Configuration
+@ConditionalOnClass({ EnableAspectJAutoProxy.class, Aspect.class, Advice.class, AnnotatedElement.class }) // 要求类路径中存在数组中的class
+@ConditionalOnProperty(prefix = &quot;spring.aop&quot;, name = &quot;auto&quot;, havingValue = &quot;true&quot;, matchIfMissing = true) // 就算环境配置中没有配置spring.aop.auto=true也照样创建类
+public class AopAutoConfiguration {
+  // 满足以上条件后AopAutoConfiguration就会被创建并添加到环境中
+
+  // 使用JDK动态代理
+    @Configuration
+    @EnableAspectJAutoProxy(proxyTargetClass = false)
+    @ConditionalOnProperty(prefix = &quot;spring.aop&quot;, name = &quot;proxy-target-class&quot;, havingValue = &quot;false&quot;,
+            matchIfMissing = false)
+    public static class JdkDynamicAutoProxyConfiguration {
+
+    }
+
+  // 使用cglib子类代理
+    @Configuration
+    @EnableAspectJAutoProxy(proxyTargetClass = true)
+    @ConditionalOnProperty(prefix = &quot;spring.aop&quot;, name = &quot;proxy-target-class&quot;, havingValue = &quot;true&quot;,
+            matchIfMissing = true)
+    public static class CglibAutoProxyConfiguration {
+
+    }
+}</code></pre>
+<h2 id="关于-Conditional注解"><a href="#关于-Conditional注解" class="headerlink" title="关于@Conditional注解"></a>关于@Conditional注解</h2><p>@Conditional注解是spring提供的条件注解，用于满足特定条件下才初始化bean的需求时使用；</p>
+<p><strong>常用的条件派生注解如下：</strong></p>
+<table>
+<thead>
+<tr>
+<th>条件注解</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@ConditionalOnBean</td>
+<td>要求上下文中存在特定的bean对象</td>
+</tr>
+<tr>
+<td>@ConditionalOnClass</td>
+<td>要求类路径中存在指定的class文件</td>
+</tr>
+<tr>
+<td>@ConditionalOnExpression</td>
+<td>要求满足指定表达式要求</td>
+</tr>
+<tr>
+<td>@ConditionalOnMissingBean</td>
+<td>要求上下文中不存在特定的bean对象</td>
+</tr>
+<tr>
+<td>@ConditionalOnMissingClass</td>
+<td>要求类路径中不存在指定的class文件</td>
+</tr>
+<tr>
+<td>@ConditionalOnNotWebApplication</td>
+<td>要求当前不是一个web应用</td>
+</tr>
+<tr>
+<td>@ConditionalOnProperty</td>
+<td>要求配置环境中有指定的配置</td>
+</tr>
+</tbody></table>
+<p><strong>自定义条件注解</strong></p>
+<p>实现Condition接口</p>
+<pre><code class="java">public class ConditionalOnHelloWorld implements Condition {
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+          // 我这里要求配置中 my.flag 的值为 true 才满足条件
+        return Boolean.valueOf(context.getEnvironment().getProperty(&quot;my.flag&quot;).toLowerCase());
+    }
+}</code></pre>
+<p>使用@Conditional</p>
+<pre><code class="java">@Configuration
+public class TestConfig {
+    @Conditional(ConditionalOnHelloWorld.class)
+    @Bean
+    public Object test() {
+        System.out.println(&quot;into TestConfig.test()&quot;);
+        return new Object();
+    }
+}</code></pre>
+<p>除了以上方式使用@Conditional注解之外还可以参照springboot中的@Conditional派生条件注解来创建</p>
+<h2 id="SpringBoot配置的加载顺序"><a href="#SpringBoot配置的加载顺序" class="headerlink" title="SpringBoot配置的加载顺序"></a>SpringBoot配置的加载顺序</h2><p>首先，SpringBoot以main方法启动，所以<code>启动时传入参数</code>的参数优先级别最高；</p>
+<p>其次，除了命令行形式传入的参数之外，其实对于很多java应用而言还会到环境变量中获取配置参数，当然SpringBoot也不例外，所以可以将参数配置到<code>环境变量（包含：ide配置文件 &gt; 系统环境变量）</code>；</p>
+<p>最后，最低优先级别就是配置文件中的配置了；加载配置文件中的配置这个工作，位于<code>org.springframework.boot.context.config.ConfigFileApplicationListener</code>中完成，加载顺序如下：</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/1.png" alt></p>
+<ol>
+<li>应用同级目录 config 下的配置文件</li>
+<li>应用同级目录下的配置文件</li>
+<li>类路径中 config 下的配置文件</li>
+<li>类路径下的配置文件(既reources下的配置文件)</li>
+</ol>
+<h2 id="开发时用的自动重启模块"><a href="#开发时用的自动重启模块" class="headerlink" title="开发时用的自动重启模块"></a>开发时用的自动重启模块</h2><p>开发web是一件非常耗时的事情，耗时主要不是耗在写代码上，而是部署、配置环境这些繁琐的事情上，实属非常令人厌烦；所以先前一直使用一款叫JReble的热部署ide插件来尽量减少这样繁琐的操作；而对于springboot开发而言，springboot也提供了类似的功能，就是<code>spring-boot-devtools</code>模块，而且使用方法也很简单；</p>
+<p><strong>添加依赖</strong></p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-devtools&lt;/artifactId&gt;
+  &lt;optional&gt;true&lt;/optional&gt;
+&lt;/dependency&gt;</code></pre>
+<p><strong>配置idea让其提供对devtools模块的支持</strong></p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/2.png" alt></p>
+<p>双击shift搜索关键字“Maintenance”</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/3.png" alt></p>
+<p><strong>至此已经配置完成</strong></p>
+<p>还需要注意的是，当开启了devtools功能后，默认会添加一下配置</p>
+<blockquote>
+<p>org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor</p>
+</blockquote>
+<pre><code class="java">    static { // 禁止缓存
+        Map&lt;String, Object&gt; properties = new HashMap&lt;&gt;();
+        properties.put(&quot;spring.thymeleaf.cache&quot;, &quot;false&quot;); 
+        properties.put(&quot;spring.freemarker.cache&quot;, &quot;false&quot;);
+        properties.put(&quot;spring.groovy.template.cache&quot;, &quot;false&quot;);
+        properties.put(&quot;spring.mustache.cache&quot;, &quot;false&quot;);
+        properties.put(&quot;server.servlet.session.persistent&quot;, &quot;true&quot;);
+        properties.put(&quot;spring.h2.console.enabled&quot;, &quot;true&quot;);
+        properties.put(&quot;spring.resources.cache.period&quot;, &quot;0&quot;);
+        properties.put(&quot;spring.resources.chain.cache&quot;, &quot;false&quot;);
+        properties.put(&quot;spring.template.provider.cache&quot;, &quot;false&quot;);
+        properties.put(&quot;spring.mvc.log-resolved-exception&quot;, &quot;true&quot;);
+        properties.put(&quot;server.error.include-stacktrace&quot;, &quot;ALWAYS&quot;);
+        properties.put(&quot;server.servlet.jsp.init-parameters.development&quot;, &quot;true&quot;);
+        properties.put(&quot;spring.reactor.stacktrace-mode.enabled&quot;, &quot;true&quot;);
+        PROPERTIES = Collections.unmodifiableMap(properties);
+    }</code></pre>
+<h2 id="SpringBoot-2-x默认的数据源连接池-HikariCP"><a href="#SpringBoot-2-x默认的数据源连接池-HikariCP" class="headerlink" title="SpringBoot 2.x默认的数据源连接池 - HikariCP"></a>SpringBoot 2.x默认的数据源连接池 - HikariCP</h2><p>添加jdbc依赖</p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-jdbc&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+<p>在SpringBoot 1.5版本时，默认的数据源连接池为<code>tomcat据源连接池</code>，但2.x之后更改为<code>HikariCP</code>,以下为DataSource自动配置源码(org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration)</p>
+<pre><code class="java">@Configuration
+@Conditional(PooledDataSourceCondition.class)
+@ConditionalOnMissingBean({ DataSource.class, XADataSource.class })
+// 加载数据源连接池配置类
+@Import({ DataSourceConfiguration.Hikari.class, DataSourceConfiguration.Tomcat.class,
+         DataSourceConfiguration.Dbcp2.class, DataSourceConfiguration.Generic.class,
+         DataSourceJmxConfiguration.class })
+protected static class PooledDataSourceConfiguration {
+
+}</code></pre>
+<p>org.springframework.boot.autoconfigure.jdbc.DataSourceConfiguration</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/6.png" alt></p>
+<p>可以看到，添加jdbc依赖后，HikariCP被添加到类路径中</p>
+<h2 id="会话级别的H2数据库和ActiveMQ"><a href="#会话级别的H2数据库和ActiveMQ" class="headerlink" title="会话级别的H2数据库和ActiveMQ"></a>会话级别的H2数据库和ActiveMQ</h2><p>springboot提供了方便开发者在调研阶段使用的数据库h2和activemq模块，非常方便的是两个模块都并不需要做任何配置就可以马上使用，既无需再本地装数据库和mq，实属方便；</p>
+<p>但需要注意的是，h2和activemq都是会话级别的，即重启之后就会抹杀之前的数据；</p>
+<h3 id="H2数据库"><a href="#H2数据库" class="headerlink" title="H2数据库"></a>H2数据库</h3><p>添加依赖</p>
+<pre><code class="xml">&lt;!-- h2数据库 --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;com.h2database&lt;/groupId&gt;
+  &lt;artifactId&gt;h2&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;!-- spring data jpa --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+<p>正常地配置实体</p>
+<pre><code class="java">@Entity
+@Data
+public class Person {
+    @Id
+    private Integer id;
+    private String name;
+}</code></pre>
+<p>正常地编写jpa repository即可。如果想要查看H2数据内容，步骤如下</p>
+<pre><code class="yaml">spring:
+  h2:
+    console:
+      enabled: true</code></pre>
+<p>浏览器访问：localhost:8080/h2-console</p>
+<p>数据库信息可以在控制台输出的日志中得知，例如</p>
+<pre><code>o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at &#39;/h2-console&#39;. Database available at &#39;jdbc:h2:mem:testdb&#39;</code></pre><h3 id="ActiveMQ"><a href="#ActiveMQ" class="headerlink" title="ActiveMQ"></a>ActiveMQ</h3><p>添加依赖</p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-activemq&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+<p>正常地使用mq功能</p>
+<pre><code class="java">@Slf4j
+@RestController
+public class TestController {
+
+    @Autowired
+    private JmsTemplate template;
+
+    @GetMapping(&quot;/save&quot;)
+    public void save() {
+        template.convertAndSend(&quot;person:msg:new&quot;, &quot;新增了一个person对象&quot;);
+    }
+
+    @JmsListener(destination = &quot;person:msg:new&quot;)
+    public void showMsg(String msg) {
+        log.info(&quot;msg={}&quot;, msg);
+    }
+}</code></pre>
+<h2 id="使用Actuator来观察应用端点"><a href="#使用Actuator来观察应用端点" class="headerlink" title="使用Actuator来观察应用端点"></a>使用Actuator来观察应用端点</h2><p>actuator是springboot提供的一个用于监控和管理应用的模块，并提供了：审计、健康信息、数据采集统计等等功能；</p>
+<p>官方文档：<a href="https://docs.spring.io/spring-boot/docs/2.2.0.M4/reference/html/#production-ready" target="_blank" rel="noopener">https://docs.spring.io/spring-boot/docs/2.2.0.M4/reference/html/#production-ready</a></p>
+<h3 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h3><p><strong>添加依赖</strong></p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+<p>访问<code>/actuator</code>查看有哪些端点</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/4.png" alt></p>
+<p>默认情况下只开放以上端点，如果想要开启所有内置端点则需要添加一下配置</p>
+<pre><code class="properties"># 暴露所有端点
+management.endpoints.enabled-by-default=true
+management.endpoints.web.exposure.include=*
+# 允许端点关闭应用
+management.endpoint.shutdown.enabled=true</code></pre>
+<h3 id="常用的端点"><a href="#常用的端点" class="headerlink" title="常用的端点"></a>常用的端点</h3><table>
+<thead>
+<tr>
+<th>请求方式</th>
+<th>请求路径</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td>/beans</td>
+<td>返回应用中的所有bean信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/health</td>
+<td>监控检测</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/env</td>
+<td>返回系统所有的环境变量</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/env/{name}</td>
+<td>返回具体的环境变量</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/info</td>
+<td>返回系统信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/conditions</td>
+<td>返回自动配置的条件信息</td>
+</tr>
+<tr>
+<td>POST</td>
+<td>/shutdown</td>
+<td>关闭应用</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/mappings</td>
+<td>返回应用所有的URL映射</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/metrics</td>
+<td>返回当前应用的系统指标（度量）信息，（提供给如promethues）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/scheduledtasks</td>
+<td>返回应用的定时任务信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/threaddump</td>
+<td>返回应用线程转存信息</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>请求方式</th>
+<th>请求路径</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td>/heapdump</td>
+<td>返回应用当前堆内存的信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/httptrace</td>
+<td>返回应用的http请求的追中信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>/caches</td>
+<td>返回应用的缓存管理对象信息</td>
+</tr>
+<tr>
+<td>POST</td>
+<td>/refresh</td>
+<td>重新加载一次配置参数（如配置文件），用于刷新配置</td>
+</tr>
+</tbody></table>
+<h3 id="自定义端点"><a href="#自定义端点" class="headerlink" title="自定义端点"></a>自定义端点</h3><p>定义</p>
+<pre><code class="java">@Endpoint(id = &quot;my&quot;)
+@Component
+public class MyEndponint {
+
+    @ReadOperation
+    public String endpointMsg() {
+        return &quot;my endpoint msg!!!!&quot;;
+    }
+
+    @ReadOperation
+    public String endpointMsg2(@Selector String msg) {
+        return &quot;my endpoint &quot; + msg;
+    }
+
+}</code></pre>
+<p>使用</p>
+<pre><code class="json">my: {
+  href: &quot;http://localhost:8080/actuator/my&quot;,
+  templated: false
+},
+my-msg: {
+    href: &quot;http://localhost:8080/actuator/my/{msg}&quot;,
+    templated: true
+}</code></pre>
+<h3 id="使用可视化界面Admin来展示端点信息"><a href="#使用可视化界面Admin来展示端点信息" class="headerlink" title="使用可视化界面Admin来展示端点信息"></a>使用可视化界面Admin来展示端点信息</h3><h4 id="服务端"><a href="#服务端" class="headerlink" title="服务端"></a>服务端</h4><blockquote>
+<p>可以创建一个独立的springboot应用在作为amdin-ui应用</p>
+</blockquote>
+<p>添加依赖</p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;de.codecentric&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-admin-server-ui&lt;/artifactId&gt;
+  &lt;version&gt;2.1.5&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<p>启动admin server</p>
+<pre><code class="java">@SpringBootApplication
+@EnableAdminServer // 开启admin server
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}</code></pre>
+<p>界面</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/5.png" alt></p>
+<h4 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h4><p>添加依赖</p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;de.codecentric&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-admin-starter-client&lt;/artifactId&gt;
+  &lt;version&gt;2.1.5&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<p>添加配置，将端点注册到amdin server上</p>
+<pre><code class="properties"># 暴露端点
+management.endpoints.enabled-by-default=true
+management.endpoints.web.exposure.include=*
+
+spring.application.name=my-endpoint-application
+# admin server的地址
+spring.boot.admin.client.url=http://localhost:8080</code></pre>
+<h2 id="关于SpringBoot如何弃用默认技术和自动配置"><a href="#关于SpringBoot如何弃用默认技术和自动配置" class="headerlink" title="关于SpringBoot如何弃用默认技术和自动配置"></a>关于SpringBoot如何弃用默认技术和自动配置</h2><p>有些时候我们希望使用自己熟悉的技术，如SpringBoot中默认数据库连接池为HikariCP，现在打算使用Druid，那么只需要将HikariCP在pom中将依赖排除（将依赖排除出类路基）再将Druid的starter即可</p>
+<p>druid github：<a href="https://github.com/alibaba/druid" target="_blank" rel="noopener">https://github.com/alibaba/druid</a></p>
+<p>详细配置：<a href="https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter" target="_blank" rel="noopener">https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter</a></p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;com.alibaba&lt;/groupId&gt;
+  &lt;artifactId&gt;druid-spring-boot-starter&lt;/artifactId&gt;
+  &lt;version&gt;1.1.17&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<p>还有就是有时候我们不希望SpringBoot进行自动配置，如使用多数据源的时候，除了使用@Primary配置方式之外还可以使用排除自动配置改为手动配置来配置多数据源，这时可以在@SpringBootApplication中进行排除自动配置类操作</p>
+<ul>
+<li>首先将配置排除</li>
+</ul>
+<pre><code class="java">@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, 
+        DataSourceTransactionManagerAutoConfiguration.class,
+        JdbcTemplateAutoConfiguration.class
+})
+public class Demo2Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Demo2Application.class, args);
+    }
+}</code></pre>
+<ul>
+<li>配置文件中添加数据配置</li>
+<li>读取配置文件并生产数据源和事务管理器</li>
+</ul>
+<pre><code class="java">@Bean
+@ConfigurationProperties(&quot;one.datasource&quot;)
+public DataSourceProperties oneDataSourceProperties() {
+  return new DataSourceProperties();
+}
+
+@Bean
+public DataSource oneDataSource() {
+  DataSourceProperties dataSourceProperties = oneDataSourceProperties();
+  return dataSourceProperties.initializeDataSourceBuilder().build();
+}
+
+@Bean
+@Resource // 根据bean id注入
+public PlatformTransactionManager twoTransactionManager(DataSource oneDataSource) {
+  return new DataSourceTransactionManager(oneDataSource);
+}
+
+// ------------------------------------------------------
+
+@Bean
+@ConfigurationProperties(&quot;two.datasource&quot;)
+public DataSourceProperties twoDataSourceProperties() {
+  return new DataSourceProperties();
+}
+
+@Bean
+public DataSource twoDataSource() {
+  DataSourceProperties dataSourceProperties = twoDataSourceProperties();
+  return dataSourceProperties.initializeDataSourceBuilder().build();
+}
+
+@Bean
+@Resource // 根据bean id注入
+public PlatformTransactionManager oneTransactionManager(DataSource twoDataSource) {
+  return new DataSourceTransactionManager(twoDataSource);
+}</code></pre>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/">
+      SpringBoot基本的东西需要懂
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('SpringBoot基本的东西需要懂'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot自动配置的基本原理"><span class="toc-text">SpringBoot自动配置的基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#初始化自动配置信息"><span class="toc-text">初始化自动配置信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#启动SpringBoot应用"><span class="toc-text">启动SpringBoot应用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何判断是否需要手动配置"><span class="toc-text">如何判断是否需要手动配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于-Conditional注解"><span class="toc-text">关于@Conditional注解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot配置的加载顺序"><span class="toc-text">SpringBoot配置的加载顺序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#开发时用的自动重启模块"><span class="toc-text">开发时用的自动重启模块</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot-2-x默认的数据源连接池-HikariCP"><span class="toc-text">SpringBoot 2.x默认的数据源连接池 - HikariCP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#会话级别的H2数据库和ActiveMQ"><span class="toc-text">会话级别的H2数据库和ActiveMQ</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#H2数据库"><span class="toc-text">H2数据库</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ActiveMQ"><span class="toc-text">ActiveMQ</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用Actuator来观察应用端点"><span class="toc-text">使用Actuator来观察应用端点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本使用"><span class="toc-text">基本使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用的端点"><span class="toc-text">常用的端点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义端点"><span class="toc-text">自定义端点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用可视化界面Admin来展示端点信息"><span class="toc-text">使用可视化界面Admin来展示端点信息</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#服务端"><span class="toc-text">服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#客户端"><span class="toc-text">客户端</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于SpringBoot如何弃用默认技术和自动配置"><span class="toc-text">关于SpringBoot如何弃用默认技术和自动配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

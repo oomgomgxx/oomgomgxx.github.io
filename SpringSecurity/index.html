@@ -1,0 +1,1579 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> SpringSecurity入门-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>SpringSecurity入门</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-06-23 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><ul>
+<li>spring security用于解决web应用的安全问题；如对用户的认证，判断用户是否为非法用户；对用户的授权，指定哪些用户能够访问和操作哪些功能；</li>
+<li>类似于spring security的安全框架还有apache的shiro，但spring security是spring全家桶的一员，能够与spring framework无缝集成，而且spring security对Oauth2认证授权标准有良好的支持，所以学习spring security对于目前的需求来说是有必要的；</li>
+<li>spring security是一种基于 Spring AOP 和 Servlet 过滤器的安全框架；</li>
+<li>spring security提供了一系列的Filter来解决web应用的安全问题</li>
+</ul>
+<h2 id="快速入门案例"><a href="#快速入门案例" class="headerlink" title="快速入门案例"></a>快速入门案例</h2><h3 id="模拟场景"><a href="#模拟场景" class="headerlink" title="模拟场景"></a>模拟场景</h3><ul>
+<li>web应用中存在3个需要<strong>认证</strong>和<strong>授权</strong>的页面，分别是：user.jsp、admin.jsp、dba.jsp</li>
+<li>web应用中存在3个角色，分别是：USER、ADMIN、DBA</li>
+<li>访问页面需要对应的权限，关系如下：<ul>
+<li>user.jsp 只要用户拥有 USER、ADMIN、DBA 中其中一个角色就可以访问</li>
+<li>admin.jsp 要求用户必须有 ADMIN 角色才可以访问</li>
+<li>dba.jsp 要求用户拥有 ADMIN、DBA 中其中一个角色就可以访问</li>
+</ul>
+</li>
+</ul>
+<h3 id="项目源码"><a href="#项目源码" class="headerlink" title="项目源码"></a>项目源码</h3><blockquote>
+<p>为了更好地了解配置，项目基于spring5+servlet3.0而不采用spring boot</p>
+</blockquote>
+<h4 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h4><p><img src="/SpringSecurity/001.png" alt></p>
+<h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><p>RootConfig</p>
+<pre><code class="java">package wiki.td.config;
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.stereotype.Controller;
+
+@Configuration
+@ComponentScan(basePackages=&quot;wiki.td&quot;,
+        includeFilters=@ComponentScan.Filter(type= FilterType.ANNOTATION,classes=Controller.class))
+public class RootConfig {
+    // ...
+}</code></pre>
+<p>WebConfig</p>
+<pre><code class="java">package wiki.td.config;
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+@ComponentScan(basePackages=&quot;wiki.td&quot;, includeFilters=@Filter(type=FilterType.ANNOTATION,classes=Controller.class),useDefaultFilters=false)
+@EnableWebMvc
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void configureViewResolvers(ViewResolverRegistry registry) {
+        registry.jsp(&quot;/&quot;, &quot;.jsp&quot;);
+    }
+}</code></pre>
+<p>WebAppInitializer</p>
+<pre><code class="java">package wiki.td.config;
+
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+import wiki.td.config.RootConfig;
+import wiki.td.config.WebConfig;
+
+public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+
+    @Override
+    protected Class&lt;?&gt;[] getRootConfigClasses() {
+        return new Class&lt;?&gt;[] { RootConfig.class };
+    }
+
+    @Override
+    protected Class&lt;?&gt;[] getServletConfigClasses() {
+        return new Class&lt;?&gt;[] { WebConfig.class };
+    }
+
+    @Override
+    protected String[] getServletMappings() {
+        return new String[] { &quot;/&quot; };
+    }
+}</code></pre>
+<p>WebServletContainerInitializer</p>
+<pre><code class="java">package wiki.td.config;
+
+import org.springframework.web.WebApplicationInitializer;
+
+import javax.servlet.ServletContainerInitializer;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.HandlesTypes;
+import java.util.Set;
+
+@HandlesTypes(WebApplicationInitializer.class)
+public class WebServletContainerInitializer implements ServletContainerInitializer {
+
+    @Override
+    public void onStartup(Set&lt;Class&lt;?&gt;&gt; c, ServletContext ctx) throws ServletException {
+
+        // spring security过滤器
+//        FilterRegistration.Dynamic filter = ctx.addFilter(&quot;springSecurityFilterChain&quot;, DelegatingFilterProxy.class);
+//        filter.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, &quot;/*&quot;);
+//        filter.setInitParameter(&quot;targetFilterLifecycle&quot;, &quot;true&quot;);
+
+    }
+}</code></pre>
+<p>SpringSecurityInitializer</p>
+<blockquote>
+<p>spring security配置1：相当于配置了springSecurityFilterChain拦截器，即这种方式代替了上面注释掉的配置</p>
+</blockquote>
+<pre><code class="java">package wiki.td.config;
+
+import org.springframework.security.web.context.AbstractSecurityWebApplicationInitializer;
+
+public class SpringSecurityInitializer extends AbstractSecurityWebApplicationInitializer {
+
+}
+</code></pre>
+<p>SecurityConfig</p>
+<blockquote>
+<p>spring security配置2</p>
+</blockquote>
+<pre><code class="java">package wiki.td.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    /** 认证配置 */
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        // 下面这段代码很容易理解，就是创建用户并指定用户的角色，存储于内存中
+        auth.inMemoryAuthentication().withUser(&quot;tandi01&quot;).password(&quot;{noop}123456&quot;).roles(&quot;USER&quot;);
+        auth.inMemoryAuthentication().withUser(&quot;tandi02&quot;).password(&quot;{noop}123456&quot;).roles(&quot;ADMIN&quot;);
+        auth.inMemoryAuthentication().withUser(&quot;tandi03&quot;).password(&quot;{noop}123456&quot;).roles(&quot;DBA&quot;);
+    }
+
+    /** 权限拦截 */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        // 要求用户访问某个uri时，需要有指定的角色
+        http.authorizeRequests()
+                .antMatchers(&quot;/user/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_USER&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
+                .antMatchers(&quot;/admin/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) &quot;)
+                .antMatchers(&quot;/dba/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
+                .and().formLogin();
+    }
+}</code></pre>
+<p>HelloController</p>
+<pre><code class="java">package wiki.td.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+public class HelloController {
+
+    @GetMapping({&quot;/user&quot;})
+    public String userPage() {
+        return &quot;user&quot;;
+    }
+
+    @GetMapping({&quot;/admin&quot;})
+    public String adminPage() {
+        return &quot;admin&quot;;
+    }
+
+    @GetMapping({&quot;/dba&quot;})
+    public String dbaPage() {
+        return &quot;dba&quot;;
+    }
+}</code></pre>
+<p>jsp页面</p>
+<pre><code class="jsp">&lt;body&gt; admin pag &lt;/body&gt;</code></pre>
+<pre><code class="jsp">&lt;body&gt; dba pag &lt;/body&gt;</code></pre>
+<pre><code class="jsp">&lt;body&gt; index pag &lt;/body&gt;</code></pre>
+<pre><code class="jsp">&lt;body&gt; admin pag &lt;/body&gt;</code></pre>
+<p>pom.xml</p>
+<pre><code class="xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+  xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+  &lt;groupId&gt;wiki.td&lt;/groupId&gt;
+  &lt;artifactId&gt;webdemo3&lt;/artifactId&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+  &lt;packaging&gt;war&lt;/packaging&gt;
+
+  &lt;properties&gt;
+    &lt;spring-version&gt;5.1.4.RELEASE&lt;/spring-version&gt;
+    &lt;spring-security&gt;5.1.4.RELEASE&lt;/spring-security&gt;
+  &lt;/properties&gt;
+
+  &lt;dependencies&gt;
+
+    &lt;!--spring mvc--&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;
+      &lt;version&gt;${spring-version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!--spring security--&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-security-config&lt;/artifactId&gt;
+      &lt;version&gt;${spring-security}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-security-web&lt;/artifactId&gt;
+      &lt;version&gt;${spring-security}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!--servlet3--&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;javax.servlet&lt;/groupId&gt;
+      &lt;artifactId&gt;javax.servlet-api&lt;/artifactId&gt;
+      &lt;version&gt;3.1.0&lt;/version&gt;
+      &lt;scope&gt;provided&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+  &lt;/dependencies&gt;
+
+  &lt;build&gt;
+    &lt;plugins&gt;
+
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-war-plugin&lt;/artifactId&gt;
+        &lt;version&gt;2.6&lt;/version&gt;
+      &lt;/plugin&gt;
+
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.tomcat.maven&lt;/groupId&gt;
+        &lt;artifactId&gt;tomcat7-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;2.2&lt;/version&gt;
+        &lt;configuration&gt;
+          &lt;path&gt;/&lt;/path&gt;
+          &lt;port&gt;8888&lt;/port&gt;
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+        &lt;version&gt;3.7.0&lt;/version&gt;
+        &lt;configuration&gt;
+          &lt;source&gt;1.8&lt;/source&gt;
+          &lt;target&gt;1.8&lt;/target&gt;
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+
+    &lt;/plugins&gt;
+  &lt;/build&gt;
+&lt;/project&gt;</code></pre>
+<h4 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h4><p>浏览器访问localhost:8888/admin，将自动跳转到spring security的登录页面，因为admin这个页面需要认证且需要用户有ADMIN角色才能够访问，登录页面如下：</p>
+<p><img src="/SpringSecurity/002.png" alt></p>
+<p>上面输入的是tandi03这个用户，该用户只有DBA角色，所以可以推断出，tandi03这个用户并没有权限访问admin这个页面，登录后结果如下：</p>
+<p><img src="/SpringSecurity/003.png" alt></p>
+<p>可以看到返回的是403，表示成功被security拦截</p>
+<p>因为tandi03拥有DBA角色，所以将url改成localhost:8888/dba 看一看</p>
+<p><img src="/SpringSecurity/004.png" alt></p>
+<p>又因为，user页面只要用户拥有 USER、ADMIN、DBA 中其中一个角色就可以访问，所以继续访问以下user看看</p>
+<p><img src="/SpringSecurity/005.png" alt></p>
+<p>其他用户如此类推</p>
+<blockquote>
+<p>拓展：</p>
+<p>spring security web登录：localhost:port/login</p>
+<p>spring security web登出：localhost:port/logout</p>
+</blockquote>
+<h2 id="关于认证和授权"><a href="#关于认证和授权" class="headerlink" title="关于认证和授权"></a>关于认证和授权</h2><ul>
+<li>所谓的认证，通俗点来说就是证明身份的过程；即验证你就是系统中的某个用户</li>
+<li>授权，授权是系统对用户而言的，即系统给用户授予某些功能的使用权力</li>
+</ul>
+<h2 id="基于数据库数据进行认证授权"><a href="#基于数据库数据进行认证授权" class="headerlink" title="基于数据库数据进行认证授权"></a>基于数据库数据进行认证授权</h2><blockquote>
+<p>以下例子基于快速入门案例上修改</p>
+</blockquote>
+<h3 id="模拟场景-1"><a href="#模拟场景-1" class="headerlink" title="模拟场景"></a>模拟场景</h3><ul>
+<li>web应用中存在3个需要<strong>认证</strong>和<strong>授权</strong>的页面，分别是：user.jsp、admin.jsp、dba.jsp</li>
+<li>web应用中存在3个角色，分别是：USER、ADMIN、DBA</li>
+<li>访问页面需要对应的权限，关系如下：<ul>
+<li>user.jsp 只要用户拥有 USER、ADMIN、DBA 中其中一个角色就可以访问</li>
+<li>admin.jsp 要求用户必须有 ADMIN 角色才可以访问</li>
+<li>dba.jsp 要求用户拥有 ADMIN、DBA 中其中一个角色就可以访问</li>
+</ul>
+</li>
+<li>基于数据库数据操作</li>
+</ul>
+<h3 id="数据库数据"><a href="#数据库数据" class="headerlink" title="数据库数据"></a>数据库数据</h3><p><strong>表关系</strong></p>
+<p>user - role</p>
+<p>user_role为中间表</p>
+<p><strong>表</strong></p>
+<p><img src="/SpringSecurity/007.png" alt></p>
+<p><img src="/SpringSecurity/008.png" alt></p>
+<p><img src="/SpringSecurity/009.png" alt></p>
+<h3 id="理解草图"><a href="#理解草图" class="headerlink" title="理解草图"></a>理解草图</h3><blockquote>
+<p>该草图源自：<a href="https://www.ktanx.com/blog/p/4916" target="_blank" rel="noopener">https://www.ktanx.com/blog/p/4916</a></p>
+</blockquote>
+<p><img src="/SpringSecurity/010.png" alt></p>
+<h3 id="项目源码-1"><a href="#项目源码-1" class="headerlink" title="项目源码"></a>项目源码</h3><h4 id="目录-1"><a href="#目录-1" class="headerlink" title="目录"></a>目录</h4><p><img src="/SpringSecurity/006.png" alt></p>
+<h4 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h4><blockquote>
+<p>只贴出差异代码</p>
+</blockquote>
+<p>RootConfig</p>
+<pre><code class="java">package wiki.td.config;
+
+import com.alibaba.druid.pool.DruidDataSource;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+import java.util.Properties;
+
+
+@Configuration
+@ComponentScan(basePackages=&quot;wiki.td&quot;,
+        includeFilters=@ComponentScan.Filter(type= FilterType.ANNOTATION,classes=Controller.class))
+@EnableJpaRepositories(basePackages = &quot;wiki.td.repository&quot;)
+public class RootConfig {
+
+    @Bean
+    public DataSource dataSource(){
+        DruidDataSource dataSource = new DruidDataSource();
+        dataSource.setUrl(&quot;jdbc:mysql://127.0.0.1:3306/ss&quot;);
+        dataSource.setUsername(&quot;root&quot;);
+        dataSource.setPassword(&quot;123456&quot;);
+        dataSource.setDriverClassName(&quot;com.mysql.jdbc.Driver&quot;);
+        return dataSource;
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+        LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        factoryBean.setDataSource(dataSource);
+        factoryBean.setPackagesToScan(&quot;wiki.td&quot;);
+        Properties prop = new Properties();
+        prop.setProperty(&quot;hibernate.hbm2ddl.auto&quot;, &quot;update&quot;);
+        prop.setProperty(&quot;hibernate.show_sql&quot;, &quot;true&quot;);
+        prop.setProperty(&quot;hibernate.format_sql&quot;, &quot;true&quot;);
+        factoryBean.setJpaProperties(prop);
+        factoryBean.setPersistenceProvider(new HibernatePersistenceProvider());
+        return factoryBean;
+    }
+
+    /**
+    @Bean
+    public PlatformTransactionManager jpaTransactionManager(DataSource dataSource, EntityManagerFactory entityManagerFactory) {
+        JpaTransactionManager jpaTransactionManager = new JpaTransactionManager();
+        jpaTransactionManager.setDataSource(dataSource);
+        jpaTransactionManager.setEntityManagerFactory(entityManagerFactory);
+        return jpaTransactionManager;
+    }
+*/
+}</code></pre>
+<p>SecurityConfig</p>
+<pre><code class="java">package wiki.td.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import wiki.td.entity.Role;
+import wiki.td.entity.User;
+import wiki.td.entity.UserPrincipal;
+import wiki.td.repository.RoleRepository;
+import wiki.td.repository.UserRepository;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+
+    /** 认证参照对象（实质就是数据库中的用户信息） */
+    @Override
+    public UserDetailsService userDetailsService() {
+        return new UserDetailsService() {
+
+            /* 使用用户名称到数据库中查找用户 */
+            @Override
+            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                User user = userRepository.findUserByUserName(username);
+                List&lt;Role&gt; roles = roleRepository.findRolesByUserId(user.getuId());
+                return new UserPrincipal(user, roles);
+            }
+        };
+    }
+
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+
+        // 密码加密工具类
+        Map&lt;String, PasswordEncoder&gt; encoders = new HashMap&lt;&gt;();
+        encoders.put(&quot;pbkdf2&quot;, new Pbkdf2PasswordEncoder());
+
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        authenticationProvider.setUserDetailsService(userDetailsService());
+        authenticationProvider.setPasswordEncoder(new DelegatingPasswordEncoder(&quot;pbkdf2&quot;, encoders));
+        return authenticationProvider;
+    }
+
+
+    /** 配置内置用户 */
+//    @Autowired
+//    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+//        auth.inMemoryAuthentication().withUser(&quot;tandi01&quot;).password(&quot;{noop}123456&quot;).roles(&quot;USER&quot;);
+//        auth.inMemoryAuthentication().withUser(&quot;tandi02&quot;).password(&quot;{noop}123456&quot;).roles(&quot;ADMIN&quot;);
+//        auth.inMemoryAuthentication().withUser(&quot;tandi03&quot;).password(&quot;{noop}123456&quot;).roles(&quot;DBA&quot;);
+//    }
+
+
+    /** 权限拦截 */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        // 要求用户访问某个uri时，需要有指定的角色
+        http.authorizeRequests()
+                .antMatchers(&quot;/user/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_USER&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
+                .antMatchers(&quot;/admin/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) &quot;)
+                .antMatchers(&quot;/dba/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
+                .and().formLogin();
+    }
+
+}</code></pre>
+<p>Role</p>
+<pre><code class="java">package wiki.td.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+@Entity
+public class Role {
+
+    @Id
+    private Integer rId;
+    private String rName;
+
+    public Integer getrId() {
+        return rId;
+    }
+
+    public void setrId(Integer rId) {
+        this.rId = rId;
+    }
+
+    public String getrName() {
+        return rName;
+    }
+
+    public void setrName(String rName) {
+        this.rName = rName;
+    }
+
+    @Override
+    public String toString() {
+        return &quot;Role{&quot; +
+                &quot;rId=&quot; + rId +
+                &quot;, rName=&#39;&quot; + rName + &#39;\&#39;&#39; +
+                &#39;}&#39;;
+    }
+}
+</code></pre>
+<p>User</p>
+<pre><code class="java">package wiki.td.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+@Entity
+public class User {
+
+    @Id
+    private Integer uId;
+    private String userName;
+    private String passWord;
+
+    public Integer getuId() {
+        return uId;
+    }
+
+    public void setuId(Integer uId) {
+        this.uId = uId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassWord() {
+        return passWord;
+    }
+
+    public void setPassWord(String passWord) {
+        this.passWord = passWord;
+    }
+
+    @Override
+    public String toString() {
+        return &quot;User{&quot; +
+                &quot;uId=&quot; + uId +
+                &quot;, userName=&#39;&quot; + userName + &#39;\&#39;&#39; +
+                &quot;, passWord=&#39;&quot; + passWord + &#39;\&#39;&#39; +
+                &#39;}&#39;;
+    }
+}
+</code></pre>
+<p>UserRole</p>
+<pre><code class="java">package wiki.td.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name=&quot;user_role&quot;)
+public class UserRole {
+
+    @Id
+    private Integer uId;
+    private Integer rId;
+
+    public Integer getuId() {
+        return uId;
+    }
+
+    public void setuId(Integer uId) {
+        this.uId = uId;
+    }
+
+    public Integer getrId() {
+        return rId;
+    }
+
+    public void setrId(Integer rId) {
+        this.rId = rId;
+    }
+
+    @Override
+    public String toString() {
+        return &quot;UserRole{&quot; +
+                &quot;uId=&quot; + uId +
+                &quot;, rId=&quot; + rId +
+                &#39;}&#39;;
+    }
+}
+</code></pre>
+<p>UserPrincipal</p>
+<pre><code class="java">package wiki.td.entity;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class UserPrincipal implements UserDetails {
+
+    private User user;
+    private List&lt;Role&gt; roles;
+
+    public UserPrincipal(User user, List&lt;Role&gt; roles) {
+        this.user = user;
+        this.roles = roles;
+    }
+
+    /** 权限 */
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+        return roles.stream().map(role -&gt; new SimpleGrantedAuthority(role.getrName())).collect(Collectors.toList());
+    }
+
+    @Override
+    public String getPassword() {
+        return user.getPassWord();
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUserName();
+    }
+
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        //账号可用
+        return true;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public List&lt;Role&gt; getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List&lt;Role&gt; roles) {
+        this.roles = roles;
+    }
+}</code></pre>
+<p>RoleRepository</p>
+<pre><code class="java">package wiki.td.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import wiki.td.entity.Role;
+
+import java.util.List;
+
+public interface RoleRepository extends JpaRepository&lt;Role, Integer&gt; {
+
+    @Query(&quot;SELECT r From Role r join UserRole ur on r.rId = ur.rId WHERE ur.uId = :userId&quot;)
+    List&lt;Role&gt; findRolesByUserId(@Param(&quot;userId&quot;) Integer userId);
+}
+</code></pre>
+<p>UserRepository</p>
+<pre><code class="java">package wiki.td.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import wiki.td.entity.User;
+
+public interface UserRepository extends JpaRepository&lt;User, Integer&gt; {
+
+    User findUserByUserName(String userName);
+}</code></pre>
+<blockquote>
+<p>测试代码</p>
+</blockquote>
+<p>TestRepository</p>
+<pre><code class="java">import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
+import wiki.td.config.RootConfig;
+import wiki.td.config.WebConfig;
+import wiki.td.entity.User;
+import wiki.td.repository.RoleRepository;
+import wiki.td.repository.UserRepository;
+
+
+@SpringJUnitWebConfig(classes = {RootConfig.class, WebConfig.class})
+public class TestRepository {
+
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Test
+    public void test() {
+        User user = userRepository.findUserByUserName(&quot;tandi02&quot;);
+        System.out.println(user);
+    }
+
+}</code></pre>
+<p>test1</p>
+<pre><code class="java">import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
+import org.springframework.security.crypto.password.StandardPasswordEncoder;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @Auther: admin
+ * @Date: 2019/4/3 16:28
+ * @Description:
+ */
+public class Test1 {
+
+    @Test
+    public void test2() {
+
+        Map&lt;String, PasswordEncoder&gt; encoders = new HashMap&lt;&gt;();
+        encoders.put(&quot;pbkdf2&quot;, new Pbkdf2PasswordEncoder());
+        encoders.put(&quot;sha256&quot;, new StandardPasswordEncoder());
+        DelegatingPasswordEncoder delegatingPasswordEncoder = new DelegatingPasswordEncoder(&quot;pbkdf2&quot;, encoders);
+        String encode = delegatingPasswordEncoder.encode(&quot;123456&quot;);
+        System.out.println(encode);
+//        {pbkdf2}82b63f6190908245694ce3f013779f12b3cc245c3805090a2bb33f74008acebfec48665baca52283
+//        {sha256}238378d9406e861698a18bc218d16fa6ff6e7ed1081ce9b7f223a35bbcd194b714484a4e66e1e089
+    }
+
+
+    @Test
+    public void test() {
+
+        List&lt;PasswordEncoder&gt; encoderList = new ArrayList&lt;&gt;();
+        encoderList.add(new Pbkdf2PasswordEncoder());
+        encoderList.add(new StandardPasswordEncoder());
+        encoderList.forEach(encoder -&gt; System.out.println(encoder.encode(&quot;123456&quot;)));
+//        0e088bfa681e68fe371bb3e1d31b2cbbca5a3b6928fd87ac60e6b13a8c767914b33a9678812ab17e
+//        045b371e94157c1ae68d67861d7fb13d5e2b2cfcb700a44e07d049430ba00e0de340a5658b15f945
+    }
+}</code></pre>
+<p>pom.xml</p>
+<pre><code class="xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+  xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+  &lt;groupId&gt;wiki.td&lt;/groupId&gt;
+  &lt;artifactId&gt;webdemo3&lt;/artifactId&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+  &lt;packaging&gt;war&lt;/packaging&gt;
+
+  &lt;properties&gt;
+    &lt;spring-version&gt;5.1.4.RELEASE&lt;/spring-version&gt;
+    &lt;spring-security&gt;5.1.4.RELEASE&lt;/spring-security&gt;
+    &lt;spring-data&gt;2.1.0.RELEASE&lt;/spring-data&gt;
+  &lt;/properties&gt;
+
+  &lt;dependencies&gt;
+
+    &lt;!-- mysql --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;mysql&lt;/groupId&gt;
+      &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
+      &lt;version&gt;5.1.46&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!-- druid --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.alibaba&lt;/groupId&gt;
+      &lt;artifactId&gt;druid&lt;/artifactId&gt;
+      &lt;version&gt;1.0.11&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!-- hibernate --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.hibernate&lt;/groupId&gt;
+      &lt;artifactId&gt;hibernate-core&lt;/artifactId&gt;
+      &lt;version&gt;5.3.6.Final&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;javax.persistence&lt;/groupId&gt;
+      &lt;artifactId&gt;persistence-api&lt;/artifactId&gt;
+      &lt;version&gt;1.0&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- spring --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-orm&lt;/artifactId&gt;
+      &lt;version&gt;${spring-version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-test&lt;/artifactId&gt;
+      &lt;version&gt;${spring-version}&lt;/version&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;
+      &lt;version&gt;${spring-version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- spring data jpa --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.data&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-data-jpa&lt;/artifactId&gt;
+      &lt;version&gt;${spring-data}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!--spring security--&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-security-config&lt;/artifactId&gt;
+      &lt;version&gt;${spring-security}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.security&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-security-web&lt;/artifactId&gt;
+      &lt;version&gt;${spring-security}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- junit5 --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+      &lt;artifactId&gt;junit-jupiter-api&lt;/artifactId&gt;
+      &lt;version&gt;5.1.0&lt;/version&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;!--servlet3--&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;javax.servlet&lt;/groupId&gt;
+      &lt;artifactId&gt;javax.servlet-api&lt;/artifactId&gt;
+      &lt;version&gt;3.1.0&lt;/version&gt;
+      &lt;scope&gt;provided&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+  &lt;/dependencies&gt;
+
+  &lt;build&gt;
+    &lt;plugins&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-war-plugin&lt;/artifactId&gt;
+        &lt;version&gt;2.6&lt;/version&gt;
+      &lt;/plugin&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.tomcat.maven&lt;/groupId&gt;
+        &lt;artifactId&gt;tomcat7-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;2.2&lt;/version&gt;
+        &lt;configuration&gt;
+          &lt;path&gt;/&lt;/path&gt;
+          &lt;port&gt;8080&lt;/port&gt;
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+        &lt;version&gt;3.7.0&lt;/version&gt;
+        &lt;configuration&gt;
+          &lt;source&gt;1.8&lt;/source&gt;
+          &lt;target&gt;1.8&lt;/target&gt;
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+    &lt;/plugins&gt;
+  &lt;/build&gt;
+&lt;/project&gt;
+</code></pre>
+<h2 id="关于HttpSecurity常用配置"><a href="#关于HttpSecurity常用配置" class="headerlink" title="关于HttpSecurity常用配置"></a>关于HttpSecurity常用配置</h2><p>HttpSecurity配置是spring security对请求的拦截配置</p>
+<pre><code class="java">@Configuration
+@EnableWebSecurity
+public class CustomWebSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .antMatchers(&quot;/resources/**&quot;, &quot;/about&quot;).permitAll()
+                .antMatchers(&quot;/admin/**&quot;).hasRole(&quot;ADMIN&quot;)
+                .antMatchers(&quot;/db/**&quot;).access(&quot;hasRole(&#39;ADMIN&#39;) and hasRole(&#39;DBA&#39;)&quot;)
+                .anyRequest().authenticated()
+                .and()
+            .formLogin()
+                .usernameParameter(&quot;username&quot;)
+                .passwordParameter(&quot;password&quot;)
+                .failureForwardUrl(&quot;/login?error&quot;)
+                .loginPage(&quot;/login&quot;)
+                .permitAll()
+                .and()
+            .logout()
+                .logoutUrl(&quot;/logout&quot;)
+                .logoutSuccessUrl(&quot;/index&quot;)
+                .permitAll()
+                .and()
+            .httpBasic()
+                .disable();
+    }
+}</code></pre>
+<ul>
+<li>authorizeRequests()：授权请求定义</li>
+<li>permitAll()：表示无需授权，允许直接访问</li>
+<li>antMatchers()：表示对应的请求路径uri</li>
+<li>anyRequest()：表示其余的所有请求</li>
+<li>authenticated()：表示需要认证</li>
+<li>and()：代表一段定义的结束并连接下一段其他的定义</li>
+<li>formLogin()：登录认证定义</li>
+<li>loginPage()：指定登录路径</li>
+<li>usernameParameter()：指定登录认证表单提交的username字段名称</li>
+<li>passwordParameter()：指定登录认证表单提交的password字段名称</li>
+<li>failureForwardUrl()：指定登录认证失败路径</li>
+<li>logout()：登出认证定义</li>
+<li>logoutUrl()：指定登出路径</li>
+<li>httpBasic()：basic登录定义</li>
+<li>disable()：表示不可用</li>
+</ul>
+<h2 id="自定义登录页面"><a href="#自定义登录页面" class="headerlink" title="自定义登录页面"></a>自定义登录页面</h2><blockquote>
+<p>案例基于上面的 “基于数据库数据进行认证授权”，下面为差异代码</p>
+</blockquote>
+<h3 id="项目源码-2"><a href="#项目源码-2" class="headerlink" title="项目源码"></a>项目源码</h3><h4 id="目录-2"><a href="#目录-2" class="headerlink" title="目录"></a>目录</h4><p><img src="/SpringSecurity/011.png" alt></p>
+<h4 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h4><p>SecuritiyConfig</p>
+<pre><code class="java">@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    // 省略。。。。
+
+    /** 权限拦截 */
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        // 要求用户访问某个uri时，需要有指定的角色
+        http
+            .authorizeRequests()
+                .antMatchers(&quot;/user/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_USER&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
+                .antMatchers(&quot;/admin/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) &quot;)
+                .antMatchers(&quot;/dba/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
+                .and()
+            .formLogin()
+                .loginPage(&quot;/login&quot;)
+                .usernameParameter(&quot;username&quot;)
+                .passwordParameter(&quot;password&quot;)
+                // 认证成功后进入处理器
+                .successHandler(new LoginSuccessHandler())
+                .permitAll()
+                .and()
+            .logout()
+                .logoutUrl(&quot;/logout&quot;)
+                .logoutSuccessUrl(&quot;/login&quot;)
+                .permitAll()
+                .and()
+                /**
+                 * 关闭csrf(跨站请求伪造)保护, Spring Security3默认关闭csrf，SpringSecurity4默认启动了csrf
+                 * 原因是不关闭会进入CsrfFilter进行处理，从而会使用CsrfToken来认证而不是session
+                 * */
+            .csrf().disable();
+    }
+
+}</code></pre>
+<p>HelloController</p>
+<pre><code class="java">@Controller
+public class HelloController {
+    /** 方法无需方法体 */
+
+    /** 登录 */
+    @GetMapping({&quot;/login&quot;})
+    public void loginPage() {}
+
+    /** 登出 */
+    @GetMapping({&quot;/logout&quot;})
+    public void logout() {}
+
+    // 省略。。。
+}</code></pre>
+<p>LoginSuccessHandler</p>
+<pre><code class="java">package wiki.td.handler;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+public class LoginSuccessHandler implements AuthenticationSuccessHandler {
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+
+        // 获取savedRequest，savedRequest缓存了当前request请求
+        SavedRequest savedRequest = new HttpSessionRequestCache().getRequest(request, response);
+
+        // 获取到原来请求的url，例如在认证前访问的是localhost:8080/admin,那么认证成功后就重定向到admin
+        String redirectUrl = (savedRequest == null) ? &quot;&quot; : savedRequest.getRedirectUrl();
+        if (!redirectUrl.isEmpty()) {
+            response.sendRedirect(redirectUrl);
+            return;
+        }
+
+        // 获取认证成功的用户信息
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        for (GrantedAuthority authority : auth.getAuthorities()) {
+
+            // 用户的权限
+            String role = authority.getAuthority();
+
+            if (role != null &amp;&amp; !&quot;&quot;.equals(role)) {
+                switch (role) {
+                    case &quot;ROLE_ADMIN&quot;:
+                        redirectUrl = &quot;/admin&quot;;
+                        break;
+                    case &quot;ROLE_DBA&quot;:
+                        redirectUrl = &quot;/dba&quot;;
+                        break;
+                    default:
+                        redirectUrl = &quot;/user&quot;;
+                        break;
+                }
+            }
+        }
+
+        // 重定向到对应的页面
+        response.sendRedirect(redirectUrl);
+    }
+}</code></pre>
+<p>权限页面</p>
+<pre><code class="jsp">&lt;body&gt;
+    admin page&lt;a href=&quot;/logout&quot;&gt;登出&lt;/a&gt;
+&lt;/body&gt;
+
+&lt;body&gt;
+    dba page&lt;a href=&quot;/logout&quot;&gt;登出&lt;/a&gt;
+&lt;/body&gt;
+
+&lt;body&gt;
+    user page&lt;a href=&quot;/logout&quot;&gt;登出&lt;/a&gt;
+&lt;/body&gt;</code></pre>
+<p>登录页面</p>
+<pre><code class="jsp">&lt;body&gt;
+&lt;h3&gt;login page&lt;/h3&gt;
+&lt;fieldset&gt;
+    &lt;legend&gt;自定义表单验证&lt;/legend&gt;
+    &lt;form action=&quot;/login&quot; method=&quot;post&quot;&gt;
+        &lt;table&gt;
+            &lt;tr&gt;
+                &lt;td&gt;用户名:&lt;/td&gt;&lt;td&gt;&lt;input type=&quot;text&quot; name=&quot;username&quot; placeholder=&quot;username&quot;&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;密码:&lt;/td&gt;&lt;td&gt;&lt;input type=&quot;password&quot; name=&quot;password&quot; placeholder=&quot;password&quot;&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;/table&gt;
+        &lt;br&gt;
+        &lt;input name=&quot;submit&quot; type=&quot;submit&quot; value=&quot;提交&quot;&gt;
+    &lt;/form&gt;
+&lt;/fieldset&gt;
+&lt;/body&gt;</code></pre>
+<h2 id="自定义认证"><a href="#自定义认证" class="headerlink" title="自定义认证"></a>自定义认证</h2><h3 id="了解默认认证过滤器UsernamePasswordAuthenticationFilter"><a href="#了解默认认证过滤器UsernamePasswordAuthenticationFilter" class="headerlink" title="了解默认认证过滤器UsernamePasswordAuthenticationFilter"></a>了解默认认证过滤器UsernamePasswordAuthenticationFilter</h3><pre><code class="java">public class UsernamePasswordAuthenticationFilter extends
+        AbstractAuthenticationProcessingFilter {
+    // 默认情况下登录表单提交的用户名称和用户密码字段名称
+    public static final String SPRING_SECURITY_FORM_USERNAME_KEY = &quot;username&quot;;
+    public static final String SPRING_SECURITY_FORM_PASSWORD_KEY = &quot;password&quot;;
+
+    private String usernameParameter = SPRING_SECURITY_FORM_USERNAME_KEY;
+    private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;
+    private boolean postOnly = true;
+
+
+    // 匹配的post方式提交到/login的表单
+    // 可以通过HttpSecurity修改该定义
+    public UsernamePasswordAuthenticationFilter() {
+        super(new AntPathRequestMatcher(&quot;/login&quot;, &quot;POST&quot;));
+    }
+
+    // 生成token
+    public Authentication attemptAuthentication(HttpServletRequest request,
+            HttpServletResponse response) throws AuthenticationException {
+        // ...
+        String username = obtainUsername(request);
+        String password = obtainPassword(request);
+        // ...
+        username = username.trim();
+
+        // 使用提交的账号密码生成一个【未认证的token】
+        UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(
+                username, password);
+
+        // Allow subclasses to set the &quot;details&quot; property
+        setDetails(request, authRequest);
+
+        // 通过AuthenticationManager返回一个认证对象Authentication
+        return this.getAuthenticationManager().authenticate(authRequest);
+    }
+
+  // ...
+}</code></pre>
+<p><strong>认证的基本原理图</strong></p>
+<p><img src="/SpringSecurity/018.png" alt></p>
+<h3 id="自定义provider实现"><a href="#自定义provider实现" class="headerlink" title="自定义provider实现"></a>自定义provider实现</h3><blockquote>
+<p>以下为差异代码，其他参上之前的章节内容</p>
+</blockquote>
+<p>MyProvider</p>
+<pre><code class="java">public class MyProvider implements AuthenticationProvider {
+
+    /** 用户获取正确认证信息的UserDetailsService */
+    private UserDetailsService userDetailsService;
+
+    public MyProvider(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    /**
+     * 【我们的自定义认证条件是，只要用户名正确就可以了不需要校验密码，是不是很任性】
+     * @param authentication 未认证的authentication
+     * @return
+     * @throws AuthenticationException
+     */
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        // 获取表达的账号密码
+        String username = authentication.getName();
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        String realUsername = userDetails.getUsername();
+
+        Authentication result = authentication;
+
+        if (realUsername.equals(username)) {
+
+            result = new UsernamePasswordAuthenticationToken(
+                    userDetails.getUsername(),
+                    userDetails.getPassword(),
+                    userDetails.getAuthorities());
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean supports(Class&lt;?&gt; authentication) {
+        return true;
+    }
+}</code></pre>
+<p>SecurityConfig</p>
+<pre><code class="java">@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    //...
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        return new MyProvider(userDetailsService());
+    }
+
+    //...
+
+}</code></pre>
+<h2 id="自定义Filter"><a href="#自定义Filter" class="headerlink" title="自定义Filter"></a>自定义Filter</h2><h3 id="基本说明"><a href="#基本说明" class="headerlink" title="基本说明"></a>基本说明</h3><p>在spring security5中，默认的过滤器链中有一下过滤器，承担着不同的责任</p>
+<blockquote>
+<p><a href="https://docs.spring.io/spring-security/site/docs/5.0.0.M1/reference/htmlsingle/#ns-custom-filters" target="_blank" rel="noopener">https://docs.spring.io/spring-security/site/docs/5.0.0.M1/reference/htmlsingle/#ns-custom-filters</a></p>
+</blockquote>
+<p><img src="/SpringSecurity/012.png" alt></p>
+<h3 id="通过源码了解spring-security过滤器"><a href="#通过源码了解spring-security过滤器" class="headerlink" title="通过源码了解spring security过滤器"></a>通过源码了解spring security过滤器</h3><p>这是我们定义的SpringSecurityInitializer，创建一个过滤器链对象并设置到上下文中；</p>
+<p>作用相当于在以前的xml汇总配置DelegatingFilterProxy.class过滤器</p>
+<pre><code class="java">public class SpringSecurityInitializer extends AbstractSecurityWebApplicationInitializer { }</code></pre>
+<p><strong>以下为容器启动时，debug AbstractSecurityWebApplicationInitializer类的过程</strong></p>
+<p><img src="/SpringSecurity/013.png" alt></p>
+<p>简单来说就是AbstractSecurityWebApplicationInitializer在应用启动时，将一个名为<code>springSecurityFilterChain</code>的DelegatingFilterProxy类实例添加到了ServletContext中</p>
+<p><strong>LogoutFilter的精简源码（过滤器实现例子）</strong></p>
+<blockquote>
+<p>定义完随后在HttpSecurity添加上即可</p>
+</blockquote>
+<pre><code class="java">// 继承了GenericFilterBean即可
+public class LogoutFilter extends GenericFilterBean {
+
+    // 省略。。。
+
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletRequest request = (HttpServletRequest) req;
+        HttpServletResponse response = (HttpServletResponse) res;
+
+        if (requiresLogout(request, response)) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(&quot;Logging out user &#39;&quot; + auth
+                        + &quot;&#39; and transferring to logout destination&quot;);
+            }
+
+            this.handler.logout(request, response, auth);
+
+            logoutSuccessHandler.onLogoutSuccess(request, response, auth);
+
+            return;
+        }
+
+        // 往下执行过滤器链
+        chain.doFilter(request, response);
+    }
+
+    // 省略。。。
+}
+</code></pre>
+<p>FilterChainProxy的精简源码</p>
+<blockquote>
+<p>这是spring security的过滤器链代理对象，负责调度过滤器</p>
+<p>而每个过滤器中的public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)中的chain就是这个类的实例</p>
+</blockquote>
+<pre><code class="java">public class FilterChainProxy extends GenericFilterBean {
+    // 省略。。。
+        private final static String FILTER_APPLIED = FilterChainProxy.class.getName().concat(
+            &quot;.APPLIED&quot;);
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response,
+            FilterChain chain) throws IOException, ServletException {
+        boolean clearContext = request.getAttribute(FILTER_APPLIED) == null;
+        if (clearContext) {
+            try {
+                // 表名正在应用当前过滤器
+                request.setAttribute(FILTER_APPLIED, Boolean.TRUE);
+                // 执行内部调用
+                doFilterInternal(request, response, chain);
+            }
+            finally {
+                SecurityContextHolder.clearContext();
+                request.removeAttribute(FILTER_APPLIED);
+            }
+        }
+        else {
+            doFilterInternal(request, response, chain);
+        }
+    }
+
+    // 内部调用处理逻辑
+    private void doFilterInternal(ServletRequest request, ServletResponse response,
+            FilterChain chain) throws IOException, ServletException {
+
+        FirewalledRequest fwRequest = firewall
+                .getFirewalledRequest((HttpServletRequest) request);
+        HttpServletResponse fwResponse = firewall
+                .getFirewalledResponse((HttpServletResponse) response);
+
+        // 获取到所有的过滤器
+        List&lt;Filter&gt; filters = getFilters(fwRequest);
+
+        if (filters == null || filters.size() == 0) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(UrlUtils.buildRequestUrl(fwRequest)
+                        + (filters == null ? &quot; has no matching filters&quot;
+                                : &quot; has an empty filter list&quot;));
+            }
+
+            fwRequest.reset();
+            chain.doFilter(fwRequest, fwResponse);
+            return;
+        }
+
+        // 使用或许到的filters创建出一个虚拟的过滤器链
+        VirtualFilterChain vfc = new VirtualFilterChain(fwRequest, chain, filters);
+        vfc.doFilter(fwRequest, fwResponse);
+    }
+
+
+    //静态内部类VirtualFilterChain
+        private static class VirtualFilterChain implements FilterChain {
+        private final FilterChain originalChain;
+        private final List&lt;Filter&gt; additionalFilters;
+        private final FirewalledRequest firewalledRequest;
+        private final int size;
+        // 当前过滤器下标
+        private int currentPosition = 0;
+
+        private VirtualFilterChain(FirewalledRequest firewalledRequest,
+                FilterChain chain, List&lt;Filter&gt; additionalFilters) {
+            this.originalChain = chain;
+            this.additionalFilters = additionalFilters;
+            // 初始化过滤器链的大小
+            this.size = additionalFilters.size();
+            this.firewalledRequest = firewalledRequest;
+        }
+
+        @Override
+        public void doFilter(ServletRequest request, ServletResponse response)
+                throws IOException, ServletException {
+
+            if (currentPosition == size) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(UrlUtils.buildRequestUrl(firewalledRequest)
+                            + &quot; reached end of additional filter chain; proceeding with original chain&quot;);
+                }
+                // Deactivate path stripping as we exit the security filter chain
+                this.firewalledRequest.reset();
+                originalChain.doFilter(request, response);
+            }
+            else {                
+                currentPosition++;
+                Filter nextFilter = additionalFilters.get(currentPosition - 1);
+                nextFilter.doFilter(request, response, this);
+            }
+        }
+    }
+
+    // 省略。。。
+}</code></pre>
+<h2 id="spring-security中一些核心类和接口"><a href="#spring-security中一些核心类和接口" class="headerlink" title="spring security中一些核心类和接口"></a>spring security中一些核心类和接口</h2><h3 id="Authentication"><a href="#Authentication" class="headerlink" title="Authentication"></a>Authentication</h3><p>Authentication是一个接口，*Token都实现了该接口，用于存储用户的认证信息（未认证和已认证都用Authentication存放）常见的UsernamePasswordAuthenticationToken就是它的实现</p>
+<h3 id="SecurityContextHolder"><a href="#SecurityContextHolder" class="headerlink" title="SecurityContextHolder"></a>SecurityContextHolder</h3><p>SecurityContextHolder是一个获取SecurityContext的静态工具类，而SecurityContext可以获取到当前请求的认证信息。可以利用SecurityContextHolder获取如下信息：</p>
+<pre><code class="java">SecurityContext context = SecurityContextHolder.getContext();
+Authentication authentication = context.getAuthentication();
+Collection&lt;? extends GrantedAuthority&gt; authorities = authentication.getAuthorities();
+Object credentials = authentication.getCredentials();
+Object details = authentication.getDetails();
+Object principal = authentication.getPrincipal();
+System.out.println(&quot;authorities=&quot; + authorities);
+System.out.println(&quot;credentials=&quot; + credentials);
+System.out.println(&quot;details=&quot; + details);
+System.out.println(&quot;principal=&quot; + principal);
+
+System.out.println(&quot;======================================&quot;);
+
+SecurityContextHolderStrategy contextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
+SecurityContext context1 = contextHolderStrategy.getContext();
+Authentication authentication1 = context1.getAuthentication();
+Collection&lt;? extends GrantedAuthority&gt; authorities1 = authentication.getAuthorities();
+Object credentials1 = authentication.getCredentials();
+Object details1 = authentication.getDetails();
+Object principal1 = authentication.getPrincipal();
+System.out.println(&quot;authorities1=&quot; + authorities1);
+System.out.println(&quot;credentials1=&quot; + credentials1);
+System.out.println(&quot;details1=&quot; + details1);
+System.out.println(&quot;principal1=&quot; + principal1);
+
+        /**
+         * output:
+
+         authorities=[ROLE_DBA]
+         credentials=null
+         details=org.springframework.security.web.authentication.WebAuthenticationDetails@fffd3270: RemoteIpAddress: 0:0:0:0:0:0:0:1; SessionId: F3F2785E424BF728CC24B15EEA7D42BB
+         principal=wiki.td.entity.UserPrincipal@4c9a25ad
+
+         ======================================
+
+         authorities1=[ROLE_DBA]
+         credentials1=null
+         details1=org.springframework.security.web.authentication.WebAuthenticationDetails@fffd3270: RemoteIpAddress: 0:0:0:0:0:0:0:1; SessionId: F3F2785E424BF728CC24B15EEA7D42BB
+         principal1=wiki.td.entity.UserPrincipal@4c9a25ad
+
+         */</code></pre>
+<h3 id="AuthenticationManager和AuthenticationProvider"><a href="#AuthenticationManager和AuthenticationProvider" class="headerlink" title="AuthenticationManager和AuthenticationProvider"></a>AuthenticationManager和AuthenticationProvider</h3><p>从名字就可以看出来意思，AuthenticationManager用于管理AuthenticationProvider；</p>
+<p>其中AuthenticationManager是一个接口，默认的实现叫ProviderManager，而ProviderManager中有个叫parent的属性用于指向自己的父ProviderManager，形成链表，所以得知AuthenticationProvider是可以有多个，其中只要有一个返回Authentication就表示认证成功；</p>
+<h3 id="UserDetailsService"><a href="#UserDetailsService" class="headerlink" title="UserDetailsService"></a>UserDetailsService</h3><p>UserDetailsService是一个接口，提供使用用户名称查找返回UserDetails服务</p>
+<h3 id="PasswordEncoder"><a href="#PasswordEncoder" class="headerlink" title="PasswordEncoder"></a>PasswordEncoder</h3><p>PasswordEncoder是一个接口，功能是给用户密码编码加密</p>
+<h3 id="HttpSecurity"><a href="#HttpSecurity" class="headerlink" title="HttpSecurity"></a>HttpSecurity</h3><p>HttpSecurity是一个immutable类，用于设置http请求拦截规则</p>
+<h3 id="AuthenticationManagerBuilder"><a href="#AuthenticationManagerBuilder" class="headerlink" title="AuthenticationManagerBuilder"></a>AuthenticationManagerBuilder</h3><p>用于构建AuthenticationManager，可以构建出基于特定环境和边界地构建AuthenticationManager的功能</p>
+<p>如下：</p>
+<pre><code class="java">    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.inMemoryAuthentication().withUser(&quot;tandi01&quot;).password(&quot;{noop}123456&quot;).roles(&quot;USER&quot;);
+        auth.inMemoryAuthentication().withUser(&quot;tandi02&quot;).password(&quot;{noop}123456&quot;).roles(&quot;ADMIN&quot;);
+        auth.inMemoryAuthentication().withUser(&quot;tandi03&quot;).password(&quot;{noop}123456&quot;).roles(&quot;DBA&quot;);
+    }</code></pre>
+<h2 id="案例代码"><a href="#案例代码" class="headerlink" title="案例代码"></a>案例代码</h2><p><a href="https://github.com/tandi960505/webdemo3" target="_blank" rel="noopener">https://github.com/tandi960505/webdemo3</a></p>
+
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/SpringSecurity/">
+      SpringSecurity入门
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('SpringSecurity入门'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#快速入门案例"><span class="toc-text">快速入门案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#模拟场景"><span class="toc-text">模拟场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#项目源码"><span class="toc-text">项目源码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#目录"><span class="toc-text">目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#代码"><span class="toc-text">代码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#演示"><span class="toc-text">演示</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于认证和授权"><span class="toc-text">关于认证和授权</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基于数据库数据进行认证授权"><span class="toc-text">基于数据库数据进行认证授权</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#模拟场景-1"><span class="toc-text">模拟场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据库数据"><span class="toc-text">数据库数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#理解草图"><span class="toc-text">理解草图</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#项目源码-1"><span class="toc-text">项目源码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#目录-1"><span class="toc-text">目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#代码-1"><span class="toc-text">代码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于HttpSecurity常用配置"><span class="toc-text">关于HttpSecurity常用配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义登录页面"><span class="toc-text">自定义登录页面</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#项目源码-2"><span class="toc-text">项目源码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#目录-2"><span class="toc-text">目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#代码-2"><span class="toc-text">代码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义认证"><span class="toc-text">自定义认证</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#了解默认认证过滤器UsernamePasswordAuthenticationFilter"><span class="toc-text">了解默认认证过滤器UsernamePasswordAuthenticationFilter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义provider实现"><span class="toc-text">自定义provider实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义Filter"><span class="toc-text">自定义Filter</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本说明"><span class="toc-text">基本说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#通过源码了解spring-security过滤器"><span class="toc-text">通过源码了解spring security过滤器</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#spring-security中一些核心类和接口"><span class="toc-text">spring security中一些核心类和接口</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Authentication"><span class="toc-text">Authentication</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SecurityContextHolder"><span class="toc-text">SecurityContextHolder</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AuthenticationManager和AuthenticationProvider"><span class="toc-text">AuthenticationManager和AuthenticationProvider</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UserDetailsService"><span class="toc-text">UserDetailsService</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PasswordEncoder"><span class="toc-text">PasswordEncoder</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#HttpSecurity"><span class="toc-text">HttpSecurity</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AuthenticationManagerBuilder"><span class="toc-text">AuthenticationManagerBuilder</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#案例代码"><span class="toc-text">案例代码</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

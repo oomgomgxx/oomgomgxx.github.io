@@ -1,0 +1,668 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 初识ZooKeeper-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>初识ZooKeeper</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2017-08-14 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ol>
+<li>最近项目需要做高可用，打算用ZooKeeper来做master-salve</li>
+<li>虽然先前已经接触过ZooKeeper。如kafka基于ZooKeeper来做集群管理、solr cloud用ZooKeeper来做配置同步、还有Dubbo用ZooKeeper来做服务注册中心等等。印象中ZooKeeper是一个与分布式息息相关的组件，所以学习一下还是非常有必要的</li>
+</ol>
+<h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><ul>
+<li>是一个高可用的分布式协调服务</li>
+<li>只要半数以上节点存活，ZooKeeper就能正常服务，所以ZooKeeper一般以集群的姿态使用</li>
+<li>使用内存存储数据结构，保证高吞吐和低延迟。使用磁盘来备份内存的数据（和Redis一样）</li>
+<li>ZooKeeper能够在高并发情况下完成分布式数据的一致性和优雅地处理运行时故障</li>
+</ul>
+<h2 id="安装ZooKeeper"><a href="#安装ZooKeeper" class="headerlink" title="安装ZooKeeper"></a>安装ZooKeeper</h2><blockquote>
+<p>ZooKeeper依赖jdk，所以先安装配置好java环境</p>
+</blockquote>
+<p>ZooKeeper安装：<a href="https://www.apache.org/dyn/closer.cgi/zookeeper/" target="_blank" rel="noopener">官网下载地址</a></p>
+<pre><code>[root@localhost opt]# wget http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz </code></pre><p>解压后目录如下：<br><img src="/%E5%88%9D%E5%A7%8Bzookeeper/001.png" alt><br><img src="/%E5%88%9D%E5%A7%8Bzookeeper/002.png" alt></p>
+<h2 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h2><h3 id="启动server"><a href="#启动server" class="headerlink" title="启动server"></a>启动server</h3><p>&emsp;&emsp;如果启动不指定配置文件，如直接使用<code>命令：zkServer.sh start</code>来启动zookeeper服务的话，服务端会默认找一个位于conf文件夹下名为<code>zoo.cfg</code>的配置文件</p>
+<pre><code class="shell">[root@localhost zookeeper-3.4.14]# bin/zkServer.sh start conf/zoo_sample.cfg
+[root@localhost zookeeper-3.4.14]# jps -l
+31623 org.apache.zookeeper.server.quorum.QuorumPeerMain
+31640 sun.tools.jps.Jps
+# 可以看到输出信息，zookeeper.server已经成功启动</code></pre>
+<h3 id="启动client"><a href="#启动client" class="headerlink" title="启动client"></a>启动client</h3><pre><code class="shell">[root@localhost zookeeper-3.4.14]# bin/zkCli.sh -server 127.0.0.1:2181 </code></pre>
+<h3 id="操作命令"><a href="#操作命令" class="headerlink" title="操作命令"></a>操作命令</h3><p>可以随便输入一些内容，只要不是命令，就会提示输出命令说明，常用命令如下</p>
+<p>节点命令</p>
+<pre><code class="shell">ls [-s] [-w] [-R] path # 列出路径中的节点,-w表示加上一个监听器
+ls2 path [watch] # 列出路径中的节点和节点的状态
+stat [-w] path # 打印节点状态,-w表示加上一个监听器
+create [-s] [-e] [-c] [-t ttl] path [data] [acl] # 创建节点，-e临时节点，-s顺序节点
+set [-s] [-v version] path data # 设置节点值
+get [-s] [-w] path # 返回节点值,-w表示加上一个监听器
+delete [-v version] path # 删除节点
+deleteall path # 删除所有节点,用来代替rmr（rmr在新版本中已经标注为过时）
+sync path # 节点同步</code></pre>
+<p>acl机制命令</p>
+<pre><code class="shell">addauth scheme auth # 创建认证策略并指定权限
+setAcl [-s] [-v version] [-R] path acl # 设置节点访问权限
+getAcl [-s] path # 返回节点的权限</code></pre>
+<p>quota机制命令</p>
+<pre><code class="shell">listquota path # 列出节点quota
+setquota -n|-b val path # 设置节点的quota限定，-n 节点个数，-b 节点大小
+delquota [-n|-b] path # 删除节点的quota限定</code></pre>
+<p>watcher命令</p>
+<pre><code class="shell">printwatches on|off 
+removewatches path [-c|-d|-a] [-l]</code></pre>
+<p>行为命令</p>
+<pre><code class="shell">history # 显示使用过的命令
+redo cmdno # 可以根据history查询出来的命令编号重新调用这些命令
+close # 断开当前的服务端连接
+quit # 退出当前客户端
+connect host:port # 重新接连到其他的服务端</code></pre>
+<h2 id="关于节点"><a href="#关于节点" class="headerlink" title="关于节点"></a>关于节点</h2><h3 id="节点类型"><a href="#节点类型" class="headerlink" title="节点类型"></a>节点类型</h3><p><strong>zookeeper节点的基本类型：</strong></p>
+<ol>
+<li>持久(persistent)节点</li>
+<li>临时(ephemeral)节点（会话级别）</li>
+<li>顺序节点</li>
+</ol>
+<p><strong>组合节点类型：</strong></p>
+<ol>
+<li>持久(persistent)节点</li>
+<li>临时(ephemeral)节点</li>
+<li>持久(persistent)顺序节点</li>
+<li>临时(ephemeral)顺序节点</li>
+</ol>
+<h3 id="节点操作"><a href="#节点操作" class="headerlink" title="节点操作"></a>节点操作</h3><p><strong>创建持久节点（默认）</strong></p>
+<pre><code class="shell">[zk: localhost:2181(CONNECTED) 13] create /zookeeper/person &#39;p1&#39;
+[zk: localhost:2181(CONNECTED) 14] stat /zookeeper/person
+cZxid = 0x12    #节点创建时的zxid
+ctime = Mon Aug 12 05:09:56 CST 2019    #节点创时间
+mZxid = 0x12    #节点修改时的zxid
+mtime = Mon Aug 12 05:09:56 CST 2019    #节点最后一次修改的时间
+pZxid = 0x12    #子节点最近一次创建/删除的zxid
+cversion = 0    #子节点的更新次数（乐观锁version）
+dataVersion = 0    #节点数据的更新次数（乐观锁version）
+aclVersion = 0    #节点acl的更新次数（乐观锁version）
+ephemeralOwner = 0x0    #是否为临时节点，0为false,非0为true
+dataLength = 2    #节点数据长度（字节）
+numChildren = 0 #字节点个数</code></pre>
+<p><strong>创建临时节点（会话结束自动删除）</strong></p>
+<pre><code class="shell">[zk: localhost:2181(CONNECTED) 0] create -e /zookeeper/person2 &#39;p2&#39;
+[zk: localhost:2181(CONNECTED) 1] stat /zookeeper/person2
+cZxid = 0x15
+ctime = Mon Aug 12 05:18:38 CST 2019
+mZxid = 0x15
+mtime = Mon Aug 12 05:18:38 CST 2019
+pZxid = 0x15
+cversion = 0
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x10004ee71460002 #非0就是临时节点
+dataLength = 2
+numChildren = 0</code></pre>
+<p><strong>创建顺序节点</strong></p>
+<pre><code class="shell">[zk: localhost:2181(CONNECTED) 6] create -s /zookeeper/person3 &#39;p3&#39;
+Created /zookeeper/person30000000007 # 创建顺序节点时最会在节点名字后添加顺序后续
+[zk: localhost:2181(CONNECTED) 8] create -s /zookeeper/person4 &#39;p4&#39;
+Created /zookeeper/person40000000008 # 可以看到后续是有序递增的</code></pre>
+<p><strong>删除节点</strong></p>
+<pre><code class="shell">[zk: localhost:2181(CONNECTED) 12] delete /zookeeper/person30000000007
+[zk: localhost:2181(CONNECTED) 14] deleteall /zookeeper/person40000000008</code></pre>
+<h3 id="acl策略"><a href="#acl策略" class="headerlink" title="acl策略"></a>acl策略</h3><p><strong>作用：</strong>针对节点设置其会话连接的访问控制</p>
+<p><strong>使用说明</strong></p>
+<pre><code>[支持的认证策略]
+world：（默认）所有会话可以访问
+auth： auth策略。使用前需要先用 authadd 添加认证策略
+digest： (常用)用户密码策略;会话访问节点时需要正确的用户和密码（既将节点设置为指定用户和密码才能够访问）
+ip： ip绑定策略;会话访问节点时需要正确的ip（既将节点设置为指定ip才能够访问）
+
+[支持的访问权限（默认crwda，表示有所有操作权限）]
+CREATE： 创建
+READ： 读取
+WRITE： 写入
+DELETE： 删除
+ADMIN： 管理</code></pre><p><strong>acl策略使用</strong></p>
+<p>1）ip模式</p>
+<pre><code class="powershell">create /test ip:127.0.0.1:crwda</code></pre>
+<p>2）digest模式</p>
+<blockquote>
+<p>注意：设置节点的digest时需要对密码部分进行编码，使用org.apache.zookeeper.server.auth.DigestAuthenticationProvider </p>
+</blockquote>
+<pre><code class="shell">create /test/t3 &#39;t3&#39;
+setAcl /test/t3 digest:test:V28q/NynI4JI3Rk54h0r8O5kMug=:crwda
+addauth digest test:test</code></pre>
+<p>3）auth模式</p>
+<blockquote>
+<p>auth和digest差不多，但使用auth前需要先添加addauth，且auth设置时无需对密码编码</p>
+</blockquote>
+<pre><code class="shell">addauth digest aaa:aaa
+setAcl /test/t4 auth:aaa:aaa:crwda</code></pre>
+<h3 id="quota策略"><a href="#quota策略" class="headerlink" title="quota策略"></a>quota策略</h3><p>作用：给节点设置配额限制</p>
+<blockquote>
+<p>重点注意：设置-n后并不是如我们所愿zookeeper会阻止节点的创建，实质只会超额后发出警告</p>
+</blockquote>
+<pre><code class="shell">[zk: localhost:2181(CONNECTED) 20] create /test/t7 &#39;t7&#39;
+[zk: localhost:2181(CONNECTED) 21] setquota -b 10 /test/t7
+[zk: localhost:2181(CONNECTED) 22] setquota -n 2 /test/t7
+[zk: localhost:2181(CONNECTED) 23] listquota /test/t7
+absolute path is /zookeeper/quota/test/t7/zookeeper_limits
+Output quota for /test/t7 count=2,bytes=-1
+Output stat for /test/t7 count=5,bytes=2
+
+[zk: localhost:2181(CONNECTED) 25] stat /test/t7
+cZxid = 0x20
+ctime = Tue Aug 13 07:42:04 CST 2019
+mZxid = 0x20
+mtime = Tue Aug 13 07:42:04 CST 2019
+pZxid = 0x28
+cversion = 4
+dataVersion = 0
+aclVersion = 0
+ephemeralOwner = 0x0
+dataLength = 2 长度为2个字节
+numChildren = 4</code></pre>
+<h2 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h2><p>除了开源的zkClient客户端之外，Java方面还有 zookeeper 和 curator 两个API</p>
+<h3 id="zookeeper"><a href="#zookeeper" class="headerlink" title="zookeeper"></a>zookeeper</h3><h4 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h4><pre><code class="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.apache.zookeeper&lt;/groupId&gt;
+    &lt;artifactId&gt;zookeeper&lt;/artifactId&gt;
+    &lt;version&gt;3.4.6&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<h4 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h4><ul>
+<li>watcher无法复用</li>
+<li>没有提供连接失败重试的实现</li>
+<li>没有提供创建多级节点的实现</li>
+</ul>
+<h4 id="基本使用-1"><a href="#基本使用-1" class="headerlink" title="基本使用"></a>基本使用</h4><pre><code class="java">public class TestZookeeper {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestZookeeper.class);
+
+    // 因为Zookeeper连接操作时异步的，所以需要等待其连接成功后，否则主线程会先关闭
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+    public static ZooKeeper connect(String server, int timeout, Watcher watcher) throws Exception {
+        return new ZooKeeper(&quot;127.0.0.1:2181&quot;, 20000, watcher);
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        Watcher masterWatcher = watchedEvent -&gt; {
+            // 判断连接状态
+            if (watchedEvent.getState() == Watcher.Event.KeeperState.SyncConnected) {
+                LOGGER.info(&quot;连接成功&quot;);
+                countDownLatch.countDown();
+            }
+        };
+
+        Watcher createWatcher = watchedEvent -&gt; {
+            // 判断操作类型
+            if (watchedEvent.getType() == Watcher.Event.EventType.NodeCreated) {
+                LOGGER.info(&quot;创建节点成功&quot;);
+            }
+        };
+
+        ZooKeeper zooKeeper = connect(&quot;127.0.0.1:2181&quot;, 5000, masterWatcher);
+        countDownLatch.await();
+
+        // 根节点
+        if (zooKeeper.exists(&quot;/test&quot;, createWatcher) == null) {
+            // 创建所有会话可操作的持久化节点
+            zooKeeper.create(&quot;/test&quot;, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
+
+        // 创建临时节点
+        zooKeeper.create(&quot;/test/t1&quot;, &quot;t1&quot;.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        zooKeeper.create(&quot;/test/t2&quot;, &quot;t2&quot;.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+
+        // 添加认证
+        zooKeeper.addAuthInfo(&quot;digest&quot;, &quot;aaa:aaa&quot;.getBytes());
+
+        // 设置acl - digest
+        List&lt;ACL&gt; digest = TestZookeeper.getAcls(&quot;digest&quot;, DigestAuthenticationProvider.generateDigest(&quot;aaa:aaa&quot;));
+        // version是乐观所的期望值，如果与zookeeper中的不一直则会操作失败,当版本号设置为-1时，忽略节点的版本号
+        Stat stat = zooKeeper.setACL(&quot;/test/t1&quot;, digest, -1);
+        LOGGER.info(zooKeeper.getACL(&quot;/test/t1&quot;, stat).toString());
+
+        // 设置acl - ip
+        List&lt;ACL&gt; ip = TestZookeeper.getAcls(&quot;ip&quot;, &quot;127.0.0.1&quot;);
+
+        Stat t2Stat = zooKeeper.exists(&quot;/test/t2&quot;, null);
+        t2Stat = zooKeeper.setACL(&quot;/test/t2&quot;, ip, t2Stat.getVersion());
+        LOGGER.info(zooKeeper.getACL(&quot;/test/t2&quot;, t2Stat).toString());
+        byte[] data = zooKeeper.getData(&quot;/test/t2&quot;, null, t2Stat);
+        LOGGER.info(new String(data));
+
+        TimeUnit.SECONDS.sleep(10);
+        zooKeeper.delete(&quot;/test/t1&quot;, -1);
+
+        TimeUnit.SECONDS.sleep(30);
+        zooKeeper.close();
+    }
+
+
+    public static List&lt;ACL&gt; getAcls(String scheme, String id) {
+        ACL auth = new ACL(ZooDefs.Perms.ALL, new Id(scheme, id));
+        final List&lt;ACL&gt; aclList = new ArrayList&lt;&gt;();
+        aclList.add(auth);
+        return aclList;
+    }
+}
+</code></pre>
+<h3 id="curator"><a href="#curator" class="headerlink" title="curator"></a>curator</h3><p>对Zookeeper库的扩展</p>
+<h4 id="依赖-1"><a href="#依赖-1" class="headerlink" title="依赖"></a>依赖</h4><pre><code class="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.apache.curator&lt;/groupId&gt;
+    &lt;artifactId&gt;curator-recipes&lt;/artifactId&gt;
+    &lt;version&gt;4.2.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<h4 id="基本使用-2"><a href="#基本使用-2" class="headerlink" title="基本使用"></a>基本使用</h4><pre><code class="java">public class TestCurator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestZookeeper.class);
+
+    private static final String SERVERS = &quot;127.0.0.1:2181&quot;;
+    private static final String ROOT_PATH = &quot;/test&quot;;
+
+    public static CuratorFramework createConn(String servers, 
+                                           int timeout,  // 超时时间
+                                           int n, // 重试次数
+                                           int sleepMsBetweenRetries) { // 重试间隔 
+
+        // 重试策略
+        RetryNTimes retryNTimes = new RetryNTimes(n, sleepMsBetweenRetries);
+
+        // 连接Zookeeper
+        CuratorFramework client = CuratorFrameworkFactory.builder()
+                .connectString(SERVERS) // Zookeeper地址
+                .sessionTimeoutMs(timeout) // 连接超时
+                .retryPolicy(retryNTimes)  // 重试策略
+                .build();
+
+        // 连接
+        client.start();
+
+        return client;
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        // 获取连接
+        CuratorFramework client = createConn(SERVERS, 10000, 10, 5000);
+
+        // 创建一个临时（根）节点，并初始内容为空
+        if (client.checkExists().forPath(ROOT_PATH) == null) {
+            client.create().withMode(CreateMode.EPHEMERAL).forPath(ROOT_PATH);
+        }
+
+        // 注册可重用监听
+        PathChildrenCache cache = new PathChildrenCache(client, ROOT_PATH, true);
+        cache.start();
+        PathChildrenCacheListener cacheListener = (client1, event) -&gt; {
+            System.out.println(&quot;事件类型：&quot; + event.getType());
+            if (null != event.getData()) {
+                System.out.println(&quot;节点数据：&quot; + event.getData().getPath() + &quot; = &quot; + new String(event.getData().getData()));
+            }
+        };
+        cache.getListenable().addListener(cacheListener);
+
+
+        // 递归创建一个临时节点
+        // 递归创建：即使没有根节点都可以创建成功
+        client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(&quot;/test/t1&quot;,&quot;t1&quot;.getBytes());
+        TimeUnit.SECONDS.sleep(10);
+        // 如果主节点是临时的话，就不能构建其子节点。
+        //client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(&quot;/test/t1/t11&quot;,&quot;t11&quot;.getBytes());
+
+        // 设置acl操作
+        List&lt;ACL&gt; ip = TestZookeeper.getAcls(&quot;ip&quot;, &quot;127.0.0.1&quot;);
+        client.setACL().withACL(ip).forPath(&quot;/test/t1&quot;);
+        System.out.println(client.getACL().forPath(&quot;/test/t1&quot;));
+        TimeUnit.SECONDS.sleep(30);
+
+        int version = client.checkExists().forPath(ROOT_PATH).getVersion();
+
+        // 递归删除子节点
+//        client.delete().deletingChildrenIfNeeded().forPath(&quot;/test/t1&quot;);
+        // 指定版本号
+        client.delete().deletingChildrenIfNeeded().withVersion(version).forPath(&quot;/test/t1&quot;);
+
+        client.close();
+    }
+
+    public static List&lt;ACL&gt; getAcls(String scheme, String id) {
+        ACL auth = new ACL(ZooDefs.Perms.ALL, new Id(scheme, id));
+        final List&lt;ACL&gt; aclList = new ArrayList&lt;&gt;();
+        aclList.add(auth);
+        return aclList;
+    }
+
+}</code></pre>
+<h2 id="可视化工具"><a href="#可视化工具" class="headerlink" title="可视化工具"></a>可视化工具</h2><blockquote>
+<p>zookeeper可视化工具</p>
+</blockquote>
+<pre><code class="bash">yum install git maven
+git clone https://github.com/zzhang5/zooinspector.git
+cd zooinspector
+mvn clean package
+chmod +x target/zooinspector-pkg/bin/zooinspector.sh
+target/zooinspector-pkg/bin/zooinspector.sh</code></pre>
+<h2 id="常用监控手段"><a href="#常用监控手段" class="headerlink" title="常用监控手段"></a>常用监控手段</h2><ul>
+<li><p>四字命令： <a href="https://www.cnblogs.com/kuku0223/p/8428341.html" target="_blank" rel="noopener">https://www.cnblogs.com/kuku0223/p/8428341.html</a> </p>
+</li>
+<li><p>JMX： <a href="https://www.jianshu.com/p/4f11d7bfc9ce" target="_blank" rel="noopener">https://www.jianshu.com/p/4f11d7bfc9ce</a> </p>
+</li>
+</ul>
+<h2 id="集群"><a href="#集群" class="headerlink" title="集群"></a>集群</h2><h3 id="关于Leader选举及ZAB协议相关内容"><a href="#关于Leader选举及ZAB协议相关内容" class="headerlink" title="关于Leader选举及ZAB协议相关内容"></a>关于Leader选举及ZAB协议相关内容</h3><p>移步到另一篇文章 <a href="https://www.tandi.pub/分布式的一致性和共识性/" target="_blank" rel="noopener">分布式的一致性和共识性</a></p>
+<h3 id="集群配置"><a href="#集群配置" class="headerlink" title="集群配置"></a>集群配置</h3><h4 id="案例说明"><a href="#案例说明" class="headerlink" title="案例说明"></a>案例说明</h4><p>案例使用 3 个节点来搭建一个伪集群。所谓的伪集群指的是在同一台机器上通过错开端口的形式来搭建集群。伪集群的和真集群的配置方式是一样的，区别是伪集群通常用于调研阶段，因为方便。</p>
+<h4 id="搭建步骤"><a href="#搭建步骤" class="headerlink" title="搭建步骤"></a>搭建步骤</h4><p><strong>1）在各个zookeeper目录下创建data目录并添加myid文件</strong></p>
+<p>server1</p>
+<pre><code class="bash">➜  apache-zookeeper-3.5.5-bin-01 mkdir data
+➜  apache-zookeeper-3.5.5-bin-01 echo &quot;1&quot; &gt; data/myid # 设置Zookeeper集群节点ID号</code></pre>
+<p>server2</p>
+<pre><code class="bash">➜  apache-zookeeper-3.5.5-bin-02 mkdir data
+➜  apache-zookeeper-3.5.5-bin-02 echo &quot;2&quot; &gt; data/myid # 设置Zookeeper集群节点ID号</code></pre>
+<p>server3</p>
+<pre><code class="bash">➜  apache-zookeeper-3.5.5-bin-03 mkdir data
+➜  apache-zookeeper-3.5.5-bin-03 echo &quot;3&quot; &gt; data/myid # 设置Zookeeper集群节点ID号</code></pre>
+<p><strong>2）修改配置文件</strong></p>
+<p>server1</p>
+<pre><code class="properties">tickTime=2000
+initLimit=10
+syncLimit=5
+# 注意：这里不要放在中文目录下，可能会出现找不到myid的问题
+dataDir=/home/tandi/zookeeper-test/apache-zookeeper-3.5.5-bin-01/data
+clientPort=2181
+
+# 2888为节点通信端口
+# 3888为节点选举端口
+server.1=127.0.0.1:2888:3888
+server.2=127.0.0.1:2889:3889
+server.3=127.0.0.1:2890:3890</code></pre>
+<p>server2</p>
+<pre><code class="properties">tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/home/tandi/zookeeper-test/apache-zookeeper-3.5.5-bin-01/data
+clientPort=2182
+
+server.1=127.0.0.1:2888:3888
+server.2=127.0.0.1:2889:3889
+server.3=127.0.0.1:2890:3890</code></pre>
+<p>server3</p>
+<pre><code class="properties">tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/home/tandi/zookeeper-test/apache-zookeeper-3.5.5-bin-03/data
+clientPort=2183
+
+server.1=127.0.0.1:2888:3888
+server.2=127.0.0.1:2889:3889
+server.3=127.0.0.1:2890:3890</code></pre>
+<p><strong>3）启动集群节点</strong></p>
+<pre><code class="bash">➜  apache-zookeeper-3.5.5-bin-01 bin/zkServer.sh start conf/zoo.cfg 
+➜  apache-zookeeper-3.5.5-bin-02 bin/zkServer.sh start conf/zoo.cfg 
+➜  apache-zookeeper-3.5.5-bin-03 bin/zkServer.sh start conf/zoo.cfg </code></pre>
+<h4 id="测试集群"><a href="#测试集群" class="headerlink" title="测试集群"></a>测试集群</h4><p><strong>1）先在任意一个集群节点中添加一个node。例如在 server3 中添加</strong></p>
+<pre><code class="shell"># 客户端连接上server1
+➜  apache-zookeeper-3.5.5-bin-03 bin/zkCli.sh -server localhost:2181
+[zk: localhost:2181(CONNECTED) 1] create /test &#39;t1&#39; # 创建一个node用于观察集群是否搭建成功</code></pre>
+<p><strong>2）在其它集群节点中观察是否同步成功</strong></p>
+<pre><code class="shell"># 客户端连接上server2
+➜  apache-zookeeper-3.5.5-bin-03 bin/zkCli.sh -server localhost:2182
+[zk: localhost:2182(CONNECTED) 0] ls /
+[test, zookeeper]
+[zk: localhost:2182(CONNECTED) 1] get /test
+t1</code></pre>
+<p><strong>3）查看集群节点的角色身份</strong></p>
+<pre><code class="shell">➜  apache-zookeeper-3.5.5-bin-01 bin/zkServer.sh status             
+ZooKeeper JMX enabled by default
+Using config: /home/tandi/zookeeper-test/apache-zookeeper-3.5.5-bin-01/bin/../conf/zoo.cfg
+Client port found: 2181. Client address: localhost.
+Mode: follower # 从节点
+
+➜  apache-zookeeper-3.5.5-bin-02 bin/zkServer.sh status             
+ZooKeeper JMX enabled by default
+Using config: /home/tandi/zookeeper-test/apache-zookeeper-3.5.5-bin-02/bin/../conf/zoo.cfg
+Client port found: 2182. Client address: localhost.
+Mode: leader # 主节点
+
+➜  apache-zookeeper-3.5.5-bin-03 bin/zkServer.sh status
+ZooKeeper JMX enabled by default
+Using config: /home/tandi/zookeeper-test/apache-zookeeper-3.5.5-bin-03/bin/../conf/zoo.cfg
+Client port found: 2183. Client address: localhost.
+Mode: follower # 从节点</code></pre>
+<p><strong>为什么是server2做了Leader？</strong></p>
+<p>首先服务器并不是同时启动的，在当前案例中，我们先启动了 server1，再启动 server2，但因为server2的集群节点ID值比server1大，所以 server2 就成为了Leader。虽然随后 server3 加入到集群，但因为集群中已经有了Leader，所以 server3 自然就成为了 follower 了。</p>
+<p><strong>查看集群配置</strong></p>
+<pre><code class="shell"># 在Zookeeper中查看当前集群的配置信息（位于节点&quot;/zookeeper/config&quot;中）
+[zk: localhost:2181(CONNECTED) 0] get /zookeeper/config
+server.1=localhost:2888:3888:participant
+server.2=localhost:2889:3889:participant
+server.3=localhost:2890:3890:participant
+version=0</code></pre>
+<h2 id="常见使用场景"><a href="#常见使用场景" class="headerlink" title="常见使用场景"></a>常见使用场景</h2><h3 id="消息发布和订阅（配置中心）"><a href="#消息发布和订阅（配置中心）" class="headerlink" title="消息发布和订阅（配置中心）"></a>消息发布和订阅（配置中心）</h3><p>将共享配置存放到 ZooKeeper 节点中。应用启动时到 ZooKeeper 中获取节点信息，同时在对应节点中添加 Watch 来监听内容的变更。</p>
+<h3 id="全局ID"><a href="#全局ID" class="headerlink" title="全局ID"></a>全局ID</h3><p>利用 ZooKeeper 的顺序节点和API特性来完成。例如 create() 一个名称为 <code>id-</code> 的节点，该方法会返回一个诸如<code>id-0000000005</code>的节点名称，那么就可以使用这个节点名称来做全局ID。</p>
+<p>除此之外还可以在 <code>id-0000000005</code> 的基础上加上一些需要的信息，例如 <code>type-id-0000000005</code> 以定制化更加可读的ID值。</p>
+<h3 id="主备切换"><a href="#主备切换" class="headerlink" title="主备切换"></a>主备切换</h3><ul>
+<li>方法1</li>
+</ul>
+<p>&emsp;&emsp;利用<code>临时节点</code>。例如2台服务器启动，先成功创建节点的先提供服务，而创建失败的服务就在该节点上添加Watch监听其消失，一旦Zookeeper节点消失就可以顶替宕机的服务继续提供服务了</p>
+<ul>
+<li>方法2</li>
+</ul>
+<p>&emsp;&emsp;利用<code>临时顺序节点</code>。例如多台服务器在启动时在持久节点 instances 下创建临时顺序节点。创建完成后判断自己的序号是否为最小，如果是则对外提供服务，即 RUNNING 状态。如果不是则为 STANDBY ，并监听 instances 节点的变化来切换自己的状态</p>
+<h3 id="Master选举"><a href="#Master选举" class="headerlink" title="Master选举"></a>Master选举</h3><p>Master选举和上面主备切换的方法1是一样的。既先成功创建节点的就为 Master，然后 Slave 在该节点上添加Watch ，一旦监听到节点变化就竞争创建节点成为Master</p>
+<h3 id="服务注册中心"><a href="#服务注册中心" class="headerlink" title="服务注册中心"></a>服务注册中心</h3><p>利用临时节点来存储服务地址。例如先创建一个持久节点 tiket-services 用于聚集服务列表，然后服务提供者在启动时将自己对外暴露的服务注册到该节点上，譬如可以创建一个临时节点，名称为<code>address-127.0.0.1:8080</code>。而服务发现就是消费者获取持久节点 tiket-services 下的子节点列表再进行服务调用。当然，具体的实现方式千差万别，但基本原理是一样的。</p>
+<h3 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h3><ul>
+<li>排它锁</li>
+</ul>
+<p>利用<code>临时节点</code>和<code>Watch</code>。其实和上面提到的Master选举操作是一样。例如获取锁时在持久节点<code>/exclusive_lock</code>中创建<code>临时节点lock</code>。那么即使是并发创建也只会有一个客户端创建节点成功（创建成功表示获取到锁），而没有成功创建节点的客户端就在<code>临时节点lock</code>上添加 Watch 来监听其状态，一旦该节点消失或被主动删除（释放）后就重新创建该节点（竞争锁）。而使用临时节点的原因是避免获取到锁的Client宕机后无法释放锁从而造成死锁。</p>
+<img src="/%E5%88%9D%E5%A7%8Bzookeeper/003.png" style="zoom: 50%;">
+
+<ul>
+<li>共享锁</li>
+</ul>
+<p>利用<code>临时顺序节点</code>和<code>Watch</code>。例如获取锁时在持久节点<code>/shared_lock</code>中创建临时顺序节点。但这时和排它锁就稍有区别了。</p>
+<p>读锁获取：</p>
+<ol>
+<li>创建<code>临时顺序节点</code>，例如名称为<code>主机ip-R-</code>。如果创建成功的话就会生成一个名称诸如为 <code>主机ip-R-0000000001</code> 的临时顺序节点</li>
+<li>成功创建节点后，再获取<code>/shared_lock</code>下的子节点列表</li>
+<li>判断自己的序列号是否为最小，是则获取共享锁成功；如果自己的序号不是最小，那么接着判断在比自己序号小的节点中<code>是否存在写节点</code>，如果不存在则获取共享锁成功；如果比自己序号小的节点中存在写节点则进入等待，并在距离自己最近且比自己序号小的<code>写节点</code>上添加 Watch 监听其变化用于重复以上操作</li>
+</ol>
+<p>写锁获取：</p>
+<ol>
+<li>创建<code>临时顺序节点</code>，例如名称为<code>主机ip-W-</code>。如果创建成功的话就会生成一个名称诸如为 <code>主机ip-W-0000000001</code> 的临时顺序节点</li>
+<li>成功创建节点后，再获取<code>/shared_lock</code>下的子节点列表</li>
+<li>判断自己的序号是否为最小，如果是则获取写锁成功；如果不是则进入等待状态，并在距离自己最近且比自己序号小的节点上添加 Watch 监听其变化用于重复以上操作</li>
+</ol>
+<p><img src="/%E5%88%9D%E5%A7%8Bzookeeper/004.png" alt></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="http://fangchao.me/2016/10/13/zookeeper.html" target="_blank" rel="noopener">Zookeeper部署与动态扩容</a></li>
+<li>《从Paxos到ZooKeeper 分布式一致性原理与实战》</li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2018年07月09日08:40:40 — 迁移关于zab协议内容到文章<a href="https://www.tandi.wiki/分布式的一致性和共识性/" target="_blank" rel="noopener">《分布式的一致性和共识性》</a></li>
+</ul>
+
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/%E5%88%9D%E5%A7%8Bzookeeper/">
+      初识ZooKeeper
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('初识ZooKeeper'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装ZooKeeper"><span class="toc-text">安装ZooKeeper</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本使用"><span class="toc-text">基本使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#启动server"><span class="toc-text">启动server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#启动client"><span class="toc-text">启动client</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#操作命令"><span class="toc-text">操作命令</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于节点"><span class="toc-text">关于节点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#节点类型"><span class="toc-text">节点类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#节点操作"><span class="toc-text">节点操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#acl策略"><span class="toc-text">acl策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#quota策略"><span class="toc-text">quota策略</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#客户端"><span class="toc-text">客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#zookeeper"><span class="toc-text">zookeeper</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#依赖"><span class="toc-text">依赖</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#缺点"><span class="toc-text">缺点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#基本使用-1"><span class="toc-text">基本使用</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#curator"><span class="toc-text">curator</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#依赖-1"><span class="toc-text">依赖</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#基本使用-2"><span class="toc-text">基本使用</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#可视化工具"><span class="toc-text">可视化工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用监控手段"><span class="toc-text">常用监控手段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#集群"><span class="toc-text">集群</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#关于Leader选举及ZAB协议相关内容"><span class="toc-text">关于Leader选举及ZAB协议相关内容</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#集群配置"><span class="toc-text">集群配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#案例说明"><span class="toc-text">案例说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#搭建步骤"><span class="toc-text">搭建步骤</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#测试集群"><span class="toc-text">测试集群</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见使用场景"><span class="toc-text">常见使用场景</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息发布和订阅（配置中心）"><span class="toc-text">消息发布和订阅（配置中心）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#全局ID"><span class="toc-text">全局ID</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主备切换"><span class="toc-text">主备切换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Master选举"><span class="toc-text">Master选举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服务注册中心"><span class="toc-text">服务注册中心</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式锁"><span class="toc-text">分布式锁</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> Consul的基本使用-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>Consul的基本使用</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-08-03 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><ul>
+<li>Consul 是 HashiCorp 公司推出的开源工具，用于实现分布式系统的服务发现与配置</li>
+<li>Consul 提供 服务注册与发现、分布一致性协议实现、健康检查、Key/Value存储、多数据中心等功能，而无需要依赖其它工具（比如ZooKeeper等），使用起来也较为简单</li>
+<li>Consul 使用Golang开发，具有天然的可移植性。其中安装包仅包含一个可执行文件，方便部署之余且和Docker能够无缝配合 </li>
+</ul>
+<h2 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h2><blockquote>
+<p>官网：<a href="https://www.consul.io/" target="_blank" rel="noopener">https://www.consul.io/</a></p>
+</blockquote>
+<p>consul是一个命令工具，上传linux或直接用wget下载，解压后将其mv到/bin目录即可</p>
+<p><img src="/consul%E5%85%A5%E9%97%A8/002.png" alt></p>
+<h2 id="命令参数"><a href="#命令参数" class="headerlink" title="命令参数"></a>命令参数</h2><pre><code>-advertise        通知展现地址用来改变我们给集群中的其他节点展现的地址，一般情况下-bind地址就是展现地址
+-bootstrap        用来控制一个server是否在bootstrap模式，在一个datacenter中只能有一个server处于bootstrap模式，当一个server处于bootstrap模式时，可以自己选举为raft leader。
+-bootstrap-expect 在数据中心中期望提供的server节点数目，当该值提供的时候，consul一直等到达到指定sever数目的时候才会引导整个集群，该标记不能和bootstrap公用
+-bind             该地址用来在集群内部的通讯，集群内的所有节点到地址都必须是可达的，默认是0.0.0.0
+-client           consul绑定的地址，这个地址提供HTTP、DNS、RPC等服务，默认是127.0.0.1
+-config-file      明确的指定要加载哪个配置文件
+-config-dir       配置文件目录，里面所有以.json结尾的文件都会被加载
+-data-dir         提供一个目录用来存放agent的状态，所有的agent允许都需要该目录，该目录必须是稳定的，系统重启后都继续存在
+-dc               该标记控制agent允许的datacenter的名称，默认是dc1
+-encrypt          指定secret key，使consul在通讯时进行加密，key可以通过consul keygen生成，同一个集群中的节点必须使用相同的key
+-join             加入一个已经启动的agent的ip地址，可以多次指定多个agent的地址。如果consul不能加入任何指定的地址中，则agent会启动失败，默认agent启动时不会加入任何节点。
+-retry-join       和join类似，但是允许你在第一次失败后进行尝试。
+-retry-interval   两次join之间的时间间隔，默认是30s
+-retry-max        尝试重复join的次数，默认是0，也就是无限次尝试
+-log-level        consul agent启动后显示的日志信息级别。默认是info，可选：trace、debug、info、warn、err。
+-node             节点在集群中的名称，在一个集群中必须是唯一的，默认是该节点的主机名
+-protocol         consul使用的协议版本
+-rejoin           使consul忽略先前的离开，在再次启动后仍旧尝试加入集群中。
+-server           定义agent运行在server模式，每个集群至少有一个server，建议每个集群的server不要超过5个
+-syslog           开启系统日志功能，只在linux/osx上生效
+-ui-dir           提供存放web ui资源的路径，该目录必须是可读的
+-pid-file         提供一个路径来存放pid文件，可以使用该文件进行SIGINT/SIGHUP(关闭/更新)agent</code></pre><h2 id="服务端口"><a href="#服务端口" class="headerlink" title="服务端口"></a>服务端口</h2><table>
+<thead>
+<tr>
+<th>端口</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>8300</td>
+<td>Used for RPC Server</td>
+</tr>
+<tr>
+<td>8301</td>
+<td>LAN GOSSIP（局域网传播）</td>
+</tr>
+<tr>
+<td>8302</td>
+<td>WAN GOSSIP（广域网传播）</td>
+</tr>
+<tr>
+<td>8500</td>
+<td>Used for HTTP Server</td>
+</tr>
+<tr>
+<td>8600</td>
+<td>Used for DNS Server</td>
+</tr>
+<tr>
+<td>8502</td>
+<td>Used for gRPC Server</td>
+</tr>
+</tbody></table>
+<h2 id="基础架构"><a href="#基础架构" class="headerlink" title="基础架构"></a>基础架构</h2><img src="/consul%E5%85%A5%E9%97%A8/001.png" style="zoom: 67%;">
+
+<ul>
+<li>Consul 支持多数据中心（官网建议使用1个）</li>
+<li>Consul Cluster 由多个 Consul Agent 实例组成</li>
+<li>其中 Agent 分为： Client模式 和 Server模式。Server模式主要负责对外提供服务。Client模式是一个轻量级的进程，主要用于注册服务、运行健康检查、转发请求等</li>
+<li>Agent Client 与 Agent Server 通信使用 Gossip协议 和 RPC协议</li>
+<li>Agent Server 之间通信使用 Raft算法 和 RPC协议</li>
+<li>其中 Agent Server 又分为：Leader 和 Follower 两种角色。Leader主要负责 处理请求 和 同步数据</li>
+<li>集群的 Agent Server 通过Raft算法来实现Leader选举，所以 Agent Server 数量应该是 2n+1（官方推荐每个集群至少有1个 Agent Server 且不要超过5个）</li>
+<li>在Consul的Raft算法实现中，Follower 会将所有请求转发给 Leader 处理，通过这样的方式来提高一致性</li>
+</ul>
+<h2 id="Agent的启动和停止"><a href="#Agent的启动和停止" class="headerlink" title="Agent的启动和停止"></a>Agent的启动和停止</h2><blockquote>
+<p>启动agent</p>
+</blockquote>
+<pre><code class="shell">➜  ~ consul agent -dev -node agent-01 -client 192.168.31.250</code></pre>
+<ul>
+<li>-dev：开发模式启动。可以省略数据 bind 和 data_dir 配置</li>
+<li>-node：节点名称。默认为所在机器名称</li>
+<li>-client：HTTP、DNS、RPC等服务的通信地址。默认为127.0.0.1</li>
+</ul>
+<blockquote>
+<p>命令方式 - 查看集群成员</p>
+</blockquote>
+<pre><code class="shell">➜  ~ consul members -http-addr=192.168.31.250:8500
+Node      Address         Status  Type    Build  Protocol  DC   Segment
+agent-01  127.0.0.1:8301  alive   server  1.6.2  2         dc1  &lt;all&gt;</code></pre>
+<ul>
+<li>-http-addr：对应agent启动时设置的 -client 值。默认为127.0.0.1:8500</li>
+</ul>
+<blockquote>
+<p>REST方式 - 查看集群成员</p>
+</blockquote>
+<pre><code class="shell">➜  ~ curl 192.168.31.250:8500/v1/catalog/nodes
+[
+    {
+        &quot;ID&quot;: &quot;dbdb33c2-8498-683e-bf4c-cfcb33bec3f7&quot;,
+        &quot;Node&quot;: &quot;agent-01&quot;,
+        &quot;Address&quot;: &quot;127.0.0.1&quot;,
+        &quot;Datacenter&quot;: &quot;dc1&quot;,
+        &quot;TaggedAddresses&quot;: {
+            &quot;lan&quot;: &quot;127.0.0.1&quot;,
+            &quot;wan&quot;: &quot;127.0.0.1&quot;
+        },
+        &quot;Meta&quot;: {
+            &quot;consul-network-segment&quot;: &quot;&quot;
+        },
+        &quot;CreateIndex&quot;: 9,
+        &quot;ModifyIndex&quot;: 10
+    }
+]
+</code></pre>
+<blockquote>
+<p>停止agent</p>
+</blockquote>
+<pre><code class="shell">➜  ~ consul leave -http-addr=192.168.31.250:8500</code></pre>
+<blockquote>
+<p>启动一个生产环境的Agent</p>
+</blockquote>
+<pre><code class="shell">➜  apps consul agent -server -data-dir /tmp/consul -node=consul-01 -bind=192.168.31.250 -config-dir /etc/consul.d</code></pre>
+<ul>
+<li>-data-dir：保存Agent运行过程产生的数据</li>
+<li>-node：节点名称</li>
+<li>-bind：绑定的机器，即监听那台机器的服务</li>
+<li>-config-dir：配置文件夹</li>
+</ul>
+<h2 id="注册和查询服务"><a href="#注册和查询服务" class="headerlink" title="注册和查询服务"></a>注册和查询服务</h2><blockquote>
+<p>步骤1：手动注册一个服务</p>
+</blockquote>
+<p>需要手动创建文件和写入内容，文件名称一般和服务名称一样</p>
+<pre><code class="shell">➜  ~ mkdir /etc/consul.d
+➜  ~ echo &#39;{&quot;service&quot;: {&quot;name&quot;: &quot;web&quot;, &quot;tags&quot;: [&quot;rails&quot;], &quot;port&quot;: 80}}&#39; &gt; /etc/consul.d/web.json</code></pre>
+<blockquote>
+<p>步骤2：启动agent并指定配置文件</p>
+</blockquote>
+<pre><code class="shell">➜ consul agent -dev -node=agent-01 -config-dir=/etc/consul.d</code></pre>
+<blockquote>
+<p>步骤3：REST方式查询服务。可以追加 ?passing 表明只查询健康的服务</p>
+</blockquote>
+<p>查看指定服务</p>
+<pre><code class="shell">➜  ~ curl http://localhost:8500/v1/catalog/service/web
+[
+    {
+        &quot;ID&quot;: &quot;5486cbfa-c081-32c9-7e8d-8ad06855093f&quot;,
+        &quot;Node&quot;: &quot;agent-01&quot;,
+        &quot;Address&quot;: &quot;127.0.0.1&quot;,
+        &quot;Datacenter&quot;: &quot;dc1&quot;,
+        &quot;TaggedAddresses&quot;: {
+            &quot;lan&quot;: &quot;127.0.0.1&quot;,
+            &quot;wan&quot;: &quot;127.0.0.1&quot;
+        },
+        &quot;NodeMeta&quot;: {
+            &quot;consul-network-segment&quot;: &quot;&quot;
+        },
+        &quot;ServiceKind&quot;: &quot;&quot;,
+        &quot;ServiceID&quot;: &quot;web&quot;,
+        &quot;ServiceName&quot;: &quot;web&quot;,
+        &quot;ServiceTags&quot;: [
+            &quot;rails&quot;
+        ],
+        &quot;ServiceAddress&quot;: &quot;&quot;,
+        &quot;ServiceWeights&quot;: {
+            &quot;Passing&quot;: 1,
+            &quot;Warning&quot;: 1
+        },
+        &quot;ServiceMeta&quot;: {},
+        &quot;ServicePort&quot;: 80,
+        &quot;ServiceEnableTagOverride&quot;: false,
+        &quot;ServiceProxy&quot;: {
+            &quot;MeshGateway&quot;: {},
+            &quot;Expose&quot;: {}
+        },
+        &quot;ServiceConnect&quot;: {},
+        &quot;CreateIndex&quot;: 10,
+        &quot;ModifyIndex&quot;: 10
+    }
+]</code></pre>
+<p>查看所有服务</p>
+<pre><code class="shell">➜  ~ curl http://localhost:8500/v1/catalog/services
+{
+    &quot;consul&quot;: [],
+    &quot;my-service-name&quot;: [
+        &quot;release=1&quot;,
+        &quot;mytag=tandi&quot;
+    ],
+    &quot;web&quot;: [
+        &quot;rails&quot;
+    ]
+}</code></pre>
+<blockquote>
+<p>使用REST方式注册服务</p>
+</blockquote>
+<pre><code class="shell">➜  ~ curl -X PUT -H &quot;Content-type:application/json&quot; -d &#39;{&quot;ID&quot;:&quot;my-service-id&quot;,&quot;Name&quot;:&quot;my-service-name&quot;,&quot;Tags&quot;:[&quot;release=1&quot;,&quot;mytag=tandi&quot;],&quot;Address&quot;:&quot;192.168.4.120&quot;,&quot;Port&quot;:8888,&quot;Meta&quot;:{&quot;my_version&quot;:&quot;4.0&quot;},&quot;EnableTagOverride&quot;:false,&quot;Check&quot;:{&quot;DeregisterCriticalServiceAfter&quot;:&quot;90m&quot;,&quot;HTTP&quot;:&quot;http://www.tandi.wiki/&quot;,&quot;Interval&quot;:&quot;10s&quot;}}&#39; http://127.0.0.1:8500/v1/agent/service/register</code></pre>
+<h2 id="搭建集群"><a href="#搭建集群" class="headerlink" title="搭建集群"></a>搭建集群</h2><blockquote>
+<p>环境说明：两台CentOS7虚拟机，简称cent01，cent02；其中cent02复制cent01（虚拟机复制要小心，特别要注意软件的配置文件和数据）</p>
+</blockquote>
+<p>SSH连接如下：</p>
+<p><img src="/consul%E5%85%A5%E9%97%A8/018.png" alt></p>
+<p><strong>步骤1：创建一个Server节点（cent01）</strong></p>
+<pre><code class="shell">➜  ~ consul agent -server -bootstrap-expect 1  -data-dir /tmp/consul -node=server-node -bind=192.168.4.157  -config-dir /etc/consul.d</code></pre>
+<p><strong>步骤2：创建一个Client节点（cent02）</strong></p>
+<pre><code class="shell">➜  ~ consul agent -data-dir /tmp/consul -node=client-node01 -bind=192.168.4.159 -config-dir /etc/consul.d</code></pre>
+<p><strong>步骤3：将client-node01节点加入到集群（cent02）</strong></p>
+<blockquote>
+<p>注意：在consul中，节点想要加入到集群中，只需要知道集群中的随便一个服务节点即可</p>
+</blockquote>
+<pre><code class="shell">➜  ~ consul join 192.168.4.157</code></pre>
+<p><strong>步骤4：查看consul集群信息</strong></p>
+<pre><code class="shell">➜  ~ consul members
+Node(节点名称)  Address(节点位置)    Status  Type    Build  Protocol  DC   Segment
+server-node    192.168.4.157:8301  alive   server  1.4.2  2         dc1  &lt;all&gt;
+client-node01  192.168.4.159:8301  alive   client  1.4.2  2         dc1  &lt;default&gt;</code></pre>
+<p><strong>集群中可能出现的问题</strong></p>
+<ul>
+<li><p>无法加入集群，因为nodeId冲突</p>
+<ul>
+<li>虚拟机复制的时候报/tmp/consul也复制了，最大可能是在虚拟机复制之前，使用过/tmp/consul，并产生了nodeid保存到了目录，解决方法将其清除重启consul agent</li>
+</ul>
+</li>
+<li><p>桥接模式，两台虚拟机之间ping不同</p>
+<ul>
+<li>确认网络可用，即虚拟机能联网，主机能ssh操作虚拟机</li>
+<li>关闭主机和虚拟机的防火墙</li>
+</ul>
+</li>
+</ul>
+<h2 id="启用WEB-UI"><a href="#启用WEB-UI" class="headerlink" title="启用WEB-UI"></a>启用WEB-UI</h2><blockquote>
+<p>本机访问指定 -ui 即可。非本机访问需要指定 -client 0.0.0.0 -ui</p>
+</blockquote>
+<pre><code class="shell">➜  consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul -bind 192.168.31.250 -config-dir /etc/consul.d  -client 
+0.0.0.0 -ui</code></pre>
+<blockquote>
+<p>访问：<a href="http://localhost:8500" target="_blank" rel="noopener">http://localhost:8500</a></p>
+</blockquote>
+<p><img src="/consul%E5%85%A5%E9%97%A8/003.png" alt></p>
+<h2 id="键值对存取"><a href="#键值对存取" class="headerlink" title="键值对存取"></a>键值对存取</h2><blockquote>
+<p>保存 key - value</p>
+</blockquote>
+<pre><code class="shell"># 在kv（根）目录创建
+➜  ~ curl -X PUT -d &#39;值&#39; http://localhost:8500/v1/kv/键
+# 在指定目录下创建
+➜  ~ curl -X PUT -d &#39;值&#39; http://localhost:8500/v1/kv/目录名称/键</code></pre>
+<blockquote>
+<p>查看 key - value</p>
+</blockquote>
+<pre><code class="shell"># 查询kv（根）目录下所有key-value
+➜  ~ curl http://localhost:8500/v1/kv/\?recurse
+# 查询指定key
+➜  ~ curl http://localhost:8500/v1/kv/键</code></pre>
+<blockquote>
+<p>更新 key - value</p>
+</blockquote>
+<pre><code class="shell">➜  ~ curl -X PUT -d &#39;值&#39; http://localhost:8500/v1/kv/键</code></pre>
+<blockquote>
+<p>删除 key - value</p>
+</blockquote>
+<pre><code class="shell">➜  ~ curl -X DELETE http://localhost:8500/v1/kv/键</code></pre>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://learn.hashicorp.com/consul" target="_blank" rel="noopener">HashiCorp Consul</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/consul%E5%85%A5%E9%97%A8/">
+      Consul的基本使用
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('Consul的基本使用'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么？"><span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#下载安装"><span class="toc-text">下载安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令参数"><span class="toc-text">命令参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#服务端口"><span class="toc-text">服务端口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基础架构"><span class="toc-text">基础架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Agent的启动和停止"><span class="toc-text">Agent的启动和停止</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#注册和查询服务"><span class="toc-text">注册和查询服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#搭建集群"><span class="toc-text">搭建集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#启用WEB-UI"><span class="toc-text">启用WEB-UI</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#键值对存取"><span class="toc-text">键值对存取</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

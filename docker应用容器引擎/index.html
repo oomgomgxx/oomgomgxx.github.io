@@ -1,0 +1,817 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> Docker的基本使用-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>Docker的基本使用</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-07-23 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="认识Docker"><a href="#认识Docker" class="headerlink" title="认识Docker"></a>认识Docker</h2><ul>
+<li>Docker是一个应用容器引擎，可实现环境的一次封装到处运行</li>
+<li>Docker支持多容器同时运行，利用容器可以实现产品的：<code>标准化打包</code>、<code>环境隔离</code>、<code>标准化部署</code>等功能</li>
+</ul>
+<blockquote>
+<p>个人感受：</p>
+<p>&emsp;&emsp;作为一个开发者来说可能Docker并不是你百分需要掌握的技能，但是如果你会Docker的话，个人认为这将会大大提高你的学习和生产能力。</p>
+<p>&emsp;&emsp;就我个人而言就最为讨厌配置环境，因为环境不同或者稍有些许配置错误都将会浪费很多时间，这使得我不能专注于技术本身而将时间浪费在了弄环境上。这时Docker（或者说容器技术）就打救了我。使用Docker只需一两条命令就很便捷地搭建出一个数据库或各种应用服务，设置各种集群等，无疑这对于广大开发者来说是一种福音。</p>
+</blockquote>
+<h2 id="容器化与虚拟化的区别"><a href="#容器化与虚拟化的区别" class="headerlink" title="容器化与虚拟化的区别"></a>容器化与虚拟化的区别</h2><p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/001.png" alt></p>
+<ul>
+<li>容器化可以简单理解为现今的一种轻量级虚拟化技术</li>
+<li>容器引擎主要依赖操作系统的隔离技术来实现容器的虚拟和隔离。例如Linux的network namespace可以做到网卡隔离。而cgroup则可以做到进程隔离等</li>
+<li>虚拟化是从物理硬件上虚拟出一套虚拟硬件，所以位于虚拟化上的应用限制于虚拟硬件（<a href="https://zh.wikipedia.org/wiki/Hypervisor" target="_blank" rel="noopener">Hypervisor层</a>)。而容器技术则直接受限于物理硬件，换句话就是容器技术可以更加充分地利用物理机上的资源。这点是作为使用者应该知道的最重要的区别。</li>
+</ul>
+<h2 id="组件介绍"><a href="#组件介绍" class="headerlink" title="组件介绍"></a>组件介绍</h2><p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/012.png" alt></p>
+<ul>
+<li><strong>Docker Client：</strong>负责接收用户的 Docker Command 和 Restful API</li>
+<li><strong>Docker Deamon：</strong>可理解为Docker Server，即我们所理解的容器引擎。负责处理Docker Client请求并协调处理其他Docker组件</li>
+<li><strong>Docker Image：</strong>镜像可以理解为对某个应用及其环境的封装。在Docker中镜像的特点是：只读、可重用和可叠加</li>
+<li><strong>Docker Container：</strong>容器是镜像的运行时。在Docker中容器之间可以做到资源隔离，这就是所谓的” 船舱隔离 “</li>
+<li><strong>Docker Regitry：</strong>Regitry是Docker Image的托管仓库。Regitry可以分为公共和私有两种。公司内部或者个人可以搭建自己的私有仓库在保存一些不想被外界使用的镜像。而一般的开源应用服务如果支持容器化的话都会将自己的镜像放到公共仓库中提供给大家使用（类似于maven中央仓库概念）。例如我们现在想要安装一个MySQL，这时我们就可以到公共仓库中找到对应的镜像文件然后拉下来使用即可。</li>
+</ul>
+<blockquote>
+<p>常见的公共镜像仓库（Regitry）有哪些？</p>
+<p><a href="https://hub.docker.com/" target="_blank" rel="noopener">DockerHub</a>（Docker默认）</p>
+<ul>
+<li><a href="https://quay.io/" target="_blank" rel="noopener">Quay</a></li>
+<li><a href="https://cloud.google.com/container-registry/" target="_blank" rel="noopener">Google Container Registry</a></li>
+<li><a href="https://azure.microsoft.com/en-us/services/container-registry/" target="_blank" rel="noopener">Azure Container Registry</a></li>
+</ul>
+<p>以上公共镜像仓库均位于国外，所以拉取镜像时可能比较缓慢甚至失败。因此国内出现了不少CDN加速站点，例如以下这些：</p>
+<ul>
+<li><a href="https://registry.docker-cn.com" target="_blank" rel="noopener">Docker cn</a></li>
+<li><a href="https://dockerhub.azk8s.cn" target="_blank" rel="noopener">Azure 中国镜像</a></li>
+<li><a href="https://reg-mirror.qiniu.com" target="_blank" rel="noopener">七牛</a></li>
+<li><a href="https://hub-mirror.c.163.com" target="_blank" rel="noopener">网易163</a></li>
+<li><a href="https://mirror.ccs.tencentyun.com" target="_blank" rel="noopener">腾讯云</a></li>
+</ul>
+</blockquote>
+<h2 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h2><h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre><code class="shell">yum install docker</code></pre>
+<h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><blockquote>
+<p>以Tomcat为例子</p>
+</blockquote>
+<p>拉取镜像</p>
+<pre><code class="shell">➜ docker pull tomcat
+Using default tag: latest
+Trying to pull repository docker.io/library/tomcat ... 
+latest: Pulling from docker.io/library/tomcat
+844c33c7e6ea: Pull complete 
+ada5d61ae65d: Pull complete 
+f8427fdf4292: Pull complete 
+f025bafc4ab8: Pull complete 
+67b8714e1225: Pull complete 
+64b12da521a3: Pull complete 
+2e38df533772: Pull complete 
+4144d55bbb47: Pull complete 
+fc059d90e2b2: Pull complete 
+9d8f80ed8620: Pull complete 
+Digest: sha256:68355b27adee5fc76c23e3d3cb994bd2733f05aa8e2c070a61346e16eed308ac
+Status: Downloaded newer image for docker.io/tomcat:latest</code></pre>
+<p>启动tomcat</p>
+<pre><code class="shell">➜  ~ docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+docker.io/tomcat    latest              6fa48e047721        7 hours ago         507 MB
+➜  ~ docker run --name tomcat -p 8080:8080 -d 6fa48e047721  
+7e7d2242f369250999c9c79b47255b3d310a6dd1aff3c45fc99685108579b61b</code></pre>
+<ul>
+<li>–name：指定容器名称</li>
+<li>-p：指定端口映射</li>
+<li>-d：后台运行并打印容器id</li>
+</ul>
+<p>上面的两步操作可以合成一步，即直接run。这样docker会自动拉取镜像再运行，如下。</p>
+<pre><code class="shell">docker run --name tomcat -p 8080:8080 -d tomcat</code></pre>
+<h3 id="服务相关"><a href="#服务相关" class="headerlink" title="服务相关"></a>服务相关</h3><p>启动</p>
+<pre><code class="shell">systemctl start docker</code></pre>
+<p>停止</p>
+<pre><code class="shell">systemctl stop docker</code></pre>
+<p>重启</p>
+<pre><code class="shell">systemctl restart docker</code></pre>
+<p>查看状态</p>
+<pre><code class="shell">systemctl status docker</code></pre>
+<p>设置开机启动</p>
+<pre><code class="shell">systemctl enable docker</code></pre>
+<h3 id="容器相关"><a href="#容器相关" class="headerlink" title="容器相关"></a>容器相关</h3><p>查看容器状态</p>
+<pre><code class="shell">docker ps
+docker ps -a （包含历史）</code></pre>
+<p>查看元数据（如：ip、网关等等）</p>
+<pre><code class="shell">docker inspect 容器运行时名称</code></pre>
+<p>输出容器中应用日志</p>
+<pre><code class="shell">docker logs 容器id或容器名字</code></pre>
+<p>在容器中执行命令</p>
+<pre><code class="shell">docker exec -it 容器id或容器名字 命令
+# 例如启动容器中的shell
+docker exec -it 容器id或容器名字 bash</code></pre>
+<p>停止所有docker容器</p>
+<pre><code class="shell"># 停止指定容器
+docker stop 容器名称或id
+# 停止所有
+docker stop $(docker ps -qa)</code></pre>
+<p>删除容器</p>
+<pre><code class="shell">docker rm 容器id或容器名字</code></pre>
+<p>实时监控容器</p>
+<pre><code class="shell">docker stats tomcat</code></pre>
+<p>查看容器的映射端口</p>
+<pre><code class="shell">➜  ~ docker port tomcat
+8080/tcp -&gt; 0.0.0.0:8080</code></pre>
+<p>连接正在运行的容器</p>
+<pre><code class="shell">docker attach --sig-proxy=false tomcat</code></pre>
+<ul>
+<li><code>--sig-proxy=false</code>作用是 ctrl+c 退出连接不关闭容器</li>
+</ul>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><p>查找镜像</p>
+<pre><code class="shell">docker search 镜像名称
+&gt;&gt;&gt;&gt;&gt;&gt;
+NAME：仓库名称
+DESCRIPTION：镜像描述
+STARS：用户评价，反应一个镜像的受欢迎程度
+OFFICIAL：是否官方</code></pre>
+<p>删除镜像</p>
+<pre><code class="shell"># 删除指定镜像
+docker rmi 镜像
+
+# 删除所有镜像
+docker rmi $(docker images -q)</code></pre>
+<p>查看docker容器目前支持的网络模式</p>
+<pre><code class="shell">➜  ~ docker network ls
+NETWORK ID          NAME                DRIVER              SCOPE
+f4a3530daab5        bridge              bridge              local
+f0d6c1700eb9        host                host                local
+7ede4aa145a3        none                null                local</code></pre>
+<ul>
+<li>可在除此run镜像时使用<code>--net</code>指定</li>
+</ul>
+<p>查看docker容器目前的挂载目录</p>
+<pre><code class="shell">➜  ~ docker volume ls
+DRIVER              VOLUME NAME</code></pre>
+<p>docker run常用参数</p>
+<pre><code class="shell">-a stdin: 指定标准输入输出内容类型，可选 STDIN/STDOUT/STDERR 三项；
+
+-d: 后台运行容器，并返回容器ID；
+
+-i: 以交互模式运行容器，通常与 -t 同时使用；
+
+-p: 端口映射，格式为：主机(宿主)端口:容器端口；
+
+-t: 为容器重新分配一个伪输入终端；
+
+--name=&quot;nginx-lb&quot;: 为容器指定一个名称；
+
+--dns 8.8.8.8: 指定容器使用的DNS服务器，默认和宿主一致；
+
+--dns-search example.com: 指定容器DNS搜索域名，默认和宿主一致；
+
+-h &quot;mars&quot;: 指定容器的hostname；
+
+-e username=&quot;ritchie&quot;: 设置环境变量；
+
+--env-file=[]: 从指定文件读入环境变量；
+
+--cpuset=&quot;0-2&quot; or --cpuset=&quot;0,1,2&quot;: 绑定容器到指定CPU运行；
+
+-m :设置容器使用内存最大值；
+
+--net=&quot;bridge&quot;: 指定容器的网络模式，支持 bridge/host/none/container: 四种类型；
+
+--link=[]: 添加链接(连接的容器ip会配合到DNS中)；
+
+--expose=[]: 开放一个端口或一组端口；
+
+--restart=no ：指定宕机重启策略，支持no/no-failure/always/unless-stopped</code></pre>
+<h2 id="配置国内镜像加速站点"><a href="#配置国内镜像加速站点" class="headerlink" title="配置国内镜像加速站点"></a>配置国内镜像加速站点</h2><ul>
+<li>我当前使用的系统是CentOS</li>
+</ul>
+<blockquote>
+<p>步骤1：将加速站点添加到   /etc/docker/daemon.json 中</p>
+</blockquote>
+<pre><code class="shell">{
+  &quot;registry-mirrors&quot;:[&quot;https://registry.docker-cn.com&quot;]
+}</code></pre>
+<blockquote>
+<p>步骤2：重启docker服务</p>
+</blockquote>
+<pre><code class="shell"># 从文件系统中获取更改的配置并重新生成依赖树
+➜  ~ sudo systemctl daemon-reload
+# 重启服务
+➜  ~ sudo systemctl restart docker.service</code></pre>
+<blockquote>
+<p>查看是否配置成功</p>
+</blockquote>
+<pre><code class="shell">➜  ~ docker info
+...
+Registry Mirrors:
+ https://registry.docker-cn.com
+...</code></pre>
+<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><h3 id="了解镜像的构建"><a href="#了解镜像的构建" class="headerlink" title="了解镜像的构建"></a>了解镜像的构建</h3><p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/002.png" alt></p>
+<ul>
+<li>首先 Docker Image 本身是<code>只读</code>且<code>可复用</code>的。那么如何复用呢？在Docker中镜像复用是通过镜像叠加来实现的</li>
+<li>如上图所示，因为镜像本身是只读的，所以每一次修改都会生成一个新的镜像层（layer）</li>
+<li>图中的 bootfs（引导文件系统） 主要用于加载和初始化内核相关内容，完成后会自动unmount。而 Base Image 是整个镜像的最基层，即 rootfs（根文件系统），可以简单理解为是一个最简约轻量的文件系统。随后的 emacs、apache 等等实质都是一些软件应用的打包，而在容器运行时，容器将会包含所有镜像中的内容</li>
+</ul>
+<h3 id="基于容器构建"><a href="#基于容器构建" class="headerlink" title="基于容器构建"></a>基于容器构建</h3><pre><code class="shell">sudo docker commit 容器id或名称 镜像名称</code></pre>
+<ul>
+<li>不推荐这种方式，因为使用的人无法直观得知镜像的构建过程</li>
+</ul>
+<h3 id="使用Dockerfile构建-推荐"><a href="#使用Dockerfile构建-推荐" class="headerlink" title="使用Dockerfile构建(推荐)"></a>使用Dockerfile构建(推荐)</h3><h4 id="快速入门-1"><a href="#快速入门-1" class="headerlink" title="快速入门"></a>快速入门</h4><blockquote>
+<p>步骤1：编写 Dockerfile 文件。vim Dockerfile </p>
+</blockquote>
+<pre><code class="dockerfile"># 基础镜像
+FROM tomcat
+# 构建过程中执行命令
+RUN echo &#39;helle dockerfile ~~~~~&#39;</code></pre>
+<blockquote>
+<p>步骤2：基于 Dockerfile 构建镜像</p>
+</blockquote>
+<pre><code class="shell"># 当前所处路径
+➜  dockerfile pwd
+/home/vagrant/dockerfile
+# 构建镜像
+# 格式：docker build -t 库名称(可省略)/镜像名称:标签  Dockerfile所在路径
+# 镜像名称为 mytomcat
+➜  dockerfile docker build -t mytomcat .          
+Sending build context to Docker daemon 2.048 kB
+Step 1/2 : FROM tomcat
+ ---&gt; 6fa48e047721 # 镜像ID
+Step 2/2 : RUN echo &#39;helle dockerfile ~~~~~&#39;
+ ---&gt; Running in 3b8b12856cac # 1.基于镜像6fa48e047721启动一个容器
+helle dockerfile ~~~~~ # 2.修改当前容器3b8b12856cac
+ ---&gt; fdd8fa08e7fe # 3.根据修改过后的容器生产一个镜像
+Removing intermediate container 3b8b12856cac # 4.成功生产镜像后移除原来容器
+Successfully built fdd8fa08e7fe # 最终镜像ID</code></pre>
+<ul>
+<li>除此之外还可以从构建过程看出每一个Dockerfile指令都是一个 Step </li>
+</ul>
+<blockquote>
+<p>查看生产的镜像</p>
+</blockquote>
+<pre><code class="shell">➜  dockerfile docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+mytomcat            latest              fdd8fa08e7fe        3 minutes ago       507 MB
+docker.io/tomcat    latest              6fa48e047721        9 hours ago         507 MB</code></pre>
+<h4 id="Dockerfile语法"><a href="#Dockerfile语法" class="headerlink" title="Dockerfile语法"></a>Dockerfile语法</h4><h5 id="FROM"><a href="#FROM" class="headerlink" title="FROM"></a>FROM</h5><pre><code class="dockerfile"># 基础镜像（注意：FROM必须在文件顶部）
+FROM 镜像名称 </code></pre>
+<ul>
+<li><p>scratch 是基础镜像的特殊值，表示当前镜像不基于任何镜像来构建镜像，例如只用作软件打包</p>
+</li>
+<li><p>最基础的镜像应该是系统镜像</p>
+</li>
+<li><p>如果是基于某些软件应用来构建自己的镜像，则无需显式指定系统镜像而只需直接基于某个软件应用镜像来构建即可。例如 FROM nginx，这里的nginx本身已经是基于系统镜像来构建的，所有已经有了 rootfs。因此在构建自己的镜像时，我们只需考虑如何使用基础镜像和挂载数据到基础镜像即可。如下：</p>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/003.png" alt></p>
+</li>
+</ul>
+<h5 id="RUN"><a href="#RUN" class="headerlink" title="RUN"></a>RUN</h5><pre><code class="dockerfile"># 镜像构建时执行的命令(注意：每执行一次RUN都会生成新的Layer)
+RUN 需要执行的linux命令</code></pre>
+<h5 id="MAINTAINER"><a href="#MAINTAINER" class="headerlink" title="MAINTAINER"></a>MAINTAINER</h5><pre><code class="dockerfile"># 指定Dockerfile的元数据。例如创建者的信息
+MAINTAINER 作者名称&lt;作者邮箱&gt;</code></pre>
+<h5 id="ADD"><a href="#ADD" class="headerlink" title="ADD"></a>ADD</h5><pre><code class="dockerfile"># 添加文件到镜像的指定位置(因为镜像是只读的，所以该操作会产生新Layer，其他指令同理)
+# 源文件可以是一个路径也可以是一个url地址（注意：会自动进行解压）
+ADD 源文件 目标文件
+ADD [&quot;源文件1&quot;, &quot;源文件2&quot;, ..., &quot;目标文件&quot;]</code></pre>
+<h5 id="COPY"><a href="#COPY" class="headerlink" title="COPY"></a>COPY</h5><pre><code class="dockerfile"># 添加文件到镜像的指定位置
+# 功能和ADD一样，但不支持解压和URL
+COPY 源文件 目标文件
+COPY [&quot;源文件1&quot;, &quot;源文件2&quot;, ..., &quot;目标文件&quot;]</code></pre>
+<h5 id="ENV"><a href="#ENV" class="headerlink" title="ENV"></a>ENV</h5><pre><code class="dockerfile"># 设置环境变量
+ENV key value
+ENV key=value</code></pre>
+<h5 id="ARG"><a href="#ARG" class="headerlink" title="ARG"></a>ARG</h5><pre><code class="dockerfile"># 指定构建时参数，功能和ENV一样，但是只在Dockerfile内有效
+ARG key=value</code></pre>
+<p>LABEL</p>
+<pre><code class="dockerfile"># 指定镜像元数据。可以使用 docker inspect 命令查看到
+LABEL 元数据
+LABEL version=&quot;2.0&quot;
+LABEL desc=&quot;其实就是描述信息&quot;</code></pre>
+<h5 id="WORKDIR"><a href="#WORKDIR" class="headerlink" title="WORKDIR"></a>WORKDIR</h5><pre><code class="dockerfile"># 指定工作目录
+# 注意：该指令相当于Linux的CD命令，在该命令之后的RUN/CMD/ENTRYPOINT，都将在该工作目录下进行
+WORKDIR 目录路径</code></pre>
+<h5 id="VOLUME"><a href="#VOLUME" class="headerlink" title="VOLUME"></a>VOLUME</h5><pre><code class="dockerfile"># 指定数据挂载点。可将容器数据目录挂载到宿主机器上
+# 非常重要，用于避免数据因容器重启而丢失
+# 可以使用 docker volume ls 命令查看到
+# 启动容器 docker run 的时候，可以通过-v参数修改挂载点
+VOLUME 路径</code></pre>
+<h5 id="EXPOSE"><a href="#EXPOSE" class="headerlink" title="EXPOSE"></a>EXPOSE</h5><pre><code class="dockerfile"># 暴露容器端口（只针对容器之间）
+# 注意1：该配置只作声明作用，有助于观看Dockerfile的人得知端口信息
+# 注意2：如果外部需要访问，则使用参数-p
+EXPOSE 端口号
+EXPOSE 端口号/协议</code></pre>
+<h5 id="CMD"><a href="#CMD" class="headerlink" title="CMD"></a>CMD</h5><pre><code class="dockerfile"># 设置容器启动时执行的默认命令
+# 注意1: CMD在Dockerfile中是唯一的，既即使定义多个CMD都会被最后的覆盖
+CMD [&quot;命令&quot;]
+CMD [&quot;命令&quot;,&quot;命令参数1&quot;,&quot;命令参数2&quot;]
+CMD 命令 命令参数
+# 注意2：CMD只是默认的，如果docker run的指定了命令则CMD会被覆盖
+# 例如：docker run -it tomcat bin/bash</code></pre>
+<h5 id="ENTRYPOINT"><a href="#ENTRYPOINT" class="headerlink" title="ENTRYPOINT"></a>ENTRYPOINT</h5><pre><code class="dockerfile"># 功能和CMD一样，但不会被 docker run 的命令行参数指定的指令所覆盖
+# 如：ENTRYPOINT [&quot;/bin/echo&quot;]，然后docker run -itd xxxx hi传入参数，则会输出hi
+ENTRYPOINT [&quot;命令&quot;]
+ENTRYPOINT [&quot;命令&quot;,&quot;命令参数1&quot;,&quot;命令参数2&quot;]
+ENTRYPOINT 命令 命令参数</code></pre>
+<h5 id="RUN、CMD、ENTRYPOINT之间的区别"><a href="#RUN、CMD、ENTRYPOINT之间的区别" class="headerlink" title="RUN、CMD、ENTRYPOINT之间的区别"></a>RUN、CMD、ENTRYPOINT之间的区别</h5><blockquote>
+<p>说明：</p>
+<ol>
+<li>如果ENTRYPOINT在CMD之后定义，ENTRYPOINT中的命令会覆盖CMD中的命令</li>
+<li>而且ENTRYPOINT中的命令，可以使用CMD中定义的参数</li>
+<li>ENTRYPOINT使用参数的顺序：先使用自己定义的参数，再使用CMD中的定义的参数</li>
+</ol>
+</blockquote>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/007.png" alt></p>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/008.png" alt></p>
+<ul>
+<li>注意：shell格式能输出ENV变量，而exec格式不能</li>
+</ul>
+<blockquote>
+<p>例子</p>
+</blockquote>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/005.png" alt></p>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/006.png" alt></p>
+<h5 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a>最佳实践</h5><blockquote>
+<p>以下 Dockerfile 源自MySQL</p>
+</blockquote>
+<pre><code class="dockerfile">FROM debian:stretch-slim
+
+# 在debian layer(临时产生的容器)中添加用户和用户组
+# 该操作会生成新的layer
+RUN groupadd -r mysql &amp;&amp; useradd -r -g mysql mysql
+
+# 更新上一层layer(临时产生的容器)和下载配置相关上下文
+# 该操作会生成新的layer
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends gnupg dirmngr &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+# 设置环境变量
+ENV GOSU_VERSION 1.7
+
+# 更新上一层layer(临时产生的容器)和配置相关上下文
+# 该操作会生成新的layer
+RUN set -x \
+    &amp;&amp; apt-get update &amp;&amp; apt-get install -y --no-install-recommends ca-certificates wget &amp;&amp; rm -rf /var/lib/apt/lists/* \
+    &amp;&amp; wget -O /usr/local/bin/gosu &quot;https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)&quot; \
+    &amp;&amp; wget -O /usr/local/bin/gosu.asc &quot;https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc&quot; \
+    &amp;&amp; export GNUPGHOME=&quot;$(mktemp -d)&quot; \
+    &amp;&amp; gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    &amp;&amp; gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \
+    &amp;&amp; gpgconf --kill all \
+    &amp;&amp; rm -rf &quot;$GNUPGHOME&quot; /usr/local/bin/gosu.asc \
+    &amp;&amp; chmod +x /usr/local/bin/gosu \
+    &amp;&amp; gosu nobody true \
+    &amp;&amp; apt-get purge -y --auto-remove ca-certificates wget
+
+# 创建文件夹docker-entrypoint-initdb.d
+# 该操作会生成新的layer
+RUN mkdir /docker-entrypoint-initdb.d
+
+# 更新上一层layer(临时产生的容器)和配置相关上下文
+# 该操作会生成新的layer
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends \
+# for MYSQL_RANDOM_ROOT_PASSWORD
+        pwgen \
+        openssl \
+        perl \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+# 配置相关上下文
+# 该操作会生成新的layer
+RUN set -ex; \
+# gpg: key 5072E1F5: public key &quot;MySQL Release Engineering &lt;mysql-build@oss.oracle.com&gt;&quot; imported
+    key=&#39;A4A9406876FCBD3C456770C88C718D3B5072E1F5&#39;; \
+    export GNUPGHOME=&quot;$(mktemp -d)&quot;; \
+    gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys &quot;$key&quot;; \
+    gpg --batch --export &quot;$key&quot; &gt; /etc/apt/trusted.gpg.d/mysql.gpg; \
+    gpgconf --kill all; \
+    rm -rf &quot;$GNUPGHOME&quot;; \
+    apt-key list &gt; /dev/null
+
+# 设置环境变量
+ENV MYSQL_MAJOR 8.0
+ENV MYSQL_VERSION 8.0.18-1debian9
+
+# 配置相关上下文
+# 该操作会生成新的layer
+RUN echo &quot;deb http://repo.mysql.com/apt/debian/ stretch mysql-${MYSQL_MAJOR}&quot; &gt; /etc/apt/sources.list.d/mysql.list
+
+# 更新上一层layer(临时产生的容器)和配置相关上下文
+# 该操作会生成新的layer
+RUN { \
+        echo mysql-community-server mysql-community-server/data-dir select &#39;&#39;; \
+        echo mysql-community-server mysql-community-server/root-pass password &#39;&#39;; \
+        echo mysql-community-server mysql-community-server/re-root-pass password &#39;&#39;; \
+        echo mysql-community-server mysql-community-server/remove-test-db select false; \
+    } | debconf-set-selections \
+    &amp;&amp; apt-get update &amp;&amp; apt-get install -y mysql-community-client=&quot;${MYSQL_VERSION}&quot; mysql-community-server-core=&quot;${MYSQL_VERSION}&quot; &amp;&amp; rm -rf /var/lib/apt/lists/* \
+    &amp;&amp; rm -rf /var/lib/mysql &amp;&amp; mkdir -p /var/lib/mysql /var/run/mysqld \
+    &amp;&amp; chown -R mysql:mysql /var/lib/mysql /var/run/mysqld \
+# ensure that /var/run/mysqld (used for socket and lock files) is writable regardless of the UID our mysqld instance ends up having at runtime
+    &amp;&amp; chmod 777 /var/run/mysqld
+
+# 设置挂载点
+VOLUME /var/lib/mysql
+
+# 拷贝配置文件到容器中
+COPY config/ /etc/mysql/
+COPY docker-entrypoint.sh /usr/local/bin/
+
+# 产生新的Layer
+RUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh
+
+# 容器启动时指定脚本docker-entrypoint.sh
+ENTRYPOINT [&quot;docker-entrypoint.sh&quot;]
+
+# 暴露端口号
+EXPOSE 3306 33060
+
+# 容器启动时启动mysql服务
+CMD [&quot;mysqld&quot;]</code></pre>
+<blockquote>
+<p>基于以上 Dockerfile 生成 MySQL 镜像</p>
+</blockquote>
+<p>下载 Dockerfile 到当前目录</p>
+<pre><code class="shell">wget https://raw.githubusercontent.com/docker-library/mysql/6659750146b7a6b91a96c7867
+29b4d482cf49fe6/8.0/Dockerfile</code></pre>
+<p>基于 Dockerfile 构 建MySQL</p>
+<pre><code class="shell">➜  dockerfile docker build -t mysql8 .</code></pre>
+<h2 id="单机容器编排"><a href="#单机容器编排" class="headerlink" title="单机容器编排"></a>单机容器编排</h2><h3 id="Docker-Compose和容器编排"><a href="#Docker-Compose和容器编排" class="headerlink" title="Docker Compose和容器编排"></a>Docker Compose和容器编排</h3><ul>
+<li>Docker的最佳实践是一个容器只运行一个进程</li>
+<li>通常应用服务都不会单个存在，很多时候服务之间是存在依赖性的。例如应用依赖数据库服务和缓存服务，这时就需要对容器进行编排。例如在服务A启动之前需要保证服务B和服务C启动，否者服务A不能正常提供服务，这时我们就需要手动启动多个服务</li>
+<li>针对以上情况，如果服务太多的话，启动服务的工作就会变得额外沉重。为了解决这个问题 Docker 提供了 Docker Compose 作为解决方案</li>
+<li>Docker Compose 允许对容器进行编排并关联服务之间的关系</li>
+<li>Docker Compose 使用 yaml 进行配置，通过解析 yaml 配置转为 docker 参数来运行组建容器</li>
+<li>Docker Compose 使用步骤：<code>定义Dockerfile生成镜像</code>、<code>定义yaml</code>、运行<code>docker-compose up</code>命令</li>
+</ul>
+<h3 id="安装Docker-Compose"><a href="#安装Docker-Compose" class="headerlink" title="安装Docker Compose"></a>安装Docker Compose</h3><ul>
+<li>官方文档：<a href="https://docs.docker.com/compose/install/" target="_blank" rel="noopener">https://docs.docker.com/compose/install/</a></li>
+<li>Docker Compose的安装方式有两种：pip（因为Docker Compose是用Python开发的）、curl</li>
+</ul>
+<blockquote>
+<p>步骤1：下载 docker-compose</p>
+</blockquote>
+<pre><code class="shell">sudo curl -L &quot;https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)&quot; -o /usr/local/bin/docker-compose</code></pre>
+<blockquote>
+<p>步骤2：授权</p>
+</blockquote>
+<pre><code class="shell">sudo chmod +x /usr/local/bin/docker-compose</code></pre>
+<h3 id="快速入门-2"><a href="#快速入门-2" class="headerlink" title="快速入门"></a>快速入门</h3><blockquote>
+<p>步骤1：创建 docker-compose.yml 文件，注意docker-compose.yml是缺省文件名字</p>
+</blockquote>
+<pre><code class="yaml"># docker compose版本号
+version: &#39;3.3&#39;
+services: 
+    # 服务名称（自定义）
+    tomcat: 
+        # dockerfile文件所在的位置
+        # build: .  
+        # 除了使用dockerfile还可以直接指定镜像,默认使用最新版本
+        image: tomcat
+        # 端口映射，相当于 -p 8080:8080
+        ports:
+            - &quot;8080:8080&quot; </code></pre>
+<blockquote>
+<p>步骤2：运行docker-compose.yml</p>
+</blockquote>
+<pre><code class="shell"># 后台运行（在docker-compose文件目录下执行）
+docker-compose up -d
+# 指定文件启动
+docker-compose -f docker-compose.yml up -d
+# 停止容器
+docker-compose stop
+# 移除容器
+docker-compose rm</code></pre>
+<h3 id="docker-compose配置参考"><a href="#docker-compose配置参考" class="headerlink" title="docker-compose配置参考"></a>docker-compose配置参考</h3><ul>
+<li><a href="https://github.com/docker/docker.github.io/blob/master/compose/index.md#common-use-cases" target="_blank" rel="noopener">https://github.com/docker/docker.github.io/blob/master/compose/index.md#common-use-cases</a> </li>
+<li><a href="https://docs.docker.com/compose/compose-file/" target="_blank" rel="noopener">https://docs.docker.com/compose/compose-file/</a> </li>
+</ul>
+<h3 id="最佳实践-1"><a href="#最佳实践-1" class="headerlink" title="最佳实践"></a>最佳实践</h3><blockquote>
+<p>下面以 elasticsearch + cerebro + kibana  为例子。因为博主机器内存有限，所以只能单节点做例子，而集群配置可以参考官方文档（注意版本）：</p>
+<ul>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.5/docker.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/7.5/docker.html</a> </li>
+</ul>
+</blockquote>
+<p>步骤1：扩大宿主机限制，否则 Elasticsearch 可能启动不成功</p>
+<pre><code class="shell">sudo sysctl -w vm.max_map_count=262144</code></pre>
+<p>步骤2：编写 docker-compose.yml 文件</p>
+<pre><code class="yaml">version: &quot;3.6&quot;
+services: 
+    elasticsearch:
+        container_name: elasticsearch
+        image: elasticsearch:7.5.0 # 注意需要指定版本号，否则拉取不成功
+        ports: 
+            - 9200:9200
+        environment: 
+            - node.name=es-node-1 # 指定节点名称
+            - bootstrap.memory_lock=true # 锁定内存大小
+            - discovery.type=single-node # 单节点模式
+            - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot; # 配置堆大小
+        ulimits: # 覆盖容器原来的限制
+            memlock:
+                soft: -1
+                hard: -1
+        restart: always # 重启策略
+        networks: # 指定网络
+            - elastic     
+
+    kibana:
+        container_name: kibana
+        image: kibana:7.5.0
+        ports: 
+            - 5601:5601
+        restart: always
+        depends_on: 
+            - elasticsearch
+        networks: 
+            - elastic
+
+    # cerebro可用于监控es节点，如内存、cpu等等指标
+    cerebro: 
+        container_name: cerebro
+        image: lmenezes/cerebro
+        ports: 
+            - 9000:9000
+        restart: always
+        depends_on: 
+            - elasticsearch
+        networks: 
+            - elastic
+
+# 定义一个网络，用于服务之间使用
+networks:
+    elastic:
+        driver: bridge</code></pre>
+<h2 id="注册中心相关"><a href="#注册中心相关" class="headerlink" title="注册中心相关"></a>注册中心相关</h2><ul>
+<li>以下操作需要将加速站点配置为DaoCloud</li>
+</ul>
+<blockquote>
+<p>步骤1：在DockerHub上注册一个账号</p>
+</blockquote>
+<p>账号：<a href="mailto:xxxxxxx@xxx.com">xxxxxxx@xxx.com</a></p>
+<p>密码：dh———————–</p>
+<blockquote>
+<p>步骤2：Docker登录到注册中心</p>
+</blockquote>
+<pre><code class="shell">docker login</code></pre>
+<blockquote>
+<p>步骤3：编写Dockerfile</p>
+</blockquote>
+<pre><code class="dockerfile">FROM scratch
+LABEL desc=测试镜像上传到注册中心
+CMD echo &quot;hello...&quot;</code></pre>
+<blockquote>
+<p>步骤4：构建镜像</p>
+</blockquote>
+<pre><code class="shell">格式：docker build -t 库名称/镜像名称 dockerfile文件所在路径
+docker build -t tandi/hello-test .</code></pre>
+<blockquote>
+<p>步骤5：上传镜像</p>
+</blockquote>
+<pre><code class="shell">docker push tandi/hello-test</code></pre>
+<blockquote>
+<p>查看是否上传成功</p>
+</blockquote>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/009.png" alt></p>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/010.png" alt></p>
+<blockquote>
+<p>从注册中心拉取镜像</p>
+<p>注意：拉取前必须确认库是public的</p>
+</blockquote>
+<pre><code class="shell">docker pull tandi/hello-test</code></pre>
+<p><strong>搭建私有注册中心</strong></p>
+<blockquote>
+<p>步骤1：拉取docker hub上的registry</p>
+</blockquote>
+<pre><code class="shell">docker pull registry</code></pre>
+<blockquote>
+<p>步骤2：构建一个镜像</p>
+</blockquote>
+<p>Dockerfile</p>
+<pre><code class="dockerfile">FROM scratch
+LABEL desc=测试镜像上传到注册中心
+CMD echo &quot;hello...&quot;</code></pre>
+<p>构建镜像</p>
+<pre><code class="shell">格式：docker build -t 注册中心所在主机ip:5000/镜像名称 .
+docker build -t 192.168.1.102:5000/hello-test .</code></pre>
+<p>配置注册中心信任</p>
+<pre><code class="shell">vim /etc/docker/daemon.json
+添加如下内容：(注册中心配置)
+{
+  &quot;registry-mirrors&quot;: [&quot;http://f1361db2.m.daocloud.io&quot;], # 镜像加速
+  &quot;insecure-registries&quot;: [&quot;192.168.1.102:5000&quot;] # 非SSL源管理镜像
+}
+vim /lib/systemd/system/docker.service
+添加如下内容：(docker服务配置)
+EnvironmentFile=-/etc/docker/daemon.json</code></pre>
+<p>重启docker服务</p>
+<pre><code class="shell">systemctl daemon-reload
+systemctl restart docker</code></pre>
+<blockquote>
+<p>步骤3：启动注册中心容器</p>
+</blockquote>
+<pre><code class="shell">docker run -d -p 5000:5000 116995fd6624</code></pre>
+<blockquote>
+<p>步骤4：将镜像push到私有注册中心</p>
+</blockquote>
+<pre><code class="shell">docker push 192.168.1.102:5000/hello-test</code></pre>
+<blockquote>
+<p>步骤5：检验是否push成功</p>
+</blockquote>
+<p>浏览器：<a href="http://192.168.1.102:5000/v2/_catalog" target="_blank" rel="noopener">http://192.168.1.102:5000/v2/_catalog</a></p>
+<p><img src="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/011.png" alt></p>
+<h2 id="安装可视化工具-Portainer"><a href="#安装可视化工具-Portainer" class="headerlink" title="安装可视化工具 - Portainer"></a>安装可视化工具 - Portainer</h2><pre><code class="shell">docker pull portainer/portainer 
+docker run --name portainer-ui -d -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer</code></pre>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://docs.docker.com/" target="_blank" rel="noopener">Docker Documentation</a></li>
+<li><a href="https://www.accenture.com/us-en/blogs/blogs-reshma-shinde-docker-containerization-devops" target="_blank" rel="noopener">Evolution of Linux containerization helped in simplifying DevOps using Docker</a></li>
+<li><a href="https://woshijpf.github.io/%E5%86%85%E6%A0%B8/2017/06/14/ramfs-rootfs-initramfs%E7%9A%84%E5%8C%BA%E5%88%AB.html" target="_blank" rel="noopener">ramfs, tmpfs, rootfs, initramfs的区别</a></li>
+<li><a href="https://juejin.im/post/5cd2cf01f265da0374189441" target="_blank" rel="noopener">Docker Hub 镜像加速器</a></li>
+<li>《Docker进阶与实战》</li>
+<li>《Docker微服务架构实战》</li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年12月14日02:09:53 — 重新编排并丰富Docker概念和使用内容</li>
+</ul>
+
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/">
+      Docker的基本使用
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('Docker的基本使用'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#认识Docker"><span class="toc-text">认识Docker</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#容器化与虚拟化的区别"><span class="toc-text">容器化与虚拟化的区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#组件介绍"><span class="toc-text">组件介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本使用"><span class="toc-text">基本使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#安装"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服务相关"><span class="toc-text">服务相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#容器相关"><span class="toc-text">容器相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他"><span class="toc-text">其他</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置国内镜像加速站点"><span class="toc-text">配置国内镜像加速站点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#构建镜像"><span class="toc-text">构建镜像</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#了解镜像的构建"><span class="toc-text">了解镜像的构建</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基于容器构建"><span class="toc-text">基于容器构建</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用Dockerfile构建-推荐"><span class="toc-text">使用Dockerfile构建(推荐)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#快速入门-1"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Dockerfile语法"><span class="toc-text">Dockerfile语法</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#FROM"><span class="toc-text">FROM</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#RUN"><span class="toc-text">RUN</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#MAINTAINER"><span class="toc-text">MAINTAINER</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#ADD"><span class="toc-text">ADD</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#COPY"><span class="toc-text">COPY</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#ENV"><span class="toc-text">ENV</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#ARG"><span class="toc-text">ARG</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#WORKDIR"><span class="toc-text">WORKDIR</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#VOLUME"><span class="toc-text">VOLUME</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#EXPOSE"><span class="toc-text">EXPOSE</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CMD"><span class="toc-text">CMD</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#ENTRYPOINT"><span class="toc-text">ENTRYPOINT</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#RUN、CMD、ENTRYPOINT之间的区别"><span class="toc-text">RUN、CMD、ENTRYPOINT之间的区别</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#最佳实践"><span class="toc-text">最佳实践</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#单机容器编排"><span class="toc-text">单机容器编排</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Docker-Compose和容器编排"><span class="toc-text">Docker Compose和容器编排</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安装Docker-Compose"><span class="toc-text">安装Docker Compose</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门-2"><span class="toc-text">快速入门</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#docker-compose配置参考"><span class="toc-text">docker-compose配置参考</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最佳实践-1"><span class="toc-text">最佳实践</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#注册中心相关"><span class="toc-text">注册中心相关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装可视化工具-Portainer"><span class="toc-text">安装可视化工具 - Portainer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

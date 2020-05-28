@@ -1,0 +1,521 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> ConcurrentHashMap中的位运算应用-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>ConcurrentHashMap中的位运算应用</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2019-11-28 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="闲聊"><a href="#闲聊" class="headerlink" title="闲聊"></a>闲聊</h2><p>&emsp;&emsp;先前写过一篇针对 HashMap 源码进行浅析的文章，现在回看觉得内容实在有些简陋，所以借着最近时间比较充裕，打算记录一下自己对 JDK 1.8 后 ConcurrentHashMap 的一些理解。</p>
+<p>&emsp;&emsp;位运算是计算机中最为高效的计算方式，如果你平时有翻阅源码的爱好那么肯定不难发现其实很多大神写的代码中的计算操作都是用位运算来完成的。因此接下来我们就从位运算的角度切入 ConcurrentHashMap 源码，分析一下在 ConcurrentHashMap 中位运算的应用。</p>
+<h2 id="自定义初始化容量"><a href="#自定义初始化容量" class="headerlink" title="自定义初始化容量"></a>自定义初始化容量</h2><p>&emsp;&emsp;先前在Q群里看到有小伙伴说面试被问到一个这样的问题，就是如果将 HashMap 初始化容量设置为 10000，然后往里头存储 10000 个元素，问 HashMap 需要扩容几次？对于这样一个问题如果你没有阅读过源码你就很容易被引入坑里，因为一些人他只知道 HashMap 中加载因为 0.75 ，所以 10000 的容量实质只能存储 7500 个，因此需要扩容1次。但是实际情况真的是这样的？答案肯定是否定的，对于 HashMap 而言它的容量必须是2的n次幂，且n不能大于30。也就是说如果你设置初始化容量为 10000 的话，那么 HashMap 会先判断 10000 是不是2的n次幂，如果不是则转变为2的n次幂再作为初始化容量。当然，前提是传入的这个初始化值是大于或等于零且小于或等于 MAXIMUM_CAPACITY（1 &lt;&lt; 30，即2的30次方）。</p>
+<p>以下我们就承接着上面的问题来阅读以下初始化容量的构造方法，代码如下：</p>
+<pre><code class="java">public ConcurrentHashMap(int initialCapacity) {
+
+    if (initialCapacity &lt; 0)
+        throw new IllegalArgumentException();
+
+    int cap = ((initialCapacity &gt;= (MAXIMUM_CAPACITY &gt;&gt;&gt; 1)) ?
+               MAXIMUM_CAPACITY :
+               // 扩容为原来的1.5配再加1
+               tableSizeFor(initialCapacity + (initialCapacity &gt;&gt;&gt; 1) + 1)); 
+    this.sizeCtl = cap;
+}</code></pre>
+<ul>
+<li>initialCapacity 必须大于或者等于0</li>
+<li>如果 initialCapacity 大于或等于(MAXIMUM_CAPACITY &gt;&gt;&gt; 1)则直接将其设置为MAXIMUM_CAPACITY。这样做理由视情况而定：<ul>
+<li>大于时，意味着 initialCapacity 可能超过了 MAXIMUM_CAPACITY 或者并不是2的n次幂，因此避免越界和减少计算操作而直接设置为MAXIMUM_CAPACITY会更加高效</li>
+<li>等于时，我对此的理解是，如果 initialCapacity 等于 (MAXIMUM_CAPACITY &gt;&gt;&gt; 1) 的话其实对于后续扩容只能有且仅有地进行1次，而且到了那个时候的数据量再进行扩容操作代价就有些大了，因此直接设置为 MAXIMUM_CAPACITY 效果可能更佳</li>
+</ul>
+</li>
+<li>如果 initialCapacity 不符合上面的条件，那么 initialCapacity 会增加为原来的 1.5 倍再加 1。操作时 initialCapacity + (initialCapacity &gt;&gt;&gt; 1) + 1 。这里采用无符号右移的好处是当 initialCapacity 为基数时可以截断其小数位。</li>
+</ul>
+<p>将 initialCapacity 扩容为原来的1.5配再加1后操作还没有完成，这时还需要将其结果转换为2的n次幂。操作如下：</p>
+<pre><code class="java">private static final int tableSizeFor(int c) {
+    int n = c - 1;
+    n |= n &gt;&gt;&gt; 1;
+    n |= n &gt;&gt;&gt; 2;
+    n |= n &gt;&gt;&gt; 4;
+    n |= n &gt;&gt;&gt; 8;
+    n |= n &gt;&gt;&gt; 16;
+    return (n &lt; 0) ? 1 : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+}</code></pre>
+<p>上面这这个操作主要分为两部分：</p>
+<ol>
+<li>return 对上的操作，主要是将数值 c 的二进制最高位1后的所有0置换为1</li>
+<li>return行，判断结果值 n 是否越界，大于或等于 MAXIMUM_CAPACITY 时则最终结果为MAXIMUM_CAPACITY。否则为 n + 1。</li>
+</ol>
+<blockquote>
+<p>接下来是分析时间，我们分析一下 return 对上的操作是如何进行的。</p>
+<p>现在假设传入的 initialCapacity 值为 10000。过程如下：</p>
+</blockquote>
+<p><strong>第一步：</strong>进入构造器</p>
+<pre><code class="java">initialCapacity + (initialCapacity &gt;&gt;&gt; 1) + 1 = 1501</code></pre>
+<p><strong>第二部：</strong>进行 return 对上的操作，即将数值的二进制最高位1后的所有0置换为1</p>
+<pre><code class="properties">int n = c - 1;
+n = 1501 - 1 = 1500
+
+# n |= n &gt;&gt;&gt; 1; 计算如下
+0011 1010 1001 1000 = 1500补码
+0001 1101 0100 1100 = 右移1位后
+------------------- 或预算结果（或运算，00才为0）
+0011 1111 1101 1100 = 16348      
+
+# n |= n &gt;&gt;&gt; 2; 计算如下
+0011 1111 1101 1100 = 16348补码
+0000 1111 1111 0111 = 右移2位后
+-------------------
+0011 1111 1111 1111 = 16383
+# 可以看到这个时候n值的二进制最高位1后的值已经全部为1，所以后续的操作结果都是16383，即不会再变化
+
+# n |= n &gt;&gt;&gt; 2;  计算如下
+0011 1111 1111 1111 = 16383补码
+0000 0011 1111 1111 = 右移4位后
+-------------------
+0011 1111 1111 1111 = 16383 
+
+# n |= n &gt;&gt;&gt; 8;
+0011 1111 1111 1111 = 16383补码
+0000 0000 0011 1111 = 右移8位后
+-------------------
+0011 1111 1111 1111 = 16383 
+# 省略...</code></pre>
+<p>因此n的组中结果为：16383</p>
+<p><strong>第三部：</strong>判断是否越界，并将n设置为2的n次幂</p>
+<pre><code class="java">(n &lt; 0) ? 1 : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1 = 16384</code></pre>
+<p>最后我们使用 debug 来验证我们的结果：</p>
+<p><img src="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/001.png" alt></p>
+<p>好了，到这里我们就可以回答一下上面的那个面试题了。16383乘0.17结果约为12287，因此存储1000个元素是不会扩容的。</p>
+<h2 id="哈希值"><a href="#哈希值" class="headerlink" title="哈希值"></a>哈希值</h2><p>&emsp;&emsp;哈希值对于散列表数据结构来说是至关重要的存在。这是因为元素要想存储到散列表时必须通过哈希值（也叫散列值）来确定自己的存储下标。因为这个缘故，所以大多数情况下要是我们相拥散列表来存储自己编写的引用类型时都应该重载从 Object 类继承过来的 hashCode 和 equals 两个方法。</p>
+<p>&emsp;&emsp;在讲解 hashCode 和 equals 两个方法之前我们先简单回顾以下什么是散列表。散列表也叫哈希表，一般数据结构表现为 数组 + 链表。但其实这只是一种常见实现而已（例如JDK1.8加入了红黑树），因为散列表在最理想的情况下仅仅只需要数组来实现即可，即这个时候的查询时间复杂度为O(1)，这是最理想的情况，前提是数据足够离散。但是生活告诉我们很多情况都是事与愿违的，如果数据不够离散的话，那么元素使用哈希值来定位存储下标时就会出现一种叫”哈希冲突/碰撞”的现象，既元素之间出现了相同的哈希值。出现这种情况的原因有3种：</p>
+<ul>
+<li>重复保存了同一个元素</li>
+<li>不同元素间存在相同哈希值</li>
+<li>大小值位运算导致哈希冲突（下面有案例）</li>
+</ul>
+<p>&emsp;&emsp;好了，我们已经回顾了散列表数据结构，还提到什么是”哈希冲突/碰撞”。那么现在就说说 hashCode 和 equals 两个方法的作用：</p>
+<ul>
+<li>hashCode：获取实例的哈希值</li>
+<li>equals：判断实例是否相同</li>
+</ul>
+<p>&emsp;&emsp;hashCode 和 equals 的关系是这样的，例如：Person A 和 Person B 的 hashCode 相等，既发生了哈希碰撞，这时散列表会调用实例的 equals 方法进一步判断 Person A 和 Person B 是不是同一个实例。这就为什么需要重载 hashCode 和 equals 方法的原因。也因为这个缘故所以重载方法时需要重点注意，既如果两个实例进行 equals 操作返回 true 的话，那么他们的 hashCode 肯定是相等的，反之不然。</p>
+<p>&emsp;&emsp;至此，该回顾的内容我们都已经回顾了，接下来是时候看看 ConcurrentHashMap 中它是如何使用位运算来优化元素实例的哈希值的。我们从它的 put 方法开始观察，源码如下：</p>
+<pre><code class="java">final V putVal(K key, V value, boolean onlyIfAbsent) {
+    // 省略
+    int hash = spread(key.hashCode());
+    // 省略
+}</code></pre>
+<p>可以看到，在存储元素时它先获取了元素自身的 hashCode 值，然后传递给了 spread 方法。对于 spread 而言，它的主要功能有两个：</p>
+<ol>
+<li>降低元素的哈希冲突</li>
+<li>将元素的负哈希值改为正</li>
+</ol>
+<p>以下为 spread 方法源码：</p>
+<pre><code class="java">static final int spread(int h) {
+    return (h ^ (h &gt;&gt;&gt; 16)) &amp; HASH_BITS;
+}</code></pre>
+<p><strong>第一步：</strong>h ^ (h &gt;&gt;&gt; 16)</p>
+<p>&emsp;&emsp;首先需要知道的是 hashCode 它是一个int类型，即32位。这里无符号右移16位的意思就是将高16位的值挪到低16位位置中，这样做的目的是降低哈希冲突。因为散列表下标计算公式为：h &amp; (n-1) ，而 n 的最大值为 2 的 30 次方（散列表最大容量），但又因为 hashCode 是一个32位的int类型，其最大值是 2 的 31 次方减1，因此存在 h 大于 (n-1) 的情况。如果不做任何处理的话就会加大哈希冲突的出现。举个简单的例子：</p>
+<pre><code class="java"># 例如有两个哈希值a 和 b，分别如下：
+#    0000 0000 0000 1000 0000 0000 0000 0010 = a
+#    0000 0000 0000 0000 0000 0000 0000 0010 = b
+# 可以看到a和b的低16位是相同的，而高16位是存在差异的。
+# 接下来以HashMap默认容量值16来计算一下a和b的存储下标位置：
+a:
+    0000 0000 0000 0000 0000 0000 0000 1111 = 16 - 1，高位以0补全
+        &amp;
+    0000 0000 0000 1000 0000 0000 0000 0010 = a
+    ---- 结果
+    0000 0000 0000 0000 0000 0000 0000 0010 = 下标2
+
+b:
+    0000 0000 0000 0000 0000 0000 0000 1111 = 16 - 1，高位以0补全
+        &amp;
+    0000 0000 0000 0000 0000 0000 0000 0010 = b
+    ---- 结果
+    0000 0000 0000 0000 0000 0000 0000 0010 = 下标同样为2    </code></pre>
+<p>从例子中可以看到，如果不对原来的哈希值做任何处理的话就会出现上面的情况，既1高位不同但地位相同的两个哈希值计算出来的下标发生了哈希冲突现象，而 h ^ (h &gt;&gt;&gt; 16) 就是解决这个问题的。接下来我们还是使用上面a和b这两个值来进行一次 h ^ (h &gt;&gt;&gt; 16)  计算以验证一下是不是上面所说的那样可以解决上面的冲突问题。</p>
+<pre><code class="java">原值
+0000 0000 0000 1000 0000 0000 0000 0010 = a
+0000 0000 0000 0000 0000 0000 0000 0010 = b
+
+&gt;&gt;&gt; 16 后
+0000 0000 0000 0000 0000 0000 0000 1000 = a
+0000 0000 0000 0000 0000 0000 0000 0000 = b
+
+^ 后
+0000 0000 0000 1000 0000 0000 0000 1010 = a // 相当于原基础上加了8
+0000 0000 0000 0000 0000 0000 0000 0010 = b</code></pre>
+<p>经过计算后可以看到 a 的低位变成了1010，而b则原封不动还是0010，因此解决了不处理时的冲突现象。</p>
+<p><strong>第二步：</strong>h ^ (h &gt;&gt;&gt; 16) &amp; HASH_BITS</p>
+<p>&emsp;&emsp;HASH_BITS 的值为 0x7fffffff（Integer.MAX_VALUE）。该值的二进制位 <code>0111 1111 1111 1111 1111 1111 1111 1111</code>。因此负数<code>&amp;</code>上 0x7fffffff 就会变为正数。</p>
+<h2 id="LastRun高低位机制"><a href="#LastRun高低位机制" class="headerlink" title="LastRun高低位机制"></a>LastRun高低位机制</h2><h3 id="了解"><a href="#了解" class="headerlink" title="了解"></a>了解</h3><p>&emsp;&emsp;LastRun机制是用来提高 ConcurrentHashMap 的扩容效率的，主要体现在它可以减少扩容时需要重新计算散列表下标值的工作量。但需要注意的是 LastRun 机制在 JDK1.7 和 JDK1.8 两个版本中是存在差异的，如 JDK1.7 中是没有高低位操作，既只有 LastRun 机制。</p>
+<p>&emsp;&emsp;对于高低位机制的理解个人认为应该溯源到 JDK1.7 的 HashMap 身上，因为高低位机制解决了 HashMap  并发扩容后 get 操作的死循环问题（实在不太理解为什么会有人用多线程并发操作HashMap，真是黑人问号.jpg）。那么这个问题的点位于 JDK1.7 版 HashMap 的 transfer 方法中，源码如下：</p>
+<blockquote>
+<p>java.util.HashMap</p>
+</blockquote>
+<pre><code class="java">void resize(int newCapacity) {
+    // 省略
+    transfer(newTable, initHashSeedAsNeeded(newCapacity));
+    table = newTable; // 注意：这里需要先迁移完才会切断OldTable的引用
+    // 省略
+}
+
+void transfer(Entry[] newTable, boolean rehash) {
+    int newCapacity = newTable.length;
+    for (Entry&lt;K,V&gt; e : table) {
+        while(null != e) { // 关键变量 e 和 next
+            Entry&lt;K,V&gt; next = e.next;
+            if (rehash) {
+                e.hash = null == e.key ? 0 : hash(e.key);
+            }
+            int i = indexFor(e.hash, newCapacity);
+            // 问题代码
+            e.next = newTable[i];
+            newTable[i] = e;
+            e = next;
+        }
+    }
+}</code></pre>
+<p>从问题代码中可以得知迁移过程使用的是 头插法 迁移方式，过程如下：</p>
+<ol>
+<li>先将目标位置下的冲突链表赋值给自己(e)的next指向</li>
+<li>再将自己(e)设置到这个目标位置下</li>
+</ol>
+<p>那么为什么会导致死循环呢？我用图片来解释下死循环是如何发生的，如下：</p>
+<img src="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/002.png" style="zoom:67%;">
+
+<p>好了，现在我们知道了 JDK1.7 的 HashMap 并发扩容时会导致 get 死循环问题后我们再看看 JDK1.8 中HashMap 是如何解决这个问题的，迁移源码如下：</p>
+<blockquote>
+<p>java.util.HashMap#resize</p>
+</blockquote>
+<pre><code class="java">Node&lt;K,V&gt; loHead = null, loTail = null;
+Node&lt;K,V&gt; hiHead = null, hiTail = null;
+Node&lt;K,V&gt; next;
+
+do { 
+    next = e.next; // 记录下一个迭代节点
+    if ((e.hash &amp; oldCap) == 0) { // 记录低位
+        if (loTail == null) 
+            loHead = e;
+        else 
+            loTail.next = e;
+        loTail = e;
+    }
+    else { // 记录高位
+        if (hiTail == null)
+            hiHead = e;
+        else
+            hiTail.next = e;
+        hiTail = e;
+    }
+    // 迭代冲突链表
+} while ((e = next) != null); 
+
+if (loTail != null) {
+    loTail.next = null;
+    newTab[j] = loHead;
+}
+
+if (hiTail != null) {
+    hiTail.next = null;
+    newTab[j + oldCap] = hiHead;
+}</code></pre>
+<p>可以看到，相较于 JDK 1.7 而言除了e和next之外 JDK1.8 还新增了4个变量值：</p>
+<ul>
+<li>记录低位节点：loHead、loTail</li>
+<li>记录高位节点：hiHead、hiTail。</li>
+</ul>
+<p>那么它是如何解决循环引用问题的呢？如果你有认真看上面那张循环引用分析图的话其实很容易就能得出答案。JDK 1.7 之所以并发扩容会导致循环引用，主要是因为使用了头插法后直接操作变量e所导致的，因为这样会导致原来的 A -&gt; B 引用转换为 B -&gt; A ，那么多线程并发操作时就会存在循环引用的隐患。而 JDK 1.8 后采用的是尾插法之余还新增了4个变量来避免直接操作变量e，既不存在将 A -&gt; B 引用转换为 B -&gt; A 的情况，具体迁移步骤是先用 hiHead 和 loHead 按原来顺序拼接链表，等拼接完了才设置到新散列表中。</p>
+<p>但在这里需要强调的是，即使 JDK 1.8 的 HashMap 解决了循环引用的问题，但它依然是非线程安全得多，例如在并发拼接链表时节点的next指向会被修改，这样一来就可能会直接导致其它线程拼装链表时丢失某部分节点，所以如果是多线程环境的话还是需要使用线程安全的 ConcurrentHashMap 才能保证安全。</p>
+<p>&emsp;&emsp;在 JDK 1.8 的 HashMap 中扩容时其实是用到了LastRun机制的，如上面这段代码，只不过它没有明确表述出来而已，其中 (e.hash &amp; oldCap) == 0 就是 LastRun机制操作，稍后我会从位运算角度来分析一下为什么LastRun机制可以降低扩容时需要重新计算哈希值的操作量，以及它的巧妙之处。</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>&emsp;&emsp;接下来将视角切换到 JDK 1.8 的 ConcurrentHashMap 中。我们先了解一个 ConcurrentHashMap 扩容时是如何使用LastRun高低位机制的。迁移源码如下：</p>
+<blockquote>
+<p>java.util.concurrent.ConcurrentHashMap#transfer</p>
+</blockquote>
+<pre><code class="java">if (tabAt(tab, i) == f) { // 普通节点
+    Node&lt;K,V&gt; ln, hn;
+    if (fh &gt;= 0) { // n为当前散列表容量，fh为当前节点的哈希值，runBit用于判断高低位
+        int runBit = fh &amp; n; 
+        Node&lt;K,V&gt; lastRun = f; // 预定义LastRun节点为冲突链表的head节点
+        for (Node&lt;K,V&gt; p = f.next; p != null; p = p.next) {
+            int b = p.hash &amp; n;
+            if (b != runBit) { // 迭代出LastRun，判断依据是runBit存在差异
+                runBit = b; // 注意：如果runBit存在差异，证明在迁移后当前冲突链表需要拆分
+                lastRun = p;
+            }
+        }
+        if (runBit == 0) { // 低位
+            ln = lastRun;
+            hn = null;
+        }
+        else { // 高位
+            hn = lastRun;
+            ln = null;
+        }
+        // 拼装高低位链表，只需迭代到lastRun即可
+        for (Node&lt;K,V&gt; p = f; p != lastRun; p = p.next) { 
+            int ph = p.hash; K pk = p.key; V pv = p.val;
+            if ((ph &amp; n) == 0) // 低位
+                ln = new Node&lt;K,V&gt;(ph, pk, pv, ln);
+            else // 高位
+                hn = new Node&lt;K,V&gt;(ph, pk, pv, hn);
+        }
+        setTabAt(nextTab, i, ln); // 低位链表迁移无需修改下标
+        setTabAt(nextTab, i + n, hn); // 高位链表新下标= 当前下标 + OldTable.length
+        setTabAt(tab, i, fwd); 
+        advance = true;
+    }</code></pre>
+<p>可能跟随着上面注释的步伐一时之间你还是不明白 LastRun 到底在哪里降低了下标值的计算工作。所以我画了一张图来帮组理解：</p>
+<img src="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/003.png" style="zoom:67%;">
+
+<p>LastRun的巧妙之处是使用 <code>runBit = fh &amp; n</code> 来区分高低位以确定节点迁移的新下标值。而runBit的结果只有两种：</p>
+<ul>
+<li>等于0，迁移后 newIndex = oldIndex</li>
+<li>非0，迁移后 newIndex = oldIndex + old</li>
+</ul>
+<p>其实一开始看源码的时候我自己是十分困惑的，我的疑问是，为什么可以这样确定新下标值，感觉很是神奇。Google了一番都没有得到结果。</p>
+<p>后来我使用位运算来模拟计算，同时进行猜想和验证：</p>
+<p><strong>首先说我验证的问题：</strong>当runBit值为非0时 newIndex = oldIndex + old。过程如下：</p>
+<pre><code class="properties"># lastRun操作：table.length &amp; h
+
+# lastRun操作：16 &amp; 2070812441(哈希值)
+0000 0000 0000 0000 0000 0000 0001 0000 = 16
+&amp;
+0111 1011 0110 1110 0001 0111 0001 1001 = 2070812441。因为两个都是正数，所以原码就是补码
+------
+0000 0000 0000 0000 0000 0000 0001 0000 = 16 
+# runBit值不等于0，因此newIndex应该是等于 oldIndex + oldLength
+
+# 节点当前下标位置：(16-1) &amp; 2070812441
+0000 0000 0000 0000 0000 0000 0000 1111 = 15
+&amp;
+0111 1011 0110 1110 0001 0111 0001 1001 = 2070812441
+------
+0000 0000 0000 0000 0000 0000 0000 1001 = 当前下标值为9
+# 所以在runBit值为非零的理论基础上，扩容后newIndex应该为 9+16 = 25
+
+# 验证上面的问题
+# 散列表扩容后节点的新下标：(32-1) &amp; 2070812441
+0000 0000 0000 0000 0000 0000 0001 1111 = 31
+&amp;
+0111 1011 0110 1110 0001 0111 0001 1001 = 2070812441
+------
+0000 0000 0000 0000 0000 0000 0001 1001 = 结果是25
+# 因此验证了当runBit值为非零时 newIndex = oldIndex + old 是成立的</code></pre>
+<p><strong>最后我的猜想：</strong>如果runBit等于0，那么扩容前后下标( hash&amp;(n-1) )值不变</p>
+<pre><code class="properties"># LastRun判断为0案例：
+
+# LastRun：16 &amp; 2070812457
+0000 0000 0000 0000 0000 0000 0001 0000 = 16
+&amp;
+0111 1011 0110 1110 0001 0111 0010 1001 = 2070812457
+------
+0000 0000 0000 0000 0000 0000 0000 0000 = 0，既runBit值为0
+
+# 节点当前下标位置：(16-1) &amp; 2070812457
+0000 0000 0000 0000 0000 0000 0000 1111 = 16-1
+&amp;
+0111 1011 0110 1110 0001 0111 0010 1001 = 2070812457
+------
+0000 0000 0000 0000 0000 0000 0000 1001 = 9
+
+# 散列表扩容后节点的新下标：(32-1) &amp; 2070812457
+0000 0000 0000 0000 0000 0000 0001 1111 = 32-1
+&amp;
+0111 1011 0110 1110 0001 0111 0010 1001 = 2070812457
+------
+0000 0000 0000 0000 0000 0000 0000 1001 = 9
+
+# 可以看到当runBit值为0时，节点迁移前后的下标确实没有变化</code></pre>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/">
+      ConcurrentHashMap中的位运算应用
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('ConcurrentHashMap中的位运算应用'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#闲聊"><span class="toc-text">闲聊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义初始化容量"><span class="toc-text">自定义初始化容量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#哈希值"><span class="toc-text">哈希值</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LastRun高低位机制"><span class="toc-text">LastRun高低位机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#了解"><span class="toc-text">了解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分析"><span class="toc-text">分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

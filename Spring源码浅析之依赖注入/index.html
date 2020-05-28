@@ -1,0 +1,406 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> Spring源码浅析之依赖注入-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>Spring源码浅析之依赖注入</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2020-03-24 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><blockquote>
+<p>文章内容基于 Spring 5 </p>
+</blockquote>
+<p>&emsp;&emsp;本想将该部分内容放在上一篇文章中的，但是主题稍有出入而且不想让篇幅太长因此独自另开一篇文章来记录。但是我依然建议先观看上一篇文章《Spring源码浅析之SingletonBean的实例化过程》后再来看当前的内容，这样思路会更加清晰。</p>
+<h2 id="关于控制反转和依赖注入"><a href="#关于控制反转和依赖注入" class="headerlink" title="关于控制反转和依赖注入"></a>关于控制反转和依赖注入</h2><p>&emsp;&emsp;那么在谈注入方式之前先聊一聊关于<code>控制反转</code>和<code>依赖注入</code>的区别。主要是因为看到网上很多人说它们是同一个东西，而我个人并不这样理解。</p>
+<blockquote>
+<p>以下内容片段摘自网上的某篇文章</p>
+</blockquote>
+<img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/001.png" style="zoom: 67%;">
+
+<p>可以看到文章作者的理解是<code>依赖注入其实是IOC的另一种说法</code>，除此还提及到<code>控制反转是指获得依赖的方式反转了</code>。那我的质疑就是 IoC 和 DI 其实不是同一个级别的东西，还有就是 IoC 不仅仅体现在依赖注入。还有就是不要因为他提到<code>马丁福勒</code>就彻底相信他了，我们应该时刻保持着怀疑的态度来看待问题。</p>
+<p>&emsp;&emsp;那我会先谈谈自己的见解，然后再用源码来证实一下自己的说法。因为口说无凭，事实胜于雄辩。我所理解的 Ioc 其实是一种思想，且并不只是在 Spring 中出现。例如GOF的23种计模式中的<code>观察者模式</code>也运用了控制反转的思想，主要体现在由可观察对象来通知观察者而不是观察者主动轮询可观察对象，既这时后观察者是从主动变为被动。除了编程之外其实生活中也有 IoC 思想的场景，例如著名的 <a href="https://baike.baidu.com/item/%E5%A5%BD%E8%8E%B1%E5%9D%9E%E5%8E%9F%E5%88%99/16019700" target="_blank" rel="noopener">好莱坞原则</a> 就是 IoC 的体现。在 Spring 中，IoC 主要体现在实例维护上，开发者将维护实例职责交由Spring来完成，这就是Spring的 IoC 思想。而需要重点情况出的实例维护到底包含哪些内容？大致有这些：<code>配置管理</code>、<code>实例创建与销毁</code>、<code>实例的依赖查找</code>、<code>实例的依赖注入</code>等等，以上提到的都是 IoC 的职责。所以说IoC 是不等同于依赖注入的。通俗地说，依赖注入仅仅只是 Spring IoC 中的一项功能，如果依赖注入脱离了 IoC 的话，那么只是一个没有”上下文”的普通操作而已。</p>
+<p>&emsp;&emsp;除此之外，很多人都只会提到<code>依赖注入</code>而忽略了<code>依赖查找</code>。其实<code>(手动)依赖查找</code>和<code>依赖注入</code>是存在区别的。<code>(手动)依赖查找</code>主要是根据 BeanDefinition 查找实例，而在查找过程中如果发现没有对应的 BeanDefinition 则会抛出 NoSuchBeanDefinitionException 异常。<code>依赖注入</code>包含<code>(自动装配)依赖查找</code>和<code>注入依赖</code>2个动作，且<code>(自动装配)依赖查找</code>还有别与前面的<code>手动依赖查找</code>。例如下面这个案例：</p>
+<pre><code class="java">// 手动依赖查找
+@Test
+public void test() {
+    // 会抛出 NoSuchBeanDefinitionException 
+    applicationContext.getBean(BeanFactory.class);
+}
+
+// 依赖注入（自动装配依赖查找 + 注入依赖）
+@Autowired
+private BeanFactory beanFactory; // 可以获取到 BeanFactory 实例</code></pre>
+<p>得到上面两种结果的原因很简单，上面已经提到<code>手动依赖查找</code>是根据 BeanDefinition 来查找实例的，而 BeanFactory 是 Spring 容器的内置Bean，换句话说它并不是由解析配置得到的，所以容器中不存在与之对应的 BeanDefinition，因此<code>手动依赖查找</code>方式会抛出 NoSuchBeanDefinitionException 异常。</p>
+<p>多说一句，除了 BeanFactory 之外，ResourceLoader、ApplicationEventPublisher、ApplicationContext 等都是内置 Bean（可以查看AbstractApplicationContext#prepareBeanFactory方法）。</p>
+<blockquote>
+<p>依赖注入 和 依赖查找 的基本流程图</p>
+</blockquote>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/002.png" alt></p>
+<p>最后可以得出这样的结论：</p>
+<ul>
+<li>控制反转包含 依赖注入 和 依赖查找</li>
+<li>控制反转 != 依赖注入 != 依赖查找</li>
+</ul>
+<h2 id="Spring支持的几种依赖注入方式"><a href="#Spring支持的几种依赖注入方式" class="headerlink" title="Spring支持的几种依赖注入方式"></a>Spring支持的几种依赖注入方式</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>&emsp;&emsp;在Spring中支持 4 种依赖注入方式，分别是：<code>构造器注入</code>、<code>字段注入</code>、<code>方法注入(包含Setter方法)</code>、<code>接口方法回调注入</code>。在网上看到有很多人误以为<code>方法注入</code>和<code>Setter注入</code>是区分开的，但实时并非如此，如果有看上一章内容的话，在流程图中可以看到，@Autowired注解处理过程中其实只区分是 Field  和 Method，而不会区分 普通Method 还是 Setter Method，这点可以看看以下源码：</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/003.png" alt></p>
+<p>而上面提到的 4 种依赖注入方式又可以按照<code>依赖注入时机</code>划分为 3 大类型：</p>
+<p><code>第1类</code>：构造器注入(@Bean标注的实例工厂方法类似)。依赖会在<code>创建实例时被注入</code></p>
+<p><code>第2类</code>：方法注入。依赖会在创建实例后，<code>填充属性时被注入</code></p>
+<p><code>第3类</code>：接口方法回调注入。依赖会在创建实例和填充属性后的<code>初始化阶段注入</code></p>
+<h3 id="注入方式详解"><a href="#注入方式详解" class="headerlink" title="注入方式详解"></a>注入方式详解</h3><h4 id="构造器注入"><a href="#构造器注入" class="headerlink" title="构造器注入"></a>构造器注入</h4><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>构造器注入指的是通过重载构造方法来实现注入配置，使用构造器注入无需额外添加注解配置。例子如下：</p>
+<pre><code class="java">@Configuration
+public class TestConfig {
+
+    private PersonRepo personRepo;
+
+    public TestConfig(PersonRepo personRepo) {
+        this.personRepo = this.getPersonRepo();
+    }
+}</code></pre>
+<p>但需要重点注意的是，如果在实例化过程中容器检测到实例的<code>构造器存在歧义</code>则会调用默认构造方法来完成实例化，而如果这时没有提供默认构造方法的话就会抛出没有找到方法异常。那么什么叫存在歧义呢，例子如下：</p>
+<pre><code class="java">@Configuration
+public class TestConfig {
+
+    private PersonRepo personRepo;
+    private TransactionTemplate transactionTemplate;
+
+    public TestConfig() {
+    }
+
+    public TestConfig(PersonRepo personRepo) {
+        this.personRepo = this.getPersonRepo();
+    }
+
+    public TestConfig(PersonRepo personRepo, TransactionTemplate transactionTemplate) {
+        this.personRepo = this.getPersonRepo();
+        this.transactionTemplate = transactionTemplate;
+    }
+}</code></pre>
+<p>上面存在两个重载的构造方法，因此在实例化时 Spring 是不知道该选用哪个的，因此在这种情况下就会选用默认构造方法来完成实例化过程，而如果这时没有提供默认构造器就会抛异常。</p>
+<blockquote>
+<p>源码分析</p>
+</blockquote>
+<p>源码位置：AbstractAutowireCapableBeanFactory#createBeanInstance</p>
+<pre><code class="java">protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
+    // Make sure bean class is actually resolved at this point.
+    Class&lt;?&gt; beanClass = resolveBeanClass(mbd, beanName);
+
+    // Lambda 方法创建。例如Spring5后支持下面这种注册Bean的操作
+    // context.registerBean(&quot;mySecondService&quot;, MyService.class, () -&gt; new MyService());
+    Supplier&lt;?&gt; instanceSupplier = mbd.getInstanceSupplier();
+    if (instanceSupplier != null) {
+        return obtainFromSupplier(instanceSupplier, beanName);
+    }
+
+    // 实例工厂方法创建
+    if (mbd.getFactoryMethodName() != null) {
+        return instantiateUsingFactoryMethod(beanName, mbd, args);
+    }
+
+    // 构造器创建
+    if (resolved) {
+        if (autowireNecessary) {
+            return autowireConstructor(beanName, mbd, null, null);
+        }
+        else {
+            return instantiateBean(beanName, mbd);
+        }
+    }
+    Constructor&lt;?&gt;[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+    if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
+        mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+        return autowireConstructor(beanName, mbd, ctors, args);
+    }
+
+    // Preferred constructors for default construction?
+    ctors = mbd.getPreferredConstructors();
+    if (ctors != null) {
+        return autowireConstructor(beanName, mbd, ctors, null);
+    }
+
+    // No special handling: simply use no-arg constructor.
+    return instantiateBean(beanName, mbd);
+}</code></pre>
+<p>其中<code>实例工厂方法</code>和<code>(重载)构造器</code>这两种创建 Bean 实例的方式的依赖注入时机是一样，都会在创建Bean 后马上注入依赖。要证明这一点其实很简单，我们可以在 Bean 生命周期的属性填充操作之前拦截实例观察，看看是否已经存有依赖就可以了。例子如下：</p>
+<pre><code class="java">@Configuration
+public class TestConfig {
+
+    private PersonRepo personRepo;
+    private TransactionTemplate transactionTemplate;
+
+    public TestConfig(PersonRepo personRepo, TransactionTemplate transactionTemplate) {
+        this.personRepo = personRepo;
+        this.transactionTemplate = transactionTemplate;
+    }
+}</code></pre>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/004.png" alt></p>
+<h4 id="方法注入和字段注入"><a href="#方法注入和字段注入" class="headerlink" title="方法注入和字段注入"></a>方法注入和字段注入</h4><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>方法注入依赖和字段注入依赖的时机是一样的，都是在 Bean 实例化之后的属性填充操作中完成依赖注入的。从这点可以看出注入依赖的时机相较于构造器注入来说要稍晚一些。而且方法注入和字段注入依赖的是注解，因此需要 InstantiationAwareBeanPostProcessor 类型的注解处理器来完成注入工作。Spring中常见的依赖注入注解处理器有以下几个：</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/005.png" alt></p>
+<p>至于<code>方法注入</code>和<code>字段注入</code>的区别在上面已经提及过，两种都是在同一个注解处理器中完成依赖注入操作的，区别仅只是类型不同而已。</p>
+<blockquote>
+<p>源码浅析</p>
+</blockquote>
+<p>案例代码在上面的例子作稍微的修改，如下</p>
+<pre><code class="java">@Configuration
+public class TestConfig {
+    @Autowired
+    private PersonRepo personRepo;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+}</code></pre>
+<p>那么首先证明在属性填充之前以上依赖不会被注入，这个有别于构造器注入。断点位置和上面的一样</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/006.png" alt></p>
+<p>从上面我们看到确实没有注入依赖。接着再证明一下，经过属性填充之后依赖会被注入到Bean中，如下</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/007.png" alt></p>
+<h4 id="接口方法回调注入"><a href="#接口方法回调注入" class="headerlink" title="接口方法回调注入"></a>接口方法回调注入</h4><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>接口方法回调注入主要依赖的是 Spring 提供的 Aware 接口。例如 Spring 的几个内置 Bean 都有相应的的接口，如下：</p>
+<ul>
+<li>ApplicationContextAware：用于获取内置的 ApplicationContext 实例</li>
+<li>BeanFactoryAware：用于获取内置的 BeanFactory 实例</li>
+<li>ApplicationEventPublisherAware：用于获取内置的 ApplicationEventPublisher 实例</li>
+<li>ResourceLoaderAware：用于获取内置的 ResourceLoaderAware实例</li>
+</ul>
+<p>可以看出 Spring 除了自动装配之外，还提供了Aware接口来暴露容器的内置bean。</p>
+<p>接口方法回调注入依赖的时机是最晚的，位于 Bean 生命周期的初始化阶段。</p>
+<blockquote>
+<p>源码</p>
+</blockquote>
+<p>将上一次的测试案例修改为接口方法回调注入，如下：</p>
+<pre><code class="java">@Configuration
+public class TestConfig implements ApplicationContextAware {
+
+    private PersonRepo personRepo;
+    private TransactionTemplate transactionTemplate;
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.personRepo = applicationContext.getBean(PersonRepo.class);
+        this.transactionTemplate = applicationContext.getBean(TransactionTemplate.class);
+    }
+}</code></pre>
+<p>首先要证明的是接口方法回调注入在属性填充阶段不会注入依赖，如下：</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/008.png" alt></p>
+<p>可以看到断言无误。接下来我们断言当执行初始化操作后，依赖会被注入到Bean中，如下：</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/009.png" alt></p>
+<h3 id="该如何选择注入方式"><a href="#该如何选择注入方式" class="headerlink" title="该如何选择注入方式"></a>该如何选择注入方式</h3><ul>
+<li>经过上面的分析我们已经得知几种注入方式的主要区别是依赖注入的时机不同</li>
+<li><code>构造器注入</code>依赖的时机最早，它能够确保在Bean实例化之后就马上注入依赖。一般如果依赖注入后是不可变的，就推荐使用构造器注入。而且据了解旧版本的 Spring 官方文档中是推荐使用构造器注入的（新版本没留意到）。除此之外使用构造器注入还可以提前暴露循环依赖问题（下一章会谈到）。但构造器注入的缺点是如果要注入多个依赖的话那么构造方法就会变得复杂，易读性较差。</li>
+<li><code>方法注入和字段注入</code>这两种方式注入依赖的时机是一样的。如果依赖注入后还存在重新注入的情况那么推荐使用方法注入。</li>
+<li><code>接口方法回调注入</code>的依赖注入时机是最晚的。需要手动进行依赖查找用得较少。</li>
+<li>总的来说如果没有特别场景的话使用哪种注入方式都是一样的，而我个人更倾向字段注入，主要是因为方便和易读性较好，特别是使用Lombok省略手写Setter、Getter方法之后。</li>
+</ul>
+<h2 id="如何解决构造器注入的循环依赖问题"><a href="#如何解决构造器注入的循环依赖问题" class="headerlink" title="如何解决构造器注入的循环依赖问题"></a>如何解决构造器注入的循环依赖问题</h2><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>&emsp;&emsp;循环依赖指的是：<code>A -&gt; B -&gt; A</code>。如果出现这种情况而又没有做任何处理，则会在实例化时出现死循环。在 Spring 中该问题是通过提前暴露信息来中断死循环的。通俗点说就是在创建 Bean 时将创建标识暴露到<code>创建中对象池</code>，那么其它对象实例化时依赖该实例的话就可以在<code>创建中对象池</code>里得知这个依赖处于正在创建状态，如此一来就可以中断死循环了。例如Spring发生死循环后会抛出 BeanCurrentlyInCreationException 异常。</p>
+<p>&emsp;&emsp;这里需要强调一下，关于循环依赖出现死循环一般只出现在使用构造器注入时，因为构造器注入依赖的时机最早，它要求创建Bean后就要马上注入依赖，而这时的依赖可能还没完成创建，因此大大增加了死循环的概率，因此这种情况下只能抛出 BeanCurrentlyInCreationException 异常。</p>
+<blockquote>
+<p>那么如何解决循环依赖问题呢？</p>
+</blockquote>
+<ul>
+<li>使用方法注入或字段注入。这两种方式会提前暴露一个 ObjectFactory 实例来提供给其它实例进行依赖操作。ObjectFactory 和 FactoryBean 即可一样有懒加载效果，只有调用 getObject 方法后才会返回真正实例化</li>
+<li>使用接口方法回调注入</li>
+<li>构造器注入时，采用 @Lazy 注解来延迟依赖使用</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.baeldung.com/spring-5-functional-beans" target="_blank" rel="noopener">Spring 5 Functional Bean Registration</a></li>
+<li><a href="https://www.baeldung.com/circular-dependencies-in-spring" target="_blank" rel="noopener">Circular Dependencies in Spring</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/">
+      Spring源码浅析之依赖注入
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('Spring源码浅析之依赖注入'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于控制反转和依赖注入"><span class="toc-text">关于控制反转和依赖注入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring支持的几种依赖注入方式"><span class="toc-text">Spring支持的几种依赖注入方式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#注入方式详解"><span class="toc-text">注入方式详解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#构造器注入"><span class="toc-text">构造器注入</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方法注入和字段注入"><span class="toc-text">方法注入和字段注入</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#接口方法回调注入"><span class="toc-text">接口方法回调注入</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#该如何选择注入方式"><span class="toc-text">该如何选择注入方式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#如何解决构造器注入的循环依赖问题"><span class="toc-text">如何解决构造器注入的循环依赖问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

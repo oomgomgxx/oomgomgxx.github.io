@@ -1,0 +1,527 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 搭建ELK日志收集系统-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>搭建ELK日志收集系统</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-10-15 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h2><p>kafka：<a href="http://kafka.apache.org/downloads" target="_blank" rel="noopener">http://kafka.apache.org/downloads</a> </p>
+<p>zookeeper：<a href="https://www.apache.org/dyn/closer.cgi/zookeeper/（不用kafka内置的zookeeper）" target="_blank" rel="noopener">https://www.apache.org/dyn/closer.cgi/zookeeper/（不用kafka内置的zookeeper）</a></p>
+<p>jdk：<a href="https://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="noopener">https://www.oracle.com/technetwork/java/javase/downloads/index.html</a></p>
+<h2 id="命令行操作"><a href="#命令行操作" class="headerlink" title="命令行操作"></a>命令行操作</h2><p><strong>步骤1：配置jdk环境变量</strong></p>
+<p>1）vim /etc/profile</p>
+<pre><code>在unset...前添加一下内容
+# user settings
+JAVA_HOME=/usr/local/jdk1.8.0_201
+PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
+export JAVA_HOME PATH</code></pre><p>2）source /etc/profile 刷新配置</p>
+<p><strong>步骤2：将zookeeper配置文件zoo_sample.cfg改名为zoo.cfg</strong></p>
+<pre><code>mv zoo_sample.cfg zoo.cfg</code></pre><p><strong>步骤3：启动zookeeper（使用kafka提供的配置文件）</strong></p>
+<pre><code>[root@localhost bin]# ./zkServer.sh start /usr/local/kafka_2.11-2.1.0/config/zookeeper.properties</code></pre><p><strong>步骤4：启动kafka服务</strong></p>
+<pre><code>[root@localhost bin]# ./kafka-server-start.sh ../config/server.properties</code></pre><p><strong>步骤5：创建topic</strong></p>
+<pre><code>[root@localhost bin]# ./kafka-topics.sh --create --zookeeper 192.168.4.157:2181 --replication-factor 1 --partitions 1 --topic test</code></pre><p><strong>步骤6：查看topic是否创建成功</strong></p>
+<pre><code>[root@localhost bin]# ./kafka-topics.sh --zookeeper 192.168.4.157:2181 --list
+test</code></pre><p><strong>步骤7：kafka producer生产消息</strong></p>
+<pre><code>[root@localhost bin]# ./kafka-console-producer.sh --broker-list 192.168.4.157:9092 --topic test</code></pre><p><strong>步骤8：kafka consumer消费消息</strong></p>
+<pre><code>[root@localhost bin]# ./kafka-console-consumer.sh --bootstrap-server 192.168.4.157:9092 --topic test --from-beginning</code></pre><p>–from-beginning ：表示监听 test这个topic上的所有历史消息（即新消息和旧消息都获取-&gt; kafka消息持久化）</p>
+<h2 id="代码操作"><a href="#代码操作" class="headerlink" title="代码操作"></a>代码操作</h2><p><strong>步骤1：关闭防火墙和修改配置文件</strong></p>
+<pre><code>systemctl stop firewall
+systemctl disable firewall
+
+vim /usr/local/kafka/config/server.properties</code></pre><p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/013.png" alt></p>
+<p><strong>步骤2：配置pom.xml</strong></p>
+<pre><code class="xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;parent&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+        &lt;version&gt;2.1.2.RELEASE&lt;/version&gt;
+        &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
+    &lt;/parent&gt;
+    &lt;groupId&gt;com.td&lt;/groupId&gt;
+    &lt;artifactId&gt;kafkahw&lt;/artifactId&gt;
+    &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
+    &lt;name&gt;kafkahw&lt;/name&gt;
+    &lt;description&gt;hello world&lt;/description&gt;
+
+    &lt;properties&gt;
+        &lt;java.version&gt;1.8&lt;/java.version&gt;
+    &lt;/properties&gt;
+
+    &lt;dependencies&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.kafka&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-kafka&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+
+&lt;/project&gt;
+</code></pre>
+<p><strong>步骤3：配置springboot属性文件</strong></p>
+<pre><code class="yml">server:
+  port: 8888
+  servlet:
+    context-path: /kafkahw
+
+spring:
+  kafka:
+    bootstrap-servers: 192.168.1.101:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: consumer-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+</code></pre>
+<p><strong>步骤4：代码</strong></p>
+<p>生产者</p>
+<pre><code class="java">package com.td.resouce;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class KafkaResource {
+
+    @Autowired
+    private KafkaTemplate&lt;String, String&gt; kafkaTemplate;
+
+    @GetMapping(value={&quot;/&quot;,&quot;/login&quot;})
+    public String login(){
+        return &quot;ok&quot;;
+    }
+
+    @GetMapping(&quot;/send/{topic}/{content}&quot;)
+    public String send(@PathVariable(&quot;topic&quot;) String topic,
+                       @PathVariable(&quot;content&quot;) String content){
+        try {
+            System.out.println(&quot;准备发送消息...&quot;);
+            kafkaTemplate.send(topic, content);
+            System.out.println(&quot;准备发送完成...&quot;);
+        }catch (Exception e){
+            e.printStackTrace();
+            return &quot;send fail&quot;;
+        }
+        return &quot;send success&quot;;
+    }
+
+}</code></pre>
+<p>消费者</p>
+<pre><code class="java">package com.td.consumer;
+
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class KafkaConsumer {
+
+    @KafkaListener(topics = &quot;test&quot;)
+    public void consumer(String content){
+        System.out.println(&quot;监听到：&quot; + content);
+    }
+}</code></pre>
+<p>启动类</p>
+<pre><code class="java">package com.td;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class KafkahwApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(KafkahwApplication.class, args);
+    }
+
+}</code></pre>
+<h2 id="安装前端监控"><a href="#安装前端监控" class="headerlink" title="安装前端监控"></a>安装前端监控</h2><p><strong>步骤1：下载kafka-monitor</strong></p>
+<blockquote>
+<p>github：<a href="https://github.com/quantifind/KafkaOffsetMonitor" target="_blank" rel="noopener">https://github.com/quantifind/KafkaOffsetMonitor</a></p>
+<p>百度云盘：链接：<a href="https://pan.baidu.com/s/1c1Snar2" target="_blank" rel="noopener">https://pan.baidu.com/s/1c1Snar2</a> 密码：ncjp</p>
+<p>下载完，直接复制进去运行即可</p>
+</blockquote>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/012.png" alt></p>
+<p><strong>步骤2：启动</strong></p>
+<pre><code>java -cp KafkaOffsetMonitor-assembly-0.2.0.jar com.quantifind.kafka.offsetapp.OffsetGetterWeb --zk 192.168.1.101:2181 --port 8089 --refresh 10.seconds --retain 1.days</code></pre><p><strong>步骤3：浏览</strong></p>
+<pre><code>http://192.168.1.101:8089</code></pre><h2 id="Kafka-Connect-Elasticsearch-Connector（方法1）"><a href="#Kafka-Connect-Elasticsearch-Connector（方法1）" class="headerlink" title="Kafka Connect Elasticsearch Connector（方法1）"></a>Kafka Connect Elasticsearch Connector（方法1）</h2><blockquote>
+<p>提醒：虚拟机复制的话切记要情况elasticsearch中的data目录数据</p>
+<p>ElasticSearch直接消费kafka消息</p>
+</blockquote>
+<blockquote>
+<p>以下以CDC为例</p>
+</blockquote>
+<p><strong>步骤1：下载连接器</strong></p>
+<p>kafka connect ElasticSearch：<a href="https://www.confluent.io/connector/kafka-connect-elasticsearch/" target="_blank" rel="noopener">https://www.confluent.io/connector/kafka-connect-elasticsearch/</a></p>
+<p>Debezium：<a href="https://repo1.maven.org/maven2/io/debezium/debezium-connector-mysql/" target="_blank" rel="noopener">https://repo1.maven.org/maven2/io/debezium/debezium-connector-mysql/</a></p>
+<p><strong>步骤2：安装并配置</strong></p>
+<p>profile（将Debezium插件依赖包配置到classpath上，必须）</p>
+<pre><code class="shell"># user settings
+JAVA_HOME=/usr/local/jdk1.8.0_201
+PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$NODE_HOME/bin:$PATH
+# debezium 插件依赖
+export CLASSPATH=/usr/local/debezium-connector-mysql/*
+export JAVA_HOME PATH</code></pre>
+<p>server.properties（kafka server配置）</p>
+<pre><code class="properties">listeners=PLAINTEXT://192.168.4.159:9092</code></pre>
+<p>connect-distributed.properties（kafka连接器配置）</p>
+<pre><code class="properties">bootstrap.servers=192.168.4.159:9092
+key.converter.schemas.enable=false
+value.converter.schemas.enable=false
+# 启用rest配置schema
+rest.host.name=192.168.4.159
+rest.port=8083
+# kafka connect elasticsearch插件
+plugin.path=/usr/local/confluentinc-kafka-connect-elasticsearch-5.1.0</code></pre>
+<p>elasticsearch.yml</p>
+<pre><code class="yml">network.host: 192.168.4.159
+http.port: 9200
+# 允许跨域访问es（es插件）
+http.cors.enabled: true
+http.cors.allow-origin: &quot;*&quot;</code></pre>
+<p><strong>步骤3：启动</strong></p>
+<ol>
+<li>启动zookeeper</li>
+<li>启动kafka server</li>
+<li>启动elasticsearch（注意：es必须使用非root启动）</li>
+<li>启动kafka connect</li>
+</ol>
+<p><strong>步骤4：测试</strong></p>
+<ul>
+<li>配置source</li>
+</ul>
+<pre><code>POST http://192.168.4.159:8083/connectors/
+{
+    &quot;name&quot;: &quot;my-first-connector&quot;,
+    &quot;config&quot;: {
+        &quot;connector.class&quot;: &quot;io.debezium.connector.mysql.MySqlConnector&quot;,
+        &quot;database.hostname&quot;: &quot;192.168.4.120&quot;,
+        &quot;database.port&quot;: &quot;3306&quot;,
+        &quot;database.user&quot;: &quot;tandi&quot;,
+        &quot;database.password&quot;: &quot;123456&quot;,
+        &quot;database.server.id&quot;: &quot;11111&quot;,
+        &quot;database.server.name&quot;: &quot;192.168.4.120&quot;,
+        &quot;database.serverTimezone&quot;: &quot;UTC&quot;,
+
+        &quot;database.history.kafka.bootstrap.servers&quot;: &quot;192.168.4.159:9092&quot;,
+        &quot;database.history.kafka.topic&quot;: &quot;192.168.4.120.db1&quot; ,
+        &quot;include.schema.changes&quot;: &quot;true&quot;,
+
+        &quot;transforms&quot;: &quot;unwrap,changetopic&quot;,
+        &quot;transforms.unwrap.type&quot;: &quot;io.debezium.transforms.UnwrapFromEnvelope&quot;,
+        &quot;transforms.changetopic.type&quot;:&quot;org.apache.kafka.connect.transforms.RegexRouter&quot;,
+        &quot;transforms.changetopic.regex&quot;:&quot;(.*)&quot;,
+        &quot;transforms.changetopic.replacement&quot;:&quot;$1-smt&quot;
+    }
+}</code></pre><p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/030.png" alt></p>
+<ul>
+<li>配置sink</li>
+</ul>
+<pre><code>POST http://192.168.4.159:8083/connectors/
+
+{
+  &quot;name&quot;: &quot;elasticsearch-sink&quot;,
+  &quot;config&quot;: {
+    &quot;connector.class&quot;: &quot;io.confluent.connect.elasticsearch.ElasticsearchSinkConnector&quot;,
+    &quot;tasks.max&quot;: &quot;1&quot;,
+    &quot;topics&quot;: &quot;192.168.4.120.db1.t1-smt,192.168.4.120-smt&quot;,
+    &quot;key.ignore&quot;: &quot;true&quot;,
+    &quot;schema.ignore&quot;: &quot;true&quot;,
+    &quot;connection.url&quot;: &quot;http://192.168.4.159:9200&quot;,
+    &quot;type.name&quot;: &quot;kafka-connect&quot;,
+    &quot;name&quot;: &quot;elasticsearch-sink&quot;
+  }
+}</code></pre><p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/031.png" alt></p>
+<ul>
+<li>向数据库添加数据</li>
+</ul>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/032.png" alt></p>
+<ul>
+<li>查看ElasticSearch</li>
+</ul>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/033.png" alt></p>
+<h2 id="Logstash整合kafka并数据到ElasticSearch（方法2）"><a href="#Logstash整合kafka并数据到ElasticSearch（方法2）" class="headerlink" title="Logstash整合kafka并数据到ElasticSearch（方法2）"></a>Logstash整合kafka并数据到ElasticSearch（方法2）</h2><blockquote>
+<p>提醒：虚拟机复制的话切记要情况elasticsearch中的data目录数据</p>
+<p>Logstash消费kafka消息到ElasticSearch</p>
+</blockquote>
+<p><strong>步骤1：下载并上传Logstash到linux</strong></p>
+<blockquote>
+<p>logstash：<a href="https://www.elastic.co/cn/products/logstash" target="_blank" rel="noopener">https://www.elastic.co/cn/products/logstash</a></p>
+</blockquote>
+<p>上传解压如下</p>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/014.png" alt></p>
+<p><strong>步骤2：创建并配置Logstash启动文件</strong></p>
+<p>LogstashKafka.conf</p>
+<pre><code>[root@localhost config]# touch logstash-kafka.conf
+[root@localhost config]# vim logstash-kafka.conf</code></pre><blockquote>
+<p>配置文件说明：从input获取数据输出到output</p>
+</blockquote>
+<p>从kafka读取 - &gt; 从kafka中获取数据消费输出到控制台</p>
+<pre><code>output{  
+    input{
+      kafka{
+        bootstrap_servers =&gt; [&quot;192.168.4.157:9092&quot;]
+         # 建议和生产消息的线程组区别，同一个组不能消费同一个分区
+        group_id =&gt; &quot;consumer-logs-group&quot;
+        auto_offset_reset =&gt; &quot;earliest&quot;
+        consumer_threads =&gt; 5
+        decorate_events =&gt; true
+        topics =&gt; [&quot;logs&quot;,&quot;test&quot;]
+      }
+    }
+
+    stdout{
+        codec =&gt; rubydebug
+    }
+
+    elasticsearch {
+        hosts =&gt; [&quot;192.168.4.157:9200&quot;]
+        user =&gt; &quot;tandi&quot;
+        password =&gt; &quot;tandi&quot;
+        index =&gt; &quot;%{service}-%{+YYYY-MM-dd}&quot;
+    }
+}</code></pre><p>向kafka输出</p>
+<pre><code>input{
+    stdin{}
+}
+output{
+    kafka{
+        topic_id =&gt; &quot;logs&quot;
+        bootstrap_servers =&gt; &quot;192.168.4.157:9092&quot; 
+        batch_size =&gt; 5
+
+    stdout{
+        codec =&gt; rubydebug
+    }
+}</code></pre><p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/015.png" alt></p>
+<p><strong>步骤3：测试从kafka中消费数据</strong></p>
+<p>1）启动zookeeper</p>
+<p>2）启动kafka</p>
+<p>3）启动logstash</p>
+<pre><code>[root@localhost logstash-6.5.4]# bin/logstash -f config/logstash-kafka-input-td.conf </code></pre><h2 id="Kibana整合ElasticSearch"><a href="#Kibana整合ElasticSearch" class="headerlink" title="Kibana整合ElasticSearch"></a>Kibana整合ElasticSearch</h2><blockquote>
+<p>切记：kibana和ElasticSearch必须版本号要一直，否者很麻烦</p>
+</blockquote>
+<p><strong>步骤1：下载kibana</strong></p>
+<p><strong>步骤2：配置kibana</strong></p>
+<pre><code>server.port: 5601 # kibana端口
+server.host: &quot;192.168.4.157&quot; # 本机端口
+elasticsearch.url: &quot;http://192.168.4.157:9200&quot; # elasticsearch url
+kibana.index: &quot;.kibana&quot;</code></pre><h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/">
+      搭建ELK日志收集系统
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('搭建ELK日志收集系统'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#下载安装"><span class="toc-text">下载安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令行操作"><span class="toc-text">命令行操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#代码操作"><span class="toc-text">代码操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装前端监控"><span class="toc-text">安装前端监控</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka-Connect-Elasticsearch-Connector（方法1）"><span class="toc-text">Kafka Connect Elasticsearch Connector（方法1）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Logstash整合kafka并数据到ElasticSearch（方法2）"><span class="toc-text">Logstash整合kafka并数据到ElasticSearch（方法2）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kibana整合ElasticSearch"><span class="toc-text">Kibana整合ElasticSearch</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

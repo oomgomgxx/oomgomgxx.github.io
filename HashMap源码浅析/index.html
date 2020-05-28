@@ -1,0 +1,612 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> HashMap源码浅析-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>HashMap源码浅析</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-05-23 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="JDK-1-7"><a href="#JDK-1-7" class="headerlink" title="JDK 1.7"></a>JDK 1.7</h2><blockquote>
+<p>基本了解</p>
+</blockquote>
+<p><img src="/HashMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/001.png" alt></p>
+<blockquote>
+<p>构造方法</p>
+</blockquote>
+<pre><code class="java">public HashMap() {
+    this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
+}
+
+public HashMap(int initialCapacity, float loadFactor) {
+    this.loadFactor = loadFactor;
+    threshold = initialCapacity;
+}
+
+// 初始化table
+private void inflateTable(int toSize) {
+    // Find a power of 2 &gt;= toSize
+    // 返回2的n次方
+    int capacity = roundUpToPowerOf2(toSize);
+    // 初始化后的阈值
+    threshold = (int) Math.min(capacity * loadFactor, MAXIMUM_CAPACITY + 1);
+    table = new Entry[capacity];
+    // 初始化哈希种子
+    initHashSeedAsNeeded(capacity);
+}</code></pre>
+<blockquote>
+<p>put方法相关</p>
+</blockquote>
+<pre><code class="java">public V put(K key, V value) {
+    // 初始化数组
+    if (table == EMPTY_TABLE) { 
+        inflateTable(threshold);
+    }
+    // 存放null
+    if (key == null)
+        return putForNullKey(value);
+
+    // 使用异或运算优化对象的哈希值以减少哈希冲突
+    int hash = hash(key); 
+
+    // 计算对象（元素）在table中位置
+    // 下标计算公式为：h &amp; (length-1)，length为数组的长度
+    // 又因为length必定是2的n次幂所以该公式等同于 h % length 取余公式，但因为&amp;更加符合计算机运算规则所以比%要稍高效一些
+    int i = indexFor(hash, table.length);
+
+    // 替换已存在的元素值
+    for (Entry&lt;K,V&gt; e = table[i]; e != null; e = e.next) {
+        Object k;
+        // 哈希值就一样了，那么还要判断key是否一样
+        if (e.hash == hash &amp;&amp; ((k = e.key) == key || key.equals(k))) {
+            // 置换新值并返回旧值
+            V oldValue = e.value;
+            e.value = value;
+            e.recordAccess(this);
+            return oldValue;
+        }
+    }
+
+    modCount++;
+    addEntry(hash, key, value, i);
+    return null;
+}
+
+/**
+     *  1. key为null时的哈希值始终为0，换句话就是table索引也是0，因为 hash &amp; n-1 有假必假
+     *    2. 获取到哈希值后需要再进行右移和异或运算，目的是解决高低位问题。 
+     *  3. 为什么HashMap容量为2的n次幂。主要是因为，用位运算代替普通取模运行（&amp;取代%）来提高计算速度
+     */
+final int hash(Object k) {
+    // key为String时的操作
+    // hashSeed默认为0，需要设置jvm参数jdk.map.althashing.threshold来调整hashSeed
+    int h = hashSeed; 
+    if (0 != h &amp;&amp; k instanceof String) {
+        // 在String中，计算hashCode的公式为：s[0]*31^(n-1) + s[1]*31^(n-2) + ... + s[n-1]
+        return sun.misc.Hashing.stringHash32((String) k);
+    }
+    // 将hashCode高位右移进行计算，以解决hashcode低位同但高位不同的问题（减少哈希冲突）
+    h ^= k.hashCode();
+    h ^= (h &gt;&gt;&gt; 20) ^ (h &gt;&gt;&gt; 12);
+    return h ^ (h &gt;&gt;&gt; 7) ^ (h &gt;&gt;&gt; 4);
+}
+
+// hash：key的哈希值
+// bucketIndex：元素将要存储在table的下标位置
+void addEntry(int hash, K key, V value, int bucketIndex) {
+
+    // 判断容器是否需要扩容
+    // 扩容要求：
+    //   1. size(元素个数)大于容器阈值(capacity * load factor)
+    //   2. table[bucketIndex]已经给链表占了
+    if ((size &gt;= threshold) &amp;&amp; (null != table[bucketIndex])) {
+        // 扩展为原来的两倍
+        resize(2 * table.length);
+        hash = (null != key) ? hash(key) : 0;
+        // 重新计算应该存储的位置
+        bucketIndex = indexFor(hash, table.length);
+    }
+
+    // 保存元素
+    createEntry(hash, key, value, bucketIndex);
+}
+
+void createEntry(int hash, K key, V value, int bucketIndex) {
+    // 获取bucketIndex这个位置的链表，如果有的话
+    Entry&lt;K,V&gt; e = table[bucketIndex];
+    // 正式保存
+    // 【重】这里可以看到，它是将原链表设置为新节点的next，即新节点作为head
+    // 但这在JDK1.8后改了，改为设置到链尾，因为配和新引入的红黑树结构
+    table[bucketIndex] = new Entry&lt;&gt;(hash, key, value, e);
+    // 将元素size加1
+    size++;
+}
+
+// 节点的构造方法
+Entry(int h, K k, V v, Entry&lt;K,V&gt; n) {
+    hash = h;
+    key = k;
+    value = v;
+    next = n;
+}
+
+// 扩容
+void resize(int newCapacity) {
+    // 旧数组信息
+    Entry[] oldTable = table;
+    int oldCapacity = oldTable.length;
+
+    // 如果旧数组的大小已经是MAXIMUM_CAPACITY，即表示没法再扩容了，那么HashMap就会将加载因此设置为Integer.MAX_VALUE
+    // 因为原来的加载因子0.75f是经过实际测试考虑的，即空间浪费程度和哈希冲突程度是折中的
+    // 通俗点说就是不会太浪费空间也不会出现大量哈希冲突而导致链表越来越长导致查询效率降低
+    // 现在设置为 Integer.MAX_VALUE 即表示将空间利用率调到最大而不顾哈希冲突导致性能下降，因为没办法再扩容了嘛
+    if (oldCapacity == MAXIMUM_CAPACITY) {
+        threshold = Integer.MAX_VALUE;
+        return;
+    }
+
+    // 创建一个新的Node数组，固定为原来长度的2倍
+    Entry[] newTable = new Entry[newCapacity];
+    // 将旧数组中的元素重新计算哈希值并存到新数组中
+    transfer(newTable, initHashSeedAsNeeded(newCapacity));
+    // 替换数组
+    table = newTable;
+    // 计算新的容量阈值
+    threshold = (int)Math.min(newCapacity * loadFactor, MAXIMUM_CAPACITY + 1);
+}
+
+// 判断是否需要rehash
+// 【需要jvm参数开启功能，主要针对String类型】
+final boolean initHashSeedAsNeeded(int capacity) {
+    // hashSeed默认为0，只有switching为true时hashSeed才会被改变
+    boolean currentAltHashing = hashSeed != 0;
+    // sun.misc.VM.isBooted()默认为false
+    boolean useAltHashing = sun.misc.VM.isBooted() &amp;&amp; (capacity &gt;= Holder.ALTERNATIVE_HASHING_THRESHOLD);
+    boolean switching = currentAltHashing ^ useAltHashing;
+    if (switching) {
+        hashSeed = useAltHashing? sun.misc.Hashing.randomHashSeed(this) : 0;
+    }
+    return switching;
+}
+
+// 将旧数组元素置换到新数组中
+// 【重】该方法在JDK1.8后被移除，因为在并发情况下可能会导致引用【死循环】和【丢失节点】
+void transfer(Entry[] newTable, boolean rehash) {
+    int newCapacity = newTable.length;
+
+    // 遍历旧数组
+    for (Entry&lt;K,V&gt; e : table) {
+
+        // 遍历链表
+        while(null != e) {
+            // e为head节点
+            Entry&lt;K,V&gt; next = e.next;
+            if (rehash) { // 是否需要rehash
+                e.hash = null == e.key ? 0 : hash(e.key);
+            }
+            // 重新计算哈希值
+            int i = indexFor(e.hash, newCapacity);
+            // 交换值位置【头插法，导致并发丢失节点和存在死循环风险】
+            // 每次都将新数组中的元素先设置到e.next中然后将整个e置换到该下标位置下
+            e.next = newTable[i]; 
+            newTable[i] = e; 
+
+            // 下一个循环
+            e = next; 
+        }
+    }
+}</code></pre>
+<h2 id="JDK-1-8"><a href="#JDK-1-8" class="headerlink" title="JDK 1.8"></a>JDK 1.8</h2><blockquote>
+<p>基本了解</p>
+</blockquote>
+<p><img src="/HashMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/002.png" alt></p>
+<blockquote>
+<p>构造方法</p>
+</blockquote>
+<pre><code class="java">public HashMap() {
+    this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
+}
+
+public HashMap(int initialCapacity, float loadFactor) {
+    this.loadFactor = loadFactor;
+    this.threshold = tableSizeFor(initialCapacity);
+}</code></pre>
+<blockquote>
+<p>put方法相关</p>
+</blockquote>
+<pre><code class="java">public V put(K key, V value) {
+    return putVal(hash(key), key, value, false, true);
+}
+
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent, boolean evict) {
+
+    Node&lt;K,V&gt;[] tab; 
+    Node&lt;K,V&gt; p; 
+    int n; // table长度
+    int i;
+
+    // 初始化table
+    if ((tab = table) == null || (n = tab.length) == 0)
+        n = (tab = resize()).length;
+
+    // table下标位置恰好没有存元素
+    if ((p = tab[i = (n - 1) &amp; hash]) == null)
+        tab[i] = newNode(hash, key, value, null);
+
+    // table下标位置有元素，将作为子节点存入（这里有别于JDK1.7存在head节点）
+    else {
+        Node&lt;K,V&gt; e; K k;
+        // p为head节点
+
+        // 哈希值相等，key也相等
+        if (p.hash == hash &amp;&amp; ((k = p.key) == key || (key != null &amp;&amp; key.equals(k))))
+            e = p;
+
+        // 节点是TreeNode吗？是
+        else if (p instanceof TreeNode)
+            e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(this, tab, hash, key, value);
+
+        // 添加到链表中
+        else {
+            for (int binCount = 0; ; ++binCount) {
+
+                // p节点没有子节点了
+                if ((e = p.next) == null) {
+                    // 直接作为子节点存储到p中
+                    p.next = newNode(hash, key, value, null);
+
+                    // 如果这时链表长度于等于7（从0开始，即大于等于8个节点）
+                    // 则将链表数化成红黑树
+                    if (binCount &gt;= TREEIFY_THRESHOLD - 1)
+                        // 查看是否有必要树化
+                        // 树化要求：tab.length &lt; MIN_TREEIFY_CAPACITY（默认64）
+                        // 如果tab.length不足64，就需要resize，直至tab.length&gt;64才可以树化
+                        treeifyBin(tab, hash);
+                    //【问题1】为什么需要引入红黑树？
+                    // 因为当大量哈希冲突的时候会导致节点链表越来越长从而降低HashMap性能。而链表的查询复杂度为O(n),而红黑树为二叉查找树，所以时间复杂度为O(logn)，因此在数据量大的散列表中红黑树更有优势
+
+                    //【问题2】为什么选择红黑树而不是二叉树或绝对平衡二叉树呢？
+                    // 首先，二叉树在极端情况下依然会形成链表。例如1,2,3,4的hashCode相同时，二叉树退化成链表
+                    // 再是，绝对平衡就好像有强迫症一样把精力消耗在如何达到平衡上，因此造成不必要的性能开销
+                    // 而红黑树它是一棵平衡树但不是绝对平衡树，优点有以下
+                    // 1. 树属于折半查找，于较长的链表相比查询效率要高
+                    // 2. 平衡树解决了二叉树的计算情况问题（二叉树退化成链表）
+                    // 3. 非绝对平衡树比绝对平衡树在增删节点时要高效一些
+                    // 因此红黑树是综合性能较强的数型数据结构
+                    break;
+                }
+                // p节点有子节点，这时e就是p的子节点
+                // 判断是否已经存有该key的value，有的打断循环直接替换value即可
+                if (e.hash == hash &amp;&amp; ((k = e.key) == key || (key != null &amp;&amp; key.equals(k))))
+                    break;
+
+                // 循环下一个节点
+                p = e;
+            }
+        }
+        // e不为null表示已经存有该key的value，这时只需替换值即可
+        if (e != null) {
+            V oldValue = e.value;
+            if (!onlyIfAbsent || oldValue == null)
+                e.value = value;
+            afterNodeAccess(e);
+            return oldValue;
+        }
+    }
+
+    ++modCount;
+    // 判断是否需要扩容
+    if (++size &gt; threshold)
+        resize();
+    afterNodeInsertion(evict);
+    return null;
+}
+
+// 判断是否需要树化
+final void treeifyBin(Node&lt;K,V&gt;[] tab, int hash) {
+    int n, index; 
+    Node&lt;K,V&gt; e;
+
+    // 不满足树化要求，需要再扩容
+    if (tab == null || (n = tab.length) &lt; MIN_TREEIFY_CAPACITY)
+        resize(); 
+
+    // 将当前hash值得链表树化
+    else if ((e = tab[index = (n - 1) &amp; hash]) != null) {
+        TreeNode&lt;K,V&gt; hd = null;
+        TreeNode&lt;K,V&gt; tl = null;
+        do {
+            TreeNode&lt;K,V&gt; p = replacementTreeNode(e, null);
+            if (tl == null)
+                hd = p;
+            else {
+                p.prev = tl;
+                tl.next = p;
+            }
+            tl = p;
+
+        } while ((e = e.next) != null);
+        if ((tab[index] = hd) != null)
+            hd.treeify(tab);
+    }
+}
+
+
+// 扩容条件：
+// size &gt; threshold 或者 tab == null 再者 tab.length &lt; MIN_TREEIFY_CAPACITY
+// 以上三种情况均会导致resize
+final Node&lt;K,V&gt;[] resize() {
+    Node&lt;K,V&gt;[] oldTab = table;
+    int oldCap = (oldTab == null) ? 0 : oldTab.length; // 旧长度
+    int oldThr = threshold; // 旧扩容阈值
+    int newCap = 0; // 新长度
+    int newThr = 0; // 新扩容阈值
+
+    // 数组长度大于0吗
+    if (oldCap &gt; 0) {
+        // 如果数组长度已然是最大值，则将扩容阈值设置为Integer.MAX_VALUE
+        // 这样做可以提升HashMap的空间利用率，即可以存放更多节点，但会提高哈希冲突率从而降低HashMap性能
+        if (oldCap &gt;= MAXIMUM_CAPACITY) {
+            threshold = Integer.MAX_VALUE;
+            return oldTab;
+        }
+        // 正常扩容条件：
+        // 1. table.length*2依然小于最大值容量阈值
+        // 2. table.length大于或等大于等于16
+        else if ((newCap = oldCap &lt;&lt; 1) &lt; MAXIMUM_CAPACITY &amp;&amp; oldCap &gt;= DEFAULT_INITIAL_CAPACITY)
+            newThr = oldThr &lt;&lt; 1; // 新容量阈值是原来的2倍
+    }
+    // 扩容阈值大于0吗
+    else if (oldThr &gt; 0)
+        newCap = oldThr;
+
+    // 即没元素扩容阈值又等于0【初始阶段】
+    else {              
+        // 容器为默认容量，即16
+        newCap = DEFAULT_INITIAL_CAPACITY;
+        // 扩容阈值为：16*0.75f
+        newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+    }
+
+    // 新数组，新扩容阈值
+    threshold = newThr;
+    Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])new Node[newCap];
+
+    // 将新建的数组赋值给全局变量
+    table = newTab;
+    if (oldTab != null) {
+        for (int j = 0; j &lt; oldCap; ++j) { // 以下为原来JDK1.7 transfer() 的操作
+            Node&lt;K,V&gt; e; // 链表head节点
+            if ((e = oldTab[j]) != null) {
+                oldTab[j] = null; // 置空旧数组
+                if (e.next == null) // 没有冲突链表
+                    newTab[e.hash &amp; (newCap - 1)] = e;
+                else if (e instanceof TreeNode) // 节点为树节点
+                    ((TreeNode&lt;K,V&gt;)e).split(this, newTab, j, oldCap);
+                else { // preserve order. 冲突链表节点，相较JDK1.7多了以下4个指针变量
+                    Node&lt;K,V&gt; loHead = null, loTail = null;
+                    Node&lt;K,V&gt; hiHead = null, hiTail = null;
+                    Node&lt;K,V&gt; next;
+                    do { // 执行高低位标记。高位节点将迁移到新数组的 oldIndex+oldLength 位置，低位则迁移到oldIndex
+                        next = e.next; // 记录next指针
+                        if ((e.hash &amp; oldCap) == 0) { // 当前节点位于新散列表的低位
+                            if (loTail == null) // 没有tail则为低位链头
+                                loHead = e;
+                            else // 尾插法形成低位链表
+                                loTail.next = e;
+                            loTail = e;
+                        }
+                        else { // 当前节点位于新散列表的高位
+                            if (hiTail == null)
+                                hiHead = e;
+                            else
+                                hiTail.next = e;
+                            hiTail = e;
+                        }
+                    } while ((e = next) != null); // 注意，while在处理的是旧数组中的冲突链表
+                    // 并发操作可能会导致节点丢失，因为是先拼接链表再设新散列表
+                    if (loTail != null) { 
+                        loTail.next = null;
+                        newTab[j] = loHead; // 低位链表迁移到新散列表下原下标值处
+                    }
+                    if (hiTail != null) { // 高位链表迁移到新散列表，下标为：当前下标（OldIndex） + oldCap(OldTable.length)
+                        hiTail.next = null;
+                        newTab[j + oldCap] = hiHead;
+                    }
+                } // 为什么能够解决JDK1.7的死循环问题？ 通过高低位拆分冲突链表后，再等待组装完成后再插入新散列表。
+            }
+        }
+    }
+
+    return newTab;
+}</code></pre>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/HashMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/">
+      HashMap源码浅析
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('HashMap源码浅析'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK-1-7"><span class="toc-text">JDK 1.7</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK-1-8"><span class="toc-text">JDK 1.8</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

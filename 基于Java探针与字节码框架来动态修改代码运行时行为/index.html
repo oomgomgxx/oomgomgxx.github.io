@@ -1,0 +1,595 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 基于Java探针和字节码框架来动态修改代码运行时行为-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>基于Java探针和字节码框架来动态修改代码运行时行为</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2019-12-01 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><blockquote>
+<p>是什么？</p>
+</blockquote>
+<ul>
+<li><code>Java探针</code>其实就是指Java Agent，一种能够直接与 JVM 交互的代理</li>
+<li>Java Agent能与JVM交互的前提是JVM本身支持JVM TI（<a href="https://docs.oracle.com/javase/8/docs/platform/jvmti/jvmti.html" target="_blank" rel="noopener">JVM Tool Interface</a>）。这样说的原因是并非所有JVM都支持JVM TI，即JVM TI并不是规范</li>
+<li>JVM TI 支持需要访问JVM状态的全部工具，包括但不限于：<code>性能分析</code>，<code>Debug调试</code>，<code>监控</code>，<code>线程分析</code>和<code>覆盖率分析</code>等等。从这点可以看出 JVM TI 是很强大的</li>
+<li>Java从JDK5开始提供了实现Java Agent的API，位于<code>java.lang.instrument</code>包下</li>
+</ul>
+<blockquote>
+<p>Java Agent与 JVM TI 的关系</p>
+</blockquote>
+<ul>
+<li><p>Java Agent通过实现JVM TI的回调方法来获取或操作 JVM 的相关性信息</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/001.png" alt></p>
+</li>
+<li><p>Java Agent可以简单理解为是一段需要依附在主程序上的代码。目前的依附方式有两种（都属于本机内操作）</p>
+<ul>
+<li><p><strong>启动依附：</strong>即在启动主程序时指定Java Agent <code>-javaagent:代理.jar[=参数]</code></p>
+</li>
+<li><p><strong>使用 Attach API 依附：</strong>该API位于 <code>tool.jar</code> 的<code>com.sun.tools.attach</code>包下。该方式可以实现动态依附，既即使主程序正在运行也可以操作</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/002.png" alt></p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>可能经过上面一番说明你依然感觉很困惑，但没关系，我们来看看Java Agent 的身影</p>
+</blockquote>
+<ul>
+<li>热部署插件JRebel</li>
+<li>懒人开发包Lombok</li>
+<li>分布式链路追中服务的Java探针（例如SkyWalking和Pinpoint）</li>
+<li>安全(不能改内容)且动态的Java跟踪工具 BTrace</li>
+<li>阿里开源的在线分析诊断工具 Arthas</li>
+<li>JDK自带的诊断工具，例如 Visual VM、JConsole </li>
+</ul>
+<h2 id="Java-Agent实现"><a href="#Java-Agent实现" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h2><h3 id="了解基本API"><a href="#了解基本API" class="headerlink" title="了解基本API"></a>了解基本API</h3><p>经过一番了解过后我想大家对 Java Agent 的情况已经略知一二了。接下来以案例的形式对 Java Agent 开发进行快速入门。案例分为两部分：</p>
+<ul>
+<li>第1部分，以<code>-javaagent</code>参数进行依附，模拟在不修改主程序源码情况下为目标类增加方法</li>
+<li>第2部分，以<code>Attach API</code>进行依附，模拟主程序处于运行时，为目标织入环绕代码（类似于Spring AOP中的 @Around 功能）</li>
+</ul>
+<blockquote>
+<p>在这之前先了解一下 Java Agent 的 jar 包结构：</p>
+</blockquote>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/003.png" alt></p>
+<ul>
+<li><p>Agent class</p>
+<p>实现了 JVM TI 回调方法的代理类，相当于普通程序的入口类(Main)。其中有两个回调方法可以实现，分别是：premain 和 agentmain，各自为 <code>-javaagent</code>依附和<code>Attach API</code>依附的入口方法</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/004.png" alt></p>
+</li>
+<li><p>Packaging</p>
+<p>即包结构，如图所示需要创建 <code>META-INF/MANIFEST.MF</code>文件结构。其中 MANIFEST.MF 包含以下描述配置</p>
+<ul>
+<li>Agent-Class：实现了agentmain回调方法的入口类限定名</li>
+<li>Premain-Class：实现了premain 回调方法的入口类限定名</li>
+<li>Boot-Class-Path：依赖的路径，可以省略但需要将依赖一同编译进jar包</li>
+<li>Can-Redefine-Classes：是否允许重新定义类，默认为false</li>
+<li>Can-Retransform-Classes：是否允许替换类的字节码，默认为false</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>JDK 5 开始提供的Instrumentation API</p>
+</blockquote>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/005.png" alt></p>
+<h3 id="不修改主程序源码情况下为目标类增加方法"><a href="#不修改主程序源码情况下为目标类增加方法" class="headerlink" title="不修改主程序源码情况下为目标类增加方法"></a>不修改主程序源码情况下为目标类增加方法</h3><h4 id="主程序"><a href="#主程序" class="headerlink" title="主程序"></a>主程序</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<pre><code class="xml">&lt;!-- 用于指定程序入口，如果不做以下操作运行需要使用-cp参数指定入口类 --&gt;
+&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+            &lt;version&gt;2.1&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;archive&gt;
+                    &lt;manifest&gt;
+                        &lt;addClasspath&gt;true&lt;/addClasspath&gt;
+                        &lt;mainClass&gt;wiki.td.Main&lt;/mainClass&gt;
+                    &lt;/manifest&gt;
+                &lt;/archive&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</code></pre>
+<blockquote>
+<p>主程序代码</p>
+</blockquote>
+<p>Person</p>
+<pre><code class="java">public class Person {
+    private String name;
+    public Person() {
+    }
+    public Person(String name) {
+        this.name = name;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+}</code></pre>
+<p>Main</p>
+<pre><code class="java">public class Main {
+    public static void main(String[] args) throws Exception {
+        System.out.println(&quot;============ main ===========&quot;);
+        Person person = new Person(&quot;Sam&quot;);
+        System.out.println(person.toString());
+    }
+}</code></pre>
+<h4 id="Java-Agent实现-1"><a href="#Java-Agent实现-1" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<pre><code class="xml">&lt;!-- 字节码框架Javassit --&gt;
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.javassist&lt;/groupId&gt;
+        &lt;artifactId&gt;javassist&lt;/artifactId&gt;
+        &lt;version&gt;3.26.0-GA&lt;/version&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+&lt;!-- 打包插件 --&gt;
+&lt;build&gt;
+    &lt;plugins&gt;
+
+        &lt;!--            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.1.1&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;archive&gt;
+                        &lt;manifest&gt;
+                            &lt;addClasspath&gt;true&lt;/addClasspath&gt;
+                        &lt;/manifest&gt;
+                        &lt;manifestEntries&gt;
+                            &lt;Premain-Class&gt;wiki.td.Agent&lt;/Premain-Class&gt;
+                            &lt;Agent-Class&gt;wiki.td.Agent&lt;/Agent-Class&gt;
+                            &lt;Can-Redefine-Classes&gt;true&lt;/Can-Redefine-Classes&gt;
+                            &lt;Can-Retransform-Classes&gt;true&lt;/Can-Retransform-Classes&gt;
+                            &amp;lt;!&amp;ndash; 指定依赖的classpath &amp;ndash;&amp;gt;
+                            &amp;lt;!&amp;ndash; 如果不配置则启动时指定：java -classpath &amp;ndash;&amp;gt;
+                            &lt;Boot-Class-Path&gt;E:/ProgrammingEnvironment/maven/LocalRepository/org/javassist/javassist/3.26.0-GA/javassist-3.26.0-GA.jar&lt;/Boot-Class-Path&gt;
+                        &lt;/manifestEntries&gt;
+                    &lt;/archive&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;--&gt;
+
+        &lt;!--
+                1. 将依赖一同打包进jar（因为依赖会一起打包所以无需像maven-jar-plugin那样指定依赖的classpath）
+                2. 指定 Premain-Class、Agent-Class、Can-Redefine-Classes、Can-Retransform-Classes
+            --&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.1.1&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;archive&gt;
+                        &lt;index&gt;true&lt;/index&gt;
+                        &lt;manifest&gt;
+                            &lt;addClasspath&gt;true&lt;/addClasspath&gt;
+                        &lt;/manifest&gt;
+                        &lt;manifestEntries&gt;
+                            &lt;Premain-Class&gt;wiki.td.Agent&lt;/Premain-Class&gt;
+                            &lt;Agent-Class&gt;wiki.td.Agent&lt;/Agent-Class&gt;
+                            &lt;Can-Redefine-Classes&gt;true&lt;/Can-Redefine-Classes&gt;
+                            &lt;Can-Retransform-Classes&gt;true&lt;/Can-Retransform-Classes&gt;
+                        &lt;/manifestEntries&gt;
+                    &lt;/archive&gt;
+                    &lt;!-- 将当前项目的依赖一同打包进jar --&gt;
+                    &lt;descriptorRefs&gt;
+                        &lt;descriptorRef&gt;jar-with-dependencies&lt;/descriptorRef&gt;
+                    &lt;/descriptorRefs&gt;
+                &lt;/configuration&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;id&gt;make-assembly-dir&lt;/id&gt;
+                        &lt;phase&gt;package&lt;/phase&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;single&lt;/goal&gt;
+                        &lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</code></pre>
+<blockquote>
+<p>Java Agent实现</p>
+</blockquote>
+<pre><code class="java">public class Agent {
+    /**
+     * 启动依附回调方法
+     * @param agentArgs
+     * @param inst
+     */
+    public static void premain(String agentArgs, Instrumentation inst) {
+        System.out.println(&quot;========================= into premain =========================&quot;);
+        System.out.println(&quot;参数：&quot; + agentArgs);
+        inst.addTransformer(new PersonClassFileTransformer(agentArgs), true);
+    }
+
+    /**
+     * Attach API依附回调方法
+     * @param agentArgs
+     * @param inst
+     */
+    public static void agentmain(String agentArgs, Instrumentation inst) {
+        premain(agentArgs, inst);
+    }
+}
+
+
+class PersonClassFileTransformer implements ClassFileTransformer {
+    private String targetClassName;
+
+    PersonClassFileTransformer(String targetClassName) {
+        this.targetClassName = targetClassName;
+    }
+
+    @Override
+    public byte[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined,
+                            ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
+        // 修改类的限定名格式
+        String target = className.replace(&quot;/&quot;, &quot;.&quot;);
+
+        if (targetClassName.equals(target)) {
+            try {
+                // 获取目标类
+                ClassPool classPool = ClassPool.getDefault();
+                CtClass ctClass = classPool.makeClass(new ByteArrayInputStream(classfileBuffer));
+
+                // 构建一个新的方法，案例以toString为例
+                // 如果不重写toString，默认对象会用Object的toString，输出类容是限定名加十六进制地址
+                // 这里我们重载toString让其输出Person的name
+                final String method = new StringBuilder()
+                        .append(&quot;public String toString() { &quot;)
+                        .append(&quot;return \&quot;name=\&quot; + this.name; }&quot;)
+                        .toString();
+                CtMethod make = CtNewMethod.make(method, ctClass);
+
+                // 将添加到类中（注意：如果是修改操作无需进行addMethod）
+                ctClass.addMethod(make);
+                return ctClass.toBytecode();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+}</code></pre>
+<h4 id="打包并测试"><a href="#打包并测试" class="headerlink" title="打包并测试"></a>打包并测试</h4><p>未使用agent之前</p>
+<pre><code class="shell">~ java -jar hello.jar
+============ main ===========
+wiki.td.Person@75b84c92</code></pre>
+<p>使用agent之后</p>
+<pre><code class="shell">~ java -javaagent:agent.jar=wiki.td.Person -jar hello.jar
+========================= into premain =========================
+参数：wiki.td.Person
+============ main ===========
+name=Sam</code></pre>
+<h3 id="主程序处于运行时，为目标织入Around代码"><a href="#主程序处于运行时，为目标织入Around代码" class="headerlink" title="主程序处于运行时，为目标织入Around代码"></a>主程序处于运行时，为目标织入Around代码</h3><h4 id="主程序-1"><a href="#主程序-1" class="headerlink" title="主程序"></a>主程序</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<pre><code class="xml">&lt;dependencies&gt;
+    &lt;!-- 因为检索不到tools的缘故，所以这里我硬编指定本地依赖 --&gt;
+    &lt;!-- attach api --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.sun&lt;/groupId&gt;
+        &lt;artifactId&gt;tools&lt;/artifactId&gt;
+        &lt;version&gt;1.8.0&lt;/version&gt;
+        &lt;scope&gt;system&lt;/scope&gt;
+        &lt;systemPath&gt;C:/Program Files/Java/jdk1.8.0_231/lib/tools.jar&lt;/systemPath&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+<blockquote>
+<p>主程序代码</p>
+</blockquote>
+<p>Person</p>
+<pre><code class="java">public class Person {
+    public void sayHi() {
+        System.out.println(&quot;你好呀&quot;);
+    }
+}</code></pre>
+<p>Main</p>
+<pre><code class="java">public class Main {
+    public static void main(String[] args) throws Exception {
+        // 让程序一直循环以便观察
+        for (; ; ) {
+            new Person().sayHi();
+            TimeUnit.SECONDS.sleep(3);
+        }
+    }
+}</code></pre>
+<h4 id="Java-Agent实现-2"><a href="#Java-Agent实现-2" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h4><blockquote>
+<p>Java Agent实现（依赖和上面案例一样不变）</p>
+</blockquote>
+<pre><code class="java">public class Agent {
+
+    /**
+     * 启动依附回调方法
+     * @param agentArgs
+     * @param inst
+     */
+    public static void premain(String agentArgs, Instrumentation inst) {
+        agentmain(agentArgs, inst)
+    }
+
+    /**
+     * Attach API依附回调方法
+     * @param agentArgs
+     * @param inst
+     */
+    public static void agentmain(String agentArgs, Instrumentation inst) {
+        System.out.println(&quot;========================= into agentmain =========================&quot;);
+        System.out.println(&quot;参数：&quot; + agentArgs);
+
+        // 获取所有已加载的类
+        Class[] allLoadedClasses = inst.getAllLoadedClasses();
+        for (int i = 0; i &lt; allLoadedClasses.length; i++) {
+            Class clazz = allLoadedClasses[i];
+            // 只往目标类织入代码
+            if (clazz.getName().equals(agentArgs)) {
+                try {
+                    // 添加转换器
+                    inst.addTransformer(new PersonClassFileTransformer(agentArgs), true);
+                    // 用转换器重新转换类
+                    inst.retransformClasses(clazz);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+}
+
+class PersonClassFileTransformer implements ClassFileTransformer {
+    private String targetClassName;
+
+    PersonClassFileTransformer(String targetClassName) {
+        this.targetClassName = targetClassName;
+    }
+
+    @Override
+    public byte[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined,
+                            ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
+        String target = className.replace(&quot;/&quot;, &quot;.&quot;);
+        if (targetClassName.equals(target)) {
+            try {
+                // 获取到类
+                ClassPool classPool = ClassPool.getDefault();
+                CtClass ctClass = classPool.get(targetClassName);
+                // 获取到目标类的sayHi方法
+                CtMethod method = ctClass.getDeclaredMethod(&quot;sayHi&quot;);
+                // 在say之前和之后织入环绕代码
+                method.insertBefore(&quot;{ System.out.println(\&quot;----- agent before -----\&quot;); }&quot;);
+                method.insertAfter(&quot;{ System.out.println(\&quot;----- agent after -----\&quot;); }&quot;);
+                // 返回类的最终字节流
+                return ctClass.toBytecode();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+}</code></pre>
+<h4 id="测试类（Attach-API操作）"><a href="#测试类（Attach-API操作）" class="headerlink" title="测试类（Attach API操作）"></a>测试类（Attach API操作）</h4><pre><code class="java">public class AgentTest {
+    public static void main(String[] args) throws Exception {
+        // 遍历所有vm进程来获取目标进程（代替手动jps查找）
+        List&lt;VirtualMachineDescriptor&gt; vms = VirtualMachine.list();
+        for (int i = 0; i &lt; vms.size(); i++) {
+            VirtualMachineDescriptor descriptor = vms.get(i);
+            // 要求主程序为wiki.td.Main才进行attach
+            if (&quot;wiki.td.Main&quot;.equals(descriptor.displayName())) {
+                // 往目标attach agent
+                VirtualMachine attach = VirtualMachine.attach(descriptor.id());
+                // 参数1：agent jar, 参数2：agent参数
+                attach.loadAgent(&quot;E:/ProgrammingEnvironment/workspace/IdeaProjects/agent/target/agent-1.0-jar-with-dependencies.jar&quot;, &quot;wiki.td.Person&quot;);
+                TimeUnit.SECONDS.sleep(20);
+                attach.detach(); // 20s后detach agent
+            }
+        }
+    }
+}</code></pre>
+<h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/006.gif" alt></p>
+<p>OK<del>~</del>，这就完成了我们的无代码侵入aop操作了 </p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-jpda2/index.html" target="_blank" rel="noopener">JVMTI 和 Agent 实现</a></li>
+<li><a href="https://www.youtube.com/watch?v=tlcF8awgUEE" target="_blank" rel="noopener">How to Create a Java Agent and Why Would You Need One?</a></li>
+<li><a href="[https://zh.wikipedia.org/wiki/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90](https://zh.wikipedia.org/wiki/性能分析)">性能分析</a></li>
+<li><a href="https://www.smartik.net/2017/11/method-breakpoints-are-evil.html" target="_blank" rel="noopener">Method Breakpoints are Evil</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-jvmti/" target="_blank" rel="noopener">基于 JVMTI 实现 Java 线程的监控</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/">
+      基于Java探针和字节码框架来动态修改代码运行时行为
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('基于Java探针和字节码框架来动态修改代码运行时行为'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-Agent实现"><span class="toc-text">Java Agent实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#了解基本API"><span class="toc-text">了解基本API</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#不修改主程序源码情况下为目标类增加方法"><span class="toc-text">不修改主程序源码情况下为目标类增加方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#主程序"><span class="toc-text">主程序</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java-Agent实现-1"><span class="toc-text">Java Agent实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#打包并测试"><span class="toc-text">打包并测试</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主程序处于运行时，为目标织入Around代码"><span class="toc-text">主程序处于运行时，为目标织入Around代码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#主程序-1"><span class="toc-text">主程序</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Java-Agent实现-2"><span class="toc-text">Java Agent实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#测试类（Attach-API操作）"><span class="toc-text">测试类（Attach API操作）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#测试"><span class="toc-text">测试</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

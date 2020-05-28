@@ -1,0 +1,809 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 使用Micronaut实现微服务-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>使用Micronaut实现微服务</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2018-11-07 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="使用micronaut构建微服务"><a href="#使用micronaut构建微服务" class="headerlink" title="使用micronaut构建微服务"></a>使用micronaut构建微服务</h2><h3 id="场景说明"><a href="#场景说明" class="headerlink" title="场景说明"></a>场景说明</h3><blockquote>
+<p>场景：通过 ip:port/api/books 返回还有库存的书籍信息</p>
+<p>微服务：Gateway（网关服务：java实现）、Book（书籍服务：groovy实现）、Inventory（存货服务，kotlin实现）</p>
+<p>服务注册中心：Apache Consul</p>
+</blockquote>
+<p>整体架构如下</p>
+<p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/002.png" alt></p>
+<h3 id="Gateway服务编写（java）"><a href="#Gateway服务编写（java）" class="headerlink" title="Gateway服务编写（java）"></a>Gateway服务编写（java）</h3><h4 id="步骤1：使用mn工具生成项目"><a href="#步骤1：使用mn工具生成项目" class="headerlink" title="步骤1：使用mn工具生成项目"></a>步骤1：使用mn工具生成项目</h4><blockquote>
+<p>默认使用gradle项目管理工具，和java语言</p>
+</blockquote>
+<pre><code class="shell">mn create-app example.micronaut.gateway</code></pre>
+<h4 id="步骤2：目录"><a href="#步骤2：目录" class="headerlink" title="步骤2：目录"></a>步骤2：目录</h4><p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/001.png" alt></p>
+<h4 id="步骤3：Book-java"><a href="#步骤3：Book-java" class="headerlink" title="步骤3：Book.java"></a>步骤3：Book.java</h4><pre><code class="java">package example.micronaut.beans;
+public class Book {
+     private String isbn; 
+     private String name; 
+     private Integer stock;
+     public Book() {}
+     public Book(String isbn, String name) { 
+         this.isbn = isbn; 
+         this.name = name; 
+     }
+     public String getIsbn() { return isbn; }
+     public void setIsbn(String isbn) { this.isbn = isbn; }
+     public String getName() { return name; }
+     public void setName(String name) { this.name = name; }
+     public Integer getStock() { return stock; }
+     public void setStock(Integer stock) { this.stock = stock; }
+}</code></pre>
+<h4 id="步骤4：BooksController-java"><a href="#步骤4：BooksController-java" class="headerlink" title="步骤4：BooksController.java"></a>步骤4：BooksController.java</h4><blockquote>
+<p>网关控制器</p>
+</blockquote>
+<pre><code class="java">package example.micronaut.controller;
+
+import example.micronaut.beans.Book;
+import example.micronaut.client.BooksFetcher;
+import example.micronaut.client.InventoryFetcher;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.reactivex.Flowable;
+
+@Controller(&quot;/api&quot;)
+public class BooksController {
+
+    private final BooksFetcher booksFetcher;
+    private final InventoryFetcher inventoryFetcher;
+    // 依赖注入实例
+    public BooksController(BooksFetcher booksFetcher, InventoryFetcher inventoryFetcher) {
+        this.booksFetcher = booksFetcher;
+        this.inventoryFetcher = inventoryFetcher;
+    }
+
+    @Get(&quot;/books&quot;)
+    Flowable&lt;Book&gt; findAll() {
+
+        // 获取到所有的book
+        Flowable&lt;Book&gt; bookFlowable = booksFetcher.fetchBooks();
+        return bookFlowable
+                .flatMapMaybe(b -&gt; inventoryFetcher.inventory(b.getIsbn())  // 获取book的库存
+                        .filter(stock -&gt; stock &gt; 0) // 筛选出库存大于0的book
+                        .map(stock -&gt; { // 将stock(库存)设置到Book属性中
+                            b.setStock(stock);
+                            return b;
+                        })
+                );
+    }
+}</code></pre>
+<h4 id="步骤5：定义服务接口"><a href="#步骤5：定义服务接口" class="headerlink" title="步骤5：定义服务接口"></a>步骤5：定义服务接口</h4><p>BookFetcher.java</p>
+<pre><code class="java">package example.micronaut.client;
+
+import example.micronaut.beans.Book;
+import io.reactivex.Flowable;
+
+public interface BooksFetcher { 
+    Flowable&lt;Book&gt; fetchBooks();
+}</code></pre>
+<p>InventoryFetcher.java</p>
+<pre><code class="java">package example.micronaut.client;
+
+import io.reactivex.Maybe;
+
+public interface InventoryFetcher { 
+    Maybe&lt;Integer&gt; inventory(String isbn); 
+}</code></pre>
+<h4 id="步骤6：定义HttpClient"><a href="#步骤6：定义HttpClient" class="headerlink" title="步骤6：定义HttpClient"></a>步骤6：定义HttpClient</h4><blockquote>
+<p>类似于Spring Cloud OpenFeign</p>
+</blockquote>
+<p>BookClient.java</p>
+<pre><code class="java">package example.micronaut.client.impl;
+
+import example.micronaut.beans.Book;
+import example.micronaut.client.BooksFetcher;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.env.Environment;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.client.annotation.Client;
+import io.reactivex.Flowable;
+
+@Client(&quot;books&quot;) /** 发现服务books */
+//@Requires(notEnv = Environment.TEST)
+public interface BooksClient extends BooksFetcher {
+
+    @Override
+    @Get(&quot;/api/books&quot;) /**调用服务端点*/
+    Flowable&lt;Book&gt; fetchBooks();
+
+}</code></pre>
+<p>InventoryClient.java</p>
+<pre><code class="java">package example.micronaut.client.impl;
+
+import example.micronaut.client.InventoryFetcher;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.env.Environment;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.client.annotation.Client;
+import io.reactivex.Maybe;
+
+
+/** 发现服务inventory */
+@Client(&quot;inventory&quot;)
+//@Requires(notEnv = Environment.TEST)
+public interface InventoryClient extends InventoryFetcher {
+
+    @Override
+    @Get(&quot;/api/inventory/{isbn}&quot;)  /**调用服务端点*/
+    Maybe&lt;Integer&gt; inventory(String isbn);
+}</code></pre>
+<h4 id="步骤7：启动类（自动生成）"><a href="#步骤7：启动类（自动生成）" class="headerlink" title="步骤7：启动类（自动生成）"></a>步骤7：启动类（自动生成）</h4><pre><code class="java">package example.micronaut;
+
+import io.micronaut.runtime.Micronaut;
+
+public class Application {
+
+    public static void main(String[] args) {
+        Micronaut.run(Application.class);
+    }
+}</code></pre>
+<h4 id="步骤8：application-yml"><a href="#步骤8：application-yml" class="headerlink" title="步骤8：application.yml"></a>步骤8：application.yml</h4><blockquote>
+<p>在micronaut中，application-test.yml为测试环境使用的配置</p>
+<p>本例子中application.yml和application-test.yml内容一样</p>
+</blockquote>
+<pre><code class="yml">micronaut:
+    application:
+        name: gateway
+    server:
+        port: 8080
+consul:
+    client:
+        registration:
+            enabled: true
+        defaultZone: &quot;${CONSUL_HOST:192.168.4.163}:${CONSUL_PORT:8500}&quot;</code></pre>
+<h4 id="步骤9：单元测试类"><a href="#步骤9：单元测试类" class="headerlink" title="步骤9：单元测试类"></a>步骤9：单元测试类</h4><p>MockBooksClient.java</p>
+<pre><code class="java">package example.micronaut.client;
+
+import example.micronaut.beans.Book;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.env.Environment;
+import io.reactivex.Flowable;
+
+import javax.inject.Singleton;
+
+@Singleton
+@Requires(env = Environment.TEST)
+public class MockBooksClient implements BooksFetcher {
+
+    @Override
+    public Flowable&lt;Book&gt; fetchBooks() {
+        return Flowable.just(
+                new Book(&quot;1491950358&quot;, &quot;Building Microservices&quot;),
+                new Book(&quot;1680502395&quot;, &quot;Release It!&quot;),
+                new Book(&quot;0321601912&quot;, &quot;Continuous Delivery:&quot;));
+    }
+}</code></pre>
+<p>MockInventoryClient.java</p>
+<pre><code class="java">package example.micronaut.client;
+
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.env.Environment;
+import io.reactivex.Maybe;
+
+import javax.inject.Singleton;
+
+@Singleton
+@Requires(env = Environment.TEST)
+public class MockInventoryClient implements InventoryFetcher {
+
+    @Override
+    public Maybe&lt;Integer&gt; inventory(String isbn) {
+        if (isbn.equals(&quot;1491950358&quot;)) {
+            return Maybe.just(2);
+        }
+        if (isbn.equals(&quot;1680502395&quot;)) {
+            return Maybe.just(0);
+        }
+        return Maybe.empty();
+    }
+}</code></pre>
+<p>BookControllerTest.java</p>
+<pre><code class="java">package example.micronaut.controller;
+
+import example.micronaut.beans.Book;
+import io.micronaut.context.ApplicationContext;
+import io.micronaut.core.type.Argument;
+import io.micronaut.http.HttpRequest;
+import io.micronaut.http.client.HttpClient;
+import io.micronaut.runtime.server.EmbeddedServer;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+/**
+ * 单元测试类
+ * 默认使用 application-test.yml文件测试（需要新建）
+ */
+public class BooksControllerTest {
+
+    private static EmbeddedServer server; 
+    private static HttpClient client;
+
+    @BeforeClass 
+    public static void setupServer() {
+        server = ApplicationContext.run(EmbeddedServer.class); 
+        client = server .getApplicationContext() .createBean(HttpClient.class, server.getURL());
+    }
+
+    @AfterClass 
+    public static void stopServer() {
+        if (server != null) { 
+            server.stop();
+        }
+        if (client != null) { 
+            client.stop();
+        }
+     }
+
+     @Test 
+     public void retrieveBooks() { 
+         HttpRequest request = HttpRequest.GET(&quot;/api/books&quot;);         
+         List&lt;Book&gt; books = client.toBlocking().retrieve(request, Argument.of(List.class, Book.class));
+         assertNotNull(books); 
+         assertEquals(1, books.size());
+     } 
+}</code></pre>
+<h4 id="步骤10：build-gradle"><a href="#步骤10：build-gradle" class="headerlink" title="步骤10：build.gradle"></a>步骤10：build.gradle</h4><blockquote>
+<p>配置依赖</p>
+</blockquote>
+<pre><code class="gradle">plugins {
+    id &quot;io.spring.dependency-management&quot; version &quot;1.0.6.RELEASE&quot;
+    id &quot;com.github.johnrengelman.shadow&quot; version &quot;4.0.2&quot;
+    id &quot;net.ltgt.apt-eclipse&quot; version &quot;0.18&quot;
+    id &quot;net.ltgt.apt-idea&quot; version &quot;0.18&quot;
+}
+
+apply plugin:&quot;application&quot;
+apply plugin:&quot;java&quot;
+
+version &quot;0.1&quot;
+group &quot;example.micronaut&quot;
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url &quot;https://jcenter.bintray.com&quot; }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom &#39;io.micronaut:micronaut-bom:1.0.4&#39;
+    }
+}
+
+/**  服务注册发现依赖：runtime &quot;io.micronaut:micronaut-discovery-client&quot; */
+dependencies {
+    annotationProcessor &quot;io.micronaut:micronaut-inject-java&quot;
+    annotationProcessor &quot;io.micronaut:micronaut-validation&quot;
+    compile &quot;io.micronaut:micronaut-inject&quot;
+    compile &quot;io.micronaut:micronaut-validation&quot;
+    compile &quot;io.micronaut:micronaut-runtime&quot;
+    compile &quot;io.micronaut:micronaut-http-client&quot;
+    compile &quot;io.micronaut:micronaut-http-server-netty&quot;
+    compile &quot;io.micronaut:micronaut-inject-java&quot;
+    runtime &quot;ch.qos.logback:logback-classic:1.2.3&quot;
+    runtime &quot;io.micronaut:micronaut-discovery-client&quot;
+    compile &quot;junit:junit:4.12&quot;
+    compile &quot;io.micronaut:micronaut-inject-java&quot;
+    compile &quot;org.hamcrest:hamcrest-all:1.3&quot;
+}
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+run.jvmArgs(&#39;-noverify&#39;, &#39;-XX:TieredStopAtLevel=1&#39;)
+
+mainClassName = &quot;example.micronaut.Application&quot;
+
+tasks.withType(JavaCompile){
+    options.encoding = &quot;UTF-8&quot;
+    options.compilerArgs.add(&#39;-parameters&#39;)
+}</code></pre>
+<h3 id="Book服务编写（groovy）"><a href="#Book服务编写（groovy）" class="headerlink" title="Book服务编写（groovy）"></a>Book服务编写（groovy）</h3><h4 id="步骤1：使用mn生成项目"><a href="#步骤1：使用mn生成项目" class="headerlink" title="步骤1：使用mn生成项目"></a>步骤1：使用mn生成项目</h4><pre><code class="shell">mn create-app example.micronaut.books --lang groovy</code></pre>
+<h4 id="步骤2：目录-1"><a href="#步骤2：目录-1" class="headerlink" title="步骤2：目录"></a>步骤2：目录</h4><p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/003.png" alt></p>
+<h4 id="步骤3：Book-groovy"><a href="#步骤3：Book-groovy" class="headerlink" title="步骤3：Book.groovy"></a>步骤3：Book.groovy</h4><pre><code class="groovy">package example.micronaut.beans
+
+import groovy.transform.CompileStatic
+import groovy.transform.TupleConstructor
+
+@CompileStatic
+@TupleConstructor
+class Book {
+    String isbn
+    String name
+}</code></pre>
+<h4 id="步骤4：BooksController-groovy"><a href="#步骤4：BooksController-groovy" class="headerlink" title="步骤4：BooksController.groovy"></a>步骤4：BooksController.groovy</h4><pre><code class="groovy">package example.micronaut.controller
+
+import example.micronaut.beans.Book
+import example.micronaut.repository.BooksRepository
+import groovy.transform.CompileStatic
+import io.micronaut.http.annotation.Controller
+import io.micronaut.http.annotation.Get
+
+@CompileStatic
+@Controller(&quot;/api&quot;)
+class BooksController {
+
+    private final BooksRepository booksRepository
+    BooksController(BooksRepository booksRepository) {
+        this.booksRepository = booksRepository
+    }
+
+    @Get(&quot;/books&quot;)
+    List&lt;Book&gt; list() {
+        booksRepository.findAll()
+    }
+}</code></pre>
+<h4 id="步骤5：DAO（模拟数据库操作）"><a href="#步骤5：DAO（模拟数据库操作）" class="headerlink" title="步骤5：DAO（模拟数据库操作）"></a>步骤5：DAO（模拟数据库操作）</h4><p>BooksRepository.groovy</p>
+<pre><code class="groovy">package example.micronaut.repository
+
+import example.micronaut.beans.Book
+
+interface BooksRepository {
+    List&lt;Book&gt; findAll()
+}</code></pre>
+<p>BooksRepositoryImpl.groovy</p>
+<pre><code class="groovy">package example.micronaut.repository
+
+import example.micronaut.beans.Book
+import groovy.transform.CompileStatic
+import javax.inject.Singleton
+
+@CompileStatic
+@Singleton
+class BooksRepositoryImpl implements BooksRepository {
+
+    @Override
+    List&lt;Book&gt; findAll() {
+        [
+                new Book(&quot;1491950358&quot;, &quot;Building Microservices&quot;),
+                new Book(&quot;1680502395&quot;, &quot;Release It!&quot;),
+        ]
+    }
+}</code></pre>
+<h4 id="步骤6：启动类（自动生成）"><a href="#步骤6：启动类（自动生成）" class="headerlink" title="步骤6：启动类（自动生成）"></a>步骤6：启动类（自动生成）</h4><pre><code class="groovy">package example.micronaut
+
+import io.micronaut.runtime.Micronaut
+import groovy.transform.CompileStatic
+
+@CompileStatic
+class Application {
+    static void main(String[] args) {
+        Micronaut.run(Application)
+    }
+}</code></pre>
+<h4 id="步骤7：application-yml"><a href="#步骤7：application-yml" class="headerlink" title="步骤7：application.yml"></a>步骤7：application.yml</h4><pre><code class="yml">micronaut:
+    application:
+        name: books
+    server:
+        port: 8082
+consul:
+    client:
+        registration:
+            enabled: true
+        defaultZone: &quot;${CONSUL_HOST:192.168.4.163}:${CONSUL_PORT:8500}&quot;</code></pre>
+<h4 id="步骤8：单元测试类"><a href="#步骤8：单元测试类" class="headerlink" title="步骤8：单元测试类"></a>步骤8：单元测试类</h4><p>BooksControllerSpec.groovy</p>
+<pre><code class="groovy">package example.micronaut.controller
+
+import example.micronaut.beans.Book
+import io.micronaut.context.ApplicationContext
+import io.micronaut.core.type.Argument
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.client.RxHttpClient
+import io.micronaut.runtime.server.EmbeddedServer
+import spock.lang.AutoCleanup
+import spock.lang.Shared
+import spock.lang.Specification
+
+/** 功能测试类 */
+class BooksControllerSpec extends Specification {
+
+    /** 容器 */
+    @Shared
+    @AutoCleanup
+    EmbeddedServer embeddedServer = ApplicationContext.run(EmbeddedServer)
+
+    @Shared
+    @AutoCleanup 
+    RxHttpClient client = embeddedServer.applicationContext.createBean(RxHttpClient, embeddedServer.getURL())
+
+    void &quot;test books retrieve&quot;() { 
+        when:
+        HttpRequest request = HttpRequest.GET(&#39;/api/books&#39;)
+        List&lt;Book&gt; books = client.toBlocking().retrieve(request, Argument.of(List, Book))
+
+        then:
+        books books.size() == 2
+    }
+}</code></pre>
+<h4 id="步骤9：build-gradle"><a href="#步骤9：build-gradle" class="headerlink" title="步骤9：build.gradle"></a>步骤9：build.gradle</h4><pre><code class="gradle">plugins {
+    id &quot;io.spring.dependency-management&quot; version &quot;1.0.6.RELEASE&quot;
+    id &quot;com.github.johnrengelman.shadow&quot; version &quot;4.0.2&quot;
+}
+
+apply plugin:&quot;application&quot;
+apply plugin:&quot;groovy&quot;
+
+version &quot;0.1&quot;
+group &quot;example.micronaut&quot;
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url &quot;https://jcenter.bintray.com&quot; }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom &#39;io.micronaut:micronaut-bom:1.0.4&#39;
+    }
+}
+
+/**
+ runtime &quot;io.micronaut:micronaut-discovery-client&quot;
+*/
+dependencies {
+    compile &quot;io.micronaut:micronaut-runtime-groovy&quot;
+    compile &quot;io.micronaut:micronaut-validation&quot;
+    compile &quot;io.micronaut:micronaut-http-client&quot;
+    compile &quot;io.micronaut:micronaut-http-server-netty&quot;
+    compileOnly &quot;io.micronaut:micronaut-inject-groovy&quot;
+    runtime &quot;ch.qos.logback:logback-classic:1.2.3&quot;
+    runtime &quot;io.micronaut:micronaut-discovery-client&quot;
+    compile &quot;io.micronaut:micronaut-inject-groovy&quot;
+    compile (&quot;org.spockframework:spock-core&quot;) {
+        exclude group: &quot;org.codehaus.groovy&quot;, module: &quot;groovy-all&quot;
+    }
+}
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+run.jvmArgs(&#39;-noverify&#39;, &#39;-XX:TieredStopAtLevel=1&#39;)
+
+mainClassName = &quot;example.micronaut.Application&quot;
+
+tasks.withType(GroovyCompile) {
+    groovyOptions.forkOptions.jvmArgs.add(&#39;-Dgroovy.parameters=true&#39;)
+}</code></pre>
+<h3 id="Inventory服务编写（kotlin）"><a href="#Inventory服务编写（kotlin）" class="headerlink" title="Inventory服务编写（kotlin）"></a>Inventory服务编写（kotlin）</h3><h4 id="步骤1：使用mn生成项目-1"><a href="#步骤1：使用mn生成项目-1" class="headerlink" title="步骤1：使用mn生成项目"></a>步骤1：使用mn生成项目</h4><pre><code class="shell">mn create-app example.micronaut.inventory --lang kotlin
+</code></pre>
+<h4 id="步骤2：目录-2"><a href="#步骤2：目录-2" class="headerlink" title="步骤2：目录"></a>步骤2：目录</h4><p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/004.png" alt></p>
+<h4 id="步骤3：Book-kt"><a href="#步骤3：Book-kt" class="headerlink" title="步骤3：Book.kt"></a>步骤3：Book.kt</h4><pre><code class="kotlin">package example.micronaut.beans
+
+data class Book(val isbn: String, val stock: Int)</code></pre>
+<h4 id="步骤4：BooksController-kt"><a href="#步骤4：BooksController-kt" class="headerlink" title="步骤4：BooksController.kt"></a>步骤4：BooksController.kt</h4><pre><code class="kotlin">package example.micronaut.controller
+
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.MediaType
+import io.micronaut.http.annotation.Controller
+import io.micronaut.http.annotation.Get
+import io.micronaut.http.annotation.Produces
+
+@Controller(&quot;/api&quot;)
+class BooksController {
+
+    @Produces(MediaType.TEXT_PLAIN)
+    @Get(&quot;/inventory/{isbn}&quot;)
+    fun inventory(isbn: String): HttpResponse&lt;Int&gt; {
+        // 返回book的库存信息
+        return when (isbn) {
+            &quot;1491950358&quot; -&gt; HttpResponse.ok(2)
+            &quot;1680502395&quot; -&gt; HttpResponse.ok(0) /* 1680502395 库存为0 */
+            else -&gt; HttpResponse.notFound()
+        }
+    }
+}</code></pre>
+<h4 id="步骤5：application（自动生成）"><a href="#步骤5：application（自动生成）" class="headerlink" title="步骤5：application（自动生成）"></a>步骤5：application（自动生成）</h4><pre><code class="kotlin">package example.micronaut
+
+import io.micronaut.runtime.Micronaut
+
+object Application {
+
+    @JvmStatic
+    fun main(args: Array&lt;String&gt;) {
+        Micronaut.build()
+                .packages(&quot;example.micronaut&quot;)
+                .mainClass(Application.javaClass)
+                .start()
+    }
+}</code></pre>
+<h4 id="步骤6：application-yml"><a href="#步骤6：application-yml" class="headerlink" title="步骤6：application.yml"></a>步骤6：application.yml</h4><pre><code class="yml">micronaut:
+    application:
+        name: inventory
+    server:
+        port: 8081
+consul:
+    client:
+        registration:
+            enabled: true
+        defaultZone: &quot;${CONSUL_HOST:192.168.4.163}:${CONSUL_PORT:8500}&quot;</code></pre>
+<h4 id="步骤7：build-gradle"><a href="#步骤7：build-gradle" class="headerlink" title="步骤7：build.gradle"></a>步骤7：build.gradle</h4><pre><code class="gradle">plugins {
+    id &quot;io.spring.dependency-management&quot; version &quot;1.0.6.RELEASE&quot;
+    id &quot;com.github.johnrengelman.shadow&quot; version &quot;4.0.2&quot;
+    id &quot;org.jetbrains.kotlin.jvm&quot; version &quot;1.2.61&quot;
+    id &quot;org.jetbrains.kotlin.kapt&quot; version &quot;1.2.61&quot;
+    id &quot;org.jetbrains.kotlin.plugin.allopen&quot; version &quot;1.2.61&quot;
+}
+
+apply plugin:&quot;application&quot;
+
+version &quot;0.1&quot;
+group &quot;example.micronaut&quot;
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url &quot;https://jcenter.bintray.com&quot; }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom &#39;io.micronaut:micronaut-bom:1.0.4&#39;
+    }
+}
+
+/**
+ runtime &quot;io.micronaut:micronaut-discovery-client&quot;
+ */
+dependencies {
+    compile &quot;org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}&quot;
+    compile &quot;org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}&quot;
+    compile &quot;io.micronaut:micronaut-runtime&quot;
+    compile &quot;io.micronaut:micronaut-http-client&quot;
+    compile &quot;io.micronaut:micronaut-http-server-netty&quot;
+    kapt &quot;io.micronaut:micronaut-inject-java&quot;
+    kapt &quot;io.micronaut:micronaut-validation&quot;
+    kaptTest &quot;io.micronaut:micronaut-inject-java&quot;
+    runtime &quot;io.micronaut:micronaut-discovery-client&quot;
+    runtime &quot;ch.qos.logback:logback-classic:1.2.3&quot;
+    runtime &quot;com.fasterxml.jackson.module:jackson-module-kotlin:2.9.7&quot;
+    testCompile &quot;org.junit.jupiter:junit-jupiter-api:5.1.0&quot;
+    testCompile &quot;org.jetbrains.spek:spek-api:1.1.5&quot;
+    testRuntime &quot;org.junit.jupiter:junit-jupiter-engine:5.1.0&quot;
+    testRuntime &quot;org.jetbrains.spek:spek-junit-platform-engine:1.1.5&quot;
+}
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+run.jvmArgs(&#39;-noverify&#39;, &#39;-XX:TieredStopAtLevel=1&#39;)
+
+mainClassName = &quot;example.micronaut.Application&quot;
+
+
+test {
+    useJUnitPlatform()
+}
+
+allOpen {
+    annotation(&quot;io.micronaut.aop.Around&quot;)
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = &#39;1.8&#39; 
+        //Will retain parameter names for Java reflection
+        javaParameters = true 
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = &#39;1.8&#39; 
+        javaParameters = true 
+    }
+}</code></pre>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><h4 id="步骤1：启动consul"><a href="#步骤1：启动consul" class="headerlink" title="步骤1：启动consul"></a>步骤1：启动consul</h4><pre><code class="shell">[root@localhost ~]# consul agent -server -bootstrap-expect=1 -data-dir=/tmp/consul-data -bind=192.168.4.163 -client=0.0.0.0 -ui</code></pre>
+<p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/005.png" alt></p>
+<h4 id="步骤2：启动微服务-启动无顺序"><a href="#步骤2：启动微服务-启动无顺序" class="headerlink" title="步骤2：启动微服务(启动无顺序)"></a>步骤2：启动微服务(启动无顺序)</h4><p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/006.png" alt></p>
+<p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/007.png" alt></p>
+<p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/008.png" alt></p>
+<p>启动成功如下</p>
+<p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/010.png" alt></p>
+<h4 id="步骤3：访问gateway获取还有库存的数据本书"><a href="#步骤3：访问gateway获取还有库存的数据本书" class="headerlink" title="步骤3：访问gateway获取还有库存的数据本书"></a>步骤3：访问gateway获取还有库存的数据本书</h4><p><img src="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/009.png" alt></p>
+
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/">
+      使用Micronaut实现微服务
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('使用Micronaut实现微服务'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#使用micronaut构建微服务"><span class="toc-text">使用micronaut构建微服务</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#场景说明"><span class="toc-text">场景说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Gateway服务编写（java）"><span class="toc-text">Gateway服务编写（java）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤1：使用mn工具生成项目"><span class="toc-text">步骤1：使用mn工具生成项目</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤2：目录"><span class="toc-text">步骤2：目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤3：Book-java"><span class="toc-text">步骤3：Book.java</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤4：BooksController-java"><span class="toc-text">步骤4：BooksController.java</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤5：定义服务接口"><span class="toc-text">步骤5：定义服务接口</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤6：定义HttpClient"><span class="toc-text">步骤6：定义HttpClient</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤7：启动类（自动生成）"><span class="toc-text">步骤7：启动类（自动生成）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤8：application-yml"><span class="toc-text">步骤8：application.yml</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤9：单元测试类"><span class="toc-text">步骤9：单元测试类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤10：build-gradle"><span class="toc-text">步骤10：build.gradle</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Book服务编写（groovy）"><span class="toc-text">Book服务编写（groovy）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤1：使用mn生成项目"><span class="toc-text">步骤1：使用mn生成项目</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤2：目录-1"><span class="toc-text">步骤2：目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤3：Book-groovy"><span class="toc-text">步骤3：Book.groovy</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤4：BooksController-groovy"><span class="toc-text">步骤4：BooksController.groovy</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤5：DAO（模拟数据库操作）"><span class="toc-text">步骤5：DAO（模拟数据库操作）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤6：启动类（自动生成）"><span class="toc-text">步骤6：启动类（自动生成）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤7：application-yml"><span class="toc-text">步骤7：application.yml</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤8：单元测试类"><span class="toc-text">步骤8：单元测试类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤9：build-gradle"><span class="toc-text">步骤9：build.gradle</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Inventory服务编写（kotlin）"><span class="toc-text">Inventory服务编写（kotlin）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤1：使用mn生成项目-1"><span class="toc-text">步骤1：使用mn生成项目</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤2：目录-2"><span class="toc-text">步骤2：目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤3：Book-kt"><span class="toc-text">步骤3：Book.kt</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤4：BooksController-kt"><span class="toc-text">步骤4：BooksController.kt</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤5：application（自动生成）"><span class="toc-text">步骤5：application（自动生成）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤6：application-yml"><span class="toc-text">步骤6：application.yml</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤7：build-gradle"><span class="toc-text">步骤7：build.gradle</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#测试"><span class="toc-text">测试</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤1：启动consul"><span class="toc-text">步骤1：启动consul</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤2：启动微服务-启动无顺序"><span class="toc-text">步骤2：启动微服务(启动无顺序)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤3：访问gateway获取还有库存的数据本书"><span class="toc-text">步骤3：访问gateway获取还有库存的数据本书</span></a></li></ol></li></ol></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

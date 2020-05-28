@@ -1,0 +1,557 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> MySQL日志-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>MySQL日志</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2019-06-17 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="日志的作用"><a href="#日志的作用" class="headerlink" title="日志的作用"></a>日志的作用</h2><p>在代码中我们经常使用日志来去记录和输出系统的一些执行信息，我们可以通过这些日志来观察系统的执行过程和状况，不管是开发时用于调试又或者用来定位错误，这都是日志所带给我们的便利；</p>
+<p>而对于数据库而言，日志更加是比不可少的组成部分，因为数据库本身的理念就是存储数据，保证数据的持久化；那么一旦数据库出了问题又或者丢失了一些数据时该怎么办？mysql中就提供了诸如二进制日志来对数据库的变更操作进行记录，一旦出了什么问题就可以通过二进制日志来去恢复；</p>
+<p>除了针对恢复数据的<code>二进制日志</code>外，mysql还提供了：<code>慢查询日志</code>、<code>错误日志</code>、<code>通用查询日志</code>等等一些负责不同任务的日志；</p>
+<p>除了数据库(mysql server)本身，一些存储引擎也有自己的日志，如InnoDB的<code>redo日志</code>，就可以做到减少磁盘访问的效果；</p>
+<p>因此了解日志个人认为也是非常有必要的，就算不能彻彻底底地弄懂它也至少对其有基本的认识；</p>
+<p><strong>对于学习技术而言，个人的感受是，俯瞰技术全貌怎么都比片面认识来的实际；</strong></p>
+<h2 id="MySQL中日志的种类"><a href="#MySQL中日志的种类" class="headerlink" title="MySQL中日志的种类"></a>MySQL中日志的种类</h2><h3 id="二进制日志-归档日志"><a href="#二进制日志-归档日志" class="headerlink" title="二进制日志(归档日志)"></a>二进制日志(归档日志)</h3><h4 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h4><ol>
+<li>二进制日志记录的是所有更改数据的语句</li>
+<li>使用二进制日志的最大原因是二进制日志可以最大可能恢复数据库，因为二进制日志包含数据库服务启动后的所有更改数据的操作</li>
+<li>二进制日志默认是关闭的，需要手动开启</li>
+</ol>
+<h4 id="查看二进制日志是否开启"><a href="#查看二进制日志是否开启" class="headerlink" title="查看二进制日志是否开启"></a>查看二进制日志是否开启</h4><pre><code class="sql">-- 是否开启
+show variables like &#39;%log_bin%&#39;;
+-- 二进制日志文件的名字
+show binary logs;</code></pre>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/1.png" alt></p>
+<h4 id="开启二进制日志"><a href="#开启二进制日志" class="headerlink" title="开启二进制日志"></a>开启二进制日志</h4><blockquote>
+<p>官方文档：<a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html</a> </p>
+</blockquote>
+<p>在mysql的ini文件中添加或修改配置</p>
+<blockquote>
+<p>Mysql 5.7</p>
+</blockquote>
+<pre><code class="properties">[mysqld]
+server-id = 1
+log-bin = mysql-bin-log</code></pre>
+<p>重启mysql服务，因为像我一样使用docker容器的话只需要重启容器即可</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/2.png" alt></p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/3.png" alt></p>
+<p>然后可以看到在目录中多了两个二进制日志的文件</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/4.png" alt></p>
+<p>其中000001这个后缀会随着mysql的重启而增加1，即二进制文件会从mysql启动时开始记录；</p>
+<p>接下来打开 mysql-bin-log.index 文件，内容如下：</p>
+<blockquote>
+<p>查看之前我又重启了一次mysql</p>
+</blockquote>
+<pre><code>./mysql-bin-log.000001
+./mysql-bin-log.000002</code></pre><p>可以看出这个文件是用来记录二进制文件的个数的</p>
+<h4 id="查看二进制日志"><a href="#查看二进制日志" class="headerlink" title="查看二进制日志"></a>查看二进制日志</h4><p>在此之前我在数据库中做了如下操作</p>
+<pre><code class="mysql">mysql&gt; create database test;
+Query OK, 1 rows affected (0.01 秒)
+
+mysql&gt; use test;
+Query OK, 0 rows affected (0.01 秒)
+
+mysql&gt; create table book(id int primary key auto_increment, bname varchar(30) not null);
+Query OK, 0 rows affected (0.04 秒)
+
+mysql&gt; insert into book(bname) values(&#39;book1&#39;),(&#39;book2&#39;);
+Query OK, 2 rows affected (0.01 秒)
+
+mysql&gt; delete from book;
+Query OK, 2 rows affected (0.02 秒)</code></pre>
+<ol>
+<li>进入docker容器使用mysql提供的 mysqlbinlog 来读取二进制日志中的内容</li>
+</ol>
+<pre><code class="bash">docker exec -it 容器名称 bin/sh</code></pre>
+<ol start="2">
+<li>读取二进制文件内容</li>
+</ol>
+<blockquote>
+<p>其中 /var/lib/mysql 是mysql的挂载点</p>
+<p>非docker容器mysql省略该步骤，直接在命令行中使用 mysqlbinlog 即可</p>
+</blockquote>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/5.png" alt></p>
+<ol start="3">
+<li><p>二进制内容如下</p>
+<pre><code class="properties">/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+# at 4
+#190627 13:27:37 server id 1  end_log_pos 123 CRC32 0x369d3ff8     Start: binlog v 4, server v 5.7.25-log created 190627 13:27:37
+# Warning: this binlog is either in use or was not closed properly.
+BINLOG &#39;
+ScQUXQ8BAAAAdwAAAHsAAAABAAQANS43LjI1LWxvZwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAXwAEGggAAAAICAgCAAAACgoKKioAEjQA
+Afg/nTY=
+&#39;/*!*/;
+# at 123
+#190627 13:27:37 server id 1  end_log_pos 154 CRC32 0x02688b4d     Previous-GTIDs
+# [empty]
+# at 154
+#190627 13:35:25 server id 1  end_log_pos 219 CRC32 0xf0c8f17a     Anonymous_GTID    last_committed=0    sequence_number=1    rbr_only=no
+SET @@SESSION.GTID_NEXT= &#39;ANONYMOUS&#39;/*!*/;
+# at 219
+#190627 13:35:25 server id 1  end_log_pos 313 CRC32 0xdcf0f957     Query    thread_id=5    exec_time=0    error_code=0
+SET TIMESTAMP=1561642525/*!*/;
+SET @@session.pseudo_thread_id=5/*!*/;
+SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
+SET @@session.sql_mode=1436549152/*!*/;
+SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
+/*!\C utf8 *//*!*/;
+SET @@session.character_set_client=33,@@session.collation_connection=33,@@session.collation_server=8/*!*/;
+SET @@session.lc_time_names=0/*!*/;
+SET @@session.collation_database=DEFAULT/*!*/;
+create database test
+/*!*/;
+# at 313
+#190627 13:36:25 server id 1  end_log_pos 378 CRC32 0x038e1709     Anonymous_GTID    last_committed=1    sequence_number=2    rbr_only=no
+SET @@SESSION.GTID_NEXT= &#39;ANONYMOUS&#39;/*!*/;
+# at 378
+#190627 13:36:25 server id 1  end_log_pos 532 CRC32 0x40de115b     Query    thread_id=5    exec_time=0    error_code=0
+use `test`/*!*/;
+SET TIMESTAMP=1561642585/*!*/;
+create table book(id int primary key auto_increment, bname varchar(30) not null)
+/*!*/;
+# at 532
+#190627 13:37:21 server id 1  end_log_pos 597 CRC32 0xd8c55e1b     Anonymous_GTID    last_committed=2    sequence_number=3    rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= &#39;ANONYMOUS&#39;/*!*/;
+# at 597
+#190627 13:37:21 server id 1  end_log_pos 669 CRC32 0x715d874a     Query    thread_id=5    exec_time=0    error_code=0
+SET TIMESTAMP=1561642641/*!*/;
+BEGIN
+/*!*/;
+# at 669
+#190627 13:37:21 server id 1  end_log_pos 719 CRC32 0xbd1b94bd     Table_map(创建了表): `test`.`book` mapped to number 103
+# at 719
+#190627 13:37:21 server id 1  end_log_pos 776 CRC32 0x4ce16b91     Write_rows(写入了数据): table id 103 flags: STMT_END_F
+
+BINLOG &#39;
+kcYUXRMBAAAAMgAAAM8CAAAAAGcAAAAAAAEABHRlc3QABGJvb2sAAgMPAh4AAL2UG70=
+kcYUXR4BAAAAOQAAAAgDAAAAAGcAAAAAAAEAAgAC//wBAAAABWJvb2sx/AIAAAAFYm9vazKRa+FM
+&#39;/*!*/;
+# at 776
+#190627 13:37:21 server id 1  end_log_pos 807 CRC32 0xdf835904     Xid = 15
+COMMIT/*!*/;
+# at 807
+#190627 13:50:29 server id 1  end_log_pos 872 CRC32 0x8318128e     Anonymous_GTID    last_committed=3    sequence_number=4    rbr_only=yes
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;
+SET @@SESSION.GTID_NEXT= &#39;ANONYMOUS&#39;/*!*/;
+# at 872
+#190627 13:50:29 server id 1  end_log_pos 944 CRC32 0x65902211     Query    thread_id=9    exec_time=0    error_code=0
+SET TIMESTAMP=1561643429/*!*/;
+BEGIN
+/*!*/;
+# at 944
+#190627 13:50:29 server id 1  end_log_pos 994 CRC32 0x29ddc805     Table_map: `test`.`book` mapped to number 103
+# at 994
+#190627 13:50:29 server id 1  end_log_pos 1051 CRC32 0xa331f579     Delete_rows(删除了数据): table id 103 flags: STMT_END_F
+
+BINLOG &#39;
+pckUXRMBAAAAMgAAAOIDAAAAAGcAAAAAAAEABHRlc3QABGJvb2sAAgMPAh4AAAXI3Sk=
+pckUXSABAAAAOQAAABsEAAAAAGcAAAAAAAEAAgAC//wBAAAABWJvb2sx/AIAAAAFYm9vazJ59TGj
+&#39;/*!*/;
+# at 1051
+#190627 13:50:29 server id 1  end_log_pos 1082 CRC32 0x1ffda4cc     Xid = 34
+COMMIT/*!*/;
+SET @@SESSION.GTID_NEXT= &#39;AUTOMATIC&#39; /* added by mysqlbinlog */ /*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;</code></pre>
+</li>
+</ol>
+<h4 id="使用二进制日志恢复数据"><a href="#使用二进制日志恢复数据" class="headerlink" title="使用二进制日志恢复数据"></a>使用二进制日志恢复数据</h4><p>目录表的状态如下</p>
+<pre><code class="mysql">mysql&gt; delete from book;
+Query OK, 2 rows affected (0.02 秒)
+
+mysql&gt; select * from book;
+空的数据集 (0.01 秒)</code></pre>
+<p>现在我的目标是将删除 <code>delete from book;</code>的数据恢复回来；</p>
+<p>恢复之前需要到二进制文件中找到这条删除数据的命令锁执行的时间点；</p>
+<pre><code class="mysql">... 省略
+#190627 13:50:29 server id 1  end_log_pos 1051 CRC32 0xa331f579     Delete_rows(删除了数据): table id 103 flags: STMT_END_F
+
+BINLOG &#39;
+pckUXRMBAAAAMgAAAOIDAAAAAGcAAAAAAAEABHRlc3QABGJvb2sAAgMPAh4AAAXI3Sk=
+pckUXSABAAAAOQAAABsEAAAAAGcAAAAAAAEAAgAC//wBAAAABWJvb2sx/AIAAAAFYm9vazJ59TGj
+... 省略</code></pre>
+<p>可以看到时间点是：190627 13:50:29，将格式转换为：2019-06-27 13:50:29</p>
+<p>使用同样的方法找恢复数据的起点事件(不设置起点的话默认从mysql启动开始恢复)</p>
+<p>我这里的插入数据的起点事件为：190627 13:37:21，将格式转换为：2019-06-27 13:37:21</p>
+<p>使用 mysqlbinlog 命令恢复数据</p>
+<pre><code class="bash">mysqlbinlog --start-datetime=&quot;2019-06-27 13:37:21&quot; --stop-datetime=&quot;2019-06-27 13:50:29&quot; mysql-bin-log.000001 mysql-bin-log.000002 | mysql -uroot -p123456</code></pre>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/6.png" alt></p>
+<p>再查看数据</p>
+<pre><code class="mysql">mysql&gt; select * from book;
++----+-------+
+| id | bname |
++----+-------+
+| 1  | book1 |
+| 2  | book2 |
++----+-------+
+2 行于数据集 (0.02 秒)</code></pre>
+<h3 id="通用查询日志"><a href="#通用查询日志" class="headerlink" title="通用查询日志"></a>通用查询日志</h3><h4 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h4><p>记录用户的所有操作，包括 启动关闭服务器、查询、更新操作</p>
+<h4 id="查看通用查询日志是否开启"><a href="#查看通用查询日志是否开启" class="headerlink" title="查看通用查询日志是否开启"></a>查看通用查询日志是否开启</h4><pre><code class="mysql">mysql&gt; show variables like &#39;%general_log%&#39;;
++------------------+---------------------------------+
+| Variable_name    | Value                           |
++------------------+---------------------------------+
+| general_log      | OFF                             |
+| general_log_file | /var/lib/mysql/8ddb8a0a85bb.log |
++------------------+---------------------------------+
+2 行于数据集 (0.02 秒)</code></pre>
+<h4 id="开启通用查询日志"><a href="#开启通用查询日志" class="headerlink" title="开启通用查询日志"></a>开启通用查询日志</h4><p>在mysql配置文件添加如下配置</p>
+<pre><code class="properties">[mysqld]
+# General
+# close 0, open 1, default 0
+general-log=1
+general_log_file=&quot;general-log&quot;</code></pre>
+<p>重启服务</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/7.png" alt></p>
+<h4 id="观察通用查询日志"><a href="#观察通用查询日志" class="headerlink" title="观察通用查询日志"></a>观察通用查询日志</h4><p>在观察之前我做了如下操作</p>
+<pre><code class="mysql">mysql&gt; use test;
+Query OK, 0 rows affected (0.01 秒)
+
+mysql&gt; select * from book;
++----+-------+
+| id | bname |
++----+-------+
+| 1  | book1 |
+| 2  | book2 |
++----+-------+
+2 行于数据集 (0.02 秒)
+
+mysql&gt; delete from book where id = 1;
+Query OK, 1 rows affected (0.01 秒)
+
+mysql&gt; select * from book;
++----+-------+
+| id | bname |
++----+-------+
+| 2  | book2 |
++----+-------+
+1 行于数据集 (0.01 秒)</code></pre>
+<p>这是通用查询日志内容如下：</p>
+<pre><code class="mysql">mysqld, Version: 5.7.25-log (MySQL Community Server (GPL)). started with:
+Tcp port: 0  Unix socket: (null)
+Time                 Id Command    Argument
+2019-06-27T14:22:34.444592Z        2 Connect    root@172.17.0.1 on  using TCP/IP
+2019-06-27T14:22:34.541845Z        2 Query    SET NAMES utf8
+2019-06-27T14:22:34.543328Z        2 Query    show variables like &#39;profiling&#39;
+2019-06-27T14:22:34.547288Z        2 Query    SHOW DATABASES
+2019-06-27T14:22:34.581636Z        2 Query    select SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME from INFORMATION_SCHEMA.SCHEMATA
+2019-06-27T14:23:48.931701Z        3 Connect    root@172.17.0.1 on  using TCP/IP
+2019-06-27T14:23:48.933825Z        3 Query    SET NAMES utf8
+2019-06-27T14:23:58.266696Z        3 Query    use test
+2019-06-27T14:24:04.615456Z        3 Query    select * from book
+2019-06-27T14:24:24.029207Z        3 Query    delete from book where id = 1
+2019-06-27T14:24:27.554610Z        3 Query    select * from book</code></pre>
+<p>可以看出，在什么时候做了些什么操作，在通用查询日志中都一目了然</p>
+<h3 id="慢查询日志"><a href="#慢查询日志" class="headerlink" title="慢查询日志"></a>慢查询日志</h3><h4 id="作用-2"><a href="#作用-2" class="headerlink" title="作用"></a>作用</h4><ol>
+<li>慢查询日志记录的是超过指定时间的SQL语句</li>
+<li>通过慢查询日志可以找出 <strong>执行时间长</strong>、<strong>执行效率低</strong> 的语句，从而可以进行针对性的优化</li>
+</ol>
+<p><strong>需要注意的是，虽然叫慢查询日志，但是只要超过设定时间的sql就会记录起来，即慢查询并非单指select操作</strong></p>
+<h4 id="查看慢查询日志是否开启"><a href="#查看慢查询日志是否开启" class="headerlink" title="查看慢查询日志是否开启"></a>查看慢查询日志是否开启</h4><pre><code class="mysql">mysql&gt; show variables like &#39;%query%&#39;;
++------------------------------+-------------------+
+| Variable_name                | Value             |
++------------------------------+-------------------+
+| slow_query_log               | OFF               |
++------------------------------+-------------------+
+13 行于数据集 (0.02 秒)</code></pre>
+<p>或者使用 show variables like ‘%query%’;</p>
+<h4 id="开启慢查询日志"><a href="#开启慢查询日志" class="headerlink" title="开启慢查询日志"></a>开启慢查询日志</h4><h5 id="方式1：配置文件开启"><a href="#方式1：配置文件开启" class="headerlink" title="方式1：配置文件开启"></a>方式1：配置文件开启</h5><p>在mysql配置文件中添加如下配置</p>
+<pre><code class="properties"># slow-query-log
+# close 0, open 1, default 0
+slow-query-log = 1
+slow_query_log_file = &quot;my_slow-query-log&quot;
+# 超过 2s 的查询都会被记录
+long_query_time = 2</code></pre>
+<p>重启服务</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/8.png" alt></p>
+<h5 id="方式2：设置全局变量开启"><a href="#方式2：设置全局变量开启" class="headerlink" title="方式2：设置全局变量开启"></a>方式2：设置全局变量开启</h5><p>查看是否开启了慢查询</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/001.png" alt></p>
+<p>开启慢查询</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/002.png" alt></p>
+<p> 将日志的输出定向为table，因为默认是输出到file的（包含慢查询日志和通用查询日志）   </p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/003.png" alt></p>
+<p>拓展：查看mysql中有哪些用于记录日志的table</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/004.png" alt></p>
+<h4 id="观察慢查询-日志文件"><a href="#观察慢查询-日志文件" class="headerlink" title="观察慢查询-日志文件"></a>观察慢查询-日志文件</h4><p>在此之前我使用存储过程往book表添加250000条数据</p>
+<pre><code class="sql">CREATE PROCEDURE pro_insert_data(IN num INT)
+BEGIN
+    DECLARE temp INT;
+    SET temp = 1;
+    REPEAT
+        insert into book(bname) values(CONCAT(&#39;book&#39;,temp));
+        SET temp = temp + 1;
+    UNTIL temp&gt;num END REPEAT;
+END</code></pre>
+<pre><code class="mysql">mysql&gt; use test;
+Query OK, 0 rows affected (0.01 秒)
+
+mysql&gt; call pro_insert_data(250000);
+Lost connection to MySQL server during query
+
+mysql&gt; select count(1) from book;
++----------+
+| count(1) |
++----------+
+| 250001   |
++----------+
+1 行于数据集 (0.05 秒)</code></pre>
+<p>关于上面的 <strong>连接丢失问题</strong> 参考：<a href="https://www.jianshu.com/p/98c7a63b84c3" target="_blank" rel="noopener">https://www.jianshu.com/p/98c7a63b84c3</a>    </p>
+<p>但可以看到，已经成功插入了250000条数据</p>
+<p>执行更新操作</p>
+<pre><code class="sql">mysql&gt; update book set bname = &#39;asasf5461werw321sdfqwasd&#39;;
+Query OK, 250001 rows affected (3.55 秒)</code></pre>
+<p>可以看到上面的sql已经超过了2s，现在查看一下慢查询日志</p>
+<pre><code class="properties">mysqld, Version: 5.7.25-log (MySQL Community Server (GPL)). started with:
+Tcp port: 0  Unix socket: (null)
+Time                 Id Command    Argument
+# Time: 2019-06-27T15:14:08.200753Z
+# User@Host: root[root] @  [172.17.0.1]  Id:     4
+# Query_time: 3.541587  Lock_time: 0.022101 Rows_sent: 0  Rows_examined: 250001
+use test;
+SET timestamp=1561648448;
+update book set bname = &#39;asasf5461werw321sdfqwasd&#39;;</code></pre>
+<p>可以看到update这条 sql 执行时长为：3.541587 秒，锁时为：0.022101 秒，该操作涉及到的记录数：250001 条</p>
+<blockquote>
+<p>也使用使用mysql提供的慢查询日志查看工具 mysqldumpslow 来查看。使用参考：<a href="https://www.linuxidc.com/Linux/2017-03/142076.htm" target="_blank" rel="noopener">https://www.linuxidc.com/Linux/2017-03/142076.htm</a></p>
+</blockquote>
+<h4 id="观察慢查询-日志表"><a href="#观察慢查询-日志表" class="headerlink" title="观察慢查询-日志表"></a>观察慢查询-日志表</h4><p><img src="/mysql%E6%97%A5%E5%BF%97/005.png" alt></p>
+<h3 id="错误日志"><a href="#错误日志" class="headerlink" title="错误日志"></a>错误日志</h3><p>对于错误日志，感觉没什么特别要说的，用于记录mysql运行过程中的错误，默认是开启的；</p>
+<p>也可以通过mysql配置文件指定错误日志的生成路径和名字</p>
+<pre><code class="properties">[mysqld]
+log_error = &quot;error_log&quot;</code></pre>
+<h2 id="InnoDB的redo、redo"><a href="#InnoDB的redo、redo" class="headerlink" title="InnoDB的redo、redo"></a>InnoDB的redo、redo</h2><h3 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h3><p>redo log是InnoDB事务日志的组成部分（事务日志 = redo log + 日志缓冲区）。用于记录页更改的物理情况，功能是保证事务的完整性。</p>
+<p>与MySQL bin log的区别：</p>
+<ul>
+<li>bin log用于记录修改数据的操作，在事务提交之前写到磁盘</li>
+<li>redo log用于记录页的物理情况。内容先写入日志缓冲区，随后默认每隔1s刷新到磁盘日志文件中</li>
+<li>redo log属于写前日志，即修改操作之前会先记录到redo log中</li>
+</ul>
+<h3 id="undo段"><a href="#undo段" class="headerlink" title="undo段"></a>undo段</h3><ul>
+<li>undo段主要用来保证事务的回滚</li>
+<li>功能和redo log相反，用于记录页修改前的状态</li>
+<li>undo并不位于日志文件，而是在数据库内部的一个内存段中</li>
+</ul>
+<h3 id="查看redo和undo"><a href="#查看redo和undo" class="headerlink" title="查看redo和undo"></a>查看redo和undo</h3><pre><code class="mysql">mysql&gt; show global variables like &#39;%engine%&#39;;
++----------------------------------+--------+
+| Variable_name                    | Value  |
++----------------------------------+--------+
+| default_storage_engine           | InnoDB |  默认引擎用的是InnoDB就会开启 redo 和 undo
+| default_tmp_storage_engine       | InnoDB |
+| disabled_storage_engines         |        |
+| internal_tmp_disk_storage_engine | InnoDB |
++----------------------------------+--------+
+4 行于数据集 (0.01 秒)
+
+mysql&gt; show global variables like &#39;%innodb_log%&#39;;
++-----------------------------+----------+
+| Variable_name               | Value    |
++-----------------------------+----------+
+| innodb_log_buffer_size      | 16777216 | 缓冲区大少
+| innodb_log_checksums        | ON       |
+| innodb_log_compressed_pages | ON       |
+| innodb_log_file_size        | 50331648 | redolog和undolog文件大小
+| innodb_log_files_in_group   | 2        |
+| innodb_log_group_home_dir   | ./       | redolog和undolog所在位置：lb_logfile*的文件
+| innodb_log_write_ahead_size | 8192     |
++-----------------------------+----------+
+7 行于数据集 (0.01 秒)</code></pre>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年07月1日15:05:58 — 修改对InnoDB日志的理解</li>
+<li>2020年4月27日10:51:17 — 日志输出定向到table相关内容</li>
+</ul>
+
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/mysql%E6%97%A5%E5%BF%97/">
+      MySQL日志
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('MySQL日志'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#日志的作用"><span class="toc-text">日志的作用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MySQL中日志的种类"><span class="toc-text">MySQL中日志的种类</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#二进制日志-归档日志"><span class="toc-text">二进制日志(归档日志)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#作用"><span class="toc-text">作用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#查看二进制日志是否开启"><span class="toc-text">查看二进制日志是否开启</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#开启二进制日志"><span class="toc-text">开启二进制日志</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#查看二进制日志"><span class="toc-text">查看二进制日志</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#使用二进制日志恢复数据"><span class="toc-text">使用二进制日志恢复数据</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#通用查询日志"><span class="toc-text">通用查询日志</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#作用-1"><span class="toc-text">作用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#查看通用查询日志是否开启"><span class="toc-text">查看通用查询日志是否开启</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#开启通用查询日志"><span class="toc-text">开启通用查询日志</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#观察通用查询日志"><span class="toc-text">观察通用查询日志</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#慢查询日志"><span class="toc-text">慢查询日志</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#作用-2"><span class="toc-text">作用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#查看慢查询日志是否开启"><span class="toc-text">查看慢查询日志是否开启</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#开启慢查询日志"><span class="toc-text">开启慢查询日志</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#方式1：配置文件开启"><span class="toc-text">方式1：配置文件开启</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#方式2：设置全局变量开启"><span class="toc-text">方式2：设置全局变量开启</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#观察慢查询-日志文件"><span class="toc-text">观察慢查询-日志文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#观察慢查询-日志表"><span class="toc-text">观察慢查询-日志表</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#错误日志"><span class="toc-text">错误日志</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#InnoDB的redo、redo"><span class="toc-text">InnoDB的redo、redo</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#redo-log"><span class="toc-text">redo log</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#undo段"><span class="toc-text">undo段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查看redo和undo"><span class="toc-text">查看redo和undo</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

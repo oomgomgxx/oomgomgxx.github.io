@@ -1,0 +1,929 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> MySQL优化入门-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>MySQL优化入门</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2019-06-20 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ul>
+<li><p>关于优化方面个人认为是一个比较复杂的环节，而且并不能一概而论；</p>
+</li>
+<li><p>数据库优化需要结合实际的使用场景，一步一个脚印地针对出现的问题来进行解决，这就是数据库的优化；</p>
+</li>
+<li><p>因为优化的手段也有很多，如最基本的<code>SQL优化</code>、<code>表优化</code>、<code>数据库本身的优化</code>、<code>数据库所在机器的优化</code>  等等，如果是应用层面还可以通过 <code>缓存</code> 、<code>流量削峰</code> 、 <code>请求限流</code> 等等手段减轻数据库压力</p>
+</li>
+</ul>
+<h2 id="常用数据库优化手段"><a href="#常用数据库优化手段" class="headerlink" title="常用数据库优化手段"></a>常用数据库优化手段</h2><ul>
+<li><p>SQL优化</p>
+<ul>
+<li>添加索引</li>
+<li>进行执行计划分析优化</li>
+<li>必要时使用存储过程</li>
+</ul>
+</li>
+<li><p>加入缓存层以降低数据库压力</p>
+</li>
+<li><p>表优化</p>
+<ul>
+<li>水平拆分</li>
+<li>垂直（纵向）拆分</li>
+<li>分区</li>
+</ul>
+</li>
+<li><p>数据库优化</p>
+<ul>
+<li>水平拆分</li>
+<li>垂直（纵向）拆分</li>
+<li>主从复制</li>
+<li>数据库集群（用的比较少）</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>那么什么情况下分表，什么情况下分库呢？</p>
+<p>一般都是数据量大考虑分表，并发高就考虑分库。</p>
+<p>但是需要注意的是，能不拆就不拆，能少拆就少拆，因为拆得越多越细会大大提高后期维护成本。因此分库分表其实是没有办法中的办法。</p>
+</blockquote>
+<h2 id="执行计划"><a href="#执行计划" class="headerlink" title="执行计划"></a>执行计划</h2><h3 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h3><p>&emsp;&emsp;举个简单的例子：<code>select * form t1 join t2 on t1.id = t2.t1_id</code>在这个连接查询中，到底是先访问t1表呢？还是先访问t2表？而先访问t1表和先访问t2表这两个选择就代表了两个不同的执行计划；</p>
+<p>&emsp;&emsp;再通俗点说，就是 <strong>执行计划 = 执行引擎的处理方法</strong> ，通常我们会说查看或分析一下某SQL语句的执行计划，其实就是查看和分析一下数据库对这条SQL语句的处理方法，然后再通过数据库的特性来去对其进行调整优化；</p>
+<p>&emsp;&emsp;<strong>但需要明确的是，SQL优化，其实是围绕的如何更高效地使用索引为进行的，所以如果没有索引，就没法谈优化</strong></p>
+<h3 id="如何看执行计划"><a href="#如何看执行计划" class="headerlink" title="如何看执行计划"></a>如何看执行计划</h3><p>使用 desc 或者 explain ，如下</p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/1.png" alt></p>
+<p>或添加 \G</p>
+<pre><code class="sql">mysql&gt; desc select count(*) from book \G
+*************************** 1. 行 ***************************
+id           : 1
+select_type  : SIMPLE
+table        : book
+partitions   : NULL
+type         : index
+possible_keys: NULL
+key          : PRIMARY
+key_len      : 4
+ref          : NULL
+rows         : 251513
+filtered     : 100.00
+Extra        : Using index
+1 行于数据集 (0.02 秒)</code></pre>
+<blockquote>
+<p>explain适用于那些语句，以下为官方文档的说明：</p>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html" target="_blank" rel="noopener"><code>EXPLAIN</code></a> works with <a href="https://dev.mysql.com/doc/refman/8.0/en/select.html" target="_blank" rel="noopener"><code>SELECT</code></a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/delete.html" target="_blank" rel="noopener"><code>DELETE</code></a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/insert.html" target="_blank" rel="noopener"><code>INSERT</code></a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/replace.html" target="_blank" rel="noopener"><code>REPLACE</code></a>, and <a href="https://dev.mysql.com/doc/refman/8.0/en/update.html" target="_blank" rel="noopener"><code>UPDATE</code></a> statements.</li>
+</ul>
+</blockquote>
+<h3 id="了解执行计划"><a href="#了解执行计划" class="headerlink" title="了解执行计划"></a>了解执行计划</h3><blockquote>
+<p>参考文档/文章：</p>
+<ul>
+<li><p><a href="https://dev.mysql.com/doc/refman/8.0/en/optimization.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/optimization.html</a></p>
+</li>
+<li><p><a href="https://yq.aliyun.com/articles/688754" target="_blank" rel="noopener">https://yq.aliyun.com/articles/688754</a></p>
+</li>
+</ul>
+</blockquote>
+<pre><code>编写过程：
+select dinstinct  ..from  ..join ..on ..where ..group by ...having ..order by ..limit ..
+
+解析过程：            
+from .. on.. join ..where ..group by ....having ...select dinstinct ..order by ...limit ...</code></pre><ul>
+<li><p><strong>id：SQL查询id；特点是id相同，由上而下执行；id不同，大的先执行</strong></p>
+</li>
+<li><p><strong>select_type：SQL查询类型，常见有以下类型：</strong></p>
+<ul>
+<li><p>simple：简单查询，不包含如 子查询、union 等复杂查询的查询</p>
+</li>
+<li><p>primary：包含子查询的sql语句的<code>外层查询</code></p>
+</li>
+<li><p>subquery：包含子查询的sql语句的<code>内层查询</code></p>
+</li>
+<li><p>union：属于当前分析的sql语句的 union/union all 部分查询</p>
+</li>
+<li><p>derived：衍生查询（表示使用了临时表），如子查询中使用了 in 或 union/union all</p>
+</li>
+</ul>
+</li>
+<li><p><strong>partitions：所匹配到的分区，如果为null表示当前查询为非分区查询</strong></p>
+</li>
+<li><p><strong>table：表名</strong></p>
+</li>
+<li><p><strong>type：索引操作的类型，常见有以下类型：</strong></p>
+<ul>
+<li>system：只有一条数据的系统表 或 衍生表只有一条数据的主查询</li>
+<li>const：使用了unique或primary key作为查询条件，且只返回了一个结果</li>
+<li>eq_ref：对于每个索引键的查询，返回匹配<code>唯一行</code>数据，即查询的内容数据是唯一的，如unique；一般为关联查询</li>
+<li><strong>ref：</strong>对于每个索引键的查询，返回匹配的所有行（0，多）；即通过索引查询后没有进行额外的筛选操作；一般为关联查询</li>
+<li><strong>range：</strong>进行了区间查询</li>
+<li>index：进行了索引全扫描，扫描了所有索引</li>
+<li>all：当前语句进行了全表扫描</li>
+<li>其他：<a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/explain-output.html</a></li>
+<li><strong>效率：system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; all</strong></li>
+</ul>
+</li>
+<li><p><strong>possible_keys：表示当前查询中可能使用到的索引，是一种预测，不一定准确</strong></p>
+</li>
+<li><p><strong>key：实际使用到的索引</strong></p>
+</li>
+<li><p><strong>key_len：索引的字节长度，可以用该值来判断组合索引是否全用上了；</strong></p>
+<p>计算：如一张utf8(一个字符3个字节)表中name char（20）是索引，那么key_len为3x20=60，又因为name可以为null（规定用1个字节表示），所以为60+1=61（如果是varchar的话，因为不是定长，系统中非定长用2个字节表示）</p>
+</li>
+<li><p><strong>rows：这次查询所扫描的记录数，该值越少越好</strong></p>
+</li>
+<li><p><strong>filtered：在rows中过略掉的百分比值，即当前结果筛掉了多少rows才得到，该值越大越好</strong></p>
+</li>
+<li><p><strong>extra：额外信息，常见有以下类型(如果同时出现，则表示部分使用了不同的类型)</strong></p>
+<ul>
+<li>use index：进行了覆盖索引查询，即查询了索引就直接找到了结果，没有进行回表操作，性能最好</li>
+<li>use index dondition：表示存储引擎对查询的数据进行的优化</li>
+<li>using where：使用了索引，但进行了回表操作</li>
+<li>using temporary：使用了临时表，原因是根据索引进行条件查询，但又没有使用查询条件中的索引进行分组所导致的，以下操作会可能使用临时表，尽量避免<ul>
+<li>group by</li>
+<li>distinct</li>
+<li>union</li>
+</ul>
+</li>
+<li>using join buffer：表示引擎使用了连接缓存</li>
+<li>using filesort：进行了文件排序(额外排序)，通常伴随order by出现，原因是根据索引进行条件查询，但又没有使用查询条件中的索引进行排序所导致的；还有一种情况就是跨列使用组合索引导致的，如 组合索引(a1,a2,a3,a4)，那么where a1.. and a2 .. and a4 order by a3 不属于跨列，按照最左前缀原则虽然a2到a4跨列导致a4索引实现会进行using where回表之外，a1.. a2 … order by a3 是符合组合索引使用顺序的，但如果where a1.. and a2 order by a4，因为a2到a4跨列，索引失效，而a4又作为排序条件，所以因为没有使用到where中的索引排序而需要额外的using filesort</li>
+</ul>
+</li>
+<li><p><strong>ref：指明当前表所参照的字段；如在关联查询中为null，则<code>可能没有使用到索引</code></strong></p>
+<ul>
+<li>const：表示key依赖的是一个常量</li>
+<li>fucn：表示key依赖的是一个函数返回的值</li>
+</ul>
+</li>
+</ul>
+<h2 id="水平拆分和垂直拆分"><a href="#水平拆分和垂直拆分" class="headerlink" title="水平拆分和垂直拆分"></a>水平拆分和垂直拆分</h2><h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/7.png" alt></p>
+<ul>
+<li>多说一句，有些数据库是支持表分区的（如MySQL），即通过物理拆分将数据存储到不同的物理分区。例如将一个表的数据保存到不同的硬盘上。</li>
+</ul>
+<h3 id="例子-表的水平拆分"><a href="#例子-表的水平拆分" class="headerlink" title="例子 - 表的水平拆分"></a>例子 - 表的水平拆分</h3><h4 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h4><pre><code class="sql">-- 用户表
+create table user(
+    u_id int primary key auto_increment,
+    u_name varchar(10)
+) DEFAULT charset = utf8 ; 
+-- 插入用户数据
+insert into user(u_name) values(&#39;张三&#39;),(&#39;李四&#39;),(&#39;王五&#39;);
+
+-- 用户订单表
+create table uorder(
+    o_id int primary key auto_increment,
+    u_id int,
+    o_desc varchar(100)
+) DEFAULT charset = utf8 ; 
+
+-- 批量插入模拟用订单数据
+-- userid 用户id
+-- produce 订单产品
+-- num 插入数量
+CREATE PROCEDURE pro_insert_data(IN userid INT,IN produce VARCHAR(10), IN num INT)
+BEGIN
+    DECLARE temp INT;
+    SET temp = 1;
+    REPEAT
+        insert into uorder(u_id, o_desc) values(userid, CONCAT(produce,temp));
+        SET temp = temp + 1;
+    UNTIL temp&gt;num END REPEAT;
+END
+
+-- 插入订单数据
+call pro_insert_data(1, &#39;manhua&#39;, 20);
+call pro_insert_data(2, &#39;wanju&#39;, 30);
+call pro_insert_data(3, &#39;fushi&#39;, 30);</code></pre>
+<h4 id="拆分工作"><a href="#拆分工作" class="headerlink" title="拆分工作"></a>拆分工作</h4><p><strong>现在打算将uorder进行拆分，需要明确一下内容：</strong></p>
+<ul>
+<li>这张表关联自user表的u_id，所以拆分和访问必须按照u_id来做分拆策略的关键元素</li>
+<li>那现在因为uorder表中共有80条数据，那我打算将order拆分成两个表uorder0、uorder1，即每张表各存40条</li>
+<li>策略定位 <code>u_id%2</code>，即 u_id%2=1则存存到 uorder1，u_id%2=0则存存到 uorder0</li>
+</ul>
+<p><strong>按照策略将数据转移到分拆表中</strong></p>
+<p><strong>拆分表</strong></p>
+<pre><code class="sql">-- 拆分0表
+create table uorder0(
+    o_id int primary key auto_increment,
+    u_id int,
+    o_desc varchar(100)
+) DEFAULT charset = utf8 ; 
+
+-- 拆分1表
+create table uorder1(
+    o_id int primary key auto_increment,
+    u_id int,
+    o_desc varchar(100)
+) DEFAULT charset = utf8 ; </code></pre>
+<p><strong>提取拆分数据的存储过程</strong></p>
+<pre><code class="sql">CREATE PROCEDURE pro_separate_data(IN num INT)
+BEGIN
+    DECLARE temp INT;
+    DECLARE temp_uid INT;
+    DECLARE temp_odesc VARCHAR(100);
+    DECLARE uid_mod INT;
+
+    SET temp = 1;
+
+    REPEAT
+        select u_id,o_desc into temp_uid, temp_odesc from uorder where o_id = temp;
+        set uid_mod = temp_uid%2;
+            IF uid_mod=0 THEN insert into uorder0(u_id, o_desc) values(temp_uid, temp_odesc);
+            ELSEIF uid_mod=1 THEN  insert into uorder1(u_id, o_desc) values(temp_uid, temp_odesc);
+            END IF;
+        set temp = temp + 1;
+    UNTIL temp&gt;num END REPEAT;
+END</code></pre>
+<p><strong>数据拆分</strong></p>
+<pre><code>call pro_separate_data(80);</code></pre><h4 id="SpringBoot程序"><a href="#SpringBoot程序" class="headerlink" title="SpringBoot程序"></a>SpringBoot程序</h4><p><strong>目录</strong></p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/2.png" alt></p>
+<p><strong>pom</strong></p>
+<pre><code class="xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;org.projectlombok&lt;/groupId&gt;
+  &lt;artifactId&gt;lombok&lt;/artifactId&gt;
+  &lt;version&gt;1.18.6&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;mysql&lt;/groupId&gt;
+  &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
+  &lt;version&gt;5.1.46&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+  &lt;version&gt;2.1.4.RELEASE&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+  &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;</code></pre>
+<p><strong>实体</strong></p>
+<pre><code class="java">@Data
+@Entity
+@Table(name = &quot;uorder0&quot;)
+public class Order0 {
+
+    @Id
+    private Integer oId;
+    @Column(name=&quot;u_id&quot;)
+    private Integer uId;
+    @Column(name=&quot;o_desc&quot;)
+    private String oDesc;
+}</code></pre>
+<pre><code class="java">@Data
+@Entity
+@Table(name = &quot;uorder1&quot;)
+public class Order1 {
+
+    @Id
+    private Integer oId;
+    @Column(name=&quot;u_id&quot;)
+    private Integer uId;
+    @Column(name=&quot;o_desc&quot;)
+    private String oDesc;
+}</code></pre>
+<p><strong>jpa</strong></p>
+<pre><code class="java">public interface OrderRepository0 extends JpaRepository&lt;Order0, Integer&gt; {
+    List&lt;Order0&gt; findByUId(int userId);
+}</code></pre>
+<pre><code class="java">public interface OrderRepository1 extends JpaRepository&lt;Order1, Integer&gt; {
+    List&lt;Order1&gt; findByUId(int userId);
+}</code></pre>
+<p><strong>service</strong></p>
+<pre><code class="java">@Service
+public class OrderService {
+
+    @Autowired
+    private OrderRepository0 repository0;
+
+    @Autowired
+    private OrderRepository1 repository1;
+
+    public List&lt;Order0&gt; findByUId0(int userId){
+        return repository0.findByUId(userId);
+    }
+
+    public List&lt;Order1&gt; findByUId1(int userId){
+        return repository1.findByUId(userId);
+    }
+}</code></pre>
+<p><strong>单元测试</strong></p>
+<pre><code class="java">@RunWith(SpringRunner.class)
+@SpringBootTest
+public class DbtestApplicationTests {
+
+    @Autowired
+    private OrderService service;
+
+    @Test
+    public void test() {
+
+          // 模拟查找出user的id
+        int userId = 2;
+
+          // 进行取模策略计算
+          // int userIdMod = userId.hashCode() % 2;
+          int userIdMod = userId % 2;
+
+
+        if (userIdMod == 0) {
+            service.findByUId0(userId).forEach( item -&gt; System.out.println(item));
+
+        } else if (userIdMod == 1) {
+            service.findByUId1(userId).forEach( item -&gt; System.out.println(item));
+
+        } else {
+            throw new RuntimeException(&quot;处理失败&quot;);
+        }
+    }
+}</code></pre>
+<p><strong>输出</strong></p>
+<pre><code class="java">Order0(oId=1, uId=2, oDesc=wanju1)
+Order0(oId=2, uId=2, oDesc=wanju2)
+Order0(oId=3, uId=2, oDesc=wanju3)
+Order0(oId=4, uId=2, oDesc=wanju4)
+Order0(oId=5, uId=2, oDesc=wanju5)
+Order0(oId=6, uId=2, oDesc=wanju6)
+Order0(oId=7, uId=2, oDesc=wanju7)
+Order0(oId=8, uId=2, oDesc=wanju8)
+Order0(oId=9, uId=2, oDesc=wanju9)
+Order0(oId=10, uId=2, oDesc=wanju10)
+Order0(oId=11, uId=2, oDesc=wanju11)
+Order0(oId=12, uId=2, oDesc=wanju12)
+Order0(oId=13, uId=2, oDesc=wanju13)
+Order0(oId=14, uId=2, oDesc=wanju14)
+Order0(oId=15, uId=2, oDesc=wanju15)
+Order0(oId=16, uId=2, oDesc=wanju16)
+Order0(oId=17, uId=2, oDesc=wanju17)
+Order0(oId=18, uId=2, oDesc=wanju18)
+Order0(oId=19, uId=2, oDesc=wanju19)
+Order0(oId=20, uId=2, oDesc=wanju20)
+Order0(oId=21, uId=2, oDesc=wanju21)
+Order0(oId=22, uId=2, oDesc=wanju22)
+Order0(oId=23, uId=2, oDesc=wanju23)
+Order0(oId=24, uId=2, oDesc=wanju24)
+Order0(oId=25, uId=2, oDesc=wanju25)
+Order0(oId=26, uId=2, oDesc=wanju26)
+Order0(oId=27, uId=2, oDesc=wanju27)
+Order0(oId=28, uId=2, oDesc=wanju28)
+Order0(oId=29, uId=2, oDesc=wanju29)
+Order0(oId=30, uId=2, oDesc=wanju30)</code></pre>
+<h3 id="例子-表分区"><a href="#例子-表分区" class="headerlink" title="例子 - 表分区"></a>例子 - 表分区</h3><h4 id="range分区（常用）"><a href="#range分区（常用）" class="headerlink" title="range分区（常用）"></a>range分区（常用）</h4><p>定义分区</p>
+<pre><code class="sql">CREATE TABLE person (
+    p_id int not null,
+    p_name varchar(30),
+        store_id int not null
+)
+PARTITION by RANGE (store_id) (
+    PARTITION p0 VALUES less than (1000),
+    PARTITION p1 VALUES less than (5000),
+    PARTITION p2 VALUES less than (10000),
+    PARTITION p3 VALUES less than MAXVALUE
+);</code></pre>
+<p>插入数据</p>
+<pre><code class="sql">insert into person(p_id, p_name, store_id) values(1, &#39;test&#39;, 5);
+insert into person(p_id, p_name, store_id) values(2, &#39;test&#39;, 5555);
+insert into person(p_id, p_name, store_id) values(3, &#39;test&#39;, 9999);
+insert into person(p_id, p_name, store_id) values(4, &#39;test&#39;, 11111);</code></pre>
+<p>查看分区信息</p>
+<pre><code class="sql">SELECT PARTITION_NAME,TABLE_ROWS FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = &#39;person&#39;;</code></pre>
+<pre><code>p0    1
+p1    0
+p2    2
+p3    1</code></pre><p>增加分区</p>
+<pre><code class="sql">ALTER TABLE person ADD PARTITION (PARTITION p5 VALUES LESS THAN (20000)) ;</code></pre>
+<p>删除分区</p>
+<pre><code class="sql">ALTER TABLE person DROP PARTITION p5 ;</code></pre>
+<p>查看详细情况</p>
+<pre><code class="sql">SELECT * FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = &#39;person&#39;</code></pre>
+<h4 id="list分区"><a href="#list分区" class="headerlink" title="list分区"></a>list分区</h4><p>定义分区</p>
+<pre><code class="sql">CREATE TABLE person (
+    p_id int not null,
+    p_name varchar(30),
+    store_id int not null
+)
+PARTITION by list (store_id) (
+    PARTITION p0 VALUES in (1,3,5,7,9),
+    PARTITION p1 VALUES in (2,4,6,8,10)
+) ;</code></pre>
+<p>插入数据</p>
+<pre><code class="sql">insert into person(p_id, p_name, store_id) values(1, &#39;test&#39;, 2);
+insert into person(p_id, p_name, store_id) values(2, &#39;test&#39;, 4);
+insert into person(p_id, p_name, store_id) values(3, &#39;test&#39;, 3);
+insert into person(p_id, p_name, store_id) values(4, &#39;test&#39;, 5);</code></pre>
+<p>查看数据</p>
+<pre><code class="sql">SELECT PARTITION_NAME,TABLE_ROWS FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = &#39;person&#39;;</code></pre>
+<pre><code>p0    2
+p1    2</code></pre><h4 id="hash分区"><a href="#hash分区" class="headerlink" title="hash分区"></a>hash分区</h4><p>定义分区</p>
+<pre><code class="sql">CREATE TABLE person (
+    p_id int not null,
+    p_name varchar(30),
+    store_id int not null
+)
+PARTITION by HASH (store_id)
+PARTITIONS 4 ;</code></pre>
+<p>插入数据</p>
+<pre><code class="sql">insert into person(p_id, p_name, store_id) values(1, &#39;test&#39;, 2);
+insert into person(p_id, p_name, store_id) values(2, &#39;test&#39;, 4);
+insert into person(p_id, p_name, store_id) values(3, &#39;test&#39;, 3);
+insert into person(p_id, p_name, store_id) values(4, &#39;test&#39;, 5);</code></pre>
+<p>查看数据</p>
+<pre><code class="sql">SELECT PARTITION_NAME,TABLE_ROWS FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = &#39;person&#39;;</code></pre>
+<pre><code>p0    1
+p1    1
+p2    1
+p3    1</code></pre><h4 id="ksy分区"><a href="#ksy分区" class="headerlink" title="ksy分区"></a>ksy分区</h4><p>定义分区</p>
+<pre><code class="sql">CREATE TABLE person (
+    p_id int not null,
+    p_name varchar(30),
+    store_id int not null
+)
+PARTITION by LINEAR KEY (store_id)
+PARTITIONS 2 ; </code></pre>
+<p>插入数据</p>
+<pre><code class="sql">insert into person(p_id, p_name, store_id) values(1, &#39;test&#39;, 2);
+insert into person(p_id, p_name, store_id) values(2, &#39;test&#39;, 4);
+insert into person(p_id, p_name, store_id) values(3, &#39;test&#39;, 3);
+insert into person(p_id, p_name, store_id) values(4, &#39;test&#39;, 5);</code></pre>
+<p>查看数据</p>
+<pre><code class="sql">SELECT PARTITION_NAME,TABLE_ROWS FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = &#39;person&#39;;</code></pre>
+<pre><code>p0    2
+p1    2</code></pre><h2 id="MySQL复制"><a href="#MySQL复制" class="headerlink" title="MySQL复制"></a>MySQL复制</h2><h3 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h3><ul>
+<li><p>指的是将一个数据库（主库）上的数据复制到另一个数据库（从库）中</p>
+</li>
+<li><p>默认情况下复制是异步的</p>
+</li>
+<li><p>根据配置可以选择性复制某个数据库或者表</p>
+</li>
+</ul>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/6.png" alt></p>
+<h3 id="复制基本原理"><a href="#复制基本原理" class="headerlink" title="复制基本原理"></a>复制基本原理</h3><p>以一主一从为例子，如下图：</p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/3.png" alt></p>
+<ol>
+<li>首先从库会创建一条IO线程去读取主库的二进制日志binlog</li>
+<li>主库发现从库的连接后会创建一条新的线程来处理从库的复制请求<ul>
+<li>首先会向本地的binlog事件提供从库的信息</li>
+<li>告知从库已经准备好复制工作</li>
+</ul>
+</li>
+<li>从库读取binlog并将内容写入中继日志中（复制延迟主要在这里，例如网络慢）</li>
+<li>从库启动SQL线程将中继日志的内容入读库中</li>
+</ol>
+<p>可以看出MySQL的复制并非直接传输数据而是复制binlog，这是因为binlog中记录了所有修改数据库的SQL操作</p>
+<h3 id="主从复制配置"><a href="#主从复制配置" class="headerlink" title="主从复制配置"></a>主从复制配置</h3><h4 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h4><ol>
+<li>在主库中开启二进制日志（这是复制的大前提）</li>
+<li>在主库中创建一个专门用来做复制操作的用户账号</li>
+<li>设置从库的唯一id（server_id）</li>
+<li>在slave中远程备份master</li>
+<li>在slave中恢复从master备份的数据</li>
+<li>使用<code>show master status</code>查看主库状态</li>
+<li>在slave中执行 <code>change master to</code> 命令指向主库（根据第4的信息配置）</li>
+</ol>
+<h4 id="配置案例"><a href="#配置案例" class="headerlink" title="配置案例"></a>配置案例</h4><blockquote>
+<p>为了方便模拟，当前例子会在docker容器中进行，使用的是 mysql5.7 镜像</p>
+</blockquote>
+<p><strong>1. 启动MySQL容器</strong></p>
+<pre><code class="bash">主库
+docker run --name mysql57-master --expose 3306 -p 3307:3306 --privileged=true -v /Users/tandi/DockerMount/mysql57-master/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-master/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9
+
+从库
+docker run --name mysql57-slave --expose 3306 -p 3308:3306 --privileged=true -v /Users/tandi/DockerMount/mysql57-slave/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-slave/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9</code></pre>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/4.png" alt></p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/5.png" alt></p>
+<p><strong>2. 开启master的二进制日志记录</strong></p>
+<pre><code class="properties">[mysqld]
+server-id = 1
+log-bin = mysql-bin-log</code></pre>
+<p><strong>3. 在master库中创建复制用户</strong></p>
+<blockquote>
+<p>进入容器：docker exec -it mysql57-master /bin/bash</p>
+</blockquote>
+<pre><code class="bash">mysql&gt; grant replication slave on *.* to &#39;binlog_user&#39;@&#39;%&#39; identified by &#39;123456&#39;;</code></pre>
+<p><strong>4. 在master创建测试用数据</strong></p>
+<pre><code class="sql">create database masterdb;
+use masterdb;
+create table person(pid int, pname varchar(10)) default charset=utf8;
+insert into person(pid,pname) values(1,&#39;张三&#39;),(2,&#39;李四&#39;);</code></pre>
+<p><strong>5. 设置slave的server_id</strong></p>
+<p>不能与主库相同</p>
+<pre><code class="properties">[mysqld]
+server-id = 2
+log-bin = mysql-bin-log</code></pre>
+<p><strong>6. 在slave中远程备份master并恢复到本地</strong></p>
+<blockquote>
+<p>查看master容器ip：docker inspect mysql57-master | grep IPAddress</p>
+<p>进入salve容器：docker exec -it mysql57-slave /bin/bash</p>
+</blockquote>
+<pre><code class="sql">-- 备份master的数据到本地
+mysqldump -h 172.17.0.2 -u root -p123456 --default-character-set=utf8 masterdb &gt; dump.sql
+
+-- 创建对应的数据库schema
+mysql -uroot -p123456
+mysql&gt; create database masterdb;
+mysql&gt; exit
+
+-- 根据备份文件将数据还原到数据库（从）
+mysql -u root -p123456 masterdb &lt; dump.sql</code></pre>
+<p><strong>7. 查看master的状态</strong></p>
+<pre><code class="sql">mysql&gt; show master status;
++----------------------+----------+--------------+------------------+-------------------+
+| File                 | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++----------------------+----------+--------------+------------------+-------------------+
+| mysql-bin-log.000003 | 2664     |              |                  |                   |
++----------------------+----------+--------------+------------------+-------------------+</code></pre>
+<p><strong>8. 配置slave</strong></p>
+<pre><code class="sql">-- 配置从属关系
+mysql&gt; change master to master_host=&#39;172.17.0.2&#39;, master_user=&#39;binlog_user&#39;, master_password=&#39;123456&#39;, master_log_file=&#39;mysql-bin-log.000003&#39;, master_log_pos=2664;
+-- 意思是复制mysql-bin-log.000003，从2664开始复制
+
+-- 启动从属关系
+mysql&gt; start slave;</code></pre>
+<p><strong>9. 查看slave的状态看是否配置成功</strong></p>
+<pre><code class="mysql">mysql&gt; show slave status\G
+*************************** 1. 行 ***************************
+Slave_IO_State               : Waiting for master to send event
+Master_Host                  : 172.17.0.2 
+Master_User                  : binlog_user
+Master_Port                  : 3306
+Connect_Retry                : 60
+Master_Log_File              : mysql-bin-log.000003
+Read_Master_Log_Pos          : 1881
+Relay_Log_File               : 5742231876e9-relay-bin.000002
+Relay_Log_Pos                : 606
+Relay_Master_Log_File        : mysql-bin-log.000003
+Slave_IO_Running             : Yes
+Slave_SQL_Running            : Yes</code></pre>
+<h4 id="测试主从关系"><a href="#测试主从关系" class="headerlink" title="测试主从关系"></a>测试主从关系</h4><p>在master中创建一个数据</p>
+<pre><code class="sql">mysql&gt; use masterdb;
+mysql&gt; insert into person(pid, pname) values(100, &#39;测试用户&#39;);</code></pre>
+<p>到slave中查看</p>
+<pre><code class="sql">mysql&gt; use masterdb;
+mysql&gt; select * from person where pid = 100;
++------+--------------+
+| pid  | pname        |
++------+--------------+
+| 100  | 测试用户             |
++------+--------------+</code></pre>
+<h4 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h4><ul>
+<li>应该先备份master数据，如果不进行备份的话就只能同步到在<code>start slave</code>开始在master上参数的修改操作，而不能同步到之前的操作</li>
+<li>从节点在恢复master数据之前创建的数据库和表的schema必须与master上的一致，否则可能会导致同步失败</li>
+<li>同步失败解决参考：<a href="https://blog.csdn.net/xiaoxinla/article/details/7679578" target="_blank" rel="noopener">https://blog.csdn.net/xiaoxinla/article/details/7679578</a></li>
+</ul>
+<h3 id="使用MyCat实现读写分离"><a href="#使用MyCat实现读写分离" class="headerlink" title="使用MyCat实现读写分离"></a>使用MyCat实现读写分离</h3><h4 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h4><p>&emsp;&emsp;通过 MyCat 来代理 master 和 slave 两个数据节点，对于程序而言是无感知的，而程序只需要正常执行sql操作即可。因为数据库中间件可以屏蔽底层数据库架构的复杂性</p>
+<h4 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h4><blockquote>
+<p>MyCat官网：<a href="http://www.mycat.io/" target="_blank" rel="noopener">http://www.mycat.io/</a></p>
+</blockquote>
+<pre><code class="bash">wget http://dl.mycat.io/1.6.7.1/Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz
+tar -zxvf Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz</code></pre>
+<h4 id="模拟环境说明"><a href="#模拟环境说明" class="headerlink" title="模拟环境说明"></a>模拟环境说明</h4><table>
+<thead>
+<tr>
+<th>服务器</th>
+<th>本地机器 ip:port</th>
+<th>docker ip:port</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mysql-master</td>
+<td>127.0.0.1:3307</td>
+<td>172.17.0.2:3306</td>
+</tr>
+<tr>
+<td>mysql-slave</td>
+<td>127.0.0.1:3308</td>
+<td>172.17.0.3:3306</td>
+</tr>
+<tr>
+<td>mycat</td>
+<td>127.0.0.1:8066</td>
+<td></td>
+</tr>
+</tbody></table>
+<h4 id="配置MyCat的读写分离策略"><a href="#配置MyCat的读写分离策略" class="headerlink" title="配置MyCat的读写分离策略"></a>配置MyCat的读写分离策略</h4><p>server.xml</p>
+<pre><code class="xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE mycat:server SYSTEM &quot;server.dtd&quot;&gt;
+&lt;mycat:server xmlns:mycat=&quot;http://io.mycat/&quot;&gt;
+
+    &lt;!-- mycat配置 --&gt;
+    &lt;system&gt;
+        &lt;property name=&quot;nonePasswordLogin&quot;&gt;0&lt;/property&gt;
+        &lt;property name=&quot;useHandshakeV10&quot;&gt;1&lt;/property&gt;
+        &lt;property name=&quot;useSqlStat&quot;&gt;0&lt;/property&gt;
+        &lt;property name=&quot;useGlobleTableCheck&quot;&gt;0&lt;/property&gt; 
+        &lt;property name=&quot;sequnceHandlerType&quot;&gt;2&lt;/property&gt;
+        &lt;property name=&quot;subqueryRelationshipCheck&quot;&gt;false&lt;/property&gt;
+        &lt;property name=&quot;processorBufferPoolType&quot;&gt;0&lt;/property&gt;
+        &lt;property name=&quot;handleDistributedTransactions&quot;&gt;0&lt;/property&gt;
+        &lt;property name=&quot;useOffHeapForMerge&quot;&gt;1&lt;/property&gt;
+    &lt;property name=&quot;memoryPageSize&quot;&gt;64k&lt;/property&gt;
+        &lt;property name=&quot;spillsFileBufferSize&quot;&gt;1k&lt;/property&gt;
+        &lt;property name=&quot;useStreamOutput&quot;&gt;0&lt;/property&gt;
+        &lt;property name=&quot;systemReserveMemorySize&quot;&gt;384m&lt;/property&gt;
+        &lt;property name=&quot;useZKSwitch&quot;&gt;false&lt;/property&gt;
+        &lt;property name=&quot;strictTxIsolation&quot;&gt;false&lt;/property&gt;
+        &lt;property name=&quot;useZKSwitch&quot;&gt;true&lt;/property&gt;
+        &lt;!-- mycat端口 --&gt;
+        &lt;property name=&quot;serverPort&quot;&gt;8066&lt;/property&gt;
+    &lt;/system&gt;
+
+    &lt;!-- mycat用户配置 --&gt;
+    &lt;user name=&quot;mroot&quot; defaultAccount=&quot;true&quot;&gt;
+        &lt;property name=&quot;password&quot;&gt;123456&lt;/property&gt;
+        &lt;property name=&quot;schemas&quot;&gt;mycat_masterdb&lt;/property&gt;
+    &lt;/user&gt;
+    &lt;user name=&quot;muser&quot;&gt;
+        &lt;property name=&quot;password&quot;&gt;123456&lt;/property&gt;
+        &lt;property name=&quot;schemas&quot;&gt;mycat_masterdb&lt;/property&gt;
+        &lt;property name=&quot;readOnly&quot;&gt;true&lt;/property&gt;
+    &lt;/user&gt;
+
+&lt;/mycat:server&gt;</code></pre>
+<p>schema.xml</p>
+<pre><code class="xml">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;!DOCTYPE mycat:schema SYSTEM &quot;schema.dtd&quot;&gt;
+&lt;mycat:schema xmlns:mycat=&quot;http://io.mycat/&quot;&gt;
+
+    &lt;!-- mycat schemas --&gt;
+    &lt;schema name=&quot;mycat_masterdb&quot; checkSQLschema=&quot;false&quot; sqlMaxLimit=&quot;100&quot; dataNode=&quot;dn1&quot; &gt;&lt;/schema&gt;
+
+    &lt;!-- mycat datanodes --&gt;
+    &lt;dataNode name=&quot;dn1&quot; dataHost=&quot;localhost1&quot; database=&quot;masterdb&quot; /&gt;
+
+    &lt;!-- 数据库节点配置 --&gt;
+    &lt;!--
+        balance:
+            0：不用读写分离
+            1：读操作发送到当前writeHost下的readHost和备用writHost
+            2：writeHost和readHost共同分摊读操作
+            3：所有读操作都发送给writeHost下的readHost，比较合适与一主多从
+    --&gt;
+    &lt;dataHost name=&quot;localhost1&quot; maxCon=&quot;1000&quot; minCon=&quot;3&quot; balance=&quot;1&quot; writeType=&quot;0&quot; dbType=&quot;mysql&quot; dbDriver=&quot;native&quot; switchType=&quot;2&quot;  slaveThreshold=&quot;100&quot;&gt;
+
+        &lt;!-- 心跳测试 --&gt;
+        &lt;heartbeat&gt;show slave status&lt;/heartbeat&gt;
+
+        &lt;!-- 写库（master） --&gt;
+        &lt;writeHost host=&quot;mysql57-master&quot; url=&quot;localhost:3307&quot; user=&quot;root&quot; password=&quot;123456&quot; &gt;
+            &lt;!-- 读库（slave） --&gt;
+            &lt;readHost host=&quot;mysql57-slave&quot; url=&quot;localhost:3308&quot; user=&quot;root&quot; password=&quot;123456&quot; /&gt;
+        &lt;/writeHost&gt;
+    &lt;/dataHost&gt;
+
+&lt;/mycat:schema&gt;</code></pre>
+<h4 id="启动MyCat"><a href="#启动MyCat" class="headerlink" title="启动MyCat"></a>启动MyCat</h4><blockquote>
+<p>./bin/mycat stop 停止</p>
+<p>./bin/mycat restart 重启</p>
+<p>./bin/mycat console 打印日志</p>
+</blockquote>
+<pre><code class="bash">./bin/mycat start</code></pre>
+<h4 id="SpringBoot主要代码"><a href="#SpringBoot主要代码" class="headerlink" title="SpringBoot主要代码"></a>SpringBoot主要代码</h4><p><strong>JpaTrasactionConfig</strong></p>
+<pre><code class="java">@Configuration
+@EnableJpaRepositories(basePackages = &quot;com.td.dbtest.jpa&quot;, enableDefaultTransactions = false)
+public class JpaTransactionConfig {
+
+    /**
+     * Jpa默认的事务管理对读操作添加了readOnly=true事务
+     * 而MyCat只要是处于事务的sql都会走write库，所以需要修改参数 enableDefaultTransactions = false
+     * 除此之外，还可以在sql前添加 /*balance*\/ 来解决
+     */
+}</code></pre>
+<p><strong>service</strong></p>
+<pre><code class="java">@Service
+public class PersonService {
+
+    @Autowired
+    private PersonRepository repository;
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public List&lt;Person&gt; findAll(){
+        return repository.findAll();
+    }
+
+    @Transactional
+    public void save(Person person) {
+        repository.save(person);
+    }
+}</code></pre>
+<p><strong>配置</strong></p>
+<pre><code class="properties">spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+spring.datasource.url=jdbc:mysql://localhost:8066/mycat_masterdb?useSSL=false
+spring.datasource.username=mroot
+spring.datasource.password=123456
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true</code></pre>
+<p><strong>测试</strong></p>
+<pre><code class="java">@RunWith(SpringRunner.class)
+@SpringBootTest
+public class DbtestApplicationTests {
+
+    @Autowired
+    private PersonService service;
+
+    @Test
+    public void findTest() {
+        service.findAll().forEach( item -&gt; System.out.println(item) );
+    }
+
+    @Test
+    public void saveTest() {
+        Person person = new Person();
+        person.setPId(10001);
+        person.setPName(&quot;batman&quot;);
+        service.save(person);
+    }
+}</code></pre>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/">
+      MySQL优化入门
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('MySQL优化入门'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用数据库优化手段"><span class="toc-text">常用数据库优化手段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#执行计划"><span class="toc-text">执行计划</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么？"><span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何看执行计划"><span class="toc-text">如何看执行计划</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#了解执行计划"><span class="toc-text">了解执行计划</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#水平拆分和垂直拆分"><span class="toc-text">水平拆分和垂直拆分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本概念"><span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例子-表的水平拆分"><span class="toc-text">例子 - 表的水平拆分</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#准备工作"><span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#拆分工作"><span class="toc-text">拆分工作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot程序"><span class="toc-text">SpringBoot程序</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例子-表分区"><span class="toc-text">例子 - 表分区</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#range分区（常用）"><span class="toc-text">range分区（常用）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#list分区"><span class="toc-text">list分区</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#hash分区"><span class="toc-text">hash分区</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ksy分区"><span class="toc-text">ksy分区</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MySQL复制"><span class="toc-text">MySQL复制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么"><span class="toc-text">是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复制基本原理"><span class="toc-text">复制基本原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主从复制配置"><span class="toc-text">主从复制配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本步骤"><span class="toc-text">基本步骤</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置案例"><span class="toc-text">配置案例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#测试主从关系"><span class="toc-text">测试主从关系</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#注意事项"><span class="toc-text">注意事项</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用MyCat实现读写分离"><span class="toc-text">使用MyCat实现读写分离</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#下载安装"><span class="toc-text">下载安装</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#模拟环境说明"><span class="toc-text">模拟环境说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置MyCat的读写分离策略"><span class="toc-text">配置MyCat的读写分离策略</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#启动MyCat"><span class="toc-text">启动MyCat</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot主要代码"><span class="toc-text">SpringBoot主要代码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

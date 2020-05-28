@@ -1,0 +1,325 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 三十分钟体会AQS与Synchronized的原理与流程-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>三十分钟体会AQS与Synchronized的原理与流程</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2020-05-04 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="闲聊"><a href="#闲聊" class="headerlink" title="闲聊"></a>闲聊</h2><p>&emsp;&emsp;近来发现自己先前写的文章篇幅实在是有些长，不够精简扼要。个人而言不管是看书还是看网络文章，都只喜欢那些干脆利落又不拖泥带水的作品。例如当前章节叫闲聊，用意是赶时间的话尚可跳过，那么看文章的人就可以直奔主题而不用摸索了。除此之外我还发现一些同行的坏习惯，例如写文章复制来复制去没有自己的观点，总喜欢扯些没用的东西导致论点不集中，还有就是喜欢故弄玄虚（极之厌恶），明明很简单的事却习惯性长篇大论，重点是说完也不见让读者觉得有这样的必要。其实我认为，一个人如果对某个知识或者技能掌握得透彻的话，完全是可以将复杂的理论转换为简单通俗的言语再表述出来的，如果不能做到，只能说明是似懂非懂。所以我自己的笔记都是迭代式修改的，并不是写完了就不管了，为的就是不断将以前自己那些长篇大论化为通俗精简的论述，那么再回看的时候就可以少费点劲了。</p>
+<p>&emsp;&emsp;最后给阅读到这篇文章的朋友一些个人建议，就是在有限的时间里我们应该学会筛选。例如在看书这件事情上，千万不要因为觉得自己水平不高就不敢去批评一些作品，其实现在是阿猫阿狗都能够出书的，水平参差不齐，而且有些人写书纯粹是为了表现自己而并非一心做知识分享的，所以如果感到不适就不要浪费时间了。</p>
+<h2 id="Synchronized原理"><a href="#Synchronized原理" class="headerlink" title="Synchronized原理"></a>Synchronized原理</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>&emsp;&emsp;synchronized 是 Java 中相对于 AQS 较早的同步方式，原理是通过 <code>互斥指令</code> 实现的同步。synchronized 操作其实对应着两个互斥指令，分别是代表加锁操作的 <code>lock</code> 指令和代表解锁操作的 <code>unlock</code>  指令，但需要注意的是这两个指令在 JVM 字节码中有另外的表述方式，例如用 <code>monitorenter</code> 代表 lock 指令，用 <code>monitorexit</code> 代表 unlock 指令。</p>
+<p>&emsp;&emsp;在 JDK 1.6 之前 synchronized 被称为重量级锁。它<code>重</code>的表现在于一旦竞争锁失败线程将会被挂起，当锁被持有者释放时又会被唤醒，而这两个操作均由内核调度来完成。因为涉及到内核调度，所以需要从用户态切换到内核态才能做到，在这期间用户程序相当于处在呆滞状态。在人看来这段时间虽然非常短暂，但是如果发生大量<code>用户态切换到内核态</code>操作，无疑消耗会积小成多从而间接导致用户程序请求处理能力降低，而且线程挂起这个动作并不会释放线程持有的资源，这就是 synchronized  <code>重</code>的地方。但从 JDK 1.6 开始 synchronized 有了较大的改进，例如引入了多项锁优化操作，譬如 <code>锁消除</code>、<code>锁粗化</code>、<code>锁升级</code> 、<code>自旋锁</code> 等等。而我们需要重点明白的就是，这些优化操作的目标全都是为了减少(用户态切换到内核态)线程挂起唤醒而做的。</p>
+<h3 id="锁优化"><a href="#锁优化" class="headerlink" title="锁优化"></a>锁优化</h3><h4 id="锁消除"><a href="#锁消除" class="headerlink" title="锁消除"></a>锁消除</h4><p>&emsp;&emsp;指的是经分析得知虽然代码片段加了 synchronized 同步但是真实运行情况并不会发生并发操作，这时去掉 synchronized 的过程就称为锁消除。例如：</p>
+<pre><code class="java">public String concatString(String s1, String s2, String s3) {
+    return s1 + s2 + s3;
+}</code></pre>
+<p>以上操作在 JDK 1.6 之前会在(javac)前端编译优化为 StringBuffer ，而在 JDK 1.6 开始被优化为 StringBuilder。两者的区别在于前者操作是同步的，其方法都被 synchronized 修饰，而后者不是。</p>
+<h4 id="锁粗化"><a href="#锁粗化" class="headerlink" title="锁粗化"></a>锁粗化</h4><p>&emsp;&emsp;锁粗化和锁消除类似，指的是经过分析后发现连续的代码片段中发生重复加锁操作后将 synchronized 提升范围的过程。例如：</p>
+<pre><code class="java">StringBuffer sf = new StringBuffer();
+sf.append(s1);
+sf.append(s2);
+sf.append(s3);</code></pre>
+<p>上面已经提到过，StringBuilder 的方法是同步的，这时会提升 synchronized 代码块范围而不会为每个append方法加锁，伪代码如下</p>
+<pre><code class="java">StringBuffer sf = new StringBuffer();
+synchronized (sf) {
+    sf.append(s1);
+    sf.append(s2);
+    sf.append(s3);
+}</code></pre>
+<h4 id="自旋锁"><a href="#自旋锁" class="headerlink" title="自旋锁"></a>自旋锁</h4><p>&emsp;&emsp;自旋通俗点说其实就是循环的意思，既循环尝试获取锁的操作就叫自旋锁。该功能其实在 JDK 1.4 就已经引入了。其主要的目的就是为了降低线程被内核挂起的几率。但这种理论是建立在持锁线程在获取到锁后会在短时间内释放锁资源的基础上说才行得通的。换句话来说，就是如果线程执行任务所需要的时间较长，就会导致其它申请锁的线程不停地自旋从而导致 CPU 使用率极速上升，同样会影响用户程序性能，这时反而没有阻塞高效。因此通常自旋操作都是有个次数阈值的，既自旋到一定次数后线程还是没能获取到锁资源的话就会挂起。在 JVM 中提供了两个配置项来设置自旋锁，分别是自旋开关<code>-XX:+UseSpinning</code> （默认开启）和阈值设置 <code>-XX:PreBlockSpin</code> （默认10次）。</p>
+<p>&emsp;&emsp;自旋锁在 JDK 1.6 之后得到了改进。优化操作主要针对自旋阈值，为其引入了<code>自适应自旋</code>功能。该功能可以动态调节自旋阈值。例如根据上一次成功获取到锁的自旋次数作为参考值来设置阈值。又或者分析得出自旋成功获得锁的可能性较低时会直接关闭自旋操从而直接进入阻塞操作。</p>
+<h4 id="锁升级"><a href="#锁升级" class="headerlink" title="锁升级"></a>锁升级</h4><p>&emsp;&emsp;锁升级是 JDK 1.6 对 synchronized 最大的优化。默认情况下锁升级分为4个阶段：<code>无锁</code> -&gt; <code>偏向锁</code> -&gt; <code>轻量级锁</code> -&gt; <code>重量级锁(膨胀锁)</code>。其中偏向锁是可以通过 JVM 参数关闭的(-XX:-UseBiasedLocking)。</p>
+<blockquote>
+<p>了解锁升级之前应该先了解对象头</p>
+</blockquote>
+<p>对象头是<code>对象实例</code>结构的组成部分，主要由两部分组成：</p>
+<ul>
+<li>Mark Word：记录 <code>锁标记</code> 、<code>锁偏向模式</code>、<code>实例GC年龄</code></li>
+<li>Class Word：存放指向方法区对象类型实例的指针</li>
+</ul>
+<p>其中 Mark Word 是锁升级的关键，或者说它是 synchronized 同步锁的关键。因为 synchronized <code>锁定的是实例</code> ，准确一些它锁定的是实例对象头的 Mark Word 。synchronized 就是通过修改 Mark Word 信息来实现锁分配的。如下为对象头的基本结构：</p>
+<img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/002.png" style="zoom:80%;">
+
+<p>大致了解对象头之后接下来看看 4 种锁的区别</p>
+<ul>
+<li><code>无锁</code>：锁没有被线程持有，这时 Mark Word 值为<code>[ 对象哈希值 | GC年龄 | 0 | 01 ]</code></li>
+<li><code>偏向锁</code>：<ul>
+<li>偏向的意思是锁偏心于某条线程，这时 JVM 仅需要判断 MarkWord 中的线程标识是否等于当前要获取锁的线程标识（ID值）即可，如果相同则无需进行同步操作，这时效率相当于无锁状态（可以看到无锁和偏向锁的锁标记是一样的，都是01，既 JVM 对两者的处理方式大致相同）</li>
+<li>偏向锁的目的是消除在没用锁竞争的情况下的同步互斥量</li>
+<li>当偏向锁出现锁竞争时，就会升级为轻量级锁</li>
+<li>偏向锁 Mark Word 值为 <code>[ JavaTheadId | epoch | GC年龄| 0 | 01 ]</code></li>
+</ul>
+</li>
+<li><code>轻量级锁</code>：<ul>
+<li>轻量级锁和偏向锁较为类似，两者都是为了消除在没有锁竞争时的同步互斥量的。区别之处是轻量级锁采用的是 CAS自旋，而偏向锁则只需判断线程标识即可</li>
+<li>当轻量级锁出现锁竞争时，就会升级为重量级锁。该过程称之为锁膨胀，因此重量级锁又叫膨胀锁</li>
+<li>轻量级锁 Mark Word 值为 <code>[ ptr | 00 ]</code>，其中 ptr 是持锁线程栈的 Lock Record 指针</li>
+</ul>
+</li>
+<li><code>重量级锁</code>：<ul>
+<li>当轻量级锁自旋次数到达阈值后依然没有获取到锁资源时就会膨胀为重量级锁</li>
+<li>重量级锁在介绍 synchronized 时已经说过了，其实就是 JDK 1.5 的模样，既当线程竞争锁失败会被挂起</li>
+<li>重量级锁 Mark Word 值为 <code>[ ptr | 10 ]</code></li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>轻量级锁加锁过程</p>
+</blockquote>
+<p>偏向锁加锁过程其实就是通过 CAS 操作将 Mark Word 信息修改为 ptr 指向。</p>
+<p>以下为轻量级锁的加锁过程：</p>
+<img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/003.png" style="zoom:80%;">
+
+
+
+<blockquote>
+<p>4种锁的升级过程</p>
+</blockquote>
+<p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/004.png" alt></p>
+<h3 id="指令源码"><a href="#指令源码" class="headerlink" title="指令源码"></a>指令源码</h3><blockquote>
+<p>使用 <code>javap -v</code>命令观察 synchronized 字节码</p>
+</blockquote>
+<img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/001.png" style="zoom:80%;">
+
+<p>可以从上图中观察到，synchronized 确实采用 monitorenter 和 monitorexit 两条字节码指令完成同步锁功能的。</p>
+<blockquote>
+<p>到 OpenJDK(12) 中查看  monitorenter 和  monitorexit 两条指令的实现（源码位于 objectMonitor.cpp ）</p>
+</blockquote>
+<img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/005.png" style="zoom: 50%;">
+
+
+
+<h2 id="抽象队列同步器（AQS）"><a href="#抽象队列同步器（AQS）" class="headerlink" title="抽象队列同步器（AQS）"></a>抽象队列同步器（AQS）</h2><h3 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h3><p>&emsp;&emsp;在 JDK 1.5 这个版本中除了新增了 Instrumentation API 之外还加入了大神<code>道格利(Doug Lea)</code> 编写的 JSR-166（一整个 juc 包），该包中除了 CAS 操作之外最为重要的就是 AbstractQueuedSynchronizer。准确点来说 AQS 其实并不是和 Synchronized 对等的，因为 AQS 只负责提供抽象的同步方案(围绕着关键字段state进行操作)，而实现者只需要继承 AQS 并复写其模板方法即可实现特定的同步功能。再通俗点说 Lock 只是 AQS 的一种体现，例如在 juc 包中除了 Lock 之外还有诸如 CountDownLatch 、Semaphore 这样的同步工具类。</p>
+<p>&emsp;&emsp;因为当前文章是围绕锁展开的，所以接下来会通过 Lock 源码作为开端对 AQS 进行浅析。但在此之前还需要了解一些事。就是 juc 包下的工具类基本上很少使用 synchronized ，而大多数使用的是 CAS，可以说 CAS 支撑着整个 juc 包也不为过。CAS 中文意思叫<code>比较和交换</code>，其实就是乐观锁操作，只不过它是一条原子 CPU 指令，所以它是天然同步的。在 Java 中有一个较为低级别的类叫 Unsafe ，CAS 操作都是通过该类实现了。 除了CAS 之外 Unsafe 还提供线程阻塞和唤醒等操作，这些操作在 juc 中都被大量使用。</p>
+<h3 id="FIFO双向队列"><a href="#FIFO双向队列" class="headerlink" title="FIFO双向队列"></a>FIFO双向队列</h3><blockquote>
+<p>同步队列 和 等待队列 结构</p>
+</blockquote>
+<p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/008.png" alt></p>
+<blockquote>
+<p>AQS 节点源码</p>
+</blockquote>
+<img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/009.png" style="zoom: 50%;">
+
+<h3 id="源码浅析"><a href="#源码浅析" class="headerlink" title="源码浅析"></a>源码浅析</h3><blockquote>
+<p>加锁 和 解锁</p>
+</blockquote>
+<p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/006.png" alt></p>
+<blockquote>
+<p>条件等待</p>
+</blockquote>
+<p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/007.png" alt></p>
+<h2 id="Lock和Synchronized简单比对一下"><a href="#Lock和Synchronized简单比对一下" class="headerlink" title="Lock和Synchronized简单比对一下"></a>Lock和Synchronized简单比对一下</h2><blockquote>
+<p>特性区别</p>
+</blockquote>
+<p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/010.png" alt></p>
+<blockquote>
+<p>性能对比</p>
+</blockquote>
+<ul>
+<li>自从 JDK 1.6 以后对 synchronized 进行了优化以后，其实两则性能上区别不大。网上也有一些人做了些测试报告，但是个人认为只能作为一个参考，因为场景不同的话性能是有所出入的</li>
+<li>除此之外，还可以在 JDK 1.8 的 ConcurrentHashMap 中体会到，例如它摒弃了段锁改用 CAS + Synchronized 而不是 Lock ，所以可以间接得出结论就是 Synchronized 的性能其实并不差，因此无需过于纠结两者的性能</li>
+</ul>
+<blockquote>
+<p>如何选择</p>
+</blockquote>
+<ul>
+<li>Lock 也被称为自旋锁，它通过自旋操作来避免线程的挂起唤醒操作。而采用自旋需要特别注意的是，在较大的并发场景中如果存在大量自旋操作的话，就会导致 CPU 使用率急速增长从而影响用户程序性能。虽然 synchronized 中也存在自旋操作，但它的自旋次数是有阈值的，而 Lock 并没有，因此 Lock 的自旋消耗要比 synchronized 大，所以如果线程执行任务的时间较长的话建议采用 synchronized 而不是 Lock</li>
+<li>Lock 灵活性较高和粒度也相对较低，所以如果业务有特别需要，例如读读并行就可以使用Lock的读写锁功能来细化锁的粒度来提高并发性能</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>《深入理解Java虚拟机》</li>
+<li><a href="https://weekly-geekly.github.io/articles/447848/index.html" target="_blank" rel="noopener">Java object header</a></li>
+<li><a href="https://wiki.openjdk.java.net/display/HotSpot/Synchronization" target="_blank" rel="noopener">Synchronization and Object Locking</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/">
+      三十分钟体会AQS与Synchronized的原理与流程
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('三十分钟体会AQS与Synchronized的原理与流程'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#闲聊"><span class="toc-text">闲聊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Synchronized原理"><span class="toc-text">Synchronized原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁优化"><span class="toc-text">锁优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#锁消除"><span class="toc-text">锁消除</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁粗化"><span class="toc-text">锁粗化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自旋锁"><span class="toc-text">自旋锁</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁升级"><span class="toc-text">锁升级</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#指令源码"><span class="toc-text">指令源码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#抽象队列同步器（AQS）"><span class="toc-text">抽象队列同步器（AQS）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介-1"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FIFO双向队列"><span class="toc-text">FIFO双向队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Lock和Synchronized简单比对一下"><span class="toc-text">Lock和Synchronized简单比对一下</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>

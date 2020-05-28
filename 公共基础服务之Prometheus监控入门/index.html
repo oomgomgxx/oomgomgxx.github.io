@@ -1,0 +1,462 @@
+<!-- 主题布局 -->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <!-- 编码方式 -->
+  <meta charset="UTF-8">
+  <!-- 浏览器页签图标 -->
+  <link rel="icon" href="/img/favicon.ico">
+  <!-- 标题 -->
+  <title> 公共基础服务之Prometheus监控入门-学然后知不足 </title>
+
+  <!-- 自适应 -->
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+
+  <!-- 网站 seo 相关 -->
+  
+    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
+  
+  
+    <meta name="description" content="学然后知不足" />
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- baidu seo -->
+  <!-- 暂不支持 -->
+  <meta name="baidu-site-verification" content="Kfp083TiDg" />
+    
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+  <!-- 内部脚本 -->
+  
+    
+      <script src="/js/jquery.min.js"></script>
+    
+      <script src="/js/main.js"></script>
+    
+      <script src="/js/md5.min.js"></script>
+    
+      <script src="/js/highlight.min.js"></script>
+    
+  
+
+  <!-- 内部样式文件 -->
+  
+    
+      <link rel="stylesheet" href="/css/main.css">
+    
+      <link rel="stylesheet" href="/css/github.min.css">
+    
+  
+
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- gitalk -->
+  <link rel="stylesheet" href="/gitalk/gitalk.css" />
+  <script src="/gitalk/gitalk.min.js"></script>
+  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
+
+  <!-- fancybox support -->
+  
+    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+    <script type="text/javascript" src="/js/wrapImage.js"></script>
+  
+<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+<body>
+
+  <div id="container">
+    <!-- container start -->
+
+    <!-- 小屏导航栏 -->
+    <nav id="min-menu-outer">
+      <h3>
+        <a href="/">学然后知不足</a>
+      </h3>
+      <span id="min-menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a href="/about">关于博客</a>
+        
+      </span>
+    </nav>
+
+    <!-- 大屏导航栏 -->
+    <nav id="menu-outer">
+      <div id="menu-title" style="text-align: right; padding-right: 18px">
+        <h3>
+          <a href="/">学然后知不足</a>
+        </h3>
+      </div>
+      <div id="menu-inner">
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/">最新文章</a>
+        
+          <!-- 导航栏目录 -->
+          <a id="menu-a" href="/about">关于博客</a>
+        
+      </div>
+      <div id="menu-footer">Developed by TanDi.</div>
+    </nav>
+
+    <!-- 文章内容 -->
+    <div id="content-outer">
+      <div id="content-inner">
+        <!-- 文章页面 -->
+<article id="post">
+
+  <!-- 文章标题 -->
+  <h1>公共基础服务之Prometheus监控入门</h1>
+
+  <!-- 文章元信息 -->
+  <span class="post-metadata">
+    <!-- 文章日期 -->
+    <i class="fa fa-calendar"></i>&thinsp;2019-02-21 &ensp;
+    <!-- 文章作者 -->
+    作者: TanDi
+  </span>
+
+  <hr/>
+
+  <!-- 文章内容 -->
+  <h2 id="应用的监控方式有那些？"><a href="#应用的监控方式有那些？" class="headerlink" title="应用的监控方式有那些？"></a>应用的监控方式有那些？</h2><p>Logging：系统日志，最常用的监控手段，特点是结构化、离散、文本形式</p>
+<p>Tracing：请求链追踪，监控微服务架构下请求在多个节点之间的调用流程</p>
+<p>Metrics：度量/指标，即单位时间内应用系统的指标，支持聚合运算、图形展示</p>
+<p>Healthchecks：健康检查，专门用于检查应用功能是否可用（健康）的endpoint</p>
+<h2 id="简单了解一下时间序列数据库"><a href="#简单了解一下时间序列数据库" class="headerlink" title="简单了解一下时间序列数据库"></a>简单了解一下时间序列数据库</h2><ul>
+<li>时间序列数据，通俗点说就是某个时间点所产生的数据</li>
+<li>时间序列数据库指的就是用于保存一系列有序的时间点指标数据的数据库</li>
+<li>比较流行的时间序列数据库有如<code>InfluxDB</code>、RRDtool、Kdb+、<code>Prometheus</code></li>
+</ul>
+<h2 id="关于Prometheus"><a href="#关于Prometheus" class="headerlink" title="关于Prometheus"></a>关于Prometheus</h2><ul>
+<li>一款开源监控(Metrics)工具，本质是 golang 实现的一款时间序列数据库（TSDB）</li>
+<li>支持多维度监控（标签，既即使Metrics一样但标签不同的话也是不同的时间序列数据）和Metrics的拉模式</li>
+<li>支持告警功能</li>
+<li>社区活跃，有各种的exporters（相当与agent，作用是无需修改被监控系统的情况下获取起Metrics信息）</li>
+<li>单机性能优异，每秒可消费百万级别的时间序列和上千的targets（监控目标）</li>
+</ul>
+<h2 id="Prometheus架构"><a href="#Prometheus架构" class="headerlink" title="Prometheus架构"></a>Prometheus架构</h2><blockquote>
+<p>以下为官网给出的架构图</p>
+</blockquote>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/001.png" alt></p>
+<p>从架构图中可以简单了解到如下内容：</p>
+<ul>
+<li>支持 pull 形式获取 metrics 数据，如拉取 exporters、pushgateway</li>
+<li>除了支持将监控目标配置到本地之外还支持服务发现的形式来动态获取监控目标。如（DNS、Consul、K8s）</li>
+<li>支持当某个指标到得设定阀值时将告警信息推送给Alertmanager（主要作用是将告警信息分类去重以及转发到特定的目标，如email、钉钉）</li>
+<li>支持使用 PromQL 来查询 Prometheus 所监控的系统应用的指标</li>
+<li>支持不同的UI界面，如自带的 Prometheus web UI 还有比较流行的 Grafana 并支持 API 形式获取监控指标</li>
+<li>通过 TSDB 将时间序列数据持久化到磁盘上</li>
+</ul>
+<h2 id="Prometheus支持的Metrics种类"><a href="#Prometheus支持的Metrics种类" class="headerlink" title="Prometheus支持的Metrics种类"></a>Prometheus支持的Metrics种类</h2><ul>
+<li><strong>Counter(计数器)：</strong><ul>
+<li>始终增加</li>
+<li>http请求数、浏览数等等</li>
+</ul>
+</li>
+<li><strong>Gauge(测量仪)</strong><ul>
+<li>当前值的一个快照测量，可增加可减少</li>
+<li>磁盘使用率、用户在线人数</li>
+</ul>
+</li>
+<li><strong>Histogram(直方图/柱状图)</strong><ul>
+<li>通过分桶（bucket）方式统计样本</li>
+<li>分析数据分布情况</li>
+</ul>
+</li>
+<li><strong>Summary(汇总统计)</strong><ul>
+<li>根据样本统计出百分比</li>
+<li>分析数据分布情况</li>
+</ul>
+</li>
+</ul>
+<h2 id="关于metrics和metrics采集方式"><a href="#关于metrics和metrics采集方式" class="headerlink" title="关于metrics和metrics采集方式"></a>关于metrics和metrics采集方式</h2><p><strong>1）metrics说明</strong></p>
+<p>以prometheus的 <code>/metrics</code>下的一个metrics为例子</p>
+<pre><code>prometheus_http_request_duration_seconds_bucket{handler=&quot;/&quot;,le=&quot;0.1&quot;}</code></pre><p>prometheus_http_request_duration_seconds_bucket</p>
+<ul>
+<li>metrics名称</li>
+</ul>
+<p>{handler=”/“,le=”0.1”}：</p>
+<ul>
+<li>其中handler和le在prometheus称之为标签（维度）</li>
+</ul>
+<p><strong>2）metrics采集方式</strong></p>
+<p>prometheus支持两种pull方式：</p>
+<ul>
+<li>直接采集：如SpringBoot中的Actuator或prometheus模块可以直接提供metrics的采集endpoint</li>
+<li>间接采集：如MySQL一样已经成型的产品，可以通过对用的exporters来进行简介采集</li>
+</ul>
+<h2 id="Prometheus搭建"><a href="#Prometheus搭建" class="headerlink" title="Prometheus搭建"></a>Prometheus搭建</h2><p>官网下载地址：<a href="https://prometheus.io/download/" target="_blank" rel="noopener">https://prometheus.io/download/</a>，解压如下：</p>
+<pre><code class="bash">➜  prometheus-2.12.0-rc.0.linux-amd64 ll
+总用量 130M
+drwxr-xr-x 2 tandi tandi 4.0K  8月 15 03:36 console_libraries
+drwxr-xr-x 2 tandi tandi 4.0K  8月 15 03:36 consoles
+drwxr-xr-x 5 tandi tandi 4.0K  8月 18 15:00 data
+-rw-r--r-- 1 tandi tandi  12K  8月 15 03:36 LICENSE
+-rw-r--r-- 1 tandi tandi 2.8K  8月 15 03:36 NOTICE
+-rwxr-xr-x 1 tandi tandi  81M  8月 15 01:44 prometheus
+-rw-r--r-- 1 tandi tandi 1.2K  8月 18 12:55 prometheus.yml
+-rwxr-xr-x 1 tandi tandi  49M  8月 15 01:46 promtool</code></pre>
+<p>prometheus.yml配置文件</p>
+<pre><code class="yml"># 全局参数配置
+global:
+  # 需要注意的是，如果刷新和统计频率过于频繁会对当前机器造成性能问题
+  scrape_interval: 15s # 刷新频率
+  evaluation_interval: 15s # 统计频率
+
+# 告警配置
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+
+# 监控规则
+# Load rules once and periodically evaluate them according to the global &#39;evaluation_interval&#39;.
+rule_files:
+  # - &quot;first_rules.yml&quot;
+  # - &quot;second_rules.yml&quot;
+
+# 监控目标配置
+scrape_configs:
+  # The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.
+  - job_name: &#39;prometheus&#39;
+      # 默认访问目标uri&#39;/metrics&#39;
+    # metrics_path defaults to &#39;/metrics&#39;
+    # 默认使用协议 &#39;http&#39;
+    # scheme defaults to &#39;http&#39;.
+    static_configs:
+    - targets: [&#39;localhost:9090&#39;]</code></pre>
+<p>启动prometheus，访问 localhost:9090</p>
+<pre><code class="bash">./prometheus</code></pre>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/002.png" alt></p>
+<h2 id="监控例子-MySQL监控"><a href="#监控例子-MySQL监控" class="headerlink" title="监控例子 - MySQL监控"></a>监控例子 - MySQL监控</h2><p>&emsp;&emsp;在上面已经提到过，Prometheus 支持两种 metrics 采集方式：直接采集、间接采集。因为 MySQL 是一个成型的产品，所以这里采用间接采集 metrics，即需要使用 exporter。</p>
+<p>MySQL 的 exporter 下载地址：<a href="https://github.com/prometheus/mysqld_exporter/releases" target="_blank" rel="noopener">https://github.com/prometheus/mysqld_exporter/releases</a></p>
+<p><strong>1）解压如下：</strong></p>
+<pre><code class="bash">➜  mysqld_exporter-0.12.1.linux-amd64 ll
+总用量 15M
+-rw-r--r-- 1 tandi tandi 12K  7月 29 20:47 LICENSE
+-rwxr-xr-x 1 tandi tandi 15M  7月 29 20:36 mysqld_exporter
+-rw-r--r-- 1 tandi tandi  65  7月 29 20:47 NOTICE</code></pre>
+<p><strong>2）在 mysqld_exporter 根目录添加用于访问MySQL的配置文件</strong></p>
+<pre><code class="properties">[client]
+# mysql所在ip
+host=0.0.0.0
+# mysql用户密码
+user=root 
+password=123456</code></pre>
+<p><strong>3）启动exporter</strong></p>
+<pre><code class="bash">➜  mysqld_exporter-0.12.1.linux-amd64 ./mysqld_exporter --config.my-cnf=&quot;my.cnf&quot;</code></pre>
+<p>启动成功后会输出如下信息</p>
+<pre><code class="bash">INFO[0000] Starting mysqld_exporter (version=0.12.1, branch=HEAD, revision=48667bf7c3b438b5e93b259f3d17b70a7c9aff96)  source=&quot;mysqld_exporter.go:257&quot;
+INFO[0000] Build context (go=go1.12.7, user=root@0b3e56a7bc0a, date=20190729-12:35:58)  source=&quot;mysqld_exporter.go:258&quot;
+INFO[0000] Enabled scrapers:                             source=&quot;mysqld_exporter.go:269&quot;
+INFO[0000]  --collect.global_status                      source=&quot;mysqld_exporter.go:273&quot;
+INFO[0000]  --collect.global_variables                   source=&quot;mysqld_exporter.go:273&quot;
+INFO[0000]  --collect.slave_status                       source=&quot;mysqld_exporter.go:273&quot;
+INFO[0000]  --collect.info_schema.innodb_cmp             source=&quot;mysqld_exporter.go:273&quot;
+INFO[0000]  --collect.info_schema.innodb_cmpmem          source=&quot;mysqld_exporter.go:273&quot;
+INFO[0000]  --collect.info_schema.query_response_time    source=&quot;mysqld_exporter.go:273&quot;
+INFO[0000] Listening on :9104        </code></pre>
+<p><strong>4）在prometheus配置文件中将mysqld_exporter配置为监控目标</strong></p>
+<pre><code class="yml"># 监控目标配置
+scrape_configs:
+  # The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.
+  - job_name: &#39;prometheus&#39;
+      # 默认访问目标uri&#39;/metrics&#39;
+    # metrics_path defaults to &#39;/metrics&#39;
+    # 默认使用协议 &#39;http&#39;
+    # scheme defaults to &#39;http&#39;.
+    static_configs:
+    - targets: [&#39;localhost:9090&#39;]
+
+  # ########################  MySQL监控 ########################
+  - job_name: &#39;mysql&#39;
+    # scrape_interval: 5s
+    static_configs:
+    # 9104是Exporter端口
+    - targets: [&#39;localhost:9104&#39;]</code></pre>
+<p><strong>5）重启prometheus访问 <a href="http://localhost:9090/targets" target="_blank" rel="noopener">http://localhost:9090/targets</a> 如果mysql为up表示已经配置成功，可通过 <a href="http://localhost:9090/graph" target="_blank" rel="noopener">http://localhost:9090/graph</a> 进行PromQL进行指标查询</strong></p>
+<h2 id="监控例子-Linux"><a href="#监控例子-Linux" class="headerlink" title="监控例子 - Linux"></a>监控例子 - Linux</h2><p>Linux同样是成形产品，所以需要exporter。监控Linux的exporter下载地址：<a href="https://github.com/prometheus/node_exporter/releases" target="_blank" rel="noopener">https://github.com/prometheus/node_exporter/releases</a></p>
+<p><strong>1）解压如下：</strong></p>
+<pre><code class="bash">➜  node_exporter-0.18.1.linux-amd64 ll
+总用量 17M
+-rw-r--r-- 1 tandi tandi 12K  6月  5 00:50 LICENSE
+-rwxr-xr-x 1 tandi tandi 17M  6月  5 00:41 node_exporter
+-rw-r--r-- 1 tandi tandi 463  6月  5 00:50 NOTICE</code></pre>
+<p><strong>2）启动exporter</strong></p>
+<pre><code class="bash">➜  node_exporter-0.18.1.linux-amd64 ./node_exporter</code></pre>
+<p>启动成功会打印如下信息</p>
+<pre><code class="bash">INFO[0000] Starting node_exporter (version=0.18.1, branch=HEAD, revision=3db77732e925c08f675d7404a8c46466b2ece83e)  source=&quot;node_exporter.go:156&quot;
+INFO[0000] Build context (go=go1.12.5, user=root@b50852a1acba, date=20190604-16:41:18)  source=&quot;node_exporter.go:157&quot;
+INFO[0000] Enabled collectors:                           source=&quot;node_exporter.go:97&quot;
+INFO[0000]  - arp                                        source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - bcache                                     source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - bonding                                    source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - conntrack                                  source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - cpu                                        source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - cpufreq                                    source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - diskstats                                  source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - edac                                       source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - entropy                                    source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - filefd                                     source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - filesystem                                 source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - hwmon                                      source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - infiniband                                 source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - ipvs                                       source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - loadavg                                    source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - mdadm                                      source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - meminfo                                    source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - netclass                                   source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - netdev                                     source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - netstat                                    source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - nfs                                        source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - nfsd                                       source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - pressure                                   source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - sockstat                                   source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - stat                                       source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - textfile                                   source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - time                                       source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - timex                                      source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - uname                                      source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - vmstat                                     source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - xfs                                        source=&quot;node_exporter.go:104&quot;
+INFO[0000]  - zfs                                        source=&quot;node_exporter.go:104&quot;
+INFO[0000] Listening on :9100                            source=&quot;node_exporter.go:170&quot;</code></pre>
+<p><strong>3）在prometheus配置文件中将node_exporter配置为监控目标</strong></p>
+<pre><code class="yml"># 监控目标配置
+scrape_configs:
+  - job_name: &#39;prometheus&#39;
+    static_configs:
+    - targets: [&#39;localhost:9090&#39;]
+
+  # MySQL监控
+  - job_name: &#39;mysql&#39;
+    static_configs:
+    - targets: [&#39;localhost:9104&#39;]
+
+  # Linux监控
+  - job_name: &#39;linux&#39;
+    static_configs:
+    - targets: [&#39;localhost:9100&#39;]</code></pre>
+<p><strong>4) 重启prometheus访问 <a href="http://localhost:9090/targets" target="_blank" rel="noopener">http://localhost:9090/targets</a> 如果linux为up表示已经配置成功，可通过 <a href="http://localhost:9090/graph" target="_blank" rel="noopener">http://localhost:9090/graph</a> 进行PromQL进行指标查询</strong></p>
+<h2 id="搭建Dashbord-Grafana"><a href="#搭建Dashbord-Grafana" class="headerlink" title="搭建Dashbord - Grafana"></a>搭建Dashbord - Grafana</h2><p>Grafana 提供更加丰富的图形界面来展示 Prometheus 数据</p>
+<pre><code class="bash">wget https://dl.grafana.com/oss/release/grafana-6.3.3.linux-amd64.tar.gz 
+tar -zxvf grafana-6.3.3.linux-amd64.tar.gz </code></pre>
+<p><strong>1）解压如下：</strong></p>
+<pre><code class="bash">➜  grafana-6.3.3 ll
+总用量 52K
+drwxr-xr-x  2 tandi tandi 4.0K  8月 15 17:34 bin
+drwxr-xr-x  3 tandi tandi 4.0K  8月 18 11:04 conf
+drwxr-xr-x  5 tandi tandi 4.0K  8月 18 15:48 data
+-rw-r--r--  1 tandi tandi  12K  8月 15 17:24 LICENSE
+-rw-r--r--  1 tandi tandi  108  8月 15 17:24 NOTICE.md
+drwxr-xr-x 13 tandi tandi 4.0K  8月 15 17:34 public
+-rw-r--r--  1 tandi tandi 6.0K  8月 15 17:24 README.md
+drwxr-xr-x  9 tandi tandi 4.0K  8月 18 12:05 scripts
+drwxr-xr-x  3 tandi tandi 4.0K  8月 15 17:34 tools
+-rw-r--r--  1 tandi tandi    5  8月 15 17:34 VERSION</code></pre>
+<p>对与 Grafana 默认配置参数使用 sqlite3 来保存，但亦可以通过 conf 文件夹下的配置文件配置成通过 MySQL 来保存。</p>
+<p>*<em>2）启动 Grafana *</em></p>
+<pre><code class="bash">➜  bin ./grafana-server    
+...
+INFO[08-18|12:58:56] HTTP Server Listen                       logger=http.server address=0.0.0.0:3000 protocol=http subUrl= socket=</code></pre>
+<p>访问 localhost:3000 默认帐号密码 <code>admin/admin</code></p>
+<h3 id="配置-Prometheus-的-Dashboard"><a href="#配置-Prometheus-的-Dashboard" class="headerlink" title="配置 Prometheus 的 Dashboard"></a>配置 Prometheus 的 Dashboard</h3><p>添加数据源 Prometheus</p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/003.png" alt></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/004.png" alt></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/005.png" alt></p>
+<p>配置完成后返回主页就会看到对应的 Dashboard 选项，点击进入如下：</p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/006.png" alt></p>
+<h3 id="配置-MySQL-的-Dashboard"><a href="#配置-MySQL-的-Dashboard" class="headerlink" title="配置 MySQL 的 Dashboard"></a>配置 MySQL 的 Dashboard</h3><p>&emsp;&emsp;除了上面手动配置数据源的方式，Grafana 还支持导入 json 来配置 Dashboard。因为已经完成了prometheus监控了 MySQL 的配置，现在只需要导入 json 即可。</p>
+<p>mysql-dashboard 的 json 下载地址：<a href="https://github.com/prometheus/node_exporter/releases" target="_blank" rel="noopener">https://github.com/prometheus/node_exporter/releases</a></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/007.png" alt></p>
+<p>可以看到，这里提供 Prometheus 监控 MySQL 和 MongoBD 后在 Grafana 上使用 Dashboard 的 json 脚本。</p>
+<p><strong>导入json</strong></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/008.png" alt></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/009.png" alt></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/010.png" alt></p>
+<h3 id="配置-Linux-的-Dashboard-手动添加"><a href="#配置-Linux-的-Dashboard-手动添加" class="headerlink" title="配置 Linux 的 Dashboard - 手动添加"></a>配置 Linux 的 Dashboard - 手动添加</h3><p>右上角保存</p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/011.png" alt></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/012.png" alt></p>
+<h2 id="PromSQL"><a href="#PromSQL" class="headerlink" title="PromSQL"></a>PromSQL</h2><p>因为使用比较简单所以建议参考官方文档即可</p>
+<p><a href="https://prometheus.io/docs/prometheus/latest/querying/basics/" target="_blank" rel="noopener">https://prometheus.io/docs/prometheus/latest/querying/basics/</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
+  <!-- 文章原地址信息 -->
+  <div id="article-origin">
+    文章作者: TanDi <br/>
+    文章链接: 
+    <a href="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/">
+      公共基础服务之Prometheus监控入门
+    </a> <br/>
+    版权声明: 转载请注明来自 
+    <a href="https://tandi.pub">
+      https://tandi.pub
+    </a>
+  </div>
+
+  <!-- 其他内容 -->
+
+
+  <!-- Gitalk 评论功能 -->
+  
+    <div id="gitalk-container"></div>
+    <script type="text/javascript">
+      var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ['oomgomgxx'],
+          id: md5('公共基础服务之Prometheus监控入门'),
+          distractionFreeMode: false
+        })
+        gitalk.render('gitalk-container')           
+    </script>
+  
+  
+</article>
+<!-- 分页 -->
+<div id="paginator">
+  
+</div>
+<!-- 文章目录 -->
+<div id="mytoc">
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#应用的监控方式有那些？"><span class="toc-text">应用的监控方式有那些？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#简单了解一下时间序列数据库"><span class="toc-text">简单了解一下时间序列数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于Prometheus"><span class="toc-text">关于Prometheus</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus架构"><span class="toc-text">Prometheus架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus支持的Metrics种类"><span class="toc-text">Prometheus支持的Metrics种类</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于metrics和metrics采集方式"><span class="toc-text">关于metrics和metrics采集方式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus搭建"><span class="toc-text">Prometheus搭建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控例子-MySQL监控"><span class="toc-text">监控例子 - MySQL监控</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控例子-Linux"><span class="toc-text">监控例子 - Linux</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#搭建Dashbord-Grafana"><span class="toc-text">搭建Dashbord - Grafana</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#配置-Prometheus-的-Dashboard"><span class="toc-text">配置 Prometheus 的 Dashboard</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#配置-MySQL-的-Dashboard"><span class="toc-text">配置 MySQL 的 Dashboard</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#配置-Linux-的-Dashboard-手动添加"><span class="toc-text">配置 Linux 的 Dashboard - 手动添加</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PromSQL"><span class="toc-text">PromSQL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+</div>
+
+      </div>
+      <div id="bottom-outer">
+        <div id="bottom-inner">
+          魔鬼藏在细节中
+          <!-- 页脚导航 -->
+          <span>
+            <a id="bottom-totop" href="/">网站首页</a>
+            <a id="bottom-totop" href="#">回到顶部</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- container end -->
+  </div>
+
+<!-- 启动代码块高亮 -->
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+</body>
+</html>
