@@ -91,28 +91,38 @@ $(function(){
     // 记录高度
     var temp_height = 0
 
+    // 缓冲值
+    var buff_size = 20
+    var buff_height = 0
+
     // 页面滑动事件
     $(window).scroll(function(){
         
         // 页面高度
-        var page_height = $(document).height()
+        //var page_height = $(document).height()
+        
         // 页面宽度
         var page_width = $(document).width()
 
         // 显示和隐藏小屏幕导航栏
-        if( page_width < 768){
+        if( page_width < 768 ){
 
             // 当前高度
             var current_height = $(document).scrollTop();
             
-            if (current_height > temp_height){ // 往下滑
+            // 往下滑显示
+            if ( current_height > temp_height ){ 
                 $("#min-menu-outer").slideDown("slow");
-            } else { // 往上滑
+                buff_height = 0
+
+            // 往上滑隐藏
+            } else { 
                 $("#min-menu-outer").slideUp("slow");
+                buff_height = buff_size
             }
 
             // 记录高度
-            temp_height = current_height
+            temp_height = current_height + buff_height
         }
     });
 
