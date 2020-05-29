@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://tandi.pub/"/>
-  <updated>2020-05-26T12:50:16.246Z</updated>
+  <updated>2020-05-29T18:03:05.119Z</updated>
   <id>https://tandi.pub/</id>
   
   <author>
@@ -21,17 +21,18 @@
     <link href="https://tandi.pub/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/"/>
     <id>https://tandi.pub/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/</id>
     <published>2020-05-22T07:47:07.000Z</published>
-    <updated>2020-05-26T12:50:16.246Z</updated>
+    <updated>2020-05-29T18:03:05.119Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;p&gt;前段时间将 IDEA 升级到了 2020 版本，而最近使用发现经常出现卡顿的现象。虽然笔者的机器是15年买的已经有点历史了（CPU双核4线程、8G内存），但也不至于卡成这样，所以打算针对 IDEA 的 JVM 进行一次调优来舒缓一下卡顿感。而个人认为 JVM 调优是一件非常矛盾的事情，因为调优的核心思想就是在有限资源的情况下让应用运行得更顺畅（所以网上哪些连机器配置都不提就开始谈调优的人是非常不靠谱的）。直白点说就是如果你的机器配资足够高的话是根本不需要考虑调优的。 &lt;/p&gt;
+&lt;p&gt;造成 JVM 应用卡顿的原因大体有以下几种：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;GC 回收导致 STW&lt;/li&gt;
+&lt;li&gt;内存分配不合理导致（资源缺乏）频繁 GC &lt;/li&gt;
+&lt;li&gt;CPU 使用率过高导致 JVM 线程执行效率降低&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;虽然以上1点看起来很明确，但是要平衡它们却不是件容易的事儿。例如你可以增加 GC 线程让垃圾回收进行得更加迅速，但线程多了 CPU 使用率就会上升（特别是自用机器肯定会有有其它应用并行的情况出现），这也导致卡顿。又或者你可以增加 JVM 的内存容量来减少 GC 的次数（因为有足够的内存是不会触发 GC 的），但这样又会加重 GC 线程的回收负担从而让 GC 过程更加长，最后亦可能导致卡顿感加重。这就是上面为什么说 JVM 调优其实是件非常矛盾的事情。&lt;/p&gt;
     
     </summary>
     
@@ -50,17 +51,12 @@
     <link href="https://tandi.pub/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/"/>
     <id>https://tandi.pub/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/</id>
     <published>2020-05-04T09:36:53.000Z</published>
-    <updated>2020-05-25T09:22:14.266Z</updated>
+    <updated>2020-05-29T18:39:50.512Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;h2 id=&quot;闲聊&quot;&gt;&lt;a href=&quot;#闲聊&quot; class=&quot;headerlink&quot; title=&quot;闲聊&quot;&gt;&lt;/a&gt;闲聊&lt;/h2&gt;&lt;p&gt;&amp;emsp;&amp;emsp;近来发现自己先前写的文章篇幅实在是有些长，不够精简扼要。个人而言不管是看书还是看网络文章，都只喜欢那些干脆利落又不拖泥带水的作品。例如当前章节叫闲聊，用意是赶时间的话尚可跳过，那么看文章的人就可以直奔主题而不用摸索了。除此之外我还发现一些同行的坏习惯，例如写文章复制来复制去没有自己的观点，总喜欢扯些没用的东西导致论点不集中，还有就是喜欢故弄玄虚（极之厌恶），明明很简单的事却习惯性长篇大论，重点是说完也不见让读者觉得有这样的必要。其实我认为，一个人如果对某个知识或者技能掌握得透彻的话，完全是可以将复杂的理论转换为简单通俗的言语再表述出来的，如果不能做到，只能说明是似懂非懂。所以我自己的笔记都是迭代式修改的，并不是写完了就不管了，为的就是不断将以前自己那些长篇大论化为通俗精简的论述，那么再回看的时候就可以少费点劲了。&lt;/p&gt;
+&lt;p&gt;&amp;emsp;&amp;emsp;最后给阅读到这篇文章的朋友一些个人建议，就是在有限的时间里我们应该学会筛选。例如在看书这件事情上，千万不要因为觉得自己水平不高就不敢去批评一些作品，其实现在是阿猫阿狗都能够出书的，水平参差不齐，而且有些人写书纯粹是为了表现自己而并非一心做知识分享的，所以如果感到不适就不要浪费时间了。&lt;/p&gt;
     
     </summary>
     
@@ -79,17 +75,11 @@
     <link href="https://tandi.pub/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/"/>
     <id>https://tandi.pub/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/</id>
     <published>2020-04-22T05:57:33.000Z</published>
-    <updated>2020-05-25T21:32:11.890Z</updated>
+    <updated>2020-05-29T18:05:07.744Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;p&gt;今天心血来潮地在网上搜了一下有关 ORM 框架的使用对比，发现其实国内外对于ORM 框架的使用还是有着很大差别的。例如国内比较流行 MyBatis ，而国外则是 Hibernate。至于为什么这样，个人认为不同的人有着不同的考虑。其实对于技术本身而言并没有最好也没有最坏之说，有的只是合不合适而已。因此从今晚开始，打算写一篇有关ORM 框架对比相关的文章以梳理一下自己对 ORM 框架的理解，以及顺便对相关知识进行查漏补缺一下。&lt;/p&gt;
     
     </summary>
     
@@ -108,17 +98,15 @@
     <link href="https://tandi.pub/%E5%8F%AF%E7%BB%A7%E6%89%BF%E7%9A%84ThreadLocal-InheritableThreadLocal/"/>
     <id>https://tandi.pub/%E5%8F%AF%E7%BB%A7%E6%89%BF%E7%9A%84ThreadLocal-InheritableThreadLocal/</id>
     <published>2020-04-03T13:11:15.000Z</published>
-    <updated>2020-04-12T01:21:48.488Z</updated>
+    <updated>2020-05-29T18:11:18.561Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;p&gt;前段时间在Q群里看见有人问子线程如何继承父线程的ThreadLocal值，所以故作此记。&lt;/p&gt;
+&lt;h2 id=&quot;ThreadLocal小回顾&quot;&gt;&lt;a href=&quot;#ThreadLocal小回顾&quot; class=&quot;headerlink&quot; title=&quot;ThreadLocal小回顾&quot;&gt;&lt;/a&gt;ThreadLocal小回顾&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;ThreadLocal 中有个内部类叫ThreadLocalMap，存储格式是键值对存储，ThreadLocal上的操作实质就是对ThreadLocalMap 操作。&lt;/li&gt;
+&lt;li&gt;每个 Thread 对象中都持有一个与当前线程绑定的 ThreadLocalMap 引用，所以 ThreadLocal 也被叫做线程变量，是线程安全的，因为每个Thread都有独自的 ThreadLocalMap 引用。&lt;/li&gt;
+&lt;li&gt;但需要注意的是如何正确使用ThreadLocal？&lt;/li&gt;&lt;/ul&gt;
     
     </summary>
     
@@ -137,17 +125,14 @@
     <link href="https://tandi.pub/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/"/>
     <id>https://tandi.pub/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/</id>
     <published>2020-03-24T14:32:12.000Z</published>
-    <updated>2020-05-05T12:15:59.693Z</updated>
+    <updated>2020-05-29T18:07:02.309Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;blockquote&gt;
+&lt;p&gt;文章内容基于 Spring 5 &lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;本想将该部分内容放在上一篇文章中的，但是主题稍有出入而且不想让篇幅太长因此独自另开一篇文章来记录。但是我依然建议先观看上一篇文章《Spring源码浅析之SingletonBean的实例化过程》后再来看当前的内容，这样思路会更加清晰。&lt;/p&gt;
     
     </summary>
     
@@ -166,7 +151,7 @@
     <link href="https://tandi.pub/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/"/>
     <id>https://tandi.pub/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/</id>
     <published>2020-03-24T09:51:04.000Z</published>
-    <updated>2020-05-05T02:15:35.923Z</updated>
+    <updated>2020-05-29T18:07:31.925Z</updated>
     
     <summary type="html">
     
@@ -189,7 +174,7 @@
     <link href="https://tandi.pub/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/"/>
     <id>https://tandi.pub/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/</id>
     <published>2019-12-01T08:18:22.000Z</published>
-    <updated>2020-05-08T05:14:06.549Z</updated>
+    <updated>2020-05-29T18:08:02.131Z</updated>
     
     <summary type="html">
     
@@ -212,17 +197,11 @@
     <link href="https://tandi.pub/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/"/>
     <id>https://tandi.pub/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/</id>
     <published>2019-11-27T18:10:31.000Z</published>
-    <updated>2020-05-15T00:45:12.551Z</updated>
+    <updated>2020-05-29T18:09:28.346Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;p&gt;&amp;emsp;&amp;emsp;先前写过一篇针对 HashMap 源码进行浅析的文章，现在回看觉得内容实在有些简陋，所以借着最近时间比较充裕，打算记录一下自己对 JDK 1.8 后 ConcurrentHashMap 的一些理解。&lt;br&gt;&amp;emsp;&amp;emsp;位运算是计算机中最为高效的计算方式，如果你平时有翻阅源码的爱好那么肯定不难发现其实很多大神写的代码中的计算操作都是用位运算来完成的。因此接下来我们就从位运算的角度切入 ConcurrentHashMap 源码，分析一下在 ConcurrentHashMap 中位运算的应用。&lt;/p&gt;
     
     </summary>
     
@@ -241,17 +220,13 @@
     <link href="https://tandi.pub/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/"/>
     <id>https://tandi.pub/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/</id>
     <published>2019-10-11T16:49:26.000Z</published>
-    <updated>2020-05-22T05:50:00.044Z</updated>
+    <updated>2020-05-29T18:20:21.921Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;p&gt;&amp;emsp;&amp;emsp;前段时间阅读了部分 Netty 4 的源码，但当时并没有趁热打铁地将理解过程记录下来，以至于现在忘得七七八八。起初阅读 Netty 源码的原因是想知道它为什么高效，因为在 &lt;code&gt;Spring Web Flux&lt;/code&gt; 和 &lt;code&gt;Spring Cloud Gateway&lt;/code&gt; 中都看到了它的身影。虽然自己以前在公司项目中使用过 Netty 来实现功能，但是我很清楚知道会用和懂是两种不同的境界，同常会用技术的人很多但真懂的人却是少数，所以学习技术我们应该尽量做到知其然而知其所以然，亦只有这样才能在众多同行中增大自己的核心竞争力。&lt;/p&gt;
+&lt;p&gt;&amp;emsp;&amp;emsp;除此之外我自己本身对学习技术也有一定的看法，譬如我认为技术都是万变不离其宗的，所以学习技术应该&lt;code&gt;抓住技术的根本&lt;/code&gt;。例如在 Java 生态中开源技术繁多，而它们的根本都是就是 &lt;code&gt;JavaSE&lt;/code&gt;、&lt;code&gt;设计模式&lt;/code&gt;、&lt;code&gt;数据结构&lt;/code&gt;，所以不管一个框架多么高级或是多么抽象都只不过是JavaSE和设计模式还有数据结构的堆砌罢了。所以接下来要聊了的也不是 Netty，而是 Netty 的根本，&lt;code&gt;IO模型&lt;/code&gt;和&lt;code&gt;事件驱动(事件轮询)&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;&amp;emsp;&amp;emsp;在类 Unix 系统中 IO 模型一共有 5 种，分别是&lt;code&gt;阻塞IO&lt;/code&gt;、&lt;code&gt;非阻塞IO&lt;/code&gt;、&lt;code&gt;复用IO&lt;/code&gt;、&lt;code&gt;信号驱动IO&lt;/code&gt;、&lt;code&gt;异步IO&lt;/code&gt;，它们各自都有着自己的特点，所以没有最好最坏之分。而谈到事件驱动，如果没有记错第一次接触这个词是很久以前我学习 Node.js 时看到的，因为 Node.js 的三大特性之一就是事件驱动。当时就很好奇，主要是想知道事件是如何产生以及是何时被回调函数处理的，而这个问题却一直等到看了 Netty 源码后才更加明朗。例如在 Netty 中采用的是 Reactor 模式实现的事件驱动（Node.js、Readis、Nginx、Memcache 等也是）。除了 Reactor 之外还可以用 Proactor 实现，两者的区别在于前者是 &lt;code&gt;复用IO&lt;/code&gt; 后者是 &lt;code&gt;异步IO&lt;/code&gt;。&lt;/p&gt;
     
     </summary>
     
@@ -270,17 +245,13 @@
     <link href="https://tandi.pub/%E4%BD%BF%E7%94%A8%E9%98%BF%E9%87%8C%E4%BA%91%E6%8F%90%E4%BE%9B%E7%9A%84%E5%85%AC%E7%BD%91ip%E5%92%8Cfrp%E5%B7%A5%E5%85%B7%E5%AF%B9%E5%86%85%E7%BD%91%E8%AE%BE%E5%A4%87%E8%BF%9B%E8%A1%8C%E7%A9%BF%E9%80%8F%E8%AE%BF%E9%97%AE/"/>
     <id>https://tandi.pub/%E4%BD%BF%E7%94%A8%E9%98%BF%E9%87%8C%E4%BA%91%E6%8F%90%E4%BE%9B%E7%9A%84%E5%85%AC%E7%BD%91ip%E5%92%8Cfrp%E5%B7%A5%E5%85%B7%E5%AF%B9%E5%86%85%E7%BD%91%E8%AE%BE%E5%A4%87%E8%BF%9B%E8%A1%8C%E7%A9%BF%E9%80%8F%E8%AE%BF%E9%97%AE/</id>
     <published>2019-09-18T09:21:37.000Z</published>
-    <updated>2020-04-29T21:15:01.462Z</updated>
+    <updated>2020-05-29T18:10:37.433Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          
-        
-      
+      &lt;p&gt;&amp;emsp;最近打算将软路由放到公网上访问，但是因为我所处的地方是出租屋，网线是房东提供的，所以我的路由器肯定是分配不到公网ip的（就算是自己拉的网线也不一定分到公网ip），因此并不能使用DDNS（动态DNS）对内网进行访问，换句话就是只能进行内网穿透了。&lt;/p&gt;
+&lt;p&gt;&amp;emsp;所谓的内网穿透其实就是NAT穿透，即将内网ip以及端口映射到公网ip上。通常来说，要完成内网穿透的话需要：&lt;code&gt;拥有公网ip的服务器&lt;/code&gt;、&lt;code&gt;穿透工具(服务端、客户端)&lt;/code&gt;、&lt;code&gt;能上网的内网设备&lt;/code&gt;等设备。&lt;/p&gt;
+&lt;p&gt;&amp;emsp;对于穿透工具，比较出名的诸如&lt;code&gt;花生壳&lt;/code&gt;、&lt;code&gt;Ngrok&lt;/code&gt;、&lt;code&gt;Natapp&lt;/code&gt;、&lt;code&gt;frp&lt;/code&gt;等等。我自己而言之前用过Natapp做内网穿透，特点是方便，提供一站式的服务端配置，使用时只需要在目标设置安装客户端进行对接即可。现在不用的原因是考虑到自己买了阿里云服务器和域名，而阿里云服务器是有公网ip的，所以就打算干脆在阿里云上搭一个穿透工具服务端来对接内网设备得了，这时就想到了frp提供自搭建的p2p（点对点）对接功能。&lt;/p&gt;
     
     </summary>
     

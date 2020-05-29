@@ -7,7 +7,7 @@
   <!-- 编码方式 -->
   <meta charset="UTF-8">
   <!-- 浏览器页签图标 -->
-  <link rel="icon" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.svg">
   <!-- 标题 -->
   <title> 三十分钟体会AQS与Synchronized的原理与流程-学然后知不足 </title>
 
@@ -51,6 +51,8 @@
     
       <link rel="stylesheet" href="/css/github.min.css">
     
+      <link rel="stylesheet" href="/css/csshake.min.css">
+    
   
 
   <!-- 小图标 -->
@@ -66,6 +68,7 @@
     <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
     <script type="text/javascript" src="/js/wrapImage.js"></script>
   
+
 <meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
 </head>
 
@@ -92,9 +95,9 @@
 
     <!-- 大屏导航栏 -->
     <nav id="menu-outer">
-      <div id="menu-title" style="text-align: right; padding-right: 18px">
+      <div id="menu-title" style="text-align: right; padding-right: 18px" class="shake-trigger" >
         <h3>
-          <a href="/">学然后知不足</a>
+          <a href="/" class="shake-rotate" title="主页">学然后知不足</a>
         </h3>
       </div>
       <div id="menu-inner">
@@ -106,7 +109,8 @@
           <a id="menu-a" href="/about">关于博客</a>
         
       </div>
-      <div id="menu-footer">Developed by TanDi.</div>
+      <!-- 导航栏页脚 -->
+      <div id="menu-footer" class="shake-rotate" title="开发者" >Developed by TanDi.</div>
     </nav>
 
     <!-- 文章内容 -->
@@ -131,6 +135,9 @@
   <!-- 文章内容 -->
   <h2 id="闲聊"><a href="#闲聊" class="headerlink" title="闲聊"></a>闲聊</h2><p>&emsp;&emsp;近来发现自己先前写的文章篇幅实在是有些长，不够精简扼要。个人而言不管是看书还是看网络文章，都只喜欢那些干脆利落又不拖泥带水的作品。例如当前章节叫闲聊，用意是赶时间的话尚可跳过，那么看文章的人就可以直奔主题而不用摸索了。除此之外我还发现一些同行的坏习惯，例如写文章复制来复制去没有自己的观点，总喜欢扯些没用的东西导致论点不集中，还有就是喜欢故弄玄虚（极之厌恶），明明很简单的事却习惯性长篇大论，重点是说完也不见让读者觉得有这样的必要。其实我认为，一个人如果对某个知识或者技能掌握得透彻的话，完全是可以将复杂的理论转换为简单通俗的言语再表述出来的，如果不能做到，只能说明是似懂非懂。所以我自己的笔记都是迭代式修改的，并不是写完了就不管了，为的就是不断将以前自己那些长篇大论化为通俗精简的论述，那么再回看的时候就可以少费点劲了。</p>
 <p>&emsp;&emsp;最后给阅读到这篇文章的朋友一些个人建议，就是在有限的时间里我们应该学会筛选。例如在看书这件事情上，千万不要因为觉得自己水平不高就不敢去批评一些作品，其实现在是阿猫阿狗都能够出书的，水平参差不齐，而且有些人写书纯粹是为了表现自己而并非一心做知识分享的，所以如果感到不适就不要浪费时间了。</p>
+<a id="more"></a>
+
+
 <h2 id="Synchronized原理"><a href="#Synchronized原理" class="headerlink" title="Synchronized原理"></a>Synchronized原理</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>&emsp;&emsp;synchronized 是 Java 中相对于 AQS 较早的同步方式，原理是通过 <code>互斥指令</code> 实现的同步。synchronized 操作其实对应着两个互斥指令，分别是代表加锁操作的 <code>lock</code> 指令和代表解锁操作的 <code>unlock</code>  指令，但需要注意的是这两个指令在 JVM 字节码中有另外的表述方式，例如用 <code>monitorenter</code> 代表 lock 指令，用 <code>monitorexit</code> 代表 unlock 指令。</p>
 <p>&emsp;&emsp;在 JDK 1.6 之前 synchronized 被称为重量级锁。它<code>重</code>的表现在于一旦竞争锁失败线程将会被挂起，当锁被持有者释放时又会被唤醒，而这两个操作均由内核调度来完成。因为涉及到内核调度，所以需要从用户态切换到内核态才能做到，在这期间用户程序相当于处在呆滞状态。在人看来这段时间虽然非常短暂，但是如果发生大量<code>用户态切换到内核态</code>操作，无疑消耗会积小成多从而间接导致用户程序请求处理能力降低，而且线程挂起这个动作并不会释放线程持有的资源，这就是 synchronized  <code>重</code>的地方。但从 JDK 1.6 开始 synchronized 有了较大的改进，例如引入了多项锁优化操作，譬如 <code>锁消除</code>、<code>锁粗化</code>、<code>锁升级</code> 、<code>自旋锁</code> 等等。而我们需要重点明白的就是，这些优化操作的目标全都是为了减少(用户态切换到内核态)线程挂起唤醒而做的。</p>
 <h3 id="锁优化"><a href="#锁优化" class="headerlink" title="锁优化"></a>锁优化</h3><h4 id="锁消除"><a href="#锁消除" class="headerlink" title="锁消除"></a>锁消除</h4><p>&emsp;&emsp;指的是经分析得知虽然代码片段加了 synchronized 同步但是真实运行情况并不会发生并发操作，这时去掉 synchronized 的过程就称为锁消除。例如：</p>
@@ -303,7 +310,9 @@ synchronized (sf) {
       </div>
       <div id="bottom-outer">
         <div id="bottom-inner">
+          <font class="foot_msg">
           魔鬼藏在细节中
+          </font>
           <!-- 页脚导航 -->
           <span>
             <a id="bottom-totop" href="/">网站首页</a>

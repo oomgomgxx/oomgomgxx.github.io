@@ -1,6 +1,5 @@
 
-
-// 侧栏导航 visited 效果 (有问题，因为导航栏是全局刷新导致样式无法实现)
+// 侧栏导航 visited 效果 ----------------------------
 $(function(){ // 给导航栏选项分配标记
     var nav_length = $('#menu-inner a').length
     for(var i=0; i<nav_length; i++) {
@@ -14,16 +13,23 @@ $(function() {
     $('#menu-a').removeClass()
 
     // 获取状态记录
-    var current_num = sessionStorage.getItem("current_num"); 
-    var a_id = '#menu-inner a:eq(' + current_num + ')'
-    // 初始化样式
-    $(a_id).addClass('toc_active') 
+    var current_num = sessionStorage.getItem("current_num");
+
+    if (current_num != null) {
+        console.info("into")
+        var a_id = '#menu-inner a:eq(' + current_num + ')'
+        // 初始化样式
+        $(a_id).addClass('nav_active')
+    } else {
+        // 初始化样式
+        $('#menu-inner a:eq(0)').addClass('nav_active')
+    }
 
     $('#menu-inner a').click(function(event){
         // 当前点击的导航栏选项
         var current_num = $(this).val()
         // 给当前导航栏选项添加visited样式
-        $(this).addClass('toc_active')
+        $(this).addClass('nav_active')
         // 保存状态
         sessionStorage.setItem("current_num", current_num)
     });
@@ -34,11 +40,34 @@ $(function() {
         // 激活第1个选项
         var a_id = '#menu-inner a:eq(0)'
         // 给当前导航栏选项添加visited样式
-        $(a_id).addClass('toc_active')
+        $(a_id).addClass('nav_active')
         // 保存状态
         sessionStorage.setItem("current_num", 0)
     })
 })
+
+
+
+
+
+// 文章目录 visited 效果 --------------------------
+$(function() {
+
+    $('.toc-link').click(function(event){
+        $('.toc-link').removeClass('toc_active')
+        $(this).addClass('toc_active')
+    });
+
+})
+
+
+
+
+
+
+
+
+
 
 
 // 文章目录 visited 效果

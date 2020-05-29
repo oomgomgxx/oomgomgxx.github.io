@@ -7,7 +7,7 @@
   <!-- 编码方式 -->
   <meta charset="UTF-8">
   <!-- 浏览器页签图标 -->
-  <link rel="icon" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.svg">
   <!-- 标题 -->
   <title> Spring源码浅析之SingletonBean实例化过程-学然后知不足 </title>
 
@@ -51,6 +51,8 @@
     
       <link rel="stylesheet" href="/css/github.min.css">
     
+      <link rel="stylesheet" href="/css/csshake.min.css">
+    
   
 
   <!-- 小图标 -->
@@ -66,6 +68,7 @@
     <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
     <script type="text/javascript" src="/js/wrapImage.js"></script>
   
+
 <meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
 </head>
 
@@ -92,9 +95,9 @@
 
     <!-- 大屏导航栏 -->
     <nav id="menu-outer">
-      <div id="menu-title" style="text-align: right; padding-right: 18px">
+      <div id="menu-title" style="text-align: right; padding-right: 18px" class="shake-trigger" >
         <h3>
-          <a href="/">学然后知不足</a>
+          <a href="/" class="shake-rotate" title="主页">学然后知不足</a>
         </h3>
       </div>
       <div id="menu-inner">
@@ -106,7 +109,8 @@
           <a id="menu-a" href="/about">关于博客</a>
         
       </div>
-      <div id="menu-footer">Developed by TanDi.</div>
+      <!-- 导航栏页脚 -->
+      <div id="menu-footer" class="shake-rotate" title="开发者" >Developed by TanDi.</div>
     </nav>
 
     <!-- 文章内容 -->
@@ -129,9 +133,9 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ul>
-<li>温故而知新</li>
-</ul>
+  <p>温故而知新</p>
+<a id="more"></a>
+
 <h2 id="案例代码"><a href="#案例代码" class="headerlink" title="案例代码"></a>案例代码</h2><p>实体类</p>
 <pre><code class="java">@Data
 @NoArgsConstructor
@@ -723,13 +727,15 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#案例代码"><span class="toc-text">案例代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AnnotationConfigApplicationContext类简介"><span class="toc-text">AnnotationConfigApplicationContext类简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#类之间的关系"><span class="toc-text">类之间的关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于BeanFactory和ApplicationContext的区别"><span class="toc-text">关于BeanFactory和ApplicationContext的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#refresh-刷新启动容器"><span class="toc-text">refresh() - 刷新启动容器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#finishBeanFactoryInitialization-实例化SingletonBean"><span class="toc-text">finishBeanFactoryInitialization() - 实例化SingletonBean</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#populateBean-填充实例属性"><span class="toc-text">populateBean() - 填充实例属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#initializeBean-接口方法回调"><span class="toc-text">initializeBean() - 接口方法回调</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-Bean生命周期流程图"><span class="toc-text">Spring Bean生命周期流程图</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#案例代码"><span class="toc-text">案例代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AnnotationConfigApplicationContext类简介"><span class="toc-text">AnnotationConfigApplicationContext类简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#类之间的关系"><span class="toc-text">类之间的关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于BeanFactory和ApplicationContext的区别"><span class="toc-text">关于BeanFactory和ApplicationContext的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#refresh-刷新启动容器"><span class="toc-text">refresh() - 刷新启动容器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#finishBeanFactoryInitialization-实例化SingletonBean"><span class="toc-text">finishBeanFactoryInitialization() - 实例化SingletonBean</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#populateBean-填充实例属性"><span class="toc-text">populateBean() - 填充实例属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#initializeBean-接口方法回调"><span class="toc-text">initializeBean() - 接口方法回调</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-Bean生命周期流程图"><span class="toc-text">Spring Bean生命周期流程图</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
       <div id="bottom-outer">
         <div id="bottom-inner">
+          <font class="foot_msg">
           魔鬼藏在细节中
+          </font>
           <!-- 页脚导航 -->
           <span>
             <a id="bottom-totop" href="/">网站首页</a>

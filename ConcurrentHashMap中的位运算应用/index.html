@@ -7,7 +7,7 @@
   <!-- 编码方式 -->
   <meta charset="UTF-8">
   <!-- 浏览器页签图标 -->
-  <link rel="icon" href="/img/favicon.ico">
+  <link rel="icon" href="/img/favicon.svg">
   <!-- 标题 -->
   <title> ConcurrentHashMap中的位运算应用-学然后知不足 </title>
 
@@ -51,6 +51,8 @@
     
       <link rel="stylesheet" href="/css/github.min.css">
     
+      <link rel="stylesheet" href="/css/csshake.min.css">
+    
   
 
   <!-- 小图标 -->
@@ -66,6 +68,7 @@
     <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
     <script type="text/javascript" src="/js/wrapImage.js"></script>
   
+
 <meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
 </head>
 
@@ -92,9 +95,9 @@
 
     <!-- 大屏导航栏 -->
     <nav id="menu-outer">
-      <div id="menu-title" style="text-align: right; padding-right: 18px">
+      <div id="menu-title" style="text-align: right; padding-right: 18px" class="shake-trigger" >
         <h3>
-          <a href="/">学然后知不足</a>
+          <a href="/" class="shake-rotate" title="主页">学然后知不足</a>
         </h3>
       </div>
       <div id="menu-inner">
@@ -106,7 +109,8 @@
           <a id="menu-a" href="/about">关于博客</a>
         
       </div>
-      <div id="menu-footer">Developed by TanDi.</div>
+      <!-- 导航栏页脚 -->
+      <div id="menu-footer" class="shake-rotate" title="开发者" >Developed by TanDi.</div>
     </nav>
 
     <!-- 文章内容 -->
@@ -129,8 +133,10 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="闲聊"><a href="#闲聊" class="headerlink" title="闲聊"></a>闲聊</h2><p>&emsp;&emsp;先前写过一篇针对 HashMap 源码进行浅析的文章，现在回看觉得内容实在有些简陋，所以借着最近时间比较充裕，打算记录一下自己对 JDK 1.8 后 ConcurrentHashMap 的一些理解。</p>
-<p>&emsp;&emsp;位运算是计算机中最为高效的计算方式，如果你平时有翻阅源码的爱好那么肯定不难发现其实很多大神写的代码中的计算操作都是用位运算来完成的。因此接下来我们就从位运算的角度切入 ConcurrentHashMap 源码，分析一下在 ConcurrentHashMap 中位运算的应用。</p>
+  <p>&emsp;&emsp;先前写过一篇针对 HashMap 源码进行浅析的文章，现在回看觉得内容实在有些简陋，所以借着最近时间比较充裕，打算记录一下自己对 JDK 1.8 后 ConcurrentHashMap 的一些理解。<br>&emsp;&emsp;位运算是计算机中最为高效的计算方式，如果你平时有翻阅源码的爱好那么肯定不难发现其实很多大神写的代码中的计算操作都是用位运算来完成的。因此接下来我们就从位运算的角度切入 ConcurrentHashMap 源码，分析一下在 ConcurrentHashMap 中位运算的应用。</p>
+<a id="more"></a>
+
+
 <h2 id="自定义初始化容量"><a href="#自定义初始化容量" class="headerlink" title="自定义初始化容量"></a>自定义初始化容量</h2><p>&emsp;&emsp;先前在Q群里看到有小伙伴说面试被问到一个这样的问题，就是如果将 HashMap 初始化容量设置为 10000，然后往里头存储 10000 个元素，问 HashMap 需要扩容几次？对于这样一个问题如果你没有阅读过源码你就很容易被引入坑里，因为一些人他只知道 HashMap 中加载因为 0.75 ，所以 10000 的容量实质只能存储 7500 个，因此需要扩容1次。但是实际情况真的是这样的？答案肯定是否定的，对于 HashMap 而言它的容量必须是2的n次幂，且n不能大于30。也就是说如果你设置初始化容量为 10000 的话，那么 HashMap 会先判断 10000 是不是2的n次幂，如果不是则转变为2的n次幂再作为初始化容量。当然，前提是传入的这个初始化值是大于或等于零且小于或等于 MAXIMUM_CAPACITY（1 &lt;&lt; 30，即2的30次方）。</p>
 <p>以下我们就承接着上面的问题来阅读以下初始化容量的构造方法，代码如下：</p>
 <pre><code class="java">public ConcurrentHashMap(int initialCapacity) {
@@ -493,13 +499,15 @@ if (hiTail != null) {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#闲聊"><span class="toc-text">闲聊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义初始化容量"><span class="toc-text">自定义初始化容量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#哈希值"><span class="toc-text">哈希值</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LastRun高低位机制"><span class="toc-text">LastRun高低位机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#了解"><span class="toc-text">了解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分析"><span class="toc-text">分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义初始化容量"><span class="toc-text">自定义初始化容量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#哈希值"><span class="toc-text">哈希值</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#LastRun高低位机制"><span class="toc-text">LastRun高低位机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#了解"><span class="toc-text">了解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分析"><span class="toc-text">分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
       <div id="bottom-outer">
         <div id="bottom-inner">
+          <font class="foot_msg">
           魔鬼藏在细节中
+          </font>
           <!-- 页脚导航 -->
           <span>
             <a id="bottom-totop" href="/">网站首页</a>
