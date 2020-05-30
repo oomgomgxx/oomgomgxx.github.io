@@ -63,13 +63,6 @@ $(function() {
 
 
 
-
-
-
-
-
-
-
 // 文章目录 visited 效果
 $(function() {
     $('.toc-link').click(function(event){
@@ -120,10 +113,6 @@ $(function(){
     // 记录高度
     var temp_height = 0
 
-    // 缓冲值
-    var buff_size = 20
-    var buff_height = 0
-
     // 页面滑动事件
     $(window).scroll(function(){
         
@@ -141,17 +130,14 @@ $(function(){
             
             // 往下滑显示
             if ( current_height > temp_height ){ 
-                $("#min-menu-outer").slideDown("slow");
-                buff_height = 0
-
+                $("#min-menu-outer").show()
             // 往上滑隐藏
             } else { 
-                $("#min-menu-outer").slideUp("slow");
-                buff_height = buff_size
+                $("#min-menu-outer").hide()
             }
 
             // 记录高度
-            temp_height = current_height + buff_height
+            temp_height = current_height
         }
     });
 
