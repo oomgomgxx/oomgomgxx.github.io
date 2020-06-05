@@ -165,12 +165,12 @@
 -XX:ConcGCThreads=2
 -XX:MetaspaceSize=512m
 -XX:MaxMetaspaceSize=512m
--Xms1536m
--Xmx1536m
+-Xms1024m
+-Xmx1024m
 -XX:+UseG1GC
--XX:G1HeapRegionSize=2m
+-XX:G1HeapRegionSize=1m
 -XX:CICompilerCount=2
--XX:ReservedCodeCacheSize=500m
+-XX:ReservedCodeCacheSize=300m
 -XX:+AlwaysPreTouch</code></pre>
 <p>配置说明：</p>
 <p>-server</p>
@@ -187,12 +187,10 @@
 <p>-Xms1536m</p>
 <ul>
 <li>启动时堆的初始化大小</li>
-<li>设置为 1.5 G</li>
 </ul>
 <p>-Xmx1536m</p>
 <ul>
 <li>堆的最大值</li>
-<li>设置为 1.5 G</li>
 <li>该值和 -Xms 最好一致，因为这样可以减少内存扩容带来的开销</li>
 </ul>
 <p>-XX:MetaspaceSize 和 -XX:MaxMetaspaceSize</p>
@@ -201,12 +199,12 @@
 <li>两个配置最好一致，原因同上</li>
 <li>注意，最好是显式指定元空间大小，因为一旦 MetaspaceSize（默认 20 多兆，非常小）被填满就会触发 Full GC 。例如不配置的话可能会在 JVM 启动期间就连续执行多次 Full GC 的情况。因此在系统类定义较多的情况下最好预留充足的空间给元空间这样可以有效地减少 Full GC 的次数。</li>
 </ul>
-<p>-Xmn512m</p>
+<p><del>-Xmn512m</del></p>
 <ul>
-<li>新生代内存大小</li>
+<li><del>新生代内存大小</del></li>
 <li><del>该内存要特别主要，虽然 Young GC 速度快（因为用的是标记复制算法）但频率也高，所以如果内存设置得很大的话还是会给 GC 线程带来回收压力的。例如频繁 Young GC 导致 CPU 使用率上升同样会造成卡顿</del></li>
 <li><del>如果有充足的内存分配给新生代，例如 1.5G 以上，个人建议这时可以适当地将幸存者区域内存增大，这样做可以提升 标记-复制 算法的内存使用率</del></li>
-<li>使用 G1 时可以不堆该选项进行配置，因为 G1 可以通过<code>启发式推断</code>来动态调节内存以尽量满足吞吐量需求（MaxGCPauseMillis，默认为 200 ms）</li>
+<li><del>使用 G1 时可以不堆该选项进行配置，因为 G1 可以通过<code>启发式推断</code>来动态调节内存以尽量满足吞吐量需求（MaxGCPauseMillis，默认为 200 ms）</del></li>
 </ul>
 <p><del>-XX:+UseConcMarkSweepGC</del></p>
 <ul>
@@ -217,9 +215,9 @@
 <li>启动 Garbage First 垃圾回收器</li>
 <li>因为 G1 的 GC 停顿时间更加可控。可以通过 <code>MaxGCPauseMillis</code> 设置 GC 停顿期望值，默认为 200 ms</li>
 </ul>
-<p>-XX:G1HeapRegionSize=2m</p>
+<p>-XX:G1HeapRegionSize=1m</p>
 <ul>
-<li>指定 G1 Region 区的大小</li>
+<li>指定 G1 Region 区的大小，默认值为1m</li>
 <li>适当增加该值可以提高内存的使用率（因为 G1 Region 的清理算法采用的是标记复制），但与此同时增大 Region 就意味着增加 GC 线程的回收负担，所以应该根据实际的堆内存来设置该值。例如 Xmx 为 4G 时可以将该值设置为 4M ，这也是比较常见的配置方法</li>
 <li>手动指定值时值必须是 2 的幂，而且范围在 1 MB 到 32 MB 之间。默认情况下该值为 1M，即 2 的 0 次幂</li>
 </ul>
