@@ -137,7 +137,11 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="SpringBoot自动配置的基本原理"><a href="#SpringBoot自动配置的基本原理" class="headerlink" title="SpringBoot自动配置的基本原理"></a>SpringBoot自动配置的基本原理</h2><h3 id="初始化自动配置信息"><a href="#初始化自动配置信息" class="headerlink" title="初始化自动配置信息"></a>初始化自动配置信息</h3><p>以下为一个简单的springboot启动类</p>
+  <p>SpringBoot</p>
+<p>SpringBoot（Spring）基础与技巧。</p>
+<a id="more"></a>
+
+<h2 id="SpringBoot自动配置的基本原理"><a href="#SpringBoot自动配置的基本原理" class="headerlink" title="SpringBoot自动配置的基本原理"></a>SpringBoot自动配置的基本原理</h2><h3 id="初始化自动配置信息"><a href="#初始化自动配置信息" class="headerlink" title="初始化自动配置信息"></a>初始化自动配置信息</h3><p>以下为一个简单的springboot启动类</p>
 <pre><code class="java">@SpringBootApplication
 public class DemoApplication {
     public static void main(String[] args) {
@@ -547,9 +551,12 @@ public class TestConfig {
 <p><strong>配置idea让其提供对devtools模块的支持</strong></p>
 <p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/2.png" alt></p>
 <p>双击shift搜索关键字“Maintenance”</p>
+<blockquote>
+<p>如果是 windows 则按 “ctrl + shift + alt + /“ 后选择注册即可</p>
+</blockquote>
 <p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/3.png" alt></p>
 <p><strong>至此已经配置完成</strong></p>
-<p>还需要注意的是，当开启了devtools功能后，默认会添加一下配置</p>
+<p>还需要注意的是，当开启了devtools功能后，默认会添加以下配置</p>
 <blockquote>
 <p>org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor</p>
 </blockquote>
@@ -868,7 +875,258 @@ public DataSource twoDataSource() {
 public PlatformTransactionManager oneTransactionManager(DataSource twoDataSource) {
   return new DataSourceTransactionManager(twoDataSource);
 }</code></pre>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+<h2 id="函数式控制器（Spring5）"><a href="#函数式控制器（Spring5）" class="headerlink" title="函数式控制器（Spring5）"></a>函数式控制器（Spring5）</h2><pre><code class="java">/**
+     * Spring5加入的函数式Controller （当控制器相对较为简单的时候推荐使用）
+     * @return
+     */
+@Bean
+public RouterFunction&lt;ServerResponse&gt; hello() {
+    return RouterFunctions.route()
+        .GET(&quot;hello&quot;, handlerFunction -&gt; ServerResponse.ok().body(&quot;hello function.&quot;))
+        .GET(&quot;hello2&quot;, handlerFunction -&gt; ServerResponse.ok().body(&quot;hello function2.&quot;))
+        .POST(&quot;hello3&quot;, handlerFunction -&gt; ServerResponse.ok().body(&quot;hello function3.&quot;))
+        .build();
+}
+// 相当于以下
+//    @RestController
+//    class XxxController {
+//        @GetMapping(&quot;hello&quot;)
+//        public String hello() {
+//            return &quot;hello function.&quot;;
+//        }
+//        @GetMapping(&quot;hello2&quot;)
+//        public String hello2() {
+//            return &quot;hello function2.&quot;;
+//        }
+//        @PostMapping(&quot;hello3&quot;)
+//        public String hello3() {
+//            return &quot;hello function3.&quot;;
+//        }
+//    }
+
+@Bean
+public RouterFunction&lt;ServerResponse&gt; hello2() {
+    // 设置前缀
+    return RouterFunctions.route().nest(RequestPredicates.path(&quot;api/v1&quot;), builder -&gt; {
+        builder.GET(&quot;hello&quot;, handlerFunction -&gt; ServerResponse.ok().body(&quot;v1 hello function.&quot;))
+            .GET(&quot;hello2&quot;, handlerFunction -&gt; ServerResponse.ok().body(&quot;v1 hello function2.&quot;))
+            .POST(&quot;hello3&quot;, handlerFunction -&gt; ServerResponse.ok().body(&quot;v1 hello function3.&quot;));
+    })
+        .onError(Exception.class, (exception, serverRequest) -&gt; { // 局部异常处理
+            return EntityResponse.fromObject(new Error(exception.getMessage())).status(HttpStatus.NOT_FOUND).build();
+        }).build();
+}</code></pre>
+<h2 id="后端CORS响应头跨域"><a href="#后端CORS响应头跨域" class="headerlink" title="后端CORS响应头跨域"></a>后端CORS响应头跨域</h2><p>局部跨域</p>
+<pre><code class="java">// 其它内置参数：https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#mvc-ann-arguments
+@GetMapping(&quot;json&quot;)
+@CrossOrigin // 指定处理器能够跨域
+public JsonData json(WebRequest webRequest /*, Writer writer */,
+                     @CookieValue(value = &quot;JSESSIONID&quot;, required = false) String jsessionid) throws Exception { // WebRequest 是 Spring 用来代替 HttpServletRequest 的工具类
+    webRequest.getHeaderNames().forEachRemaining(System.out::println);
+    System.out.printf(&quot;jsessionid=%s&quot;, jsessionid==null?&quot;null&quot;:jsessionid);
+    return JsonData.buildSuccess(LocalDateTime.now());
+}
+
+//        上传文件
+//        @PostMapping(&quot;/file&quot;)
+//        public String handle(@RequestPart(&quot;meta-data&quot;) MetaData metadata,
+//                             @RequestPart(&quot;file-data&quot;) MultipartFile file) {
+//        }</code></pre>
+<p>全局跨域：方式1</p>
+<pre><code class="java">/**
+ * spring5 开启 WebMvcConfigurerAdapter 被@Deprecated标记为过时
+ */
+//@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    /**
+     * 全局配置Cors请求头跨域
+     * @param registry
+     */
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping(&quot;/**&quot;)
+//                .allowedOrigins(&quot;https://domain2.com&quot;)
+                .allowedOrigins(&quot;*&quot;)
+                .allowedMethods(&quot;GET&quot;, &quot;PUT&quot;)
+//                .allowedHeaders(&quot;header1&quot;, &quot;header2&quot;, &quot;header3&quot;)
+//                .exposedHeaders(&quot;header1&quot;, &quot;header2&quot;)
+                .allowCredentials(true).maxAge(3600);
+    }
+
+}</code></pre>
+<p>全局跨域：方式2</p>
+<pre><code class="java">/**
+     * 全局配置Cors请求头跨域
+     * @return
+     */
+@Bean
+public CorsFilter corsFilter() {
+
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowCredentials(true);
+    config.addAllowedOrigin(&quot;*&quot;);
+    config.addAllowedHeader(&quot;*&quot;);
+    config.addAllowedMethod(&quot;*&quot;);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration(&quot;/**&quot;, config);
+
+    return new CorsFilter(source);
+}</code></pre>
+<h2 id="404以及全局异常处理"><a href="#404以及全局异常处理" class="headerlink" title="404以及全局异常处理"></a>404以及全局异常处理</h2><p>NotFoundExecptionHandler</p>
+<pre><code class="java">/**
+ * 404 返回 json
+ */
+@RestController
+public class NotFoundExecptionHandler implements ErrorController {
+
+    @RequestMapping(&quot;/error&quot;)
+    public JsonData handle(HttpServletRequest request) {
+
+        int status = (int)request.getAttribute(&quot;javax.servlet.error.status_code&quot;);
+        if (status == 404) {
+            return JsonData.buildError(&quot;没有找到页面&quot;, status);
+        }
+
+        return JsonData.buildError(&quot;error&quot;, (Integer)request.getAttribute(&quot;javax.servlet.error.status_code&quot;));
+    }
+
+    @SuppressWarnings(&quot;deprecation&quot;)
+    @Override
+    public String getErrorPath() {
+        return &quot;/error&quot;;
+    }
+}</code></pre>
+<p>GlobalExceptionHanddler</p>
+<pre><code class="java">/**
+ * 全局异常处理
+ */
+@RestControllerAdvice
+//@RestControllerAdvice(annotations = RestController.class) // 只处理 @RestController
+//@RestControllerAdvice(&quot;pub.tandi.controller&quot;) // 只处理指定包
+public class GlobalExceptionHanddler {
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // 报文响应码
+    @ExceptionHandler(ArithmeticException.class)
+    public JsonData arithmeticException(HttpServletRequest request, Exception exception) {
+        return JsonData.buildError(&quot;算数异常&quot;);
+    }
+}</code></pre>
+<h2 id="SpringBoot启动后触发"><a href="#SpringBoot启动后触发" class="headerlink" title="SpringBoot启动后触发"></a>SpringBoot启动后触发</h2><pre><code class="java">/**
+ * SpringBoot启动后触发
+ */
+@Component
+public class AppStarted implements ApplicationRunner {
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        System.out.println(&quot;应用已启动完成&quot;);
+    }
+}
+</code></pre>
+<h2 id="ResponseEntity-自定义对象响应"><a href="#ResponseEntity-自定义对象响应" class="headerlink" title="ResponseEntity+自定义对象响应"></a>ResponseEntity+自定义对象响应</h2><p>自定义响应类 - JsonData</p>
+<pre><code class="java">public class JsonData implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private Integer code; // 状态码 0表示成功，1表示处理中，-1表示失败，其他表示http状态码
+    @JsonFormat(pattern = &quot;yyyy-MM-dd HH:mm:ss&quot;) // 当 Object 为 Date/LocalDateTime 时指定它们的日期时间格式
+    private Object data; // 数据
+    private String msg;// 描述
+
+    public JsonData() {
+    }
+
+    public JsonData(Integer code, Object data, String msg) {
+        this.code = code;
+        this.data = data;
+        this.msg = msg;
+    }
+
+    // 成功，传入数据
+    public static JsonData buildSuccess() {
+        return new JsonData(0, null, null);
+    }
+
+    // 成功，传入数据
+    public static JsonData buildSuccess(Object data) {
+        return new JsonData(0, data, null);
+    }
+
+    // 成功，传入数据,及描述信息
+    public static JsonData buildSuccess(Object data, String msg) {
+        return new JsonData(0, data, msg);
+    }
+
+    // 成功，传入数据,及状态码
+    public static JsonData buildSuccess(Object data, int code) {
+        return new JsonData(code, data, null);
+    }
+
+    // 失败，传入描述信息
+    public static JsonData buildError(String msg) {
+        return new JsonData(-1, null, msg);
+    }
+
+    // 失败，传入描述信息,状态码
+    public static JsonData buildError(String msg, Integer code) {
+        return new JsonData(code, null, msg);
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
+    }
+
+    public Object getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
+    @Override
+    public String toString() {
+        return &quot;JsonData [code=&quot; + code + &quot;, data=&quot; + data + &quot;, msg=&quot; + msg
+                + &quot;]&quot;;
+    }
+}</code></pre>
+<p>响应操作</p>
+<pre><code class="java">@GetMapping(&quot;hi&quot;)
+public ResponseEntity&lt;JsonData&gt; hi() {
+
+    //        HttpHeaders headers = new HttpHeaders();
+    //        headers.add(&quot;Content-Type&quot;, &quot;application/json; charset=utf-8&quot;);
+    //        headers.add(&quot;Cache-Control&quot;,&quot;max-age=60, must-revalidate, no-transform&quot;);
+
+    return ResponseEntity
+        .ok()
+        //                .headers(headers)
+        .cacheControl(CacheControl.noCache()) // 禁止缓存
+        .body(JsonData.buildSuccess(&quot;hello world&quot;));
+}</code></pre>
+<ul>
+<li>ResponseEntity 是 Spring 提供用来设置 http 响应码和响应头的一站式工具类</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.baeldung.com/spring-mvc-functional-controllers" target="_blank" rel="noopener">Functional Controllers in Spring MVC</a></li>
+<li><a href="https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#webmvc-fn" target="_blank" rel="noopener">webmvc-fn</a></li>
+<li><a href="https://www.baeldung.com/spring-mvc-cache-headers" target="_blank" rel="noopener">Cache Headers in Spring MVC</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年6月7日 10:11:51 — 函数式控制器、404处理、后端跨域配置</li>
+</ul>
+
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -910,7 +1168,7 @@ public PlatformTransactionManager oneTransactionManager(DataSource twoDataSource
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot自动配置的基本原理"><span class="toc-text">SpringBoot自动配置的基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#初始化自动配置信息"><span class="toc-text">初始化自动配置信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#启动SpringBoot应用"><span class="toc-text">启动SpringBoot应用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何判断是否需要手动配置"><span class="toc-text">如何判断是否需要手动配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于-Conditional注解"><span class="toc-text">关于@Conditional注解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot配置的加载顺序"><span class="toc-text">SpringBoot配置的加载顺序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#开发时用的自动重启模块"><span class="toc-text">开发时用的自动重启模块</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot-2-x默认的数据源连接池-HikariCP"><span class="toc-text">SpringBoot 2.x默认的数据源连接池 - HikariCP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#会话级别的H2数据库和ActiveMQ"><span class="toc-text">会话级别的H2数据库和ActiveMQ</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#H2数据库"><span class="toc-text">H2数据库</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ActiveMQ"><span class="toc-text">ActiveMQ</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用Actuator来观察应用端点"><span class="toc-text">使用Actuator来观察应用端点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本使用"><span class="toc-text">基本使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用的端点"><span class="toc-text">常用的端点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义端点"><span class="toc-text">自定义端点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用可视化界面Admin来展示端点信息"><span class="toc-text">使用可视化界面Admin来展示端点信息</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#服务端"><span class="toc-text">服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#客户端"><span class="toc-text">客户端</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于SpringBoot如何弃用默认技术和自动配置"><span class="toc-text">关于SpringBoot如何弃用默认技术和自动配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot自动配置的基本原理"><span class="toc-text">SpringBoot自动配置的基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#初始化自动配置信息"><span class="toc-text">初始化自动配置信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#启动SpringBoot应用"><span class="toc-text">启动SpringBoot应用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何判断是否需要手动配置"><span class="toc-text">如何判断是否需要手动配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于-Conditional注解"><span class="toc-text">关于@Conditional注解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot配置的加载顺序"><span class="toc-text">SpringBoot配置的加载顺序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#开发时用的自动重启模块"><span class="toc-text">开发时用的自动重启模块</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot-2-x默认的数据源连接池-HikariCP"><span class="toc-text">SpringBoot 2.x默认的数据源连接池 - HikariCP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#会话级别的H2数据库和ActiveMQ"><span class="toc-text">会话级别的H2数据库和ActiveMQ</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#H2数据库"><span class="toc-text">H2数据库</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ActiveMQ"><span class="toc-text">ActiveMQ</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用Actuator来观察应用端点"><span class="toc-text">使用Actuator来观察应用端点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本使用"><span class="toc-text">基本使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用的端点"><span class="toc-text">常用的端点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义端点"><span class="toc-text">自定义端点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用可视化界面Admin来展示端点信息"><span class="toc-text">使用可视化界面Admin来展示端点信息</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#服务端"><span class="toc-text">服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#客户端"><span class="toc-text">客户端</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于SpringBoot如何弃用默认技术和自动配置"><span class="toc-text">关于SpringBoot如何弃用默认技术和自动配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#函数式控制器（Spring5）"><span class="toc-text">函数式控制器（Spring5）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#后端CORS响应头跨域"><span class="toc-text">后端CORS响应头跨域</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#404以及全局异常处理"><span class="toc-text">404以及全局异常处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot启动后触发"><span class="toc-text">SpringBoot启动后触发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ResponseEntity-自定义对象响应"><span class="toc-text">ResponseEntity+自定义对象响应</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
