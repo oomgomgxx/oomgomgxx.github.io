@@ -980,14 +980,14 @@ public CorsFilter corsFilter() {
 public class NotFoundExecptionHandler implements ErrorController {
 
     @RequestMapping(&quot;/error&quot;)
-    public JsonData handle(HttpServletRequest request) {
+    public JsonData handle(HttpServletRequest request, Exception exception) {
 
         int status = (int)request.getAttribute(&quot;javax.servlet.error.status_code&quot;);
         if (status == 404) {
-            return JsonData.buildError(&quot;没有找到页面&quot;, status);
+            return JsonData.buildError(&quot;没有找到页面&quot;, 404);
         }
 
-        return JsonData.buildError(&quot;error&quot;, (Integer)request.getAttribute(&quot;javax.servlet.error.status_code&quot;));
+        return JsonData.buildError(exception.getMessage(), (Integer)request.getAttribute(&quot;javax.servlet.error.status_code&quot;));
     }
 
     @SuppressWarnings(&quot;deprecation&quot;)

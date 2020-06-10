@@ -960,13 +960,12 @@ public void testExecuteMethod() {
 </blockquote>
 <p>首先给出结论是，Redis高可用不能避免数据丢失，只能是尽量降低丢失数据的量。</p>
 <p>在Redis主从中有如下两个关键配置，可以利用其特定尽量减少数据丢失的量。</p>
-<pre><code class="properties"># 要求主从复制延迟低于指定时间值，否则拒绝提供写服务（客户端这时无法写入数据，相当于将问题抛给客户端处理）
+<pre><code class="properties"># 要求主从复制延迟低于指定时间值（秒），否则拒绝提供写服务
 min-replicas-max-lag 10
-# 要求连接到当前Master的健康节点要到达一定的数量，否则拒绝提供写服务
+# 要求主从复制连接到当前Master的健康节点要到达一定的数量，否则拒绝提供写服务
 min-replicas-to-write 3</code></pre>
 <ul>
-<li>针对延时复制导致的数据丢失可以适当低调低 min-replicas-max-lag 值</li>
-<li>针对网络分区导致的脑裂问题可以适当低调高 min-replicas-to-write 的值</li>
+<li>上面配置的意思是在主从复制中，必须有3个健康节点连接上Master且其复制的延时值不大于10秒，如果不满足条件则拒绝客户端的写服务</li>
 </ul>
 <p><font color="red">多说一句，Redis是存在一致性问题的，所以个人并不太理解那些使用Redis做分布式锁的行为。如果需要实现分布式锁，应该使用对客户端来说属于 AP 的高可用系统，例如 ZooKeeper 。</font></p>
 <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
