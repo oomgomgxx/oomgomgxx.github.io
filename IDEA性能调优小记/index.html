@@ -269,13 +269,17 @@
 <blockquote>
 <p>调优过后的情况如下</p>
 </blockquote>
+<p><strong>当前系统资源</strong></p>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/007.png" alt></p>
+<p><strong>IDEA运行时长</strong></p>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/006.png" alt></p>
+<p><strong>IDEA运行情况</strong></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/002.png" alt></p>
 <ul>
-<li>启动期间的卡顿感明显降低，因此调优目的已达到</li>
-<li>可以看到虽然启动过程中触发了 16 次 Young GC 但是它所花费的事件非常短暂</li>
+<li>首先启动期间的卡顿感已经明显降低，所以我要的调优效果已经达到</li>
+<li>因为一直没有关闭电脑，所以 IDEA 已经运行了将近 65 个小时。在这期间 Young GC 执行了 2232 次，用时将近两分钟，那么按两分钟来计算每次 Young GC  花费时间在 53 毫秒左右。而 Full GC 执行了 14 次用时将近 12.6 秒，即相当于每次 900 毫秒左右。从数据上不难看出，一次 Full GC 的用时是要比 Young GC 高很多的，但因为是自用电脑，所以一般都不会只开启 IDEA 一个应用，所以以上的结果也不算太差</li>
 <li>注意，Full GC 是不可能避免的，因为 Full GC 是一个有效地防止 OOM 的机制。换句话来说内存越小那么触发 Full GC 的几率就越大。除此之外 Full GC 还和程序执行的任务有关，例如程序产生了大量长期驻留在内存的对象，或者出现了内存泄露问题这都会导致频繁 Full GC 的出现</li>
-<li>还有就是我们不应该抗拒 GC ，我应该抗拒的是 GC 带来的长时间 STW ，这样说是因为不是所有 GC 的 STW 都很长时间的，例如 G1 的 Full GC 停顿时间相较于其它的 GC 就短很多</li>
-<li>如果发现系统内存长期居高不下，这时也可以巧妙地利用 Full GC 来清理内存以避免 OOM 。例如在系统流量较低的时间段定时定候地触发 Full GC（System.gc()）。例如 Tomcat 有个防止内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 也是这种操作（该方式也适合用与主动释放 Direct 内存）。同时还可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code> 配置提高 Full GC 的并发效率。但如果你想禁止这种手动触发 Full GC 的操作的话则可以添加 <code>-XX:+DisableExplicitGC</code> 将其禁掉即可</li>
+<li>最后多说一句，如果 JVM 进程内存长期居高不下，这时可以巧妙地利用手动触发 Full GC 来清理内存以避免 OOM 。譬如在系统流量较低的时间段定时定候地触发 Full GC（例如：System.gc()），同时该方式也可以有效地回收对外内存（ Direct Memory）。其中 Tomcat 有个预防内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 就是使用该操作来释放内存的。与此同时可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code> 配置来提高 Full GC 的并发效率（前提使用的是CMS）。但是，如果你想禁止这种手动触发 Full GC 的操作，则可以开启 <code>-XX:+DisableExplicitGC</code> 配置将其禁掉。</li>
 </ul>
 <h2 id="IDEA设置优化"><a href="#IDEA设置优化" class="headerlink" title="IDEA设置优化"></a>IDEA设置优化</h2><p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/003.png" alt></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/004.png" alt></p>
