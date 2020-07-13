@@ -254,7 +254,7 @@
 </ul>
 <p><del>-XX:MaxTenuringThreshold=10</del></p>
 <ul>
-<li><del>对象晋升老年代的岁数。默认值为15，即对象经历15次 GC 都没被回收的话就会晋升到老年代</del></li>
+<li><del>对象晋升老年代的岁数。默认值为15（CMS默认为6），即对象经历15次 GC 都没被回收的话就会晋升到老年代</del></li>
 <li><del>设置为 10 是因为经过我观察老年代其实并不缺乏内存，而且 CMS 并发标记可以有效地减少 Full GC ，所以对象尽早进入老年代就可以减少新生代对象数，换言之就是提高 Young GC 回收效率</del></li>
 </ul>
 <p>-XX:ReservedCodeCacheSize=500m</p>
@@ -279,7 +279,7 @@
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/002.png" alt></p>
 <ul>
 <li>首先启动期间的卡顿感已经明显降低，所以我要的调优效果已经达到</li>
-<li>因为一直没有关闭电脑，所以 IDEA 已经运行了将近 65 个小时。在这期间 Young GC 执行了 2232 次，用时将近两分钟，那么按两分钟来计算每次 Young GC  花费时间在 53 毫秒左右。而 Full GC 执行了 14 次用时将近 12.6 秒，即相当于每次 900 毫秒左右。从数据上不难看出，一次 Full GC 的用时是要比 Young GC 高很多的，但因为是自用电脑，所以一般都不会只开启 IDEA 一个应用，所以以上的结果也不算太差</li>
+<li>因为一直没有关闭电脑，所以 IDEA 已经运行了将近 65 个小时。在这期间 Young GC 执行了 2232 次，用时将近两分钟，那么按两分钟来计算每次 Young GC  花费时间在 53 毫秒左右。而 Full GC 执行了 14 次用时将近 12.6 秒，即相当于每次 900 毫秒左右。从数据上不难看出，一次 Full GC 的用时是要比 Young GC 高很多的，而且 IDEA 的内存使用量随项目的大小（文件数）而增加，即项目越大产生的对象就越多而出现 Full GC 的几率就越高</li>
 <li>注意，Full GC 是不可能避免的，因为 Full GC 是一个有效地防止 OOM 的机制。换句话来说内存越小那么触发 Full GC 的几率就越大。除此之外 Full GC 还和程序执行的任务有关，例如程序产生了大量长期驻留在内存的对象，或者出现了内存泄露问题这都会导致频繁 Full GC 的出现</li>
 <li>最后多说一句，如果 JVM 进程内存长期居高不下，这时可以巧妙地利用手动触发 Full GC 来清理内存以避免 OOM 。譬如在系统流量较低的时间段定时定候地触发 Full GC（例如：System.gc()），同时该方式也可以有效地回收对外内存（ Direct Memory）。其中 Tomcat 有个预防内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 就是使用该操作来释放内存的。与此同时可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code>(表示可以进行并发的混合回收) 来提高 Full GC 的并发效率。但是，如果你想禁止这种手动触发 Full GC 的操作，则可以开启 <code>-XX:+DisableExplicitGC</code> 配置将其禁掉。</li>
 </ul>

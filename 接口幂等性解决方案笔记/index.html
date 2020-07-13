@@ -144,8 +144,8 @@
 </ul>
 <h2 id="常见解决方案"><a href="#常见解决方案" class="headerlink" title="常见解决方案"></a>常见解决方案</h2><ul>
 <li>乐观锁状态机<ul>
-<li>加入version字段</li>
-<li>插入数据时进行判断，例如 obj.setVersion(1) ，1是固定值，那么只有第一个操作会成功（相当于 update table set age = xxx and version = 1 where version = 0，只有第一次能成功）</li>
+<li>加入 version 字段</li>
+<li>更新数据前先进行 version 字段判断。例如 obj.setVersion(1) ,其中1是固定值或是入参时传入的版本值，那么这个更新操作只会有一个成功。该方式实质就是 CAS，在SQL层面来看相当于 <code>update table set age = xxx and version = 1 where version = 0</code>，因此只会有第个操作成功更新数据</li>
 </ul>
 </li>
 </ul>
