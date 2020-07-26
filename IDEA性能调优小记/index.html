@@ -156,7 +156,7 @@
 </ul>
 <blockquote>
 <p>注：</p>
-<p>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将大内存划分为若干个 Region 区来细化管理。例如，如果能够为应用分配较大的堆内存（有人建议是4G，但个人认为大于1G的话就能体现G1优势了，再者 JDK 9 开始 CMS 已经被标记为废弃），那么 G1 就要比以前的 GC 都要高效的。但对于小内存而言就和 CMS 差不多了。因为 G1 和 CMS 一样有并发标记操作，而且 STW 时间更长（但 G1 有优先回收策略，因此可以忽略这点），其次 IDEA 默认的 GC 就是 CMS，那么它为什么不用 G1 呢？个人认为原因有两个，第一是小内存 CMS 更高效，第二是提供商无法保证 IDEA 用户机器都是高配置（这点可以从 IDEA 默认堆内存大小看出来），因此最好的选择就是 CMS + Parallel 了。</p>
+<p>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将大内存划分为若干个 Region 区来细化管理。例如如果能够为应用分配较大的堆内存（有人建议是4G，但个人认为大于1G的话就能体现G1优势了，再者 JDK 9 开始 CMS 已经被标记为废弃），那么 G1 就要比以前的 GC 都要高效。但对于小内存而言性能就和 CMS 差不多了。因为 G1 和 CMS 一样有并发标记操作，而且 STW 时间更长（但 G1 有优先回收策略，因此个人认为可以忽略这点），其次 IDEA 默认的 GC 就是 CMS。那么它为什么不用 G1 呢？个人认为原因有两个，第1是小内存 CMS 更高效，第2是提供商无法保证 IDEA 用户机器都是高配置的（内存方面），所以默认最好的选择就是 CMS + Parallel 了。</p>
 </blockquote>
 <p>优化过后的配置如下：</p>
 <pre><code class="properties">-server
@@ -170,8 +170,7 @@
 -XX:+UseG1GC
 -XX:G1HeapRegionSize=1m
 -XX:CICompilerCount=2
--XX:ReservedCodeCacheSize=300m
--XX:+AlwaysPreTouch</code></pre>
+-XX:ReservedCodeCacheSize=300m</code></pre>
 <p>配置说明：</p>
 <p>-server</p>
 <ul>
@@ -262,11 +261,11 @@
 <li>存放 JIT 编译内容的缓存大小</li>
 <li>注意该值在 64bit server 模式下默认为240m。如果编译内容到达该阈值的话 JIT 就不会再编译了，这样会降低 IDEA 代码的执行效率，直白点说就是会提高卡顿感</li>
 </ul>
-<p>-XX:+AlwaysPreTouch</p>
+<p><del>-XX:+AlwaysPreTouch</del></p>
 <ul>
-<li>在 Java 进程启动时就获取所有的内存（-Xmx），而不是等到访问才获取</li>
-<li>该配置可以有效地提升程序运行期间的性能，因为 JVM 不再需要被动分配内存</li>
-<li>注意，如果堆内存比较大的话该配置会带来一定的启动消耗，例如启动速度延长。但个人依然建议开启该配置，特别是针对 IDE 的调优，因为内存不大所以并没多大区别</li>
+<li><del>在 Java 进程启动时就获取所有的内存（-Xmx），而不是等到访问才获取</del></li>
+<li><del>该配置可以有效地提升程序运行期间的性能，例如可以减少扩容带来的 GC 的发生次数</del></li>
+<li><del>注意：如果堆内存比较大的话该配置会带来一定的启动消耗，例如启动速度延长。但个人依然推荐在生产机器中使用该参数。但因为现在调优的是笔记本，所以性质不一样，如果一开始 IDEA 就占满内存那么其他软件加起来 8 G 很容易就满了</del></li>
 </ul>
 <blockquote>
 <p>调优过后的情况如下</p>

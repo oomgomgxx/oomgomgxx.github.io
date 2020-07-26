@@ -137,55 +137,88 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="软引用、弱引用、虚引用之间的基本区别"><a href="#软引用、弱引用、虚引用之间的基本区别" class="headerlink" title="软引用、弱引用、虚引用之间的基本区别"></a>软引用、弱引用、虚引用之间的基本区别</h2><pre><code class="java">// 【软引用】只在内存不足才会被回收
-public static void testSoftReference() {
-    ReferenceQueue&lt;Person&gt; queue = new ReferenceQueue&lt;&gt;();
-    SoftReference&lt;Person&gt; reference = new SoftReference&lt;&gt;(new Person(&quot;Sam&quot;), queue);
+  <h2 id="关于引用的小知识"><a href="#关于引用的小知识" class="headerlink" title="关于引用的小知识"></a>关于引用的小知识</h2><pre><code class="java">public class Test {
+    public static void main(String[] args) throws InterruptedException {
 
-    System.out.println(&quot;第1次gc&quot;);
-    System.gc();
-    System.out.println(queue.poll() == reference?&quot;对象已被回收&quot;:&quot;对象依然存活&quot;);
+        // 软引用生命周期：内存不足的前提下第二次gc前，即第一次gc回收还不能满足分配后再次gc才会回收软引用
+        SoftReference&lt;Person&gt; softReference = new SoftReference&lt;&gt;(new Person(&quot;Sam&quot;));
+        System.gc();
+        System.out.println(softReference.get() == null ? &quot;对象已被回收&quot; : &quot;对象依然存活&quot;);
 
-    System.out.println(&quot;第2次gc&quot;);
-    System.gc();
-    System.out.println(queue.poll() == reference?&quot;对象已被回收&quot;:&quot;对象依然存活&quot;);
+        System.out.println(&quot;-------------------- 软引用 end -------------------------&quot;);
+
+        // 弱引用生命周期：从对象残生到下一次GC之前
+        WeakReference&lt;Person&gt; weakReference = new WeakReference&lt;&gt;(new Person(&quot;Sam&quot;));
+        System.out.println(weakReference.get() == null ? &quot;对象已被回收&quot; : &quot;对象依然存活&quot;);
+        System.gc();
+        System.out.println(weakReference.get() == null ? &quot;对象已被回收&quot; : &quot;对象依然存活&quot;);
+
+        System.out.println(&quot;-------------------- 弱引用 end -------------------------&quot;);
+
+        // 虚引用生命周期：该等级的引用不会对引用本身产生任何作用，只用于监听引用是否被回收
+        Person sam = new Person(&quot;Sam&quot;);
+        ReferenceQueue&lt;Person&gt; queue = new ReferenceQueue&lt;&gt;();
+        PhantomReference&lt;Person&gt; personPhantomReference = new PhantomReference&lt;&gt;(sam, queue);
+        // 注意：虚引用无法像其他引用一样 get() 获取到关联的引用实例
+        // 主动将引用入队
+        //personPhantomReference.enqueue();
+
+        new Thread(() -&gt; {
+            while (queue.poll() == null) { // 当引用被回收就会入队
+                try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) { }
+                System.out.println(&quot;对象依然存活&quot;);
+            }
+            System.out.println(&quot;对象已被回收&quot;);
+        }).start();
+
+        TimeUnit.SECONDS.sleep(3);
+        sam = null; // 消除强引用让gc回收，否者上面的用户线程会应为sam没被会后而一直循环
+        System.gc();
+
+        // 等待gc
+        TimeUnit.SECONDS.sleep(3);
+
+        /**
+         * 输出结果：
+         * 
+         * 对象依然存活
+         * -------------------- 软引用 end -------------------------
+         * 对象依然存活
+         * 对象已被回收
+         * -------------------- 弱引用 end -------------------------
+         * 对象依然存活
+         * 对象依然存活
+         * 对象依然存活
+         * 对象已被回收
+         */
+    }
 }
 
-// 【弱引用】实例的生命周期在第二次gc之前
-public static void testWeakReference() {
-    ReferenceQueue&lt;Person&gt; queue = new ReferenceQueue&lt;&gt;();
-    WeakReference&lt;Person&gt; reference = new WeakReference&lt;&gt;(new Person(&quot;Sam&quot;), queue);
+class Person {
+    private String name;
+    public Person(String name) {
+        this.name = name;
+    }
 
-    System.out.println(&quot;第1次gc&quot;);
-    System.gc();
-    System.out.println(queue.poll() == reference?&quot;对象已被回收&quot;:&quot;对象依然存活&quot;);
-
-    System.out.println(&quot;第2次gc&quot;);
-    System.gc();
-    System.out.println(queue.poll() == reference?&quot;对象已被回收&quot;:&quot;对象依然存活&quot;);
-    /*
-        第1次gc
-        对象依然存活
-        第2次gc
-        对象已被回收
-        * */
-}
-
-// 【虚引用】随时被gc回收，但不一定经历gc就会被回收，知识飘忽不定
-public static void testPhantomReference() {
-    ReferenceQueue&lt;Person&gt; queue = new ReferenceQueue&lt;&gt;();
-    PhantomReference&lt;Person&gt; reference = new PhantomReference&lt;&gt;(new Person(&quot;Sam&quot;), queue);
-
-    System.out.println(&quot;第1次gc&quot;);
-    System.gc();
-    System.out.println(queue.poll() == reference?&quot;对象已被回收&quot;:&quot;对象依然存活&quot;);
-
-    System.out.println(&quot;第2次gc&quot;);
-    System.gc();
-    System.out.println(queue.poll() == reference?&quot;对象已被回收&quot;:&quot;对象依然存活&quot;);
+    @Override
+    public String toString() {
+        return &quot;Person{&quot; +
+                &quot;name=&#39;&quot; + name + &#39;\&#39;&#39; +
+                &#39;}&#39;;
+    }
 }</code></pre>
-<h2 id="ThreadLocal和Thread的关系"><a href="#ThreadLocal和Thread的关系" class="headerlink" title="ThreadLocal和Thread的关系"></a>ThreadLocal和Thread的关系</h2><p><img src="/%E5%85%B3%E4%BA%8EThreadLocal%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E5%92%8CThreadLocalMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/001.png" alt></p>
-<h2 id="内存泄露问题与ThreadLocalMap源码浅析"><a href="#内存泄露问题与ThreadLocalMap源码浅析" class="headerlink" title="内存泄露问题与ThreadLocalMap源码浅析"></a>内存泄露问题与ThreadLocalMap源码浅析</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><pre><code class="java">ThreadLocalMap(ThreadLocal&lt;?&gt; firstKey, Object firstValue) {
+<blockquote>
+<p>拓展内容1：三种引用的使用场景</p>
+</blockquote>
+<p>软引用：适合做缓存</p>
+<p>弱引用：适合临时数据。例如 JDK 中的 WeakHashMap 以及接下来聊的 ThreadLocalMap </p>
+<p>虚引用：监控对象回收</p>
+<blockquote>
+<p>拓展内容2：FinalReference  </p>
+</blockquote>
+<p>除了以上 3 种比较特别的引用之外还有一种特别的引用  FinalReference  。FinalReference 接口是包级别的，说白了就是对外不公开只是内部使用的接口。JVM 会在垃圾回收之前（第一次标记之后）将实现了 Object 的 finalze 方法的实例包装为 FinalReference 放进 ReferenceQueue 中进行调用，而完成这项工作的精灵线程叫 Finalizer 线程 </p>
+<h2 id="ThreadLocal-和-Thread-之间的关系"><a href="#ThreadLocal-和-Thread-之间的关系" class="headerlink" title="ThreadLocal 和 Thread 之间的关系"></a>ThreadLocal 和 Thread 之间的关系</h2><p><img src="/%E5%85%B3%E4%BA%8EThreadLocal%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E5%92%8CThreadLocalMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/001.png" alt></p>
+<h2 id="内存泄露问题与-ThreadLocalMap-源码浅析"><a href="#内存泄露问题与-ThreadLocalMap-源码浅析" class="headerlink" title="内存泄露问题与 ThreadLocalMap 源码浅析"></a>内存泄露问题与 ThreadLocalMap 源码浅析</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><pre><code class="java">ThreadLocalMap(ThreadLocal&lt;?&gt; firstKey, Object firstValue) {
     // 初始化entry数组，大小默认为INITIAL_CAPACITY，即16
     table = new Entry[INITIAL_CAPACITY];
     // 计算第一个Entry的下标
@@ -475,7 +508,7 @@ private int expungeStaleEntry(int staleSlot) {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#软引用、弱引用、虚引用之间的基本区别"><span class="toc-text">软引用、弱引用、虚引用之间的基本区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocal和Thread的关系"><span class="toc-text">ThreadLocal和Thread的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内存泄露问题与ThreadLocalMap源码浅析"><span class="toc-text">内存泄露问题与ThreadLocalMap源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#构造方法"><span class="toc-text">构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Entry类的内存泄露问题"><span class="toc-text">Entry类的内存泄露问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Entry类"><span class="toc-text">Entry类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么要将-key-定义为弱引用"><span class="toc-text">为什么要将 key 定义为弱引用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么出现内存泄露"><span class="toc-text">为什么出现内存泄露</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#如何解决内存泄露"><span class="toc-text">如何解决内存泄露</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#rehash-和expungeStaleEntries"><span class="toc-text">rehash()和expungeStaleEntries()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#replaceStaleEntry"><span class="toc-text">replaceStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#expungeStaleEntry"><span class="toc-text">expungeStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#cleanSomeSlots"><span class="toc-text">cleanSomeSlots</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntry"><span class="toc-text">getEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntryAfterMiss"><span class="toc-text">getEntryAfterMiss</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#关于引用的小知识"><span class="toc-text">关于引用的小知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocal-和-Thread-之间的关系"><span class="toc-text">ThreadLocal 和 Thread 之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内存泄露问题与-ThreadLocalMap-源码浅析"><span class="toc-text">内存泄露问题与 ThreadLocalMap 源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#构造方法"><span class="toc-text">构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Entry类的内存泄露问题"><span class="toc-text">Entry类的内存泄露问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Entry类"><span class="toc-text">Entry类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么要将-key-定义为弱引用"><span class="toc-text">为什么要将 key 定义为弱引用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么出现内存泄露"><span class="toc-text">为什么出现内存泄露</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#如何解决内存泄露"><span class="toc-text">如何解决内存泄露</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#rehash-和expungeStaleEntries"><span class="toc-text">rehash()和expungeStaleEntries()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#replaceStaleEntry"><span class="toc-text">replaceStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#expungeStaleEntry"><span class="toc-text">expungeStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#cleanSomeSlots"><span class="toc-text">cleanSomeSlots</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntry"><span class="toc-text">getEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntryAfterMiss"><span class="toc-text">getEntryAfterMiss</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>

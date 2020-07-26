@@ -140,7 +140,8 @@
   <h2 id="为什么需要网关"><a href="#为什么需要网关" class="headerlink" title="为什么需要网关"></a>为什么需要网关</h2><blockquote>
 <p>没有用网关之前</p>
 </blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/001.png" alt></p>
+<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/001.png" style="zoom:50%;">
+
 <ul>
 <li>客户端需要维护众多服务的地址</li>
 <li>每个服务都需要对客户端请求做权限验证</li>
@@ -151,15 +152,41 @@
 <blockquote>
 <p>引入服务网关后</p>
 </blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/002.png" alt></p>
+<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/002.png" style="zoom: 50%;">
+
 <ul>
 <li>易于监控</li>
 <li>易于认证</li>
 <li>解决了没有网关前的各种问题，网关就像面向客户端的Facede模式</li>
 </ul>
+<blockquote>
+<p>网关可以完成的功能</p>
+</blockquote>
+<ul>
+<li>请求路由</li>
+<li>API组合</li>
+<li>协议转换</li>
+<li>身份验证</li>
+<li>访问授权</li>
+<li>速率限制</li>
+<li>缓存</li>
+<li>指标收集</li>
+<li>请求日志</li>
+<li>浏览器CORS跨域响应处理</li>
+</ul>
+<blockquote>
+<p>注意事项</p>
+</blockquote>
+<ul>
+<li>因为 API 网关代理了后端的多个服务因此而变得职责模糊，这时可以使用<code>后端前置模式</code>，即不同的服务类型采用不用的 API 网关</li>
+<li>开发者在开发完后端服务之后必须更新 API 网关，否者客户端就会被逼等待</li>
+<li>如果使用 API 网关实现 API 组合功能，则建议使用反应式编程来实现并行请求以提高可用性，例如使用 RxJava、Project Reactor 等框架实现</li>
+<li>API 网关尽可能使用断路器来辅助服务的调用以提高本身的可靠性，以免发生调用等待则阻塞后续请求</li>
+<li>建议微服务在 API 网关中进行身份验证操作，再配合授权服务发放 token 的形式来完会话功能。在微服务中并不推荐使用共享存储方式来实现共享会话（例如Redis实现共享会话），因为这样会违反松耦合的原则</li>
+</ul>
 <h2 id="微服务网关和Nginx有什么区别？"><a href="#微服务网关和Nginx有什么区别？" class="headerlink" title="微服务网关和Nginx有什么区别？"></a>微服务网关和Nginx有什么区别？</h2><p>&emsp;&emsp;首先要说的是Nginx也可以作为微服务网关来使用，而且性能也非常不错，但需要借助Lua脚本来手动实现各种功能需求，因此增加了学习和开发的成本(当然，如果确实不嫌麻烦和喜欢定制的话其实也可以使用Node.js来手动实现一个微服务网关)。随着微服务的兴起其实诞生了不少既简单又好用的微服务网关，目前也有不少企业把Nginx和微服务网关结合来使用。</p>
 <blockquote>
-<p>常用微服务网关</p>
+<p>企业开发常用的微服务 API 网关</p>
 </blockquote>
 <ul>
 <li>Netflix Zuul 1.x：SpringCloud集成，已停止更新</li>

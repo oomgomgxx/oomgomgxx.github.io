@@ -394,6 +394,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <p>基本介绍和相关调优参数</p>
 </blockquote>
 <p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/009.png" alt></p>
+<p>注意： CMS 中的  -XX:CMSInitiatingOccupancyFraction 要配合 -XX:+UseCMSInitiatingOccupancyOnly 使用</p>
 <blockquote>
 <p>CMS 收集过程</p>
 </blockquote>
@@ -519,6 +520,9 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <li>jstack -l PID</li>
 </ul>
 <p><img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/006.png" alt></p>
+<ul>
+<li>jstack -m PID：打印包含 native 方法在内的线程栈信息。不推荐普通场景使用，因为可能会导致挂起内核线程从而引起bug。例如类加载死锁时可以用 jstack -m 来观察死锁信息，因为在 JVM 成面来是看不到类加载死锁的，看到的只是等待锁，即线程处于 BLOCKED 状态而不会检测到死锁信息</li>
+</ul>
 <p><strong>jinfo：</strong></p>
 <p>根据 PID 输出当前<code>JVM配置信息</code></p>
 <ul>
