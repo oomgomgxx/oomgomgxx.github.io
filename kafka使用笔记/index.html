@@ -181,7 +181,7 @@
 <li>通过 Zero-copy 传输网络数据</li>
 <li>使用 mmap 将日志索引映射到内存，提高了数据的访问速度</li>
 <li>一个topic可以有多个partition，除了去中心化之外还提高了并发效率</li>
-<li>支持批量发送操作，只有数据大小到达<code>batch.size</code>才会发出，目的是提高操作的吞吐量</li>
+<li>发送缓存。支持批量发送操作，只有数据大小到达<code>batch.size</code>才会发出，目的是提高操作的吞吐量</li>
 </ul>
 <h2 id="关于topic、partition、replica之间的关系"><a href="#关于topic、partition、replica之间的关系" class="headerlink" title="关于topic、partition、replica之间的关系"></a>关于topic、partition、replica之间的关系</h2><p>&emsp;&emsp;通常生产者生产一个消息是存放在Broker的topic中的，但是topic只是逻辑上的概念，而消息实际存放的地方是partition（分区）。partition是一个有序的序列，在物理磁盘上对应着一个只能最追加内容的文件。</p>
 <p>&emsp;&emsp;其中，1个topic可以有1个或多个partition，换句话说就是1个topic的数据是分拆到1个或多个partition中的。 还有就是，kafka只能保证单个partition中的消息数据是有序的，如果1个topic有多个partition的话，那么就不能保证消息的有序性了，既 kafka 是不能保证全局有序的 。</p>
