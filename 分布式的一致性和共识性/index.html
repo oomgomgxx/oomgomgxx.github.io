@@ -147,15 +147,15 @@
 </blockquote>
 <ul>
 <li><strong>（C）一致性：</strong>客户端在任意节点上读取同一个值所返回的结果应该是一致的。<ul>
-<li>可以通过同步的请求应答机制来提高一致性。例如同步复制，或者满足执行数量的的节点持久化状态完成后才响应客户端</li>
+<li>可以通过<code>同步的请求应答机制</code>来提高一致性。例如同步复制，或者满足执行数量的的节点持久化状态完成后才响应客户端</li>
 </ul>
 </li>
 <li><strong>（A）可用性：</strong>节点应该在合理的时间内返回合理的客户端请求结果，但结果不应包含异常和超时。<ul>
-<li>可以通过<code>主备</code>或<code>集群</code>提高可用性</li>
+<li>可以通过 <code>主备</code>、<code>集群</code>、<code>服务体验降级（腾出资源保障核心服务）</code> 等手段来提高可用性</li>
 </ul>
 </li>
 <li><strong>（P）分区容错性：</strong>即使出现网络分区，系统也依然能够提供服务。<ul>
-<li>例如熔断机制就是用来提高分区容错性的</li>
+<li>例如<code>熔断机制</code>就是用来提高分区容错性的</li>
 </ul>
 </li>
 </ul>
@@ -166,27 +166,36 @@
 <ul>
 <li>对于分布式系统而言功能模块一般不会处于同一个服务节点（伪分布式除外），所以难以避免不会出现网络分区的情况。而且客户端的一次请求操作通常会涉及到多个服务节点的调用，所以如果系统不支持分区容错性就会导致系统直接不可用，因此可以得出结论就是分布式系统首要的就是实现分区容错性（P）。</li>
 <li>对于如何保证系统的可用性，无非就是实现系统的高可用（HA），例如横向扩展服务节点，但是如果扩展节点的话就意味着增加了同步状态的成本，节点越多同步状态的成本就越大。所以换句话来说，系统可用性越高要保证一致性就越困难，所以分布式系统一般都是在一致性（C）和可用性（A）之间权衡，因为分区容错性对于分布式系统而言是必须的，如果分布式系统没有分区容错性那么就失去的分布式的意义了。</li>
-<li>譬如 NoSQL中 HBase、MongoDB 等集群采用的是 CP 架构，而 Cassandra、CounchDB、Redis 等集群采用的则是 AP 架构。拿 Redis 来说，Redis的主从或集群是存在数据丢失问题的（Master宕机丢失数据，脑裂丢失数据），所以对于Redis来说并不能保证数据的一致性，因此一般我们只会用他做缓存或是在一些对一致性要求不高的场景下使用它</li>
+<li>譬如 Zookeeper、ETCD 等集群采用的是 CP 架构，而 Cassandra、CounchDB、Redis 等集群采用的则是 AP 架构。拿 Redis 来说，Redis的主从或集群是存在数据丢失问题的（Master宕机丢失数据，脑裂丢失数据），所以对于Redis来说并不能保证数据的一致性，因此一般我们只会用他做缓存或是在一些对一致性要求不高的场景下使用它</li>
+<li>AP 架构称为“可用优先”，而 CP 架构则是“一致性优先”</li>
 </ul>
 <blockquote>
 <p>拓展</p>
 </blockquote>
 <p>网络分区：指系统节点之间因为某些原因而导致不能通信</p>
-<h3 id="BASE理论"><a href="#BASE理论" class="headerlink" title="BASE理论"></a>BASE理论</h3><p><strong>关于一致性的分类</strong></p>
+<h3 id="BASE理论"><a href="#BASE理论" class="headerlink" title="BASE理论"></a>BASE理论</h3><blockquote>
+<p>关于一致性的分类</p>
+</blockquote>
 <ul>
 <li><strong>强一致性：</strong>写操作后的读操作一定可以获取到写操作的结果</li>
 <li><strong>弱一致性：</strong>写操作后的读操作既可能获取到，也可能获取不到写操作结果</li>
 <li><strong>最终一致性：</strong>弱一致性的特例。写操作后的读操作一般需要经过一段短暂的时间才能获取到写操作的结果</li>
 </ul>
 <blockquote>
-<p>个人理解Base理论其实是CAP的一种权衡方案，既如果你不知道怎样权衡CAP的话就可以参考Base理论。</p>
-<p>除此之外个人认为 CAP 的概念比较适合套在现今的集群架构上，而Base则比较适合套在现今的分布式应用服务上。前者注重状态，后者注重服务</p>
+<p>基本概念</p>
 </blockquote>
 <ul>
-<li><strong>Ba：</strong>基本可用，这里的基本可用不是允许不可用，而是当系统出现故障时允许适当地延长响应时间</li>
-<li><strong>s：</strong>软状态，表示允许客户端读到数据的中间状态，但是系统需要保证这种数据不会影响数据的完整性</li>
-<li><strong>e：</strong>最终一致性，写操作后的读操作一般需要经过一段短暂的时间才能获取到写操作的结果</li>
+<li><strong>BA：</strong>基本可用，这里的基本可用不是允许不可用，而是当系统出现故障时允许适当地延长响应时间<ul>
+<li>例如 <code>流量削峰</code>、<code>过载保护</code>、<code>服务(体验)降级</code>、<code>延迟响应</code> 等手段虽然能保护系统，但同时会降低系统的可用性</li>
 </ul>
+</li>
+<li><strong>S：</strong>软状态，表示允许客户端读到数据的中间状态，但是系统需要保证这种数据不会影响数据的完整性</li>
+<li><strong>E：</strong>最终一致性，写操作后的读操作一般需要经过一段短暂的时间才能获取到写操作的结果</li>
+</ul>
+<blockquote>
+<p>小结</p>
+</blockquote>
+<p>个人理解 BASE 理论其实是CAP的一种权衡方案，既如果你不知道怎样权衡 CAP 的话就可以参考 BASE 理论。除此之外应该要注意到 BASE 理论实质是主张牺牲部分功能的可用性来保证系统整体的基本可用。</p>
 <h2 id="分布式一致性解决方案"><a href="#分布式一致性解决方案" class="headerlink" title="分布式一致性解决方案"></a>分布式一致性解决方案</h2><ul>
 <li>分布式一致性协议用于保障请求数据在多个服务节点之间的完整性</li>
 <li>分布式一致性协议大致可以划分为两大类：强一致性 和 最终一致性</li>
@@ -302,7 +311,7 @@
 
 
 
-<h4 id="TCC协议模式"><a href="#TCC协议模式" class="headerlink" title="TCC协议模式"></a>TCC协议模式</h4><ul>
+<h4 id="TCC协议模式（补偿事务）"><a href="#TCC协议模式（补偿事务）" class="headerlink" title="TCC协议模式（补偿事务）"></a>TCC协议模式（补偿事务）</h4><ul>
 <li>TCC的操作比较像2PC。TCC 主要分为2个操作：<code>Try</code>、 <code>Confirm / Cancel</code></li>
 <li>可以对分布式事务进行回滚操作</li>
 </ul>
@@ -448,7 +457,7 @@ public void cancelPay(){
 <li>最终一致。节点间状态要达到一致至少需要<code>log(节点数)(底数=扇出数)</code>这么长的时间</li>
 </ul>
 <h4 id="支持的传播方案"><a href="#支持的传播方案" class="headerlink" title="支持的传播方案"></a>支持的传播方案</h4><ul>
-<li>Anti-Entropy（反熵）：传播节点的所有信息</li>
+<li>Anti-Entropy（反熵）：传播节点的所有信息。因为节点需要比对信息来达成一致性，因此成本较高</li>
 <li>Rumor-Mongering（谣言传播）：仅传播节点新接收的信息（增量传播）。会自动检查信息是否已被删除，如果被删除则不进行传播</li>
 </ul>
 <h4 id="支持的行为模式"><a href="#支持的行为模式" class="headerlink" title="支持的行为模式"></a>支持的行为模式</h4><ul>
@@ -596,7 +605,7 @@ public void cancelPay(){
 <p>减少状态空间</p>
 </blockquote>
 <ul>
-<li><strong>强Leader：</strong>日志条目只能是 Leader 节点传给其它集群节点。系统的所有变更都通过Leader进行，采用二段提交方式，即 Leader 接收到客户端请求变更状态后并不会马上应用日志条目，而是 Leader 将其日志条目广播出去后得到过半节点响应才由 Leader 率先应用日志条目再发送信息要求其他节点应用条目</li>
+<li><strong>强Leader：</strong>日志条目只能是 Leader 节点传给其它集群节点。系统的所有变更都通过Leader 进行，采用二段提交方式，即 Leader 接收到客户端请求变更状态后并不会马上应用日志条目，而是 Leader 将其日志条目广播出去后得到过半节点响应才由 Leader 率先应用日志条目再发送信息要求其他节点应用条目</li>
 <li><strong>Leader选举：</strong>使用<code>随机超时器</code>来协作选举（解决活锁问题），实质就是按照随机时间来发竞选数据包</li>
 </ul>
 <h4 id="算法角色-1"><a href="#算法角色-1" class="headerlink" title="算法角色"></a>算法角色</h4><blockquote>
@@ -852,7 +861,7 @@ public void cancelPay(){
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式基础理论"><span class="toc-text">分布式基础理论</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CAP定理"><span class="toc-text">CAP定理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BASE理论"><span class="toc-text">BASE理论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式一致性解决方案"><span class="toc-text">分布式一致性解决方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#强一致性方案"><span class="toc-text">强一致性方案</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#二段提交协议（2pc）"><span class="toc-text">二段提交协议（2pc）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#三段提交协议（3pc）"><span class="toc-text">三段提交协议（3pc）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最终一致性方案"><span class="toc-text">最终一致性方案</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#前置小知识"><span class="toc-text">前置小知识</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#可靠消息模式-补偿-幂等-本地消息表方案"><span class="toc-text">可靠消息模式+补偿+幂等 (本地消息表方案)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TCC协议模式"><span class="toc-text">TCC协议模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Event-Soucing"><span class="toc-text">Event Soucing</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#一站式事务解决方案-Seata"><span class="toc-text">一站式事务解决方案 - Seata</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式共识性（针对故障容错）"><span class="toc-text">分布式共识性（针对故障容错）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Gossip协议"><span class="toc-text">Gossip协议</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#特点"><span class="toc-text">特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#支持的传播方案"><span class="toc-text">支持的传播方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#支持的行为模式"><span class="toc-text">支持的行为模式</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos算法"><span class="toc-text">Paxos算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#算法的诞生"><span class="toc-text">算法的诞生</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Paxos特点"><span class="toc-text">Paxos特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#关系模型"><span class="toc-text">关系模型</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法角色"><span class="toc-text">算法角色</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法要求"><span class="toc-text">算法要求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#生成提案和接收提案"><span class="toc-text">生成提案和接收提案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法陈述"><span class="toc-text">算法陈述</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Learner获取已通过提案的方案"><span class="toc-text">Learner获取已通过提案的方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#从获取已通过提案来看一致性问题"><span class="toc-text">从获取已通过提案来看一致性问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#解决Proposer活锁问题"><span class="toc-text">解决Proposer活锁问题</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Raft算法"><span class="toc-text">Raft算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#算法的诞生-1"><span class="toc-text">算法的诞生</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Raft特点"><span class="toc-text">Raft特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#问题拆分和减少状态空间"><span class="toc-text">问题拆分和减少状态空间</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法角色-1"><span class="toc-text">算法角色</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#通信"><span class="toc-text">通信</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#日志复制过程"><span class="toc-text">日志复制过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ZooKeeper-Atomic-Broadcast（ZAB协议）"><span class="toc-text">ZooKeeper Atomic Broadcast（ZAB协议）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本简介"><span class="toc-text">基本简介</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ZAB特点"><span class="toc-text">ZAB特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#协议角色"><span class="toc-text">协议角色</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#通信模型"><span class="toc-text">通信模型</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#简单粗暴的二阶段提交"><span class="toc-text">简单粗暴的二阶段提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#协议陈述"><span class="toc-text">协议陈述</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Gossip、Paxos、Raft、ZAB之间的区别"><span class="toc-text">Gossip、Paxos、Raft、ZAB之间的区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式基础理论"><span class="toc-text">分布式基础理论</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CAP定理"><span class="toc-text">CAP定理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BASE理论"><span class="toc-text">BASE理论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式一致性解决方案"><span class="toc-text">分布式一致性解决方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#强一致性方案"><span class="toc-text">强一致性方案</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#二段提交协议（2pc）"><span class="toc-text">二段提交协议（2pc）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#三段提交协议（3pc）"><span class="toc-text">三段提交协议（3pc）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最终一致性方案"><span class="toc-text">最终一致性方案</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#前置小知识"><span class="toc-text">前置小知识</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#可靠消息模式-补偿-幂等-本地消息表方案"><span class="toc-text">可靠消息模式+补偿+幂等 (本地消息表方案)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TCC协议模式（补偿事务）"><span class="toc-text">TCC协议模式（补偿事务）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Event-Soucing"><span class="toc-text">Event Soucing</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#一站式事务解决方案-Seata"><span class="toc-text">一站式事务解决方案 - Seata</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分布式共识性（针对故障容错）"><span class="toc-text">分布式共识性（针对故障容错）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Gossip协议"><span class="toc-text">Gossip协议</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#特点"><span class="toc-text">特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#支持的传播方案"><span class="toc-text">支持的传播方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#支持的行为模式"><span class="toc-text">支持的行为模式</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos算法"><span class="toc-text">Paxos算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#算法的诞生"><span class="toc-text">算法的诞生</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Paxos特点"><span class="toc-text">Paxos特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#关系模型"><span class="toc-text">关系模型</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法角色"><span class="toc-text">算法角色</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法要求"><span class="toc-text">算法要求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#生成提案和接收提案"><span class="toc-text">生成提案和接收提案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法陈述"><span class="toc-text">算法陈述</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Learner获取已通过提案的方案"><span class="toc-text">Learner获取已通过提案的方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#从获取已通过提案来看一致性问题"><span class="toc-text">从获取已通过提案来看一致性问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#解决Proposer活锁问题"><span class="toc-text">解决Proposer活锁问题</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Raft算法"><span class="toc-text">Raft算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#算法的诞生-1"><span class="toc-text">算法的诞生</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Raft特点"><span class="toc-text">Raft特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#问题拆分和减少状态空间"><span class="toc-text">问题拆分和减少状态空间</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#算法角色-1"><span class="toc-text">算法角色</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#通信"><span class="toc-text">通信</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#日志复制过程"><span class="toc-text">日志复制过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ZooKeeper-Atomic-Broadcast（ZAB协议）"><span class="toc-text">ZooKeeper Atomic Broadcast（ZAB协议）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本简介"><span class="toc-text">基本简介</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ZAB特点"><span class="toc-text">ZAB特点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#协议角色"><span class="toc-text">协议角色</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#通信模型"><span class="toc-text">通信模型</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#简单粗暴的二阶段提交"><span class="toc-text">简单粗暴的二阶段提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#协议陈述"><span class="toc-text">协议陈述</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Gossip、Paxos、Raft、ZAB之间的区别"><span class="toc-text">Gossip、Paxos、Raft、ZAB之间的区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
