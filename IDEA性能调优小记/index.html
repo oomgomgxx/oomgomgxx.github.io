@@ -156,7 +156,9 @@
 </ul>
 <blockquote>
 <p>注：</p>
-<p>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将大内存划分为若干个 Region 区来细化管理。例如如果能够为应用分配较大的堆内存（有人建议是4G，但个人认为大于1G的话就能体现G1优势了，再者 JDK 9 开始 CMS 已经被标记为废弃），那么 G1 就要比以前的 GC 都要高效。但对于小内存而言性能就和 CMS 差不多了。因为 G1 和 CMS 一样有并发标记操作，而且 STW 时间更长（但 G1 有优先回收策略，因此个人认为可以忽略这点），其次 IDEA 默认的 GC 就是 CMS。那么它为什么不用 G1 呢？个人认为原因有两个，第1是小内存 CMS 更高效，第2是提供商无法保证 IDEA 用户机器都是高配置的（内存方面），所以默认最好的选择就是 CMS + Parallel 了。</p>
+<ul>
+<li>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将大内存划分为若干个 Region 区来细化管理。例如如果能够为应用分配较大的堆内存（有人建议是4G，但个人认为大于1G的话就能体现G1优势了，再者 JDK 9 开始 CMS 已经被标记为废弃），那么 G1 就要比以前的 GC 都要高效。但对于小内存而言性能就和 CMS 差不多了。因为 G1 和 CMS 一样有并发标记操作，而且 STW 时间更长（但 G1 有优先回收策略，因此个人认为可以忽略这点），其次 IDEA 默认的 GC 就是 CMS。那么它为什么不用 G1 呢？个人认为原因有两个，第1是小内存 CMS 更高效，第2是提供商无法保证 IDEA 用户机器都是高配置的（内存方面），所以默认最好的选择就是 CMS + Parallel 了。</li>
+</ul>
 </blockquote>
 <p>优化过后的配置如下：</p>
 <pre><code class="properties">-server
@@ -169,7 +171,9 @@
 -Xmx1024m
 -XX:+UseG1GC
 -XX:G1HeapRegionSize=1m
+-XX:+UseStringDeduplication
 -XX:CICompilerCount=2
+-XX:+AlwaysPreTouch
 -XX:ReservedCodeCacheSize=300m</code></pre>
 <p>配置说明：</p>
 <p>-server</p>
@@ -261,14 +265,19 @@
 <li>存放 JIT 编译内容的缓存大小</li>
 <li>注意该值在 64bit server 模式下默认为240m。如果编译内容到达该阈值的话 JIT 就不会再编译了，这样会降低 IDEA 代码的执行效率，直白点说就是会提高卡顿感</li>
 </ul>
-<p><del>-XX:+AlwaysPreTouch</del></p>
+<p>-XX:+AlwaysPreTouch</p>
 <ul>
-<li><del>在 Java 进程启动时就获取所有的内存（-Xmx），而不是等到访问才获取</del></li>
-<li><del>该配置可以有效地提升程序运行期间的性能，例如可以减少扩容带来的 GC 的发生次数</del></li>
-<li><del>注意：如果堆内存比较大的话该配置会带来一定的启动消耗，例如启动速度延长。但个人依然推荐在生产机器中使用该参数。但因为现在调优的是笔记本，所以性质不一样，如果一开始 IDEA 就占满内存那么其他软件加起来 8 G 很容易就满了</del></li>
+<li>在 JVM 进程启动时就分配所有的内存（-Xmx）而不是等到访问时才分配。该配置可以有效地提升程序运行期间的稳定性</li>
+<li>理论上来说堆越大的话，该配置就会带来一定的启动耗时。但个人认为可以忽略，所以建议配置</li>
+</ul>
+<p>-XX:+UseStringDeduplication</p>
+<ul>
+<li>开启字符串去重节省内存（注意：该配置只在 G1 上生效）</li>
+<li>字符串去重操作会在 GC 期间进行，默认情况下只有经历 3 次 GC 还存活的字符串才会列为关注对象（可以-XX:StringDeduplicationAgeThreshold 设置 GC 阈值）</li>
+<li>开启字符串去重功能会加大 GC 垃圾回收的工作量，即会一定程度上延长 GC 停留时间，所以这是一个<code>时间换空间</code>的操作。个人认为如果内存不充裕（例如我当前机器的情况）且对 GC 停留没有严苛的要求时建议开启该功能</li>
 </ul>
 <blockquote>
-<p>调优过后的情况如下</p>
+<p>调优过后的情况如下。（注：以下数据没加字符串去重）</p>
 </blockquote>
 <p><strong>当前系统资源</strong></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/007.png" alt></p>
@@ -278,16 +287,45 @@
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/002.png" alt></p>
 <ul>
 <li>首先启动期间的卡顿感已经明显降低，所以我要的调优效果已经达到</li>
-<li>因为一直没有关闭电脑，所以 IDEA 已经运行了将近 65 个小时。在这期间 Young GC 执行了 2232 次，用时将近两分钟，那么按两分钟来计算每次 Young GC  花费时间在 53 毫秒左右。而 Full GC 执行了 14 次用时将近 12.6 秒，即相当于每次 900 毫秒左右。从数据上不难看出，一次 Full GC 的用时是要比 Young GC 高很多的，而且 IDEA 的内存使用量随项目的大小（文件数）而增加，即项目越大产生的对象就越多而出现 Full GC 的几率就越高</li>
-<li>注意，Full GC 是不可能避免的，因为 Full GC 是一个有效地防止 OOM 的机制。换句话来说内存越小那么触发 Full GC 的几率就越大。除此之外 Full GC 还和程序执行的任务有关，例如程序产生了大量长期驻留在内存的对象，或者出现了内存泄露问题这都会导致频繁 Full GC 的出现</li>
-<li>最后多说一句，如果 JVM 进程内存长期居高不下，这时可以巧妙地利用手动触发 Full GC 来清理内存以避免 OOM 。譬如在系统流量较低的时间段定时定候地触发 Full GC（例如：System.gc()），同时该方式也可以有效地回收对外内存（ Direct Memory）。其中 Tomcat 有个预防内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 就是使用该操作来释放内存的。与此同时可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code>(表示可以进行并发的混合回收) 来提高 Full GC 的并发效率。但是，如果你想禁止这种手动触发 Full GC 的操作，则可以开启 <code>-XX:+DisableExplicitGC</code> 配置将其禁掉。</li>
+<li>因为一直没有关闭电脑，所以 IDEA 已经运行了将近 65 个小时。在这期间 Young GC 执行了 2232 次，用时将近两分钟，相当于每次 Young GC  花费时间在 53 毫秒左右。而 Full GC 执行了 14 次用时将近 12.6 秒，即相每次 900 毫秒左右。从数据上不难看出一次 Full GC 的用时是要比 Young GC 高很多的。当然，这点要还是要看对中的对象有多少而定</li>
+<li>Full GC 是不可能避免的。Full GC 是一个有效地防止内存溢出的机制，换句话来说内存越小触发 Full GC 的几率就越大，因为随着程序产生了大量长期驻留在对象导致内存紧张又或者出现了内存泄露问题都会导致频繁地 Full GC 的出现</li>
+<li>最后多说一句，如果项目堆内存紧张的话可以考虑一下利用手动形式触发 Full GC 来清理内存以避免内存溢出 。譬如在系统访问流量较低的时间段利用定时任务触发 System.gc() 。一个比较好的例子就是 Tomcat 中有个预防内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 就是采用这种方式来释放内存并检测内存泄露的。除此之外如果使用了 CMS 的话可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code>来提高 Full GC 的并发效率。但是，如果你想禁止这种手动触发 Full GC 的操作，则可以开启 <code>-XX:+DisableExplicitGC</code> 配置（譬如解决 Tomcat 监听类每小时触发一次 Full GC 的问题）</li>
 </ul>
 <h2 id="IDEA设置优化"><a href="#IDEA设置优化" class="headerlink" title="IDEA设置优化"></a>IDEA设置优化</h2><p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/003.png" alt></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/004.png" alt></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/005.png" alt></p>
-<p>除吃之外还可以观察 IDEA 的内存使用，在内存占用较大时手动情况以下。例如可以在 IDEA 右下角点击右键开启内存监控器</p>
+<p>除此之外还可以在 IDEA 右下角点击右键开启内存监控器实时观察堆的内存使用情况，可以在内存占用较大时手动点击触发 Full GC</p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/001.png" alt></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+<p>注意，有些时候可能你会观察到这么一个现象，就是 IDEA 的内存使用量超过了 -xmx 所指定的范围。这是因为 -xmx 控制的只是 JVM 堆内存，而在任务管理器中所看到的是 JVM 进程所占用的全部内存，其中包含 <code>堆内存</code> 和 <code>堆外内存（栈内存（由系统分配管理，速度快且没有泄露问题）、元空间、直接内存、C库内存池）</code> 等。</p>
+<h2 id="知识拓展"><a href="#知识拓展" class="headerlink" title="知识拓展"></a>知识拓展</h2><blockquote>
+<p>拓展1 — C库内存池，也叫内存分配器</p>
+</blockquote>
+<ul>
+<li>内存池用于加速内存分配。一般而言应用程序会首先向应用内存池（譬如 JVM 堆）申请内存，如果不足分配则会向C库内存池申请（malloc），只有在 C库内存池 不足分配时才会到系统内核中申请，而系统内核调配资源相对来说是比较低效的</li>
+<li>常见的 C库内存池譬如有 Linux 下 JVM 使用的 （glibc）Ptmalloc2 、Google 的 TCMalloc、Redis 用的 Facebook JeMalloc 等等</li>
+<li>malloc 属于动态内存分配，它的实现分为 <code>brk</code> 和 <code>mmap</code> 两种。它们的区别在于 brk 用于分派较小的内存，同时缓存释放后不会马上归还给内核而是缓存起来以提高后续所需的分配操作，而 mmap 用于较大的内存分配时使用（按需向上取整到整数个页），特点是内存在释放后会马上归还， 所以每次 mmap 都会发生缺页中断（频繁发生会使内核管理负担增大 ） 。这里需要重要注意的是 malloc 并不是将内存马上分配给进程，分配给进程的只是虚拟内存，即真正分配是在进程访问虚拟内存发生缺页中断时分配的</li>
+<li>其中 Ptmalloc2 会为每条线程预分配 64M 的内存（用于线程需要时领取），其中又因为 JVM 的线程模型 与 Linux内核线程是单对单的关系，所以在多线程高并发场景下会出现进程所占内存突增的现象。这个问题可以添加环境变量 MALLOC_ARENA_MAX 来控制，亦可以通过环境变量 LD_PRELOAD 来挂载指定的 malloc</li>
+<li>因为 glibc 默认的 malloc  容易造成内碎片，影响内存回收，因此 Redis 用 JeMalloc 取而代之。除此之外，如果发生非堆上内存泄露，同时泄露点不在应用程序上时则可以考虑将 malloc 更改为 JeMalloc</li>
+</ul>
+<blockquote>
+<p>拓展2 — 查看进程的内存状态</p>
+</blockquote>
+<ol>
+<li>先用 <code>pidof</code> 或 <code>jps</code> 得到 PID 号</li>
+<li>再用 <code>pmap -x PID</code> 查看</li>
+</ol>
+<blockquote>
+<p>拓展3 — Linux OOM-Killer （内存溢出杀手）</p>
+</blockquote>
+<ul>
+<li>Linux 系统的一种保护机制，在内存不足时用于关闭  <code>/proc/&lt;pid&gt;/oom_score</code> 值最大的进程 </li>
+<li>可通过命令 <code>grep &quot;Out of memory&quot; /var/log/messages</code> 查看有哪些进程被 Killer 关闭</li>
+<li>防止进程被关闭的方法是调整进程<code>oom_score_adj</code> 的值（范围在 -17 至 15 之间） ，该值越小被关闭的机会就越少，其中 -17 表示禁止杀死该进程。例如可通过命令 <code>sudo echo -17 &gt; /proc/进程PID/oom_score_adj</code> 设置</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/51056407" target="_blank" rel="noopener">Memory Allocator</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -329,7 +367,7 @@
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM参数调优说明"><span class="toc-text">JVM参数调优说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IDEA设置优化"><span class="toc-text">IDEA设置优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM参数调优说明"><span class="toc-text">JVM参数调优说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IDEA设置优化"><span class="toc-text">IDEA设置优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#知识拓展"><span class="toc-text">知识拓展</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
