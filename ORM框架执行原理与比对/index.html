@@ -267,8 +267,8 @@
 </ul>
 <h3 id="缺点-3"><a href="#缺点-3" class="headerlink" title="缺点"></a>缺点</h3><ul>
 <li>无法对 SQL 进行统一管理，如果存在修改 SQL 的需求时需要修改源码后并重新编译</li>
-<li>批量操作不够灵活</li>
-<li>默认不支持动态SQL（即根据条件拼装SQL查询），解决方式有以下 6 种：<ol>
+<li>批量操作(批量操作SQL语法)不够灵活。要么全部开启，要么通过 EntityManager 独立实现</li>
+<li>默认不支持动态SQL（即根据条件拼装SQL查询），因为Spring Data JPA符合的是DDD设计思想，其优点在于单表操作，符合现今微服务单一职责理念，但是如果是单体应用或者确实有复杂查询和动态查询的需求，那么亦有以下6种解决：<ol>
 <li>定义多个不同条件的 Repository 方法，然后据入参条件再判断应该使用哪个 Repository 方法</li>
 <li>自定义 JPA Repository 接口实现。通过注入 EntityManager 进行动态查询，可选择 Native SQL 、JPQL、Criteria 其中一种实现</li>
 <li>在 @Query 注解中使用 MySQL if函数进行动态拼接 SQL</li>
