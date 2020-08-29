@@ -180,7 +180,7 @@ public Person getPerson2(String name, int age) {
     return new Person(name, age); 
 }
 
-// 和@Cacheable主要却别在于@CachePut会保证方法体执行
+// 和@Cacheable区别在于@CachePut会保证方法体执行
 // 当@Cacheable发现传入的参数有缓存会直接返回缓存而不会执行方法体
 @CachePut(value=&quot;getPerson3&quot;)
 public Person getPerson3(String name) {
@@ -211,6 +211,213 @@ public @interface EnableCaching {
 }</code></pre>
 <p>保存方式是 key-value 形式（SpringBoot默认情况下会使用 ConcurrentHashMap 来保存缓存对象）</p>
 <p><img src="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/001.png" alt></p>
+<h3 id="SpringBoot-Cache整合Redis（分布式缓存）"><a href="#SpringBoot-Cache整合Redis（分布式缓存）" class="headerlink" title="SpringBoot Cache整合Redis（分布式缓存）"></a>SpringBoot Cache整合Redis（分布式缓存）</h3><h4 id="整合案例"><a href="#整合案例" class="headerlink" title="整合案例"></a>整合案例</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<pre><code class="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-data-redis&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-cache&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+<blockquote>
+<p>整合配置类</p>
+</blockquote>
+<pre><code class="java">@EnableCaching
+@Configuration(proxyBeanMethods = false)
+public class CacheConfig {
+
+    /**
+     * spring cache 整合 redis
+     * @param redisTemplate
+     * @return
+     */
+    @Bean
+    public CacheManager cacheManager(RedisTemplate redisTemplate) {
+
+        // k-v序列化器
+        final RedisSerializationContext.SerializationPair serializeKeys =
+                RedisSerializationContext.SerializationPair.fromSerializer(redisTemplate.getStringSerializer());
+
+        final RedisSerializationContext.SerializationPair serializeValues =
+                RedisSerializationContext.SerializationPair.fromSerializer(redisTemplate.getValueSerializer());
+
+        // Redis缓存配置
+        RedisCacheConfiguration defaultCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
+                .serializeKeysWith(serializeKeys)
+                .serializeValuesWith(serializeValues)
+                .disableCachingNullValues() // 禁止缓存null值
+                .entryTtl(Duration.ofHours(1)); // 统一缓存1个小时
+
+        // 根据缓存配置构造出管缓存理器
+        RedisCacheManager redisCacheManager = RedisCacheManager.RedisCacheManagerBuilder
+                .fromConnectionFactory(redisTemplate.getConnectionFactory())
+                .cacheDefaults(defaultCacheConfiguration)
+                .transactionAware()
+                .build();
+
+        return redisCacheManager;
+    }
+}</code></pre>
+<blockquote>
+<p>测试用实体</p>
+</blockquote>
+<pre><code class="java">@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Data
+public class Person implements Serializable {
+    private String id;
+    private String name;
+    private String address;
+    private int age;
+}</code></pre>
+<blockquote>
+<p>使用</p>
+</blockquote>
+<pre><code class="java">@Service
+public class PersonService {
+    private ThreadLocalRandom random = ThreadLocalRandom.current();
+
+    @Cacheable(cacheNames = &quot;findById&quot;)
+    public Person findById(String id, int age) {
+        return Person.builder()
+                .id(id)
+                .name(&quot;Sam-&quot; + random.nextInt())
+                .age(age)
+                .address(&quot;广东省广州市xxx&quot;)
+                .build();
+    }
+}</code></pre>
+<blockquote>
+<p>存在问题</p>
+</blockquote>
+<ul>
+<li>存在局限性，无法根据需要来独立设置缓存的过期时间</li>
+</ul>
+<h4 id="自定义缓存注解-解决-Cacheble局限"><a href="#自定义缓存注解-解决-Cacheble局限" class="headerlink" title="自定义缓存注解 - 解决@Cacheble局限"></a>自定义缓存注解 - 解决@Cacheble局限</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<pre><code class="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-aop&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+<blockquote>
+<p>自定义缓存注解</p>
+</blockquote>
+<pre><code class="java">@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface CustomCache {
+    @AliasFor(&quot;cacheKey&quot;)
+    String value() default &quot;&quot;;
+    String cacheKey() default &quot;&quot;;
+    int expires(); // 单位:秒
+}</code></pre>
+<blockquote>
+<p>注解处理类（切面类）</p>
+</blockquote>
+<pre><code class="java">@Component
+@Aspect
+public class CustomCacheAspect {
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Pointcut(&quot;@annotation(customCache)&quot;) // 拦截注解 TestAnnotation
+    public void pointcut(CustomCache customCache) {
+    }
+
+    @Around(&quot;pointcut(customCache)&quot;)
+    public Object around(ProceedingJoinPoint proceedingJoinPoint, CustomCache customCache) throws Throwable {
+
+        // 序列化和反序列化工具：Gson
+        final Gson gson = new Gson();
+
+        // 表达式解析器 和 参数列表变量名发现器
+        final ExpressionParser parser = new SpelExpressionParser();
+        final ParameterNameDiscoverer nameDiscoverer = new LocalVariableTableParameterNameDiscoverer();
+
+        // 当前切入点方法
+        MethodSignature methodSignature = (MethodSignature) proceedingJoinPoint.getSignature();
+        Method method = methodSignature.getMethod();
+
+        // 当前切入点方法的参数列表变量名称和值
+        String[] params = nameDiscoverer.getParameterNames(method);
+        final Object[] args = proceedingJoinPoint.getArgs();
+
+        // 构建表达式解析目标（根对象）
+        // 注意，如果根对象经常变动则不建议使用解析上下万，因为解析上下文会缓存值，如果根对象不变则建议使用解析上下文
+        Map&lt;String, Object&gt; methodParams = new HashMap&lt;&gt;();
+        for (int i = 0; i &lt; params.length; i++) {
+            methodParams.put(params[i], args[i]);
+        }
+
+        // 构造解析上下文
+        /*
+        EvaluationContext context = new StandardEvaluationContext();
+        for (int len = 0; len &lt; params.length; len++) {
+            context.setVariable(params[len], args[len]);
+        }
+         */
+
+        String el = null;
+        Expression expression = null;
+        String condition = null;
+        try {
+            el = &quot;&quot;.equals(customCache.value())?customCache.cacheKey():customCache.value();
+            expression = parser.parseExpression(el);// 解析表达式
+            condition = expression.getValue(methodParams, String.class);
+
+        } catch (ParseException e1) {
+            throw new RuntimeException(&quot;解析异常，当前注解的表达式为：&quot; + el);
+        } catch (EvaluationException e2) {
+            throw new RuntimeException(&quot;求值异常，当前注解的表达式为：&quot; + el);
+        }
+
+        String jsonObject = null;
+
+        // 判断是否已经存在缓存
+        if (redisTemplate.hasKey(condition)) {
+            System.out.println(&quot;从缓存中获取, ttl = &quot; + redisTemplate.getExpire(condition));
+            jsonObject = (String)redisTemplate.opsForValue().get(condition);
+            return gson.fromJson(jsonObject, Person.class);
+        }
+
+        System.out.println(&quot;从数据库中获取&quot;);
+
+        // 执行完切入点方法所返回的值
+        Person methodInvokeResult = (Person)proceedingJoinPoint.proceed();
+
+        // 将方法返回结果缓存
+        jsonObject = gson.toJson(methodInvokeResult);
+        redisTemplate.opsForValue().set(condition, jsonObject, customCache.expires(), TimeUnit.SECONDS);
+
+        return methodInvokeResult;
+    }
+
+}</code></pre>
+<blockquote>
+<p>使用</p>
+</blockquote>
+<pre><code class="java">@Service
+public class PersonService {
+    private ThreadLocalRandom random = ThreadLocalRandom.current();
+
+    // 以ID值作为缓存key
+    // 注意：[&#39;id&#39;] 是用于获取 map 中的值的表达式
+    // 如果是从表达式上下文中获取格式应该是 #id
+    @CustomCache(cacheKey = &quot;[&#39;id&#39;]&quot;, expires = 120)
+    public Person findById(String id, int age) {
+        return Person.builder()
+                .id(id)
+                .name(&quot;Sam-&quot; + random.nextInt())
+                .age(age)
+                .address(&quot;广东省广州市xxx&quot;)
+                .build();
+    }
+}</code></pre>
 <h2 id="常用的本地缓存"><a href="#常用的本地缓存" class="headerlink" title="常用的本地缓存"></a>常用的本地缓存</h2><h3 id="ConcurrentHashMap（SpringBoot默认）"><a href="#ConcurrentHashMap（SpringBoot默认）" class="headerlink" title="ConcurrentHashMap（SpringBoot默认）"></a>ConcurrentHashMap（SpringBoot默认）</h3><p>如果没有添加第三方 Cache 依赖的话，SpringBoot 默认会启动 SimpleCacheConfiguration 来对CacheManager做初始化操作</p>
 <p><img src="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/002.png" alt></p>
 <pre><code class="java">@Configuration
@@ -392,7 +599,7 @@ public List&lt;Person&gt; findAll() {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是本地缓存？"><span class="toc-text">什么是本地缓存？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存的意义"><span class="toc-text">缓存的意义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用本地缓存需要注意的问题"><span class="toc-text">使用本地缓存需要注意的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存驱逐策略"><span class="toc-text">缓存驱逐策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot本地缓存API"><span class="toc-text">SpringBoot本地缓存API</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用"><span class="toc-text">使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用的本地缓存"><span class="toc-text">常用的本地缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ConcurrentHashMap（SpringBoot默认）"><span class="toc-text">ConcurrentHashMap（SpringBoot默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EhCache"><span class="toc-text">EhCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Caffeine（推荐）"><span class="toc-text">Caffeine（推荐）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是本地缓存？"><span class="toc-text">什么是本地缓存？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存的意义"><span class="toc-text">缓存的意义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用本地缓存需要注意的问题"><span class="toc-text">使用本地缓存需要注意的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#缓存驱逐策略"><span class="toc-text">缓存驱逐策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringBoot本地缓存API"><span class="toc-text">SpringBoot本地缓存API</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用"><span class="toc-text">使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SpringBoot-Cache整合Redis（分布式缓存）"><span class="toc-text">SpringBoot Cache整合Redis（分布式缓存）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#整合案例"><span class="toc-text">整合案例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自定义缓存注解-解决-Cacheble局限"><span class="toc-text">自定义缓存注解 - 解决@Cacheble局限</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用的本地缓存"><span class="toc-text">常用的本地缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ConcurrentHashMap（SpringBoot默认）"><span class="toc-text">ConcurrentHashMap（SpringBoot默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EhCache"><span class="toc-text">EhCache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Caffeine（推荐）"><span class="toc-text">Caffeine（推荐）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
