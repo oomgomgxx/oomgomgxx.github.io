@@ -691,21 +691,20 @@ public void cancelPay(){
 <li>解决脑裂问题可以参考 ZAB 协议，即正常通信节点低于过半数后禁止对外提供服务。例如除了<code>选举超时</code>和<code>心跳超时</code>之外再额外加多一个<code>集群健康超时</code>来检测 Follower 连接 Leader 的健康状态，又或者在处理客户端请求之前判断 Follower 满足过半监控才对外提供服务</li>
 <li>除此之外也有人提出 <a href="https://mp.weixin.qq.com/s?__biz=MzI3NDIxNTQyOQ==&mid=2247484229&idx=1&sn=77d6178f182189e1fc8f042aa698f2e5&chksm=eb16242fdc61ad39d74b4af1a72253bc5ae0de42fa1d65274fd21b9f903e03e77e8d4680ee0c&scene=21" target="_blank" rel="noopener">leader lease</a> 方案解决脑裂问题，但按照个人的理解认为其实采用心跳机制来检测是否过半节点正常通信后再决定是否对外提供服务会更加简单和优雅一点，而且 leader lease 引入的 region leader 需要额外地恢复大大增加了 Raft 的复杂性和实现难度</li>
 </ul>
-<h3 id="ZooKeeper-Atomic-Broadcast（ZAB协议）"><a href="#ZooKeeper-Atomic-Broadcast（ZAB协议）" class="headerlink" title="ZooKeeper Atomic Broadcast（ZAB协议）"></a>ZooKeeper Atomic Broadcast（ZAB协议）</h3><h4 id="基本简介"><a href="#基本简介" class="headerlink" title="基本简介"></a>基本简介</h4><p>&emsp;&emsp;首先ZAB协议并不是Paxos算法的一个实现，这点从目的上就能看出差异。但ZAB协议和Paxos算法一样，存在<code>过半（多数派）</code>和<code>提案</code>类似的操作，和Raft一样，所以个人认为或多或少都有借鉴Paxos算法的成分（因此很多人叫ZAB和Raft为 Multi-Paxos）。除此之外，ZAB和Raft也有类似的操作，就是广播。需要提一下的是，ZAB协议比Raft算法要早，得知这一点后你可能会发现ZAB和Raft两者非常相似。不过我们并不纠结这些东西，因为在IT界大家都乐于分享，其中开源就是一个很好的体现，所以不存在谁抄谁这么一说法，但为什么又要提到这么东西呢？这是因为如果你懂Paxos或者Raft的话，那么再理解ZAB就会更容易。</p>
-<p>&emsp;&emsp;ZAB是一个专门为ZooKeeper设计的原子广播协议，主要是为了解决<code>崩溃恢复</code>问题。还有就是ZAB实现了一种<code>主备模式</code>的系统架构，可以维持备份节点与主节点之间的数据一致。据了解zab起初只是为了解决雅虎内部一些<code>高吞吐量</code>、<code>低延时</code>、<code>健壮</code>、<code>简单</code>的分布式系统场景。由这点可以看出ZAB并不像Paxos和Raft两种算法一样是个通用协议。 </p>
+<h3 id="ZooKeeper-Atomic-Broadcast（ZAB协议）"><a href="#ZooKeeper-Atomic-Broadcast（ZAB协议）" class="headerlink" title="ZooKeeper Atomic Broadcast（ZAB协议）"></a>ZooKeeper Atomic Broadcast（ZAB协议）</h3><h4 id="基本简介"><a href="#基本简介" class="headerlink" title="基本简介"></a>基本简介</h4><p>&emsp;&emsp;首先 ZAB 协议并不是 Paxos 算法的一个实现，这点可以从目的上看出差异，但 ZAB 协议和 Paxos 算法一样都存在<code>过半（多数派）</code>和<code>提案</code>等元素（Raft也一样），所以个人认为 ZAB 协议或多或少都有借鉴 Paxos 算法的成分，可能因为这所以有些人也叫 ZAB 和 Raft 为 Multi-Paxos。除此之外，ZAB 和 Raft 也非常相似（ZAB 协议要比 Raft 算法诞生得要早一些）。所以如果你懂 Paxos 或者 Raft 的话，那么再来理解 ZAB 就是件比较容易的事儿了。</p>
+<p>&emsp;&emsp;ZAB 协议如其名，是一个专门为 ZooKeeper 设计的协议，是为了解决早期 Zookeeper <code>崩溃恢复</code>需求而设计的。ZAB 实现了一种<code>主备模式</code>的系统架构，可以维持备份节点与主节点之间的数据一致。除此之外不难看出 ZAB 协议并不像 Paxos 和 Raft 两种算法一样，它是耦合在 Zookeeper 中的协议，并不通用。</p>
 <h4 id="ZAB特点"><a href="#ZAB特点" class="headerlink" title="ZAB特点"></a>ZAB特点</h4><ul>
-<li>容易理解和实现</li>
 <li>支持 Leader 选举</li>
 <li>支持崩溃恢复。节点宕机恢复后可以自动重新加入集群</li>
-<li>高可用。只要过半节点正常就能提供服务</li>
+<li>可用性高。只要过半节点正常就能提供服务</li>
 <li>主节点负责读写操作，而其它节点只负责读操作</li>
 <li>最终一致性，过半应答导致。虽然集群过半才可用解决了脑裂问题，但是在数据提交过程中只需<code>过半</code>即可进行下一步操作，也就是说极端情况下可能出现某个节点还没响应Leader且还没脱离集群，这时因为已经得到过半Follower响应，ZooKeeper响应用户操作数据成功，但接着进行查询时正好查询到还没响应Leader的那个节点，这时就出现数据不一致问题了。</li>
 </ul>
 <h4 id="协议角色"><a href="#协议角色" class="headerlink" title="协议角色"></a>协议角色</h4><blockquote>
 <p>Observer官方介绍： <a href="https://zookeeper.apache.org/doc/current/zookeeperObservers.html" target="_blank" rel="noopener">https://zookeeper.apache.org/doc/current/zookeeperObservers.html</a> </p>
 </blockquote>
-<p>ZooKeeper中是存在三种角色的：Leader、Follower、Observer。其中Observer只是单纯为了扩展ZooKeeper集群的连接数而存在的。它的功能和特性跟Follower一样，区别在于不会参加Leader选举。</p>
-<p>那为什么要用Observer来扩展连接数而不直接用Follower能？官方的解释是：如果添加更多的Follower就会引起集群的写性能下降，原因是写操作是需要过半才能成功写入的，因此使用Follower来扩展的话写操作就需要询问更多的Follower。使用其实到最后协议中的核心角色就只有2个，分别是 Leader 和 Follower 。</p>
+<p>在 ZAB 协议中存在3种角色：Leader、Follower、Observer。其中 Observer 是单纯为了扩展集群的连接数（读性能）而设计的，它的功能和 Follower 差不多，但它并不参与 Leader 选举，简单地说就是它只会默默地同步 Leader 的状态。</p>
+<p>那为什么要用 Observer 来扩展而不直接用 Follower 呢？官方的解释是：如果添加更多的 Follower 就会引起集群的写性能下降，原因是写操作需要过半才算成功写入，因此使用 Follower 来扩展的话写操作就需要询问更多的 Follower 从而导致集群可用性降低。所以到最后其实在 ZAB 协议中只有两个核心角色，它们分别是 Leader 和 Follower 。</p>
 <blockquote>
 <p>算法核心角色</p>
 </blockquote>
@@ -720,10 +719,10 @@ public void cancelPay(){
 <h4 id="通信模型"><a href="#通信模型" class="headerlink" title="通信模型"></a>通信模型</h4><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/036.png" alt></p>
 <p> 在ZAB协议中所有的<code>通信通道均为FIFO</code>，因此所有操作均按顺序执行。 步骤如下：</p>
 <ol>
-<li>Leader接收到Client请求之后会将每个请求打包成 proposal 并为其分配一个全局递增的事务ID（zxid），然后按照原接收顺序广播给所有Follower</li>
-<li>Follower接受到 proposal 后会顺序处理然后响应Leader。从另一方面来说，响应给Leader的ACK也是有序的</li>
-<li>当Leader接收到<code>过半</code>Follower的ACK响应，Leader就会广播 commit 要求所有Follower提交对应zxid的 proposal 。commit 亦会以Follower的ACK响应顺序发出</li>
-<li>Follower接收到 commit 后会对 proposal 进行顺序处理</li>
+<li>Leader 接收到Client请求之后会将每个请求打包成 proposal 并为其分配一个全局递增的事务ID（zxid），然后按照原接收顺序广播给所有Follower</li>
+<li>Follower 接受到 proposal 后会顺序处理然后响应 Leader。从另一方面来说，响应给 Leader 的 ACK也是有序的</li>
+<li>当 Leader 接收到<code>过半</code>Follower 的ACK响应，Leader 就会广播 commit 要求所有 Follower 提交对应zxid的 proposal 。commit 亦会以 Follower 的 ACK 响应顺序发出</li>
+<li>Follower 接收到 commit 后会对 proposal 进行顺序处理</li>
 </ol>
 <p>ZAB节点的两种模式</p>
 <ul>
@@ -752,8 +751,8 @@ public void cancelPay(){
 <p>在zab协议中节点的三种状态：<code>LOOKING</code>、<code>FOLLOWING</code>、<code>LEADEING</code></p>
 <ul>
 <li>LOOKING：处于选举阶段。集群中节点的初始状态均为 LOOKING</li>
-<li>FOLLOWING：Follower的状态</li>
-<li>LEADEING：Leader的状态</li>
+<li>FOLLOWING：Follower 的状态</li>
+<li>LEADEING：Leader 的状态</li>
 </ul>
 <blockquote>
 <p>发现：zookeeper选举过程（FastLeaderElection）</p>
@@ -773,19 +772,19 @@ public void cancelPay(){
 <p>在选举阶段中随着 Leader 的确立，周期值 epoch 也会被重新赋值。如下：</p>
 <p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/039.png" alt></p>
 <ol>
-<li>Follower 将自己的 Epoch 值发送给准Leader（该操作位于Leader选举的第次轮投票）。准Leader会在所有epoch值中选取最大的那个，然后再将该 epoch 值加 1 来生成<code>new epoch</code></li>
-<li>生成新epoch值后，Leader 就会将新epoch值和事务状态集合打包发送给所有 Follower</li>
-<li>Follower 成功接收后会应答 Leader</li>
-<li>如果Leader得到过半 Follower 的响应，那么 Leader 就会继续向这些 Follower 发出 commit 操作以要求Follower 提交（应用）事务状态集合</li>
+<li>在刚诞生准 Leader 后（同步Leader节点状态前的这段时间），Leader 会在最新的 zxid 中提取出 epoch 值然后在此基础上加 1 左为新一任 Leader 的任期标识<code>new epoch</code></li>
+<li>生成新 epoch 值后，Leader 就会将新 epoch 值和事务状态集合打包一同发送给所有 Follower 让其同步自己的节点状态</li>
+<li>Follower 成功接收到 Leader 的要求后会通过请求应答机制响应 Leader </li>
+<li>在这期间如果 Leader 得到过半 Follower 的响应，那么 Leader 就会继续向 Follower 发出 commit 操作要求，这时Follower 将会把从 Leader 处同步过来的内容状态应用到自己的节点中</li>
 </ol>
 <blockquote>
 <p>广播详解：集群处于正常服务状态</p>
 </blockquote>
 <p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/042.png" alt></p>
 <ol>
-<li>Leader 接收到 Client 请求后将其封装为 proposal 并赋予一个全局的唯一事务id值（zxid）然后记录log并将其广播给 Follower</li>
-<li>得到过半Follower响应后，Leader首先自己 commit 该事务，然后再将 commit 操作广播给其余 Follower，要求 Follower 提交对应的事务</li>
-<li>Follower 接收到 commit 命令后就会提交事务状态并响应 Leader。但如果提交失败则会断开与当前Leader的连接重新进入恢复模式重来同步数据直到提交成功</li>
+<li>Leader 接收到 Client 请求后将其封装为 proposal 并赋予一个全局唯一的事务id值（zxid），然后记录 log 并将其广播给 Follower</li>
+<li>得到过半 Follower 响应后，Leader首先自己 commit 该 proposal ，然后再将 commit 操作广播给 Follower</li>
+<li>Follower 接收到 commit 要求后就会将 proposal 应用到当前节点中并响应 Leader。但如果 Follower 节点自身 commit 失败的话，则会断开与当前 Leader 的连接，并重新进入恢复模式来同步数据直到最后同步成功为止</li>
 </ol>
 <p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/035.png" alt></p>
 <h3 id="Gossip、Paxos、Raft、ZAB之间的区别"><a href="#Gossip、Paxos、Raft、ZAB之间的区别" class="headerlink" title="Gossip、Paxos、Raft、ZAB之间的区别"></a>Gossip、Paxos、Raft、ZAB之间的区别</h3><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/043.png" alt></p>
