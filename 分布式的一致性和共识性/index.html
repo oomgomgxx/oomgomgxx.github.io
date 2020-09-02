@@ -825,7 +825,7 @@ public void cancelPay(){
 <p>Quorum NWR 是一种控制读写一致性策略，是一种以<a href="https://zh.wikipedia.org/wiki/%E9%B4%BF%E5%B7%A2%E5%8E%9F%E7%90%86" target="_blank" rel="noopener">鸽巢原理</a>为理论基础的一致性解决方案。它适用于拥有<code>数据副本形式集群</code>的分布式系统。其中 NWR 的含义如下：</p>
 <ul>
 <li>N：集群中节点的个数量</li>
-<li>W：写操作必须等待 W 个副本节点持久化成功后才能告知客户端写操作成功。W 不能大于 N</li>
+<li>W：写操作必须等待 W 个<code>副本节</code>点持久化成功后才能告知客户端写操作成功。W 不能大于 N</li>
 <li>R：读操作必须读取 R 个集群节点上的数据后进行版本比对才能得出最终数据。R 不能大于 N</li>
 </ul>
 <p>注意：鸽巢原理是一种证明<code>存在性</code>的论述。例如上述的 W 和 R 代表鸽子，而 N 则代表鸽笼，那么当 W+R &gt; N 的时候就必定能够读取到已经保存最新写入的那个数据节点，从而实现强一致。例如当 N = 5，W = 3， R=3，那么当读操作时就必然读到一种含有最新数据的节点。</p>
@@ -895,13 +895,22 @@ public void cancelPay(){
 <h4 id="Kafka"><a href="#Kafka" class="headerlink" title="Kafka"></a>Kafka</h4><blockquote>
 <p>确保生产者消息不丢失</p>
 </blockquote>
-<p>&emsp;&emsp;在网上经常可以看到有说 Kafka 不可靠而导致消息丢失的说法，其实这完全是因为对 Kafka 不熟悉所致。例如可以在<code>Producer 方调节 acks 参数</code> 的级别来保证消息日志落盘，但注意这会一定程度降低集群的可用性。</p>
-<p>acks 配置的级别如下：</p>
+<p>&emsp;&emsp;在网上经常可以看到有说 Kafka 不可靠而导致消息丢失的说法，其实这完全是因为对 Kafka 不熟悉所致。例如可以在<code>Producer方调节acks参数级别</code> 以及在<code>Broker方设置min.insync.replicas数量</code>来保证消息日志落盘，但需要注acks级别越高那么集群的可用性和吞吐量就越低。</p>
+<p>Producer中的 acks 配置级别：</p>
 <ul>
-<li>0：Producer 完全不理会 Broker 的是否已经日志落盘（返回 ack响应），发送完一批消息后会马上发下一批消息，这时 Producer 的吞吐量最高，但因为完全不理会日志是否落盘，所以就算出现发送失败也不会进行重试操作，也就是说存在丢失日志的风险</li>
-<li>1（默认）：Producer 会等待 Leader Broker 的日志落盘成功（返回 ack响应）。换句话就是只要 Leader Broker 持久化日志成功，Producer 就会视消息数据发送成功</li>
-<li>-1或all：Producer 会等待集群中所有 Broker 的日志落盘成功（返回 ack响应）才会发送下一批消息。当前配置模式能够百分百成功持久化日志，但吞吐量是3种配置中最低的</li>
+<li>0：Producer 完全不理会 Broker 的是否已经日志落盘（返回ack响应），发送完一批消息后会马上发下一批消息，这时 Producer 的吞吐量最高，但因为完全不理会日志是否落盘，所以就算出现发送失败也不会进行重试操作，也就是说存在丢失日志的风险</li>
+<li>1（默认）：Producer 会等待 Leader Broker 的日志落盘成功（返回ack响应）。换句话就是只要 Leader Broker 持久化日志成功，Producer 就会视消息数据发送成功</li>
+<li>-1或all：Producer 会等待集群中所有 Broker 的日志落盘成功（返回ack响应）才会发送下一批消息。当前配置模式能够百分百成功持久化日志，但吞吐量是3种配置中最低的</li>
 </ul>
+<p>Broker中的 min.insync.replicas 配置：</p>
+<ul>
+<li>用于设置必须应答成功的 Replica 数。该配置只在 Producer 中 acks 值为 -1/all 时才生效</li>
+<li>譬如某个 Topic 的 Partition 数为 3，而现在将 min.insync.replicas 设置为 2，则表示 Kafka 集群只允许1台 Broker 响应不成功，否者 Producer 就需要进入重试操作</li>
+</ul>
+<blockquote>
+<p>关于 Kafka 中的 ISR 集合（in-sync replica）</p>
+</blockquote>
+<p>ISR 集合是 Kafka 集群所维护的一个健康节点集合，默认情况下只有 ISR 集合中的成员才有资格竞选成为 Leader，除此之外还有一个重要的概念，就是当客户端发送消息到 Kafka 集群，那么这条消息持久化成功与否是需要 ISR 集合是否都接收到该消息而定的，既 ISR 集合都接收到该消息日志就视为成功，否者视为失败。</p>
 <h4 id="Redis"><a href="#Redis" class="headerlink" title="Redis"></a>Redis</h4><blockquote>
 <p>如何降低数据复制丢失和延时所带来的风险？</p>
 </blockquote>
