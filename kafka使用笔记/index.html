@@ -296,13 +296,13 @@ leader-epoch-checkpoint</code></pre>
 <li>用于判断消息是否发送成功的依据</li>
 </ul>
 <ul>
-<li><p><code>值为0时</code>，producer完全不理会 broker 的ack响应，发送完一条消息后马上发下一条消息，这时producer的吞吐量最高，但因为完全不理会 broker 的ack响应，所以就算出现发送失败的情况也不会做重试操作，因此会存在消息丢失的问题</p>
+<li><p>0：Producer 完全不理会 Broker 的是否已经日志落盘（返回 ack响应），发送完一批消息后会马上发下一批消息，这时 Producer 的吞吐量最高，但因为完全不理会日志是否落盘，所以就算出现发送失败也不会进行重试操作，也就是说存在丢失日志的风险</p>
 </li>
-<li><p><code>值为1时（默认值）</code>，producer会等待 leader broker 的ack响应，换句话就是只要 leader border 保存数据成功，producer 就会视为消息数据发送成功</p>
+<li><p>1（默认）：Producer 会等待 Leader Broker 的日志落盘成功（返回 ack响应）。换句话就是只要 Leader Broker 持久化日志成功，Producer 就会视消息数据发送成功</p>
 </li>
-<li><p><code>值为-1或all时</code>，producer会等待集群中所有 broker 的ack响应，会等待所有 brokder 将消息持久化到日志后才会发送下一条消息。这种配置能够百分百成功持久化消息数据，但因吞吐量是3种配置中最低的</p>
+<li><p>-1或all：Producer 会等待集群中所有 Broker 的日志落盘成功（返回 ack响应）才会发送下一批消息。当前配置模式能够百分百成功持久化日志，但吞吐量是3种配置中最低的</p>
 </li>
-<li><p>注意这里提到的<code>发送</code>并不是指调用send方法，而是消息缓冲池满了后发送消息给 brokder 的操作</p>
+<li><p>注意这里提到的<code>发送</code>并不是指调用send方法，而是消息缓冲池满了后发送消息给 Brokder 的操作</p>
 </li>
 </ul>
 <p>buffer.memory</p>
