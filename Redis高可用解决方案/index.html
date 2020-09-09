@@ -147,20 +147,23 @@
 <ul>
 <li>redis01（主节点）</li>
 </ul>
-<pre><code>bind 127.0.0.1
-port 6379</code></pre><ul>
+<pre><code class="shell">bind 127.0.0.1
+port 6379</code></pre>
+<ul>
 <li>redis02</li>
 </ul>
-<pre><code>bind 127.0.0.1
+<pre><code class="shell">bind 127.0.0.1
 port 6380
-replicaof 127.0.0.1 6379
-replica-read-only yes</code></pre><ul>
+replicaof 127.0.0.1 6379 # 复制目标
+replica-read-only yes # 从库只读，默认</code></pre>
+<ul>
 <li>redis03</li>
 </ul>
-<pre><code>bind 127.0.0.1
+<pre><code class="shell">bind 127.0.0.1
 port 6381
-replicaof 127.0.0.1 6379
-replica-read-only yes</code></pre><ul>
+replicaof 127.0.0.1 6379 # 复制目标
+replica-read-only yes # 从库只读，默认</code></pre>
+<ul>
 <li><p>启动顺序：redis01 -&gt; redis02 和 redis03</p>
 </li>
 <li><p>测试复制</p>
@@ -173,11 +176,11 @@ OK
 127.0.0.1:6379&gt; get person:name
 &quot;zhangsan&quot;
 
-# 连接上复制节点6380
+# 连接上从节点6380
 ➜  redis-replica redis01/bin/redis-cli -p 6380
 127.0.0.1:6380&gt; get person:name # 获取到主节点写入的数据
 &quot;zhangsan&quot;
-127.0.0.1:6380&gt; set person:name2 lisi # 因为是复制节点所以无法写入
+127.0.0.1:6380&gt; set person:name2 lisi # 因为是从节点所以无法写入
 (error) READONLY You can&#39;t write against a read only replica.</code></pre>
 <h4 id="方法2：启动参数（推荐）"><a href="#方法2：启动参数（推荐）" class="headerlink" title="方法2：启动参数（推荐）"></a>方法2：启动参数（推荐）</h4><pre><code class="shell">bin/redis-server redis.conf
 bin/redis-server --port 6380 --replicaof 127.0.0.1 6379
@@ -185,7 +188,7 @@ bin/redis-server --port 6381 --replicaof 127.0.0.1 6379</code></pre>
 <h4 id="方法3：使用命令"><a href="#方法3：使用命令" class="headerlink" title="方法3：使用命令"></a>方法3：使用命令</h4><pre><code class="shell">➜  redis-replica redis01/bin/redis-cli -p 6380
 127.0.0.1:6380&gt; replicaof 127.0.0.1 6379
 OK</code></pre>
-<h3 id="查看主从复制信息"><a href="#查看主从复制信息" class="headerlink" title="查看主从复制信息"></a>查看主从复制信息</h3><pre><code class="shell"># 复制节点
+<h3 id="查看主从复制信息"><a href="#查看主从复制信息" class="headerlink" title="查看主从复制信息"></a>查看主从复制信息</h3><pre><code class="shell"># 从节点
 127.0.0.1:6380&gt; info replication
 # Replication
 role:slave
@@ -224,11 +227,12 @@ repl_backlog_size:1048576
 repl_backlog_first_byte_offset:1
 repl_backlog_histlen:266</code></pre>
 <h3 id="断开复制"><a href="#断开复制" class="headerlink" title="断开复制"></a>断开复制</h3><pre><code class="shell">➜  redis-replica redis01/bin/redis-cli -p 6381
-127.0.0.1:6381&gt; replicaof no one # 复制节点断开复制
+127.0.0.1:6381&gt; replicaof no one # 从节点断开复制
 OK
+
 127.0.0.1:6381&gt; info replication
 # Replication
-role:master # 断开复制后，节点晋升为主节点提供服务
+role:master # 断开复制后，节点晋升回主节点，可提供读写服务
 connected_slaves:0
 master_replid:9cc30a694d9593eec57d0af180b66889721abfa7
 master_replid2:86faaec0bb925d960589ab10cdc5552b33df81f9
@@ -241,7 +245,7 @@ repl_backlog_histlen:336</code></pre>
 <h3 id="复制的过程"><a href="#复制的过程" class="headerlink" title="复制的过程"></a>复制的过程</h3><ol>
 <li><strong>保存主节点信息</strong></li>
 </ol>
-<pre><code class="shell"># 复制节点
+<pre><code class="shell"># 从节点
 127.0.0.1:6381&gt; info replication
 ...
 master_host:127.0.0.1  # 主节点地址
@@ -253,62 +257,59 @@ master_repl_offset:4958 # 复制偏移量
 <ol start="2">
 <li><strong>主从建立socket连接</strong></li>
 </ol>
-<p>&emsp;&emsp;复制节点内部有一个定时任务，作用是每隔1秒检测发现是否有新的主节点。</p>
-<p>&emsp;&emsp;当发现有新的主节点后，复制节点就会建立一个端口为24555的套接字来接收主节点发送过来的复制命令（从主节点复制过来的命令）。</p>
+<p>&emsp;&emsp;从节点内部有一个定时任务，作用是每隔1秒检测发现是否有新的主节点。</p>
+<p>&emsp;&emsp;当发现有新的主节点后，从节点就会建立一个端口为 24555 的套接字来接收主节点发送过来的数据。</p>
 <ol start="3">
 <li><strong>发送ping命令</strong></li>
 </ol>
-<p>成功建立socket连接之后，复制节点会使用ping命令首次和主节点通信。</p>
+<p>成功建立socket连接之后，从节点会使用ping命令首次和主节点通信。</p>
 <p>目的如下：</p>
 <ul>
 <li>检测主从节点之间的套接字是否可用</li>
 <li>检测主节点是否可以接收处理命令</li>
 </ul>
-<p><code>注意：如果ping命令后没有收到pong命令（每隔1秒轮询），则复制节点会先断开socket连接，等到下次定时任务启动再建立。</code></p>
+<p><code>注意：如果ping命令后没有收到pong命令（每隔1秒轮询），则从节点会先断开socket连接，等到下次定时任务启动再建立。</code></p>
 <ol start="4">
 <li><strong>权限验证</strong></li>
 </ol>
-<p>&emsp;&emsp;如果主节点设置了<code>requirepass参数</code>的话，则需要进行密码验证。这时复制节点必须设置<code>masterauth参数</code>来设置连接密码。</p>
+<p>&emsp;&emsp;如果主节点设置了<code>requirepass</code>参数，既表示需要进行密码验证。这时从节点必须设置<code>masterauth</code> 参数来设置连接密码。</p>
 <ol start="5">
 <li><strong>同步数据集</strong></li>
 </ol>
-<p>&emsp;&emsp;在成功通信后，主节点会将自己所有持有的数据全部复制（发送）给从节点（通过复制命令psync）。</p>
+<p>&emsp;&emsp;在成功通信后，主节点会将自己所持有的数据全部复制（发送）给从节点（通过复制命令psync）。</p>
 <p>包含2种复制情况：</p>
 <ul>
 <li><p><strong>全量复制：</strong>当数据量大时，会对主节点和网络造成很大的开销</p>
 <ol>
-<li>第一次连接上主节点</li>
-<li>主节点运行ID改变（例如重启。可以通过debug reload重启加载redis而不改变运行ID）</li>
-<li>复制积压缓冲区（FIFO）没有复制节点需要的数据（例如主从断开时间过长，期间主节点进行了大量写操作）</li>
+<li><code>第一次连接上主节点时，注意这时主节点会生成RDB快照文件并发送给从节点</code></li>
+<li>主节点运行 ID 改变时（例如重启。可以通过debug reload重启加载 redis 而不改变运行ID）</li>
+<li>复制积压缓冲区没有从节点需要的数据。譬如主从断开时间较长，期间主节点进行了大量写操作而导致缓冲区后写入的内容覆盖了早写入的内容</li>
 </ol>
 </li>
-<li><p><strong>局部复制</strong></p>
+<li><p><strong>增量复制</strong></p>
 <ol>
 <li>由于网络原因最近的数据没有成功同步，而主节点复制积压缓冲区存在该命令（通过对比复制偏移量再次同步这部分数据）</li>
 </ol>
 </li>
 </ul>
-<blockquote>
-<p>关于复制偏移量，从节点会每秒上传自己的复制偏移量给主节点，通过主从节点的复制偏移量对比来判断数据是否一直</p>
-</blockquote>
 <ol start="6">
 <li><strong>命令持续复制</strong></li>
 </ol>
-<p>主节点会将当前接受到的写命令实时复制给复制节点。</p>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/001.png" alt></p>
-<p>复制积压缓冲区是一个FIFO队列，用于从节点丢失数据补救。</p>
+<p>主节点会将当前接受到的写命令实时复制给从节点的同时会将发送内容记录在<code>复制积压缓冲区</code>。</p>
+<p>复制积压缓冲区相当于是一个主节点用来暂存稍后需要发送的增量数据的地方，它是一个环形结构的缓冲区，大小通过 repl_backlog_size 配置。</p>
+<p>值得注意的是因为是环形结构，所以即使缓冲区被写满主节点也会正常继续写入，这时就会导致新旧写入的内容被新写入的内容所覆盖。因此<code>复制积压缓冲区大小不宜过小，因为如果从节点故障恢复后发现主节点中并没有它确实的数据（通过对比主从的复制偏移量得知），就会触发全量复制，既主节点这时需要生成 RDB 文件并传输给从节点，因此复制效率会降低之余还会影响主节点性能</code>。</p>
 <pre><code class="shell">127.0.0.1:6379&gt; info replication
 # Replication
 ...
 # 复制积压缓冲区信息
 repl_backlog_active:1 # 是否开启，0为关闭
-repl_backlog_size:1048576 # 长度
-repl_backlog_first_byte_offset:1 # 可用长度的起始偏移量
-repl_backlog_histlen:11482 # 存储在积压缓冲区的有效长度</code></pre>
+repl_backlog_size:1048576 # 【重要】：复制积压缓冲区大小
+repl_backlog_first_byte_offset:1 # 起始偏移量
+repl_backlog_histlen:11482 # 存储在积压缓冲区的有效大小</code></pre>
 <h3 id="关于Redis复制的使用问题"><a href="#关于Redis复制的使用问题" class="headerlink" title="关于Redis复制的使用问题"></a>关于Redis复制的使用问题</h3><h4 id="读写分离"><a href="#读写分离" class="headerlink" title="读写分离"></a>读写分离</h4><blockquote>
-<p>不推荐直接使用Redis的复制来做读写分离，而是应该考虑Redis集群</p>
+<p>注意：其实不推荐直接使用复制来做读写分离，而是应该尽量考虑 Redis 集群</p>
 </blockquote>
-<p>&emsp;&emsp;读写分离可以解决Redis的高负载问题，通常在读多写少的场景使用，通过<code>主节点写</code>，<code>复制节点读</code>解决。</p>
+<p>&emsp;&emsp;读写分离可以解决Redis的高负载问题，通常在读多写少的场景使用，通过<code>主节点写</code>，<code>从节点读</code>解决。</p>
 <p>Redis读写分离存在以下问题：</p>
 <ul>
 <li><strong>复制数据延迟</strong></li>
@@ -318,31 +319,40 @@ repl_backlog_histlen:11482 # 存储在积压缓冲区的有效长度</code></pre
 <li><strong>读到过期数据</strong></li>
 </ul>
 <p>&emsp;&emsp;存在这个问题是因为Redis的删除策略：<code>惰性删除</code>、<code>定时删除</code></p>
-<p>&emsp;&emsp;<code>惰性删除</code>：主节点在获取key的时候会检查key是否过期，如果过期则删除key并将删除命令同步给复制节点。</p>
-<p>&emsp;&emsp;<code>定时删除</code>：除了惰性删除，Redis内部还维护了一个定时任务，用于轮询检测并删除过期的key，删除后会通过主节点同步删除命令给复制节点。</p>
-<p>&emsp;&emsp;那么就可能会发生这么一种情况，在某时刻大量key失效，主节点无法及时将删除命令同步给复制节点，而这是用户在复制节点对某个过期（将要被删除）的key进行了访问，这就造成了读到过期数据的问题。</p>
+<p>&emsp;&emsp;<code>惰性删除</code>：主节点在获取key的时候会检查key是否过期，如果过期则删除key并将删除命令同步给从节点。</p>
+<p>&emsp;&emsp;<code>定时删除</code>：除了惰性删除，Redis内部还维护了一个定时任务，用于轮询检测并删除过期的key，删除后会通过主节点同步删除命令给从节点。</p>
+<p>&emsp;&emsp;那么就可能会发生这么一种情况，在某时刻大量key失效，主节点无法及时将删除命令同步给从节点，而这是用户在从节点对某个过期（将要被删除）的key进行了访问，这就造成了读到过期数据的问题。</p>
 <ul>
 <li><strong>节点故障</strong></li>
 </ul>
-<p>&emsp;&emsp;Redis复制有个非常大的缺点，就是无法做到故障转移（需要借助Sentinel）。且主从复制模式中，复制节点通常为了避免数据不一致的问题而被设置成只读，在以上基础上就可能出现以下情况：</p>
-<p><strong>主节点故障：</strong>用户无法写入，只能进行读操作</p>
-<p><strong>复制节点故障：</strong>用户无法读取数据</p>
-<p>&emsp;&emsp;之所以会出现上面两个问题的主要原因是<code>用户无法感知节点停止服务</code>和<code>复制节点断开主从后无法主动变更角色来提供服务</code>。</p>
-<h4 id="配置问题"><a href="#配置问题" class="headerlink" title="配置问题"></a>配置问题</h4><p>&emsp;&emsp;在Redis的复制中，复制节点配置是可以和主节点不一致的，比如通常的做法是：<code>主节点关闭AOF备份在复制节点上开启，这用可以提高主节点的工作效率。</code></p>
-<p>&emsp;&emsp;还有就是从<code>Reids 5</code>开始提供参数<code>replica-ignore-maxmemory</code>来决定复制节点是否忽略<code>maxmemory剔除策略，默认为yes</code>。表示复制节点不会自己剔除key，而必须通过主节点同步操作来删除。这样做的用意是<code>保证复制节点不会因为maxmemory策略而导致key与主节点不一致</code>。也由于这个原因，<code>复制节点的maxmemory就必须比主节点的maxmemory大</code>，因为复制节点不会自己剔除key。</p>
-<h4 id="复制风暴"><a href="#复制风暴" class="headerlink" title="复制风暴"></a>复制风暴</h4><p>&emsp;&emsp;复制风暴指的是主节点在短时间内被多个复制节点发起全量复制。复制风暴会导致主节点服务器<code>CPU升高</code>、<code>内存和宽带大量消耗</code>。</p>
-<p>&emsp;&emsp;针对这个问题Redis的做法是，主节点为复制节点生成RDB时，如果这时有多个复制节点发起全量复制，那么这些复制节点就会共享这个RDB文件，使用这种做法来降低生成多个RDB的性能开销。</p>
-<p>&emsp;&emsp;如何避免复制风暴？</p>
-<p>&emsp;&emsp;1）<code>减少主节点上的从节点数而使用树结构</code> </p>
-<p>&emsp;&emsp;<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/003.png" alt></p>
-<p>&emsp;&emsp;2）<code>避免多个主节点部署在同一台机器上</code>，避免下面这情况：</p>
-<p>&emsp;&emsp;<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/002.png" alt></p>
+<p>&emsp;&emsp;Redis复制有个非常大的缺点，就是无法做到故障转移，且在主从复制中从节点通常为了避免导致数据不一致而被设置成只读。因为在上述基础上可能会出现以下情况：</p>
+<ol>
+<li><p>主节点故障：用户无法写入，只能进行读操作</p>
+</li>
+<li><p>从节点故障：读写分离下用户无法读取数据</p>
+</li>
+</ol>
+<p>之所以会出现上述两个问题的主要原因是<code>用户无法感知节点停止服务</code></p>
+<h4 id="配置问题"><a href="#配置问题" class="headerlink" title="配置问题"></a>配置问题</h4><p>&emsp;&emsp;在复制中从节点配置是可以和主节点不一致的，比如通常的做法是：<code>主节点关闭AOF备份，而在从节点上开启，这样做可以提高主节点的性能，而且主从复制也是备份的一种</code>。</p>
+<p>&emsp;&emsp;除此之外，从<code>Reids 5</code>开始提供参数<code>replica-ignore-maxmemory</code>来决定从节点是否忽略<code>maxmemory剔除策略，默认为yes</code>，既表示从节点不会自己剔除key，而必须通过主节点同步操作来删除。这样做的用意是<code>保证从节点不会因为maxmemory策略而导致数据与主节点不一致</code>。同样由于这个原因，从节点的 maxmemory 一般比主节点的 maxmemory 要大，因为从节点不会 maxmemory 剔除数据。</p>
+<h4 id="复制风暴问题"><a href="#复制风暴问题" class="headerlink" title="复制风暴问题"></a>复制风暴问题</h4><p>&emsp;&emsp;<code>复制风暴指的是主节点在短时间内和多个从节点建立连接从而引起大量全量复制</code>。复制风暴会导致主节点 CPU 急剧升高，以及内存和宽带被大量消耗。</p>
+<p>&emsp;&emsp;针对该问题 Redis 的做法是主节点为从节点生成 RDB 时，如果这时有多个从节点发起全量复制请求，那么这些从节点将会共享当前生成的这个 RDB 文件，通过这种方式可以大大降低主节点的性能开销。</p>
+<blockquote>
+<p>如何避免复制风暴？</p>
+</blockquote>
+<ol>
+<li>减少主节点上的从节点数，改用树结构</li>
+</ol>
+<p>&emsp;&emsp;<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/003.png" style="zoom:50%;"></p>
+<ol start="2">
+<li>避免多个主节点部署在同一台机器上</li>
+</ol>
+<p>&emsp;&emsp;<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/002.png" style="zoom:50%;"></p>
 <h3 id="复制常用配置"><a href="#复制常用配置" class="headerlink" title="复制常用配置"></a>复制常用配置</h3><pre><code class="properties"># 主节点位置
 replicaof &lt;masterip&gt; &lt;masterport&gt;
 
-# 复制节点是否只读
+# 从节点是否只读
 replica-read-only yes
-
 
 # 复制超时，如果数据量很大，该值适当调高
 repl-timeout 60
@@ -353,48 +363,54 @@ masterauth &lt;master-password&gt;
 # 积压缓冲区大小
 repl-backlog-size 1mb
 
-# 在没有复制节点的情况下多久释放复制积压缓冲区
+# 在没有从节点的情况下多久释放复制积压缓冲区
 repl-backlog-ttl 3600
 
 # 选举优先级别，范围在 0-100。数字越低，优先级越高
 replica-priority 100
 
-# 延迟低于10s的复制节点被视为健康节点
+# 延迟低于10s的从节点被视为健康节点
 min-replicas-max-lag 10
-# 健康节点至少有三个，主节点才会向复制节点进行写操作。（前提是从节点数超过3个）
+# 健康节点至少有三个，主节点才会向从节点进行写操作。（前提是从节点数超过3个）
 min-replicas-to-write 3</code></pre>
-<h2 id="Sentinel"><a href="#Sentinel" class="headerlink" title="Sentinel"></a>Sentinel</h2><h3 id="是什么又有什么用？"><a href="#是什么又有什么用？" class="headerlink" title="是什么又有什么用？"></a>是什么又有什么用？</h3><blockquote>
-<p>如图所示，Sentinel用于监控Redis的复制。</p>
+<h2 id="Sentinel"><a href="#Sentinel" class="headerlink" title="Sentinel"></a>Sentinel</h2><h3 id="是什么有什么用？"><a href="#是什么有什么用？" class="headerlink" title="是什么有什么用？"></a>是什么有什么用？</h3><blockquote>
+<p>如图所示，Sentinel 是用来监控 Redis 的复制模式的。</p>
 </blockquote>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/004.png" alt></p>
-<p>Sentinel其实是Redis的一种特殊节点，功能如下：</p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/004.png" style="zoom:67%;">
+
+<p>Sentinel 其实是 Redis 的一种特殊节点，功能如下：</p>
 <ul>
 <li>发现故障</li>
 <li>故障转移</li>
 <li>通知客户端程序</li>
 </ul>
-<p>Sentinel节点可以监控<code>数据节点（包含主从）</code> 和 <code>其余Sentinel节点</code>。做法如下：</p>
+<p>Sentinel 节点可以监控<code>数据节点</code> 以及 <code>监管其他Sentinel节点</code>，其操作如下：</p>
 <ul>
-<li>检测节点是否可达，不可达则对其做<code>下线标示</code></li>
-<li>检测到主节点不可达，Sentinel节点之间会进行投票，在大多数Sentinel节点都r认定主节点不可达时，<code>Sentinel领导节点</code>就会发起故障转移操作 并 通知客户端程序</li>
+<li>检测节点<code>是否可达</code>，不可达时则对该节点做<code>下线标示</code></li>
+<li>检测到<code>数据主节点不可达时</code>，Sentinel 节点之间会进行投票，在大多数 Sentinel节点都认定该数据主节点不可达时，<code>Sentinel领导者节点</code>就会发起<code>故障转移</code>操作并<code>通知客户端</code></li>
 </ul>
-<p>&emsp;&emsp;<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/005.png" alt></p>
-<h3 id="搭建使用"><a href="#搭建使用" class="headerlink" title="搭建使用"></a>搭建使用</h3><p>例子：redis节点3个、Sentinel节点3个</p>
-<p>在搭建Sentinel之前，需要给Sentinel一个监控目标。所以，当前例子沿用上面主从复制的配置，搭建一个1主2从的数据节点来给Sentinel监控。</p>
+<p>&emsp;&emsp;<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/005.png" style="zoom:67%;"></p>
+<h3 id="搭建使用"><a href="#搭建使用" class="headerlink" title="搭建使用"></a>搭建使用</h3><p>案例环境：</p>
+<ul>
+<li>数据节点 3 个</li>
+<li>Sentinel 节点 3 个</li>
+</ul>
+<p>在搭建 Sentinel 之前，需要给 Sentinel 一个监控目标。因此当前案例沿用上面主从复制的配置搭建一个 1 主 2 从的模型给 Sentinel 监控。</p>
 <blockquote>
-<p>关于Sentinel的配置文件和Redis一样，可以在Redis源码文件中找到模板</p>
+<p>Sentinel 的配置文件和普通数据节点一样，可以在 Redis 源码文件中找到模板</p>
 </blockquote>
 <ul>
 <li><strong>sentinel01</strong></li>
 </ul>
 <pre><code class="shell">port 26381
-# mymaster：数据节点主节点的名称
-# 127.0.0.1：数据节点主节点的ip
-# 6379：数据节点主节点的port
-# 2：判断主节点失效至少需要2个Sentinel节点，该参数成为 quorum
+# mymaster：数据主节点的名称，自定义
+# 127.0.0.1：数据主节点的ip
+# 6379：数据主节点的port
+# 2：判断数据主节点客观下线时所需要的最少的Sentinel节点，即quorum值
 sentinel monitor mymaster 127.0.0.1 6379 2
 
-# 表示Sentinel进行ping的时候，目标节点必须在 30s 内回应，否则会被视为已经下线（故障）
+# 指定Sentinel发出ping时，目标必须在30s内回应，否则会被主观下线
+# 适当地调小该值可以让哨兵更快地发现故障，但也不能过小，譬如连短暂网络波动都不允许的话，就导致哨兵误操作从而引发集群不可用
 sentinel down-after-milliseconds mymaster 30000</code></pre>
 <ul>
 <li><strong>sentinel02</strong></li>
@@ -416,7 +432,7 @@ redis02/bin/redis-sentinel redis02/sentinel.conf
 redis03/bin/redis-sentinel redis03/sentinel.conf
 # 或者使用以下方式启动
 # bin/redis-server sentinel.conf --sentinel</code></pre>
-<p> 这里需要说的是，当Sentinel节点启动后配置文件就会发生该表，以sentinel01为例子</p>
+<p> 注意，当 Sentinel 节点启动后其下所属的配置文件就会发生编号，以 sentinel01 为例</p>
 <pre><code class="shell">port 26381
 
 sentinel myid d15ff199f291f4c6ef5308f27f32e29fe7b92520
@@ -429,7 +445,7 @@ dir &quot;/home/tandi/apps/redis-sentinel&quot;
 protected-mode no
 sentinel leader-epoch mymaster 0
 
-# 已知数据节点主节点上的复制节点
+# 已知数据节点主节点上的从节点
 sentinel known-replica mymaster 127.0.0.1 6380
 sentinel known-replica mymaster 127.0.0.1 6381
 
@@ -438,7 +454,7 @@ sentinel known-sentinel mymaster 127.0.0.1 26379 02131b4181217dd09aa4c711dea62cf
 sentinel known-sentinel mymaster 127.0.0.1 26380 87776bb454ad2b904af3a649a6abfa03e8f24b69
 sentinel current-epoch 0</code></pre>
 <ul>
-<li>使用redis客户单查看sentinel信息</li>
+<li>使用客户单查看 sentinel 信息</li>
 </ul>
 <pre><code class="shell">➜  redis-replica redis01/bin/redis-cli -p 26379 info sentinel
 # Sentinel
@@ -452,7 +468,7 @@ master0:name=mymaster,status=ok,address=127.0.0.1:6379,slaves=2,sentinels=3</cod
 sentinel masters
 sentinel master 主节点名称
 
-# 获取指定复制节点的信息
+# 获取指定从节点的信息
 sentinel replicas 主节点名称
 
 # 获取指定的Sentinel集合信息（不包含当前Sentinel节点）
@@ -461,7 +477,7 @@ sentinel sentinels 主节点名称
 # 获取主节点的ip和port
 sentinel get-master-addr-by-name 主节点名称
 
-# 重新发现复制节点和Sentinel节点
+# 重新发现从节点和Sentinel节点
 sentinel reset 主节点名称
 
 # （重要）强制故障转移(更换数据主节点)
@@ -481,47 +497,48 @@ sentinel set 主节点名称
 
 # 节点用于交换下线判断信息
 sentinel is-master-down-by-addr</code></pre>
-<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><h4 id="3个定时任务"><a href="#3个定时任务" class="headerlink" title="3个定时任务"></a>3个定时任务</h4><ul>
-<li><p>每隔10秒，Sentinel节点会获取一次<code>info replication</code>信息，用此感知是否由新的数据节点加入。</p>
-</li>
-<li><p>每隔2秒，Sentinel节点会向<code>__sentinel__：hello</code>频道发送：<code>对数据主节点判断</code>和<code>自己的sentinel信息</code>。当然，在发送的同时也会订阅该频道来接受其他Sentinel节点的信息。</p>
-</li>
-<li><p>每隔1秒，Sentinel节点会向 数据节点 和 其他Sentinel节点发送一次ping命令来确定节点是否可达。</p>
-</li>
-</ul>
-<h4 id="主观下线和客观下线"><a href="#主观下线和客观下线" class="headerlink" title="主观下线和客观下线"></a>主观下线和客观下线</h4><ul>
-<li>主观下线</li>
-</ul>
-<p>当Sentinel节点去ping其他节点时发现没有在down-after-milliseconds内回应，这是Sentinel节点就会对其做下线标记，而这种标记是非常主观的，因为并没有和其它节点商量，因为可能存在这么一种情况，就是只有当前Sentinel节点和某个数据节点通信缓慢（如网络问题），而其它Sentinel节点并没有这种问题。</p>
-<ul>
-<li>客观下线</li>
-</ul>
-<p>在某个数据节点<code>被主观下线</code>后，且该<code>节点是主节点</code>的话。</p>
-<p>这时，标记主节点下线的Sentinel节点就会使用命令<code>sentinel is-master-down-by-addr</code>向其它的Sentinel节点发起仲裁，要求其它Sentinel节点对主节点进行主观下线判断，并收集其信息对该主节点进行下线判断，当主观下线数量满足quorum时，则主节点就会被客观下线，即多个Sentinel节点都认为下线了。</p>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><h4 id="3个定时任务"><a href="#3个定时任务" class="headerlink" title="3个定时任务"></a>3个定时任务</h4><p>每隔 10 秒：Sentinel 节点会获取一次<code>info replication</code>信息以感知是否有新的数据节点加入到主从模型中。</p>
+<p>每隔 2 秒：Sentinel 节点会订阅<code>__sentinel__：hello</code>频道并向其发送<code>对数据主节点判断</code>以及<code>自己当前的 sentinel 信息</code>。</p>
+<p>每隔 1 秒：Sentinel 节点会向<code>数据节点</code>和<code>其他Sentinel节点</code>发送 ping 命令以检测节点是否可达。</p>
+<h4 id="主观下线和客观下线"><a href="#主观下线和客观下线" class="headerlink" title="主观下线和客观下线"></a>主观下线和客观下线</h4><blockquote>
+<p>主观下线</p>
+</blockquote>
+<p>当 Sentinel 节点去 ping 其他节点时，如果该节点没有 <code>down-after-milliseconds</code> 内响应，这是 Sentinel 节点就会对其做下线标记，而这种标记是非常主观的，因为这时无法确认其他 Sentinel 成员节点无法 ping 通该节点</p>
+<blockquote>
+<p>客观下线</p>
+</blockquote>
+<p><code>在数据节点被标记为主观下线后，且该节点又是主节点的话</code>。这时标记主观下线的 Sentinel 节点就会使用命令<code>sentinel is-master-down-by-addr</code>向其它 Sentinel 成员节点发起仲裁，要求其它 Sentinel 成员节点对主节点进行主观下线判断，并收集其信息对该主节点进行客观下线判断，当主观下线数量满足 <code>quorum</code> 时，则主节点就会被标记为客观下线。既这时 Sentinel 都认为主节点不能正常提供服务了，因此 Sentinel 会做故障转移，以及通知客户端。</p>
 <h4 id="Sentinel故障转移过程"><a href="#Sentinel故障转移过程" class="headerlink" title="Sentinel故障转移过程"></a>Sentinel故障转移过程</h4><ol>
-<li><p>选择一个能够胜任master复制节点</p>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/006.png" alt></p>
+<li><p>选择一个能够胜任从节点当主节点。<code>首先会以优先级</code>进行评选，<code>其次通过复制偏移量，既复制得多的做主节点</code>，如果以上都无法确认，则<code>最后 runid 最小的作为主节点</code></p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/006.png" style="zoom:67%;">
 </li>
-<li><p>向该复制节点执行<code>replicaof no one</code>命令来断开原来的主从关系（此时节点就晋升为master）</p>
+<li><p>向该从节点执行<code>replicaof no one</code>命令以断开原来的主从关系，此时节点会自动晋升为主节点从而恢复写服务</p>
 </li>
-<li><p>再向其余的复制节点发起主节点变更</p>
+<li><p>再向其余的从节点发起主节点变更</p>
 </li>
-<li><p>将原来主节点变更为从节点，并在其恢复后让它去复制新master的数据</p>
+<li><p>将原来主节点变更为从节点，并在其恢复后让其作为新主节点的从节点</p>
 </li>
 </ol>
-<h3 id="Java版客户端"><a href="#Java版客户端" class="headerlink" title="Java版客户端"></a>Java版客户端</h3><h4 id="Jedis"><a href="#Jedis" class="headerlink" title="Jedis"></a>Jedis</h4><p><strong>依赖</strong></p>
+<h3 id="关于-Sentinel-领导者故障问题"><a href="#关于-Sentinel-领导者故障问题" class="headerlink" title="关于 Sentinel 领导者故障问题"></a>关于 Sentinel 领导者故障问题</h3><p>&emsp;&emsp;Sentinel 集群的通信是通过 Redis 提供的发布/订阅机制来实现的，而领导者节点选举则采用的是<code>Raft算法</code>。其中领导者节点主要负责当数据主节点故障时对数据集群做<code>故障转移</code>以及<code>通知客户端</code>的工作。</p>
+<p>&emsp;&emsp;在 Raft 算法中有两种超时机制，分别是<code>选举超时</code>和<code>心跳超时</code>。当领导者故障时，<code>率先</code>发生心跳超时的 Sentinel 从节点会进入选举超时倒数，而一旦正式选举超，该节点就会发起领导者投票进行选举，只要票数够集群节点数的一半（包含自己那票）就可以当选这界选举的领导者，当选举完毕后 Sentinel 集群就会恢复运作。</p>
+<p>&emsp;&emsp;需要补充一点的是在Raft算法中，率先发起选举的节点会将自己的选票投给自己，而接收到拉票请求的节点则是必须投给发出请求的节点。因此在 3 和节点的集群中，<code>主节点宕机后率先发出拉票的节点将会成为主节点</code>。当然，如果是正常的存储型数据节点使用 Raft 算法的话还需要判断节点复制偏移量的大小（大的成为领导者），但因为 Sentinel 并不存储数据，因此个人理解并没有这个条件。</p>
+<h3 id="Java版客户端"><a href="#Java版客户端" class="headerlink" title="Java版客户端"></a>Java版客户端</h3><h4 id="Jedis"><a href="#Jedis" class="headerlink" title="Jedis"></a>Jedis</h4><blockquote>
+<p>依赖</p>
+</blockquote>
 <pre><code class="xml">&lt;!-- jedis --&gt;
 &lt;dependency&gt;
     &lt;groupId&gt;redis.clients&lt;/groupId&gt;
     &lt;artifactId&gt;jedis&lt;/artifactId&gt;
     &lt;version&gt;3.1.0&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
-<p><strong>例子</strong></p>
+<blockquote>
+<p>操作例子</p>
+</blockquote>
 <pre><code class="Java">@Test
 public void testJedisSentinel() {
 
     String masterName = &quot;mymaster&quot;;
-
+    // 哨兵集群
     Set&lt;String&gt; sentinels = new HashSet&lt;&gt;();
     sentinels.add(&quot;127.0.0.1:26379&quot;);
     sentinels.add(&quot;127.0.0.1:26380&quot;);
@@ -544,7 +561,10 @@ public void testJedisSentinel() {
     System.out.println(resource.get(&quot;person:name&quot;));
 
 }</code></pre>
-<h4 id="Spring-Data-Redis"><a href="#Spring-Data-Redis" class="headerlink" title="Spring Data Redis"></a>Spring Data Redis</h4><p><strong>依赖</strong></p>
+<p>从上面不难看出使用 Sentinel 集群后我们并不需要填写数据节点为地址，既 Sentinel 充当着服务发现的角色，这点类似于 RocketMQ 的 NameServer 服务</p>
+<h4 id="Spring-Data-Redis"><a href="#Spring-Data-Redis" class="headerlink" title="Spring Data Redis"></a>Spring Data Redis</h4><blockquote>
+<p>依赖</p>
+</blockquote>
 <pre><code class="xml">&lt;dependency&gt;
     &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
     &lt;artifactId&gt;spring-boot-starter-data-redis&lt;/artifactId&gt;
@@ -554,7 +574,9 @@ public void testJedisSentinel() {
     &lt;artifactId&gt;commons-pool2&lt;/artifactId&gt;
     &lt;version&gt;2.6.2&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
-<p><strong>配置</strong></p>
+<blockquote>
+<p>配置</p>
+</blockquote>
 <pre><code class="yaml">spring:
   redis:
     lettuce:
@@ -567,10 +589,10 @@ public void testJedisSentinel() {
         - 127.0.0.1:26379
         - 127.0.0.1:26380
         - 127.0.0.1:26381</code></pre>
-<p><strong>例子</strong></p>
 <blockquote>
-<p>因为用的是Spring Boot，所以和普通的连接操作一样使用即可。</p>
+<p>操作例子</p>
 </blockquote>
+<p>因为用的是Spring Boot，所以和普通的连接操作一样使用即可。</p>
 <pre><code class="java">@Autowired
 private RedisTemplate&lt;String, String&gt; redisTemplate;
 
@@ -609,7 +631,7 @@ public void testExecuteMethod() {
 @Autowired
 private LettuceConnectionFactory lettuceConnectionFactory;
 
-// 获取指定主节点的复制节点ip和port
+// 获取指定主节点的从节点ip和port
 @Test
 public void test() {
     RedisSentinelConnection sentinelConnection = lettuceConnectionFactory.getSentinelConnection();
@@ -618,23 +640,25 @@ public void test() {
     System.out.println(sentinelConnection.slaves(() -&gt; &quot;mymaster&quot;));
 }</code></pre>
 <h2 id="Sentinel使用需要注意的问题"><a href="#Sentinel使用需要注意的问题" class="headerlink" title="Sentinel使用需要注意的问题"></a>Sentinel使用需要注意的问题</h2><ul>
-<li>需要注意的是，Sentinel的功能只针对主节点，而对于复制节点故障依然是无法解决</li>
-<li>如果想要在Sentinel环境下实现读写分离，思路是获取到所有复制节点来实现复制节点池，但因为读写分离存在一定的问题，所以不是很推荐，<code>建议使用Cluster</code>来解决</li>
+<li>需要注意的是，Sentinel的功能只针对主节点，而对于从节点故障依然是无法解决</li>
+<li>如果想要在Sentinel环境下实现读写分离，思路是获取到所有从节点来实现从节点池，但因为读写分离存在一定的问题，所以不是很推荐，<code>建议使用Cluster</code>来解决</li>
 </ul>
 <h2 id="Cluster"><a href="#Cluster" class="headerlink" title="Cluster"></a>Cluster</h2><h3 id="关于数据分区策略-负载均衡算法"><a href="#关于数据分区策略-负载均衡算法" class="headerlink" title="关于数据分区策略 - 负载均衡算法"></a>关于数据分区策略 - 负载均衡算法</h3><p>&emsp;&emsp;在了解Redis Cluster之前，需要理解什么是数据分区策略。掌握数据分区策略对于理解Redis Cluster的数据分布和故障转移有很大的帮助。</p>
-<p>&emsp;&emsp;常见的数据分区策略有<code>哈希取余</code>、<code>一致性哈希</code>，例如MySQL中还支持诸如<code>range</code>和<code>ksy</code>等策略，而Redis Cluster使用的则是<code>虚拟槽</code>。</p>
-<h4 id="哈希取余"><a href="#哈希取余" class="headerlink" title="哈希取余"></a>哈希取余</h4><p>&emsp;&emsp;哈希取余指的是从数据中选取一个适合的key进行哈希运算，并取余数据存储节点的数量后按照该结果来选择对应的数据存储节点来存取数据。</p>
-<p>公式：<code>hash(key) % 数据节点数量</code> </p>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/007.png" alt></p>
-<p>哈希取余策略通常使用在分库分表上。但必须强调一下它的缺点，就是如果想要扩展节点数量，那么就需要重新将数据分配，这是一个相当大的代价，所以通常使用哈希取余策略进行分区前都应该预计充足的库表数量，确保在往后一段时间来都够用。而如果确实需要扩容的话，通常都是翻倍扩容。</p>
+<p>&emsp;&emsp;常见的数据分区策略有<code>哈希取模</code>、<code>一致性哈希</code>，例如MySQL中还支持诸如<code>range</code>和<code>ksy</code>等策略，而Redis Cluster使用的则是<code>虚拟槽</code>。</p>
+<h4 id="哈希取模"><a href="#哈希取模" class="headerlink" title="哈希取模"></a>哈希取模</h4><p>&emsp;&emsp;哈希取模指的是从数据中选取一个适合的key进行哈希运算，并取模数据存储节点的数量后按照该结果来选择对应的数据存储节点来存取数据。</p>
+<p>公式：<code>hash(key) % n</code>，当节点间数为2的n次幂时可以使用<code>hash(key) &amp; (n-1)</code>来代替前一种方式可以提高计算效率，其中n为集群节点数</p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/007.png" style="zoom:67%;">
+
+<p>哈希取模策略通常使用在分库分表上。但必须强调一下它的缺点，就是如果想要扩展节点数量，那么就需要重新将数据分配，这是一个相当大的代价，所以通常使用哈希取模策略进行分区前都应该预计充足的库表数量，确保在往后一段时间来都够用。而如果确实需要扩容的话，通常都是翻倍扩容。</p>
 <h4 id="一致性哈希"><a href="#一致性哈希" class="headerlink" title="一致性哈希"></a>一致性哈希</h4><p>&emsp;&emsp;一致性哈希的思想是，先计算出存储节点的token值（例如哈希值），这个token值位于0到2的32次幂范围。而0到2的32次幂形成了一个闭合的hash环，用于确立数据应该落在那个token值对应的存储节点上，如下：</p>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/008.png" alt></p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/008.png" style="zoom:50%;">
+
 <p>图中的例子有4个数据存储节点，那么数据的存储位置需要以下步骤来确立：</p>
 <ol>
 <li>使用数据的key计算出哈希值</li>
 <li>根据哈希值来查找存储节点；例如哈希值位于node1和node2之间，则需要按照<code>顺时针选择原则</code>，即这时数据存储节点应该是node2</li>
 </ol>
-<p>&emsp;&emsp;相较于哈希取余，一致性哈希在<code>增加</code>或<code>删减</code>节点时，只会影响到原来存储在<code>左边</code>或<code>右边</code>节点的数据，再加上Hash函数的离散，从而大大降低了因扩容和缩容后导致数据不命中的数据范围。</p>
+<p>&emsp;&emsp;相较于哈希取模，一致性哈希在<code>增加</code>或<code>删减</code>节点时，只会影响到原来存储在<code>左边</code>或<code>右边</code>节点的数据，再加上Hash函数的离散，从而大大降低了因扩容和缩容后导致数据不命中的数据范围。</p>
 <p>&emsp;&emsp;其中Redis客户端Jedis提供的<code>ShardedJedis</code>就使用一致性哈希来进行分片操作的。除此之外Google Guava也同样提供一致性哈希的实现。</p>
 <p><strong>一致性哈希存在的问题：</strong></p>
 <p>&emsp;&emsp;1）增加和减少节点时，会影响左边或右边节点的数据命中。这时需要<code>人工解决</code>或<code>舍弃这部分数据</code>。也因此，<code>一致性哈希通常用在分布式缓存中</code>，因为数据足够离散，所以这部分数据其实对整体来说影响并不大。</p>
@@ -643,9 +667,11 @@ public void test() {
 <p>集群中的每个节点都负责维护部分槽和槽做映射的数据。</p>
 <p>数据通过公式<code>slot=CRC16(key)&amp;16383</code>来决定存储的槽位。这样的好处是，做到了数据与数据存储节点之间的解耦，因此有利于以后的数据迁移。也可以简单理解，<code>数据存储节点 - 虚拟槽 - 数据</code>。</p>
 <p>&emsp;&emsp;假设集群中有3个数据存储节点，如下图：</p>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/009.png" alt></p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/009.png" style="zoom: 67%;">
+
 <p>那么当扩展节点时，只需要将原来节点负责的槽位转移给新增节点即可，如下：</p>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/010.png" alt></p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/010.png" style="zoom: 67%;">
+
 <blockquote>
 <p><strong>需要强调的是，对于Redis Cluster而言，扩容和缩容是非常灵活的，在此期间不会影响对外服务。</strong></p>
 </blockquote>
@@ -655,7 +681,7 @@ public void test() {
 <li>分配槽位</li>
 </ol>
 <h4 id="手动搭建"><a href="#手动搭建" class="headerlink" title="手动搭建"></a>手动搭建</h4><blockquote>
-<p>案例使用6个节点：3个数据节点、3个备份节点</p>
+<p>案例使用 6 个节点：3个数据节点、3个备份节点</p>
 </blockquote>
 <ol>
 <li><strong>准备节点</strong></li>
@@ -700,7 +726,8 @@ a42be3d966c22da0e0a5d0206be459cf46dddec6 127.0.0.1:6381@16381 master - 0 1571062
 36fa72da040b9c9497df65f91d4ea1e3ae4454f0 127.0.0.1:6383@16383 master - 0 1571062568273 3 connected
 dc7c7c5a61088460a5f81245f1a5b39641385637 127.0.0.1:6379@16379 myself,master - 0 1571062568000 1 connected</code></pre>
 <p>可以看到已经感知到了其他的成员节点。过程如下：</p>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/011.png" alt></p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/011.png" style="zoom:67%;">
+
 <p>当6379感知到其余5个节点后，其余5个节点就通过6379作为桥梁感知到大家的存在。</p>
 <ol start="3">
 <li><strong>分配槽位</strong></li>
@@ -730,17 +757,22 @@ bin/redis-cli -h 127.0.0.1 -p 6384 cluster replicate a42be3d966c22da0e0a5d0206be
 OK
 127.0.0.1:6380&gt; get person:name
 &quot;zhangsan&quot;</code></pre>
-<h4 id="redis-trib-rb搭建（Redis-5-x开始已经不推荐）"><a href="#redis-trib-rb搭建（Redis-5-x开始已经不推荐）" class="headerlink" title="redis-trib.rb搭建（Redis 5.x开始已经不推荐）"></a>redis-trib.rb搭建（Redis 5.x开始已经不推荐）</h4><h5 id="ruby脚本相关"><a href="#ruby脚本相关" class="headerlink" title="ruby脚本相关"></a>ruby脚本相关</h5><p>除了手动搭建集群之外，Redis还提供了比较简单的搭建方法，就是使用ruby脚本来搭建。</p>
-<p>该脚本位于Redis源码包的src文件夹下。但新版本的Redis已经不推荐使用该方法来搭建，所有的集群搭建功能已经迁移到了redis-cli。</p>
-<p><strong>[下载配置ruby环境]</strong></p>
-<blockquote>
-<p>ubuntu环境</p>
+<h4 id="redis-trib-rb搭建（Redis-5-x开始已经不推荐）"><a href="#redis-trib-rb搭建（Redis-5-x开始已经不推荐）" class="headerlink" title="redis-trib.rb搭建（Redis 5.x开始已经不推荐）"></a>redis-trib.rb搭建（Redis 5.x开始已经不推荐）</h4><blockquote>
+<p>说明</p>
 </blockquote>
+<p>除了手动搭建集群之外，Redis还提供了比较简单的搭建方法，就是使用ruby脚本来搭建。</p>
+<p>该脚本位于Redis源码包的src文件夹下。但新版本的Redis已经不推荐使用该方法来搭建，所有的集群搭建功能已经迁移到了redis-cli。</p>
+<blockquote>
+<p>下载配置ruby环境</p>
+</blockquote>
+<p>ubuntu环境</p>
 <pre><code class="shell"># 安装ruby
 sudo apt install ruby rubygems-integration
 # 下载redis脚本
 sudo gem install redis</code></pre>
-<p><strong>[复制redis的ruby脚本]</strong></p>
+<blockquote>
+<p>复制redis的ruby脚本</p>
+</blockquote>
 <pre><code class="shell">➜  redis-cluster cp ../redis-5.0.5/src/redis-trib.rb .
 ➜  redis-cluster ll
 总用量 4.0K
@@ -752,7 +784,9 @@ drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis05
 drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis06
 drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis07
 -rwxrwx--- 1 root vboxsf 3.6K 10月 21 11:03 redis-trib.rb</code></pre>
-<p><strong>[运行脚本]</strong></p>
+<blockquote>
+<p>运行脚本</p>
+</blockquote>
 <pre><code class="shell">➜  redis-cluster ./redis-trib.rb       
 WARNING: redis-trib.rb is not longer available!
 You should use redis-cli instead.
@@ -772,37 +806,35 @@ To get help about all subcommands, type:
 redis-cli --cluster help</code></pre>
 <p>可以看出，ruby脚本已经不被推荐使用，而是推荐使用<code>redis-cli --cluster</code>。</p>
 <p>所以该搭建方法到此为止。例子查看之前的文章： <a href="https://www.cnblogs.com/tandi19960505/p/7690020.html" target="_blank" rel="noopener">https://www.cnblogs.com/tandi19960505/p/7690020.html</a> </p>
-<h5 id="参考1：搭建"><a href="#参考1：搭建" class="headerlink" title="参考1：搭建"></a>参考1：搭建</h5><blockquote>
-<p>源自慕课网</p>
+<h4 id="新命令搭建"><a href="#新命令搭建" class="headerlink" title="新命令搭建"></a>新命令搭建</h4><blockquote>
+<p>搭建</p>
 </blockquote>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/013.png" alt></p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/013.png" style="zoom:67%;">
+
 <p><strong>例子：</strong></p>
 <pre><code class="shell">redis-cli --cluster create 127.0.0.1:6379 127.0.0.1:6380 127.0.0.1:6381 127.0.0.1:6382 127.0.0.1:6383 127.0.0.1:6384 --cluster-replicas 1</code></pre>
 <p>意思是在集群中每个主节点有1个备份，也就是说6个节点中，3个主3个从</p>
-<blockquote>
 <p>使用该方式配置可以自动分配槽位，所以推荐这种方式来配置集群</p>
+<blockquote>
+<p>扩容</p>
 </blockquote>
-<h5 id="参考2：扩容"><a href="#参考2：扩容" class="headerlink" title="参考2：扩容"></a>参考2：扩容</h5><blockquote>
-<p>源自慕课网</p>
-</blockquote>
-<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/014.png" alt></p>
+<img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/014.png" style="zoom:67%;">
+
 <p><strong>例子：添加节点</strong></p>
 <pre><code class="shell">redis-cli --cluster add-node 127.0.0.1:6385 127.0.0.1:6384 </code></pre>
-<p>其中127.0.0.1:6384是集群成员，指定成员的目的其实很明确，就是就是相当于meet。需要注意的是，<code>新添加的节点是不会主动分配槽的</code></p>
+<p>其中 127.0.0.1:6384 是现任集群成员，指定成员的目的其实很明确，因为 Redis Cluster 采用的集群共识算法是 Gossip ，所以这里就是通过 127.0.0.1:6384 作为集群入口媒介，此后 127.0.0.1:6384 会新成员信息广播给集群中的其他成员，最后达到最终一致。</p>
+<p>注意：新添加的节点是不会主动分配槽的</p>
 <p><strong>例子：为新添加的节点分配槽位</strong></p>
 <pre><code class="shell">redis-cli --cluster reshard 127.0.0.1:6385</code></pre>
 <p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/015.png" alt></p>
-<h5 id="参考3：缩容"><a href="#参考3：缩容" class="headerlink" title="参考3：缩容"></a>参考3：缩容</h5><p>删除从节点：</p>
 <blockquote>
-<p>源自慕课网</p>
+<p>缩容</p>
 </blockquote>
+<p>删除从节点：</p>
 <p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/016.png" alt></p>
 <p>删除主节点：</p>
-<blockquote>
-<p>源自慕课网</p>
-</blockquote>
 <p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/017.png" alt></p>
-<p><code>先将主节点上的槽分给其他主节点然后再删除</code></p>
+<p>注意：应该先将主节点上的槽分给其他主节点然后再删除</p>
 <h3 id="节点扩容"><a href="#节点扩容" class="headerlink" title="节点扩容"></a>节点扩容</h3><ol>
 <li><strong>运行新节点</strong></li>
 </ol>
@@ -825,13 +857,15 @@ redis-cli --cluster add-node 127.0.0.1:6385 127.0.0.1:6379</code></pre>
 <blockquote>
 <p>推荐文章： <a href="https://enpsl.top/2019/01/23/2019-01-23-redis-cluster-operator/" target="_blank" rel="noopener">https://enpsl.top/2019/01/23/2019-01-23-redis-cluster-operator/</a> </p>
 </blockquote>
-<h3 id="Java版客户端-1"><a href="#Java版客户端-1" class="headerlink" title="Java版客户端"></a>Java版客户端</h3><h4 id="存取数据流程"><a href="#存取数据流程" class="headerlink" title="存取数据流程"></a>存取数据流程</h4><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/012.png" style="zoom:67%;">
+<h3 id="存取数据流程"><a href="#存取数据流程" class="headerlink" title="存取数据流程"></a>存取数据流程</h3><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/012.png" style="zoom:67%;">
 
-<p>可以看出，当在节点保存数据的时候会根据槽位判断是否为当前节点，如果不是会要求客户端重新发送到对应的槽位。</p>
-<p>查看key所在的槽位：</p>
+<p>客户端存取数据时可以随机选取节点进行操作，然后根据 key 哈希计算判断是否应在当前节点进行操作，如果不是，当前节点会通过 MOVED 命令要求客户端重新发送请求到正确的节点间中进行操作</p>
+<blockquote>
+<p>查看某个 key 所在的槽位</p>
+</blockquote>
 <pre><code class="shell">127.0.0.1:6379&gt; cluster keyslot person:name
 (integer) 7582</code></pre>
-<h4 id="Jedis-1"><a href="#Jedis-1" class="headerlink" title="Jedis"></a>Jedis</h4><p>依赖</p>
+<h3 id="Java版客户端-1"><a href="#Java版客户端-1" class="headerlink" title="Java版客户端"></a>Java版客户端</h3><h4 id="Jedis-1"><a href="#Jedis-1" class="headerlink" title="Jedis"></a>Jedis</h4><p>依赖</p>
 <pre><code class="xml">&lt;!-- jedis --&gt;
 &lt;dependency&gt;
     &lt;groupId&gt;redis.clients&lt;/groupId&gt;
@@ -903,7 +937,7 @@ private StringRedisTemplate stringRedisTemplate;
 @Autowired
 private LettuceConnectionFactory lettuceConnectionFactory;
 
-// 获取指定主节点的复制节点ip和port
+// 获取指定主节点的从节点ip和port
 //    @Test
 //    public void test() {
 //        RedisSentinelConnection sentinelConnection = lettuceConnectionFactory.getSentinelConnection();
@@ -955,6 +989,7 @@ public void testExecuteMethod() {
 <p>网络分区导致脑裂后丢失数据</p>
 </blockquote>
 <p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/019.png" alt></p>
+<p>因为出现网络分区，特定时间内哨兵无法通知 client-1 原 Master 已经被客观下线</p>
 <blockquote>
 <p>如何解决数据丢失？</p>
 </blockquote>
@@ -967,7 +1002,7 @@ min-replicas-to-write 3</code></pre>
 <ul>
 <li>上面配置的意思是在主从复制中，必须有3个健康节点连接上Master且其复制的延时值不大于10秒，如果不满足条件则拒绝客户端的写服务</li>
 </ul>
-<p><font color="red">多说一句，Redis 是存在一致性问题的，所以个人并不太理解那些使用 Redis 做分布式锁的行为。如果需要实现分布式锁，应该使用对客户端来说属于 AP 的高可用系统，例如 ZooKeeper 。</font></p>
+<p>多说一句，Redis 高可用属于 AP 架构，既可用性优先设计，因此尽量不要使用 Redis 来做分布式锁。如果需要实现分布式锁，应该使用一致性优先的 CP 系统，譬如 ZooKeeper、Etcd 等</p>
 <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2019年10月22日 14:40:20 — 添加集群相关内容</li>
 <li>2020年5月9日 12:14:58 — 添加关于数据丢失问题的相关内容</li>
@@ -1014,7 +1049,7 @@ min-replicas-to-write 3</code></pre>
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Replica"><span class="toc-text">Replica</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建立复制的3种方法"><span class="toc-text">建立复制的3种方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#方法1：配置文件"><span class="toc-text">方法1：配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方法2：启动参数（推荐）"><span class="toc-text">方法2：启动参数（推荐）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方法3：使用命令"><span class="toc-text">方法3：使用命令</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查看主从复制信息"><span class="toc-text">查看主从复制信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#断开复制"><span class="toc-text">断开复制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复制的过程"><span class="toc-text">复制的过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于Redis复制的使用问题"><span class="toc-text">关于Redis复制的使用问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#读写分离"><span class="toc-text">读写分离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置问题"><span class="toc-text">配置问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#复制风暴"><span class="toc-text">复制风暴</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复制常用配置"><span class="toc-text">复制常用配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sentinel"><span class="toc-text">Sentinel</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么又有什么用？"><span class="toc-text">是什么又有什么用？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#搭建使用"><span class="toc-text">搭建使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用命令"><span class="toc-text">常用命令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3个定时任务"><span class="toc-text">3个定时任务</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#主观下线和客观下线"><span class="toc-text">主观下线和客观下线</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Sentinel故障转移过程"><span class="toc-text">Sentinel故障转移过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java版客户端"><span class="toc-text">Java版客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Jedis"><span class="toc-text">Jedis</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Spring-Data-Redis"><span class="toc-text">Spring Data Redis</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sentinel使用需要注意的问题"><span class="toc-text">Sentinel使用需要注意的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cluster"><span class="toc-text">Cluster</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#关于数据分区策略-负载均衡算法"><span class="toc-text">关于数据分区策略 - 负载均衡算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#哈希取余"><span class="toc-text">哈希取余</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#一致性哈希"><span class="toc-text">一致性哈希</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#虚拟槽"><span class="toc-text">虚拟槽</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis-Cluster搭建"><span class="toc-text">Redis Cluster搭建</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#搭建步骤说明"><span class="toc-text">搭建步骤说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#手动搭建"><span class="toc-text">手动搭建</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#redis-trib-rb搭建（Redis-5-x开始已经不推荐）"><span class="toc-text">redis-trib.rb搭建（Redis 5.x开始已经不推荐）</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#ruby脚本相关"><span class="toc-text">ruby脚本相关</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#参考1：搭建"><span class="toc-text">参考1：搭建</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#参考2：扩容"><span class="toc-text">参考2：扩容</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#参考3：缩容"><span class="toc-text">参考3：缩容</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#节点扩容"><span class="toc-text">节点扩容</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java版客户端-1"><span class="toc-text">Java版客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#存取数据流程"><span class="toc-text">存取数据流程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Jedis-1"><span class="toc-text">Jedis</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Sprig-Data-Redis"><span class="toc-text">Sprig Data Redis</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于Redis高可用丢失数据问题"><span class="toc-text">关于Redis高可用丢失数据问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Replica"><span class="toc-text">Replica</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#建立复制的3种方法"><span class="toc-text">建立复制的3种方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#方法1：配置文件"><span class="toc-text">方法1：配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方法2：启动参数（推荐）"><span class="toc-text">方法2：启动参数（推荐）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方法3：使用命令"><span class="toc-text">方法3：使用命令</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查看主从复制信息"><span class="toc-text">查看主从复制信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#断开复制"><span class="toc-text">断开复制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复制的过程"><span class="toc-text">复制的过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于Redis复制的使用问题"><span class="toc-text">关于Redis复制的使用问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#读写分离"><span class="toc-text">读写分离</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置问题"><span class="toc-text">配置问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#复制风暴问题"><span class="toc-text">复制风暴问题</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复制常用配置"><span class="toc-text">复制常用配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sentinel"><span class="toc-text">Sentinel</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么有什么用？"><span class="toc-text">是什么有什么用？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#搭建使用"><span class="toc-text">搭建使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用命令"><span class="toc-text">常用命令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3个定时任务"><span class="toc-text">3个定时任务</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#主观下线和客观下线"><span class="toc-text">主观下线和客观下线</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Sentinel故障转移过程"><span class="toc-text">Sentinel故障转移过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Sentinel-领导者故障问题"><span class="toc-text">关于 Sentinel 领导者故障问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java版客户端"><span class="toc-text">Java版客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Jedis"><span class="toc-text">Jedis</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Spring-Data-Redis"><span class="toc-text">Spring Data Redis</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sentinel使用需要注意的问题"><span class="toc-text">Sentinel使用需要注意的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cluster"><span class="toc-text">Cluster</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#关于数据分区策略-负载均衡算法"><span class="toc-text">关于数据分区策略 - 负载均衡算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#哈希取模"><span class="toc-text">哈希取模</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#一致性哈希"><span class="toc-text">一致性哈希</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#虚拟槽"><span class="toc-text">虚拟槽</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis-Cluster搭建"><span class="toc-text">Redis Cluster搭建</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#搭建步骤说明"><span class="toc-text">搭建步骤说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#手动搭建"><span class="toc-text">手动搭建</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#redis-trib-rb搭建（Redis-5-x开始已经不推荐）"><span class="toc-text">redis-trib.rb搭建（Redis 5.x开始已经不推荐）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#新命令搭建"><span class="toc-text">新命令搭建</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#节点扩容"><span class="toc-text">节点扩容</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#存取数据流程"><span class="toc-text">存取数据流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java版客户端-1"><span class="toc-text">Java版客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Jedis-1"><span class="toc-text">Jedis</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Sprig-Data-Redis"><span class="toc-text">Sprig Data Redis</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于Redis高可用丢失数据问题"><span class="toc-text">关于Redis高可用丢失数据问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>

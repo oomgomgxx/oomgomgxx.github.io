@@ -627,26 +627,26 @@ public void cancelPay(){
 <li><strong>Candidate：</strong>领导者候选人。功能是参与决策（发生选举超时的Follower节点）</li>
 <li><strong>Leader：</strong>领导者。负责接收客户端请求以及日志条目复制给非</li>
 </ul>
-<p>其中 Raft 算法中有2个重要的随机超时机制，分别叫：<code>选举超时</code>、<code>心跳超时</code>。</p>
-<p><strong>选举超时：</strong>指 Follower 成为 Candidate 之前所等待的时间。</p>
+<p>其中 Raft 算法中有两个重要的超时机制，分别是：<code>选举超时</code>、<code>心跳超时</code>。</p>
+<p><strong>选举超时：</strong>指 Follower 成为 Candidate 之前所等待的时间，一旦超时将会进行 Leader 选举。</p>
 <ul>
 <li>如果在这段时间内没有收到Leader心跳包， Follower 将成为 Candidate，同时 Candidate 会产生一个新的选举任期（Term）并发起 Leader 选举（即通过广播来拉票）</li>
 <li>其它 Follower 节点接收到 Candidate 的拉票心跳必会作出选票支持，而率先拿到过半票的 Candidate 就会成为 Leader</li>
 </ul>
-<p><strong>心跳超时：</strong>指 Leader 会以一定的时间间隔来广播日志条目信息，而这个时间就是心跳超时的时间</p>
+<p><strong>心跳超时：</strong>指 Leader 会以一定的时间间隔来广播日志条目信息，而这个时间就是心跳超时的时间，一旦心跳超时就会进入选举超时环节</p>
 <ul>
 <li>一旦心跳超时节点将会从 Follower 成为 Candidate 并会发起 Leader 选举</li>
 </ul>
 <p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/023.png" alt></p>
 <ol>
-<li>集群节点刚启动，所有节点均为Follower</li>
+<li>集群节点刚启动，所有节点均为 Follower</li>
 <li>因为一开始是没有 Leader 节点的，所以会发生选举超时，节点从 Follower 变成 Candidate</li>
-<li>节点成为 Candidate 后会马上发起 Leader 选举，如果发起选举后得到集群过半的节点响应（包含Candidate自己的票数），那么 Candidate 就会成为 Leader。其中 Leader 有一个<code>任期</code>的概念，它被称为 <code>term</code>。term会在 Candidate 成为 Leader 的那一刻开始计算，可以将它理解为一个标识。</li>
+<li>节点成为 Candidate 后会马上发起 Leader 选举，如果发起选举后得到集群过半的节点响应（包含Candidate自己的票数），那么 Candidate 就会成为 Leader。其中 Leader 有一个<code>任期</code>的概念，它被称为<code>term</code>。term 代表的是当前这界选举的编号。</li>
 </ol>
 <p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/024.png" alt></p>
 <p>Candidate发起选举，但如果此时集群中存在某个比当前 Candidate 更高版本的节点(应用条目的index高)的话，那么 Raft 将不会允许当前 Candidate 成为Leader，而是要求高版本的 Follower 成为 Leader</p>
 <p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/037.gif" alt></p>
-<p>可以看到S4节点选举超时先发起选举，但是并没有成为Leader。这是因为S4只应用了log index为1中的条目，而其他节点都应用了log index为2的条目，因此都比S4高，所以S4不能成为Leader。这样做的原因是因为在Raft中日志只能从Leader复制到Follower，那么如果S4成为了 Leader 的话也就意味着丢失了log index为2上的日志条目状态，而且按照上面提到的 Raft 安全性，即某节点已经应用了某个索引位置的条目，那么其他节点就不能在该索引位置中应用其他的内容，因此S4成为Leader这件事与Raft定义相违背。</p>
+<p><strong>可以看到S4节点选举超时先发起选举，但是并没有成为Leader，这是因为S4只应用了log index为1中的条目，而其他节点都应用了log index为2的条目，因此都比S4高，所以S4不能成为Leader。这样做的原因是因为在Raft中日志只能从Leader复制到Follower，那么如果S4成为了 Leader 的话也就意味着丢失了log index为2上的日志条目状态，而且按照上面提到的 Raft 安全性，即某节点已经应用了某个索引位置的条目，那么其他节点就不能在该索引位置中应用其他的内容，因此S4成为Leader这件事与Raft定义相违背</strong>。</p>
 <h4 id="通信"><a href="#通信" class="headerlink" title="通信"></a>通信</h4><p>Raft算法的通信主要由以下两种RPC请求组成</p>
 <ul>
 <li><p>RequestVote RPC：竞选阶段使用，用于拉票。格式如下：</p>
