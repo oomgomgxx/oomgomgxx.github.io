@@ -165,8 +165,8 @@
 -Xverify:none
 -XX:ParallelGCThreads=4
 -XX:ConcGCThreads=2
--XX:MetaspaceSize=512m
--XX:MaxMetaspaceSize=512m
+-XX:MetaspaceSize=1g
+-XX:MaxMetaspaceSize=1g
 -Xms1024m
 -Xmx1024m
 -XX:+UseG1GC
@@ -174,6 +174,7 @@
 -XX:+UseStringDeduplication
 -XX:CICompilerCount=2
 -XX:+AlwaysPreTouch
+-XX:+UseAdaptiveSizePolicy
 -XX:ReservedCodeCacheSize=300m</code></pre>
 <p>配置说明：</p>
 <p>-server</p>
@@ -276,8 +277,12 @@
 <li>字符串去重操作会在 GC 期间进行，默认情况下只有经历 3 次 GC 还存活的字符串才会列为关注对象（可以-XX:StringDeduplicationAgeThreshold 设置 GC 阈值）</li>
 <li>开启字符串去重功能会加大 GC 垃圾回收的工作量，即会一定程度上延长 GC 停留时间，所以这是一个<code>时间换空间</code>的操作。个人认为如果内存不充裕（例如我当前机器的情况）且对 GC 停留没有严苛的要求时建议开启该功能</li>
 </ul>
+<p>-XX:+UseAdaptiveSizePolicy</p>
+<ul>
+<li>可以在 Full GC 时打印自适应配置策略信息，以及告知是谁引发了 Full GC</li>
+</ul>
 <blockquote>
-<p>调优过后的情况如下。（注：以下数据没加字符串去重）</p>
+<p>调优过后的情况大致如下。（注：以下数据没加字符串去重）</p>
 </blockquote>
 <p><strong>当前系统资源</strong></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/007.png" alt></p>

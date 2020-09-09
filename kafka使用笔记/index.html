@@ -183,6 +183,7 @@
 <li>一个 Topic 可以有多个 Partition，除了去中心化之外还提高了并发效率</li>
 <li>发送缓存。支持批量发送操作，Producer 只有数据大小到达<code>batch.size</code>才会真正发出，目的是提高操作的吞吐量</li>
 <li>Broker 基于 Reactor 模式处理请求，一定程度提高了 IO 的处理能力 </li>
+<li>Kafka在消费完数据后它并不会马上删除，而是等到某个时间或者量批量删除，因此减少了不必要的操作，</li>
 <li>消息压缩。Kafka 允许在 Producer 和 Broker 这两个点对消息集合进行压缩<ul>
 <li>这是一种时间换空间的做法，Producer 压缩数据可以提高传输效率，因此如果 Producer CPU 充裕的话建议开启该功能，且使用 <code>zstd算法</code> </li>
 <li>一般情况下 Producer 端开启了压缩功能 Broker 会接收后会直接保存（除非Broker开启了压缩且和Producer的压缩类型不一致才会解包再压缩），然后 Consumer 消费会将其解压再消费</li>
@@ -199,7 +200,11 @@
 <p>&emsp;&emsp;有人可能会有这样的疑问，就是即然有了topic为什么要有partition这个概念呢？如 ActiveMQ 就没有partition概念。首选 kafka 主要为作为<code>处理实时数据</code>场景提供 <code>高吞吐</code>、<code>低延迟</code> 处理方案。partition 就是用来提 topic 的并发操作效率的，有着去中心化和负载均衡的效果</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/004.png" alt></p>
 <p>从上图不难看出，当topic有多个partition 和多个生产者的情况下，不同的生产者是可以针对不同的 partition 进行操作的。但如果这时只有一个partition 的话，并发操作时压力就会全部落在这个 partition 上，因此会降并发操作的性能。</p>
-<h2 id="Kafka是如何存储topic数据的"><a href="#Kafka是如何存储topic数据的" class="headerlink" title="Kafka是如何存储topic数据的"></a>Kafka是如何存储topic数据的</h2><p>上面已经提到，topic只是逻辑上的概念，而真正存储消息的是partition。</p>
+<h2 id="Kafka是如何存储topic数据的"><a href="#Kafka是如何存储topic数据的" class="headerlink" title="Kafka是如何存储topic数据的"></a>Kafka是如何存储topic数据的</h2><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/021.png" alt></p>
+<p>上面已经提到，topic只是逻辑上的概念，而真正存储消息的是partition。</p>
 <p>首先，执行命令创建名称为 test 的topic，再为toppic分配 2 个partition分区，1个replica（leader replica）</p>
 <pre><code class="shell">./kafka-topics.sh --create --zookeeper 192.168.4.157:2181 --partitions 2 --rerelication-factor 1 --topic test</code></pre>
 <p>再观察配置文件的 logDir 选项的目录状况</p>
@@ -384,17 +389,6 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 <li><p>注意这里提到的<code>发送</code>并不是指调用send方法，而是消息缓冲池满了后发送消息给 Brokder 的操作</p>
 </li>
 </ul>
-<p>buffer.memory</p>
-<ul>
-<li>指定消息缓冲池的大小，默认为32M</li>
-</ul>
-<ul>
-<li>需要注意，该值尽量不宜设置得太小，如果设置得太小而 producer 执行 send 的频率又特别高的话，就会导致消息缓冲池很容易被撑爆，而消息缓冲池被撑满之后，producer线程的 send 操作时会阻塞的，因为需要等待brokder线程将消息缓冲池发送给Broker，既情况消息缓冲池后才可以继续将消息send进缓冲池</li>
-</ul>
-<p>block.on.buffer.full</p>
-<ul>
-<li>缓冲池用尽后停止接受新的消息且不抛出异常</li>
-</ul>
 <p>compression.type</p>
 <ul>
 <li>用于指定消息的压缩类型，默认为none，既不对消息进行压缩操作</li>
@@ -433,28 +427,36 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 <ul>
 <li>用于设置重试时间间隔（默认为100毫秒）</li>
 </ul>
-<p>batch.size</p>
+<p>batch.size（重要）</p>
 <ul>
-<li>用于设置producer的send操作的batch值（默认为16k）</li>
+<li>用于设置 Producer.send 批量发送的数量。既多少条 Record 作为一个批次。该值增大可以提高 Producer 发送数据的吞吐量</li>
+<li>该值默认为 16 k，<code>强烈建议生产环境适当地调大一些增加 Producer.send 操作的吞吐量</code>，但要注意，与此同时会加大内存的压力</li>
+</ul>
+<p>linger.ms（重要）</p>
+<ul>
+<li>基于时间的 batch 打包策略，可配合 batch.size 使用，相当于满足该值后就作为一个 batch，适当地提高该配置值可以让 batch 被填充得更加丰满，因为正常情况下 batch 可能没满就被发送线程从缓冲池中取出将其发送了</li>
+<li>该值默认为 0 秒，既不开启该功能</li>
+</ul>
+<p>buffer.memory（重要）</p>
+<ul>
+<li>指定消息发送缓冲池的大小，默认为 32 M</li>
 </ul>
 <ul>
-<li><p>但需要注意的是 producer 也并不是每次都等到 batch 值才会将其放入 buffer 中的。换句话来说，batch.size 只是一个上限制，既满了就必须放入 buffer ，但不要求一定要放满(具体参考linger.ms参数)</p>
+<li><p><code>注意该值不宜设置得太小，特别是多线程共同操作同一个Producer时</code>，如果设置太小而 Producer send 的频率又特别高的话就会导致缓冲池很容易被撑爆，一旦被撑满之 Producer send 就会被阻塞，直到 Broker 线程将缓冲池中的数据发送给 Broker 后腾出空间为止</p>
 </li>
-<li><p>通常可以增大 batch.size 来提高 send 操作的吞吐量，但是与此同时会加大内存的压力，因为不管怎么样batch.size 都会占据固定大小的内存</p>
+<li><p>相关异常：TimeoutException：Failed to allocate memory within the configured max blocking time </p>
 </li>
-</ul>
-<p>linger.ms</p>
-<ul>
-<li><p>用于设置消息发送的延时时间。默认值为0，既不进行延时发送</p>
-</li>
-<li><p>如果你想要尽量填满 batch.size 以提高吞吐量，那么就可以适当地调高 linger.ms 值</p>
-</li>
-<li><p>延时操作虽然能够提高消息的发送效率，但是实时性较强的业务场景下不建议使用</p>
+<li><p><code>batch.size 和 buffer.memory 的区别：</code></p>
+<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/022.png" alt></p>
 </li>
 </ul>
-<p>max.request.size</p>
+<p>block.on.buffer.full</p>
 <ul>
-<li><p>用于设置消息数据的最大值（默认值差不多1M）</p>
+<li>缓冲池用尽后停止接受新的消息且不抛出异常</li>
+</ul>
+<p>max.request.size（重要）</p>
+<ul>
+<li><p>用于设置发送消息数据的最大大小（默认1M），超出该值后会抛出 RecordTooLargeException 异常</p>
 </li>
 <li><p>如果需要发送的消息很大，就可以适当低调到该值，但建议对应着 Brokder 中的配置message.max.bytes（Brokder 能够接收消息的最大值）来设置</p>
 </li>
@@ -532,6 +534,11 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <ul>
 <li>是否开启定期选举</li>
 </ul>
+<p>num.replica.fetchers</p>
+<ul>
+<li>指定 Follower Replica 用多少条线程拉取 Leader Replica 的数据（默认为 1 条线程）</li>
+<li>如果 CPU 充裕可以适当地增加线程以加速拉取数据</li>
+</ul>
 <p>unclean.leader.election.enable</p>
 <ul>
 <li>是否允许<code>非ISR集合成员</code>参与 Partition  Leader 选举（默认值为false） </li>
@@ -542,7 +549,7 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <ul>
 <li>用于控制 Replica 复制滞后的最大容忍时间，默认为 10 秒</li>
 <li>表示当 Follower Replica 数据落后超过 Leader Replica 10 秒的话就会被踢出 ISR 集合（追上来后会被从新纳入到 ISR）</li>
-<li><strong>读到这里可能你会有这样的问题，就是 Follower Replica 复制滞后但还没超出 replica.lag.time.max.ms 时 Leader 宕机了，而这种情况是否会丢失同步滞后的这部分数据？默认情况下个人理解是会的，但可以通过 Producer 的 acks 以及Broker 的 min.insync.replicas 来解决</strong></li>
+<li><strong>读到这里可能你会有这样的问题，就是 Follower Replica 复制滞后但还没超出 replica.lag.time.max.ms 时 Leader 宕机了，而这种情况是否会丢失同步滞后的这部分数据？默认情况下个人理解是会的，但可以通过 Producer 的 acks 以及 Broker 的 min.insync.replicas 来解决</strong></li>
 </ul>
 <p>delete.topic.enable</p>
 <ul>
@@ -686,29 +693,29 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <li><p>而 max.poll.interval.ms 则是第2个含义（建议根据实际处理消息所需要的时间来设置，最好比实际所需的时间大一些）</p>
 </li>
 </ul>
-<p>auto.offset.reset（非常重要）</p>
+<p>auto.offset.reset（重要）</p>
 <ul>
-<li>该配置用于指定了消费者在读取一个<code>没有偏移量(还没有消费提交offset)</code>或<code>偏移量无效（因消费者长时间失效，包含偏移量的记录已经过时并被删除）</code>的分区时的应对手段。</li>
+<li>该配置用于指定消费者读取一个<code>没有偏移量(还没有消费提交offset)</code>或<code>偏移量无效（因消费者长时间失效，包含偏移量的记录已经过时并被删除）</code>的分区时的应对手段。</li>
 <li>Kafka提供以下 3 种消费模式：<ul>
 <li>latest（默认）：<ul>
-<li>在偏移量无效的情况下（例如最开始没有offset），Consumer 会从最新插入的那条记录开始消费（在消费者启动之后插入的记录）</li>
-<li>偏移量有效的情况下，Consumer 会在最新的偏移量位置开始消费（既上一次提交的offset位置）</li>
+<li>在偏移量<code>无效</code>的情况下（例如最开始没有offset），Consumer 会<code>从最新插入的那条记录开始消费</code>（在消费者启动之后插入的记录）</li>
+<li>偏移量<code>有效</code>的情况下，Consumer 会在<code>最新的偏移量位置开始消费</code>（既上一次提交的offset位置）</li>
 </ul>
 </li>
 <li>earliest：<ul>
-<li>在偏移量无效的情况下，Consumer 会从 Partition 的起始位置开始消费</li>
-<li>偏移量有效的情况下，Consumer 会在最新的偏移量位置开始消费（既上一次提交的offset位置）</li>
+<li>在偏移量<code>无效</code>的情况下，Consumer 会从 Partition 的<code>起始位置开始消费</code></li>
+<li>偏移量<code>有效</code>的情况下，Consumer 会在<code>最新的偏移量位置开始消费</code>（既上一次提交的offset位置）</li>
 </ul>
 </li>
 <li>none：<ul>
-<li>各个 Partition 都存在有效的 offset 时，会从有效的 offest 位置开始消费</li>
-<li>只要有一个分区不存在有效的 offset，则抛出异常</li>
+<li>各个 Partition 都<code>存在有效的 offset</code>时，会从<code>有效的 offest 位置开始消费</code></li>
+<li>只要有一个分区<code>不存</code>在有效的 offset，则<code>抛出异常</code></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
-<p>enable.auto.commit（非常重要）</p>
+<p>enable.auto.commit（重要）</p>
 <ul>
 <li><p>是否自动提交 Consumer offset（默认为true）</p>
 </li>
@@ -735,14 +742,14 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <ul>
 <li>用于给 Broker 设置客户端标识</li>
 </ul>
-<p>fetch.max.bytes（非常重要）</p>
+<p>fetch.max.bytes（重要）</p>
 <ul>
 <li><p>用于指定 Consumer 单次获取消息数据的最大字节</p>
 </li>
-<li><p>如果实际业务中消息都很大的，那么就需要设置一个较大的值，否这无法获取数据</p>
+<li><p>注意，如果实际业务中消息都很大的，那么就需要设置一个较大的值，否则无法获取数据。除此之外提高该值还可以增加 Consumer 的吞吐量（增大吞吐量还可以使用多线程方式解决）</p>
 </li>
 </ul>
-<p>max.poll.records（非常重要）</p>
+<p>max.poll.records（重要）</p>
 <ul>
 <li>用于指定单次 poll 能够获取到的最大 record 数量（默认为500）</li>
 <li>建议：<ul>
@@ -751,7 +758,7 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 </ul>
 </li>
 </ul>
-<p>heartbeat.interval.ms（非常重要）</p>
+<p>heartbeat.interval.ms（重要）</p>
 <ul>
 <li><p>用于指定消费者发送心跳包的时间间隔（默认为3000ms）</p>
 </li>

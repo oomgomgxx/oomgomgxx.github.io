@@ -230,7 +230,7 @@ void addEntry(int hash, K key, V value, int bucketIndex) {
     //   1. size(元素个数)大于容器阈值(capacity * load factor)
     //   2. table[bucketIndex]已经给链表占了
     if ((size &gt;= threshold) &amp;&amp; (null != table[bucketIndex])) {
-        // 扩展为原来的两倍
+        // 【重要】：扩展为原来的两倍
         resize(2 * table.length);
         hash = (null != key) ? hash(key) : 0;
         // 重新计算应该存储的位置
@@ -281,7 +281,7 @@ void resize(int newCapacity) {
     transfer(newTable, initHashSeedAsNeeded(newCapacity));
     // 替换数组
     table = newTable;
-    // 计算新的容量阈值
+    // 【重要】：计算新的容量阈值
     threshold = (int)Math.min(newCapacity * loadFactor, MAXIMUM_CAPACITY + 1);
 }
 
