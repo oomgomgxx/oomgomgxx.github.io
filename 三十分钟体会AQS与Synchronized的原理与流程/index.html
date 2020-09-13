@@ -216,14 +216,574 @@ synchronized (sf) {
 </blockquote>
 <img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/001.png" style="zoom:80%;">
 
-<p>可以从上图中观察到，synchronized 确实采用 monitorenter 和 monitorexit 两条字节码指令完成同步锁功能的。</p>
-<blockquote>
-<p>到 OpenJDK(12) 中查看  monitorenter 和  monitorexit 两条指令的实现（源码位于 objectMonitor.cpp ）</p>
+<p>可以从上图中观察到 synchronized 确实采用 monitorenter 和 monitorexit 两条字节码指令完成同步锁功能的。</p>
+<h3 id="源码浅析（Open-JDK1-8）"><a href="#源码浅析（Open-JDK1-8）" class="headerlink" title="源码浅析（Open JDK1.8）"></a>源码浅析（Open JDK1.8）</h3><blockquote>
+<p>synchronizer.cpp</p>
 </blockquote>
-<img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/005.png" style="zoom: 50%;">
+<p>偏向锁</p>
+<pre><code class="c++">void ObjectSynchronizer::fast_enter(Handle obj, BasicLock* lock, bool attempt_rebias, TRAPS) {
+
+ // 有线程正在使用偏向锁
+ // 注意：偏向锁被撤销，UseBiasedLocking为false，锁升级为 slow_enter 既轻量级锁
+ if (UseBiasedLocking) {
+
+    // 不在安全点
+    if (!SafepointSynchronize::is_at_safepoint()) {
+      // 撤销后再偏向
+      BiasedLocking::Condition cond = BiasedLocking::revoke_and_rebias(obj, attempt_rebias, THREAD);
+      if (cond == BiasedLocking::BIAS_REVOKED_AND_REBIASED) {
+        return;
+      }
+
+    // 在安全点，撤销偏向
+    } else {
+      assert(!attempt_rebias, &quot;can not rebias toward VM thread&quot;);
+      BiasedLocking::revoke_at_safepoint(obj);
+    }
+
+    assert(!obj-&gt;mark()-&gt;has_bias_pattern(), &quot;biases should be revoked by now&quot;);
+ }
+
+ // 非偏向锁，进入轻量级锁操作
+ slow_enter (obj, lock, THREAD) ;
+}</code></pre>
+<p>轻量级锁</p>
+<pre><code class="c++">// BasicLock是线程栈LockRecord段中的组成部分
+void ObjectSynchronizer::slow_enter(Handle obj, BasicLock* lock, TRAPS) {
+
+  // 获取锁对象的对象头
+  markOop mark = obj-&gt;mark();
+
+  // 该对象头没有被锁定
+  if (mark-&gt;is_neutral()) {
+
+    // 将锁对象头信息转移到线程栈LockRecord段的displaced_header中
+    lock-&gt;set_displaced_header(mark);
+
+    // 使用CAS尝试加轻量级锁
+    // 尝试将当前线程栈LockRecord段地址替换到锁对象头的指向中
+    if (mark == (markOop) Atomic::cmpxchg_ptr(lock, obj()-&gt;mark_addr(), mark)) {
+      TEVENT (slow_enter: release stacklock) ;
+      return ; // 加锁成功
+    }
+
+  // 存在锁竞争
+  // 对象锁有持锁线程，且是前线程，进行重入
+  } else if (mark-&gt;has_locker() &amp;&amp; THREAD-&gt;is_lock_owned((address)mark-&gt;locker())) {
+    assert(lock != mark-&gt;locker(), &quot;must not re-lock the same lock&quot;);
+    assert(lock != (BasicLock*)obj-&gt;mark(), &quot;don&#39;t relock with same BasicLock&quot;);
+    // 可以看到重入只是置空了displaced_header，因为displaced_header只在加锁时起暂存作用
+    // 这时轻量级锁的主要，是锁本身指向当前重入的先的owned
+    lock-&gt;set_displaced_header(NULL); 
+    return;
+  }
+
+  // 重置线程栈BasicLock
+  lock-&gt;set_displaced_header(markOopDesc::unused_mark());
+  // 进入锁膨胀阶段
+  // 进行到这一步，说明有至少两条线程在竞争锁
+  ObjectSynchronizer::inflate(THREAD, obj())-&gt;enter(THREAD);
+}</code></pre>
+<blockquote>
+<p>objectMonitor.cpp</p>
+</blockquote>
+<p>重量级锁（轻量级锁的膨胀过程）</p>
+<pre><code class="c++">// 进入监控锁
+void ATTR ObjectMonitor::enter(TRAPS) {
+
+  // 获取当前操作线程的指针
+  Thread * const Self = THREAD ;
+  void * cur ;
+
+  // &amp;_owner为持锁线程的地址
+  // 尝试使用CAS操作将当前线程地址置换到持锁线程指向的地址，成功则表示加锁成功
+  // 返回持锁线程的指针
+  cur = Atomic::cmpxchg_ptr (Self, &amp;_owner, NULL) ;
+
+  // 获取失败（可能锁正在升级）
+  if (cur == NULL) {
+     // Either ASSERT _recursions == 0 or explicitly set _recursions = 0.
+     assert (_recursions == 0   , &quot;invariant&quot;) ;
+     assert (_owner == Self, &quot;invariant&quot;) ;
+     // CONSIDER: set or assert OwnerIsThread == 1
+     return ;
+  }
+
+  // 获取成功，而且当前线程为“上一任持锁线程”，进行锁重入计数
+  if (cur == Self) {
+     _recursions ++ ;
+     return ;
+  }
+
+  // 获取成功，当前线程是第一次获取到该锁
+  if (Self-&gt;is_lock_owned ((address)cur)) {
+    _recursions = 1 ;
+    _owner = Self ; 
+    OwnerIsThread = 1 ;
+    return ;
+  }
+
+  // 获取失败，这时有其他线程持有该锁，意味需要进行锁竞争
+  assert (Self-&gt;_Stalled == 0, &quot;invariant&quot;) ;
+  Self-&gt;_Stalled = intptr_t(this) ;
+
+  // 线程进入队列之前，先尝试一轮自旋获取锁，若成果直接返回
+  // 注意：TrySpin操作是“自适应自旋”，既它会根据经验调节自旋次数
+  if (Knob_SpinEarly &amp;&amp; TrySpin (Self) &gt; 0) { // mutex.cpp
+     assert (_owner == Self      , &quot;invariant&quot;) ;
+     assert (_recursions == 0    , &quot;invariant&quot;) ;
+     assert (((oop)(object()))-&gt;mark() == markOopDesc::encode(this), &quot;invariant&quot;) ;
+     Self-&gt;_Stalled = 0 ;
+     return ;
+  }
+
+  assert (_owner != Self          , &quot;invariant&quot;) ;
+  assert (_succ  != Self          , &quot;invariant&quot;) ;
+  assert (Self-&gt;is_Java_thread()  , &quot;invariant&quot;) ;
+
+  // Java线程指针
+  JavaThread * jt = (JavaThread *) Self ;
+
+  assert (!SafepointSynchronize::is_at_safepoint(), &quot;invariant&quot;) ; // 不在安全点
+  assert (jt-&gt;thread_state() != _thread_blocked   , &quot;invariant&quot;) ; // 没有阻塞
+  assert (this-&gt;object() != NULL  , &quot;invariant&quot;) ; 
+  assert (_count &gt;= 0, &quot;invariant&quot;) ;
+
+  // Prevent deflation at STW-time.  See deflate_idle_monitors() and is_busy().
+  // Ensure the object-monitor relationship remains stable while there&#39;s contention.
+  Atomic::inc_ptr(&amp;_count);
+
+  EventJavaMonitorEnter event;
+
+  { 
+    // 讲Java线程的状态修改为Blocked
+    JavaThreadBlockedOnMonitorEnterState jtbmes(jt, this);
+
+    // 将当前Java线程切换为系统线程
+    OSThreadContendState osts(Self-&gt;osthread());
+    ThreadBlockInVM tbivm(jt);
+
+    Self-&gt;set_current_pending_monitor(this);
+
+    // 重量级锁竞争
+    // TODO-FIXME: change the following for(;;) loop to straight-line code.
+    for (;;) {
+      jt-&gt;set_suspend_equivalent();
+
+      // 重量级锁竞争逻辑
+      EnterI (THREAD) ;
+
+      if (!ExitSuspendEquivalent(jt)) break ;
+
+      _recursions = 0 ;
+      _succ = NULL ;
+      exit (false, Self) ;
+
+      jt-&gt;java_suspend_self();
+    }
+    Self-&gt;set_current_pending_monitor(NULL);
+  }
+
+  Atomic::dec_ptr(&amp;_count);
+  assert (_count &gt;= 0, &quot;invariant&quot;) ;
+  Self-&gt;_Stalled = 0 ;
 
 
+  // ...
 
+  if (ObjectMonitor::_sync_ContendedLockAttempts != NULL) {
+     ObjectMonitor::_sync_ContendedLockAttempts-&gt;inc() ;
+  }
+}</code></pre>
+<p>重量级锁竞争逻辑</p>
+<pre><code class="c++">// 重量级锁竞争逻辑
+void ATTR ObjectMonitor::EnterI (TRAPS) {
+    Thread * Self = THREAD ;
+    assert (Self-&gt;is_Java_thread(), &quot;invariant&quot;) ;
+    assert (((JavaThread *) Self)-&gt;thread_state() == _thread_blocked   , &quot;invariant&quot;) ;
+
+    // 尝试获取锁
+    if (TryLock (Self) &gt; 0) { // 大于1表示尝试成功
+        assert (_succ != Self              , &quot;invariant&quot;) ;
+        assert (_owner == Self             , &quot;invariant&quot;) ;
+        assert (_Responsible != Self       , &quot;invariant&quot;) ;
+        return ;
+    }
+
+    DeferredInitialize () ;
+
+    // 乐观思想地在线程进入队列前最尝试一次“自适应自旋”
+    if (TrySpin (Self) &gt; 0) {
+        assert (_owner == Self        , &quot;invariant&quot;) ;
+        assert (_succ != Self         , &quot;invariant&quot;) ;
+        assert (_Responsible != Self  , &quot;invariant&quot;) ;
+        return ;
+    }
+
+    // 重量级锁自旋失败，线程将进入同步队列（实质是链表）阻塞操作
+    assert (_succ  != Self            , &quot;invariant&quot;) ;
+    assert (_owner != Self            , &quot;invariant&quot;) ;
+    assert (_Responsible != Self      , &quot;invariant&quot;) ;
+
+    // Enqueue &quot;Self&quot; on ObjectMonitor&#39;s _cxq.
+    //
+    // Node acts as a proxy for Self.
+    // As an aside, if were to ever rewrite the synchronization code mostly
+    // in Java, WaitNodes, ObjectMonitors, and Events would become 1st-class
+    // Java objects.  This would avoid awkward lifecycle and liveness issues,
+    // as well as eliminate a subset of ABA issues.
+    // TODO: eliminate ObjectWaiter and enqueue either Threads or Events.
+    //
+    // 返回线程的代理节点，用于参数在同步队列中竞争锁操作
+    // 该同步队列由链表结构实现
+    ObjectWaiter node(Self) ;
+    Self-&gt;_ParkEvent-&gt;reset() ;
+    node._prev   = (ObjectWaiter *) 0xBAD ; // 当前(线程)节点的前驱节点
+    node.TState  = ObjectWaiter::TS_CXQ ; // 当前(线程)节点的状态
+
+    // Push &quot;Self&quot; onto the front of the _cxq.
+    // Once on cxq/EntryList, Self stays on-queue until it acquires the lock.
+    // Note that spinning tends to reduce the rate at which threads
+    // enqueue and dequeue on EntryList|cxq.
+    ObjectWaiter * nxt ;
+    // 先将当前竞争锁线程的代理节点推到同步队列头
+    for (;;) {
+        // 头插法
+        node._next = nxt = _cxq ; // 一开始_cxq为null
+        // 替换原来的同步队列，成功后打断循环
+        if (Atomic::cmpxchg_ptr (&amp;node, &amp;_cxq, nxt) == nxt) break ;
+
+        // 在CAS替换队列失败时也不忙尝试获取锁
+        if (TryLock (Self) &gt; 0) {
+            assert (_succ != Self         , &quot;invariant&quot;) ;
+            assert (_owner == Self        , &quot;invariant&quot;) ;
+            assert (_Responsible != Self  , &quot;invariant&quot;) ;
+            return ;
+        }
+    }
+
+    // 尝试申请成为“责任线程”
+    // 在同步队列中只有一条责任线程
+    // 责任线程的特点是定时唤醒，用于轮询持锁线程_owner是否已经释放锁
+    // 申请条件是当前线程（节点）没有子节点，因此第一条进入同步队列的线程会率先作为责任线程
+    if ((SyncFlags &amp; 16) == 0 &amp;&amp; nxt == NULL &amp;&amp; _EntryList == NULL) {
+        // Try to assume the role of responsible thread for the monitor.
+        // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=Self }
+        Atomic::cmpxchg_ptr (Self, &amp;_Responsible, NULL) ;
+    }
+
+    TEVENT (Inflated enter - Contention) ;
+    int nWakeups = 0 ;
+    int RecheckInterval = 1 ;
+
+    for (;;) {
+
+        // 再次尝试获取锁
+        if (TryLock (Self) &gt; 0) break ;
+        assert (_owner != Self, &quot;invariant&quot;) ;
+
+        // 获取锁失败，尝试申请成为责任线程
+        if ((SyncFlags &amp; 2) &amp;&amp; _Responsible == NULL) {
+           Atomic::cmpxchg_ptr (Self, &amp;_Responsible, NULL) ;
+        }
+
+        // 注意：以下就是重量级锁“重”的地方，线程将会阻塞，操作由系统调度
+
+        // 当前线程是“责任线程”，超时阻塞
+        if (_Responsible == Self || (SyncFlags &amp; 1)) {
+            TEVENT (Inflated enter - park TIMED) ;
+            Self-&gt;_ParkEvent-&gt;park ((jlong) RecheckInterval) ;
+            // Increase the RecheckInterval, but clamp the value.
+            RecheckInterval *= 8 ;
+            if (RecheckInterval &gt; 1000) RecheckInterval = 1000 ;
+
+        // 当前线程不是“责任线程”，一直阻塞
+        } else {
+            TEVENT (Inflated enter - park UNTIMED) ;
+            Self-&gt;_ParkEvent-&gt;park() ;
+        }
+
+        // 阻塞完后先尝试一次获取锁，成功直接返回
+        if (TryLock(Self) &gt; 0) break ;
+
+        // 上一步CAS尝试获取失败，表当前线程依然处于竞争锁状态
+        // 记录无用的唤醒次数
+        TEVENT (Inflated enter - Futile wakeup) ;
+        if (ObjectMonitor::_sync_FutileWakeups != NULL) {
+           ObjectMonitor::_sync_FutileWakeups-&gt;inc() ;
+        }
+        ++ nWakeups ;
+
+        // 如果不是虚假唤醒，通常会得到 _succ == Self，则尝试进行“自适应自旋”
+        if ((Knob_SpinAfterFutile &amp; 1) &amp;&amp; TrySpin (Self) &gt; 0) break ;
+
+        // 唤醒前重置_ParkEvent状态，减少虚假唤醒
+        if ((Knob_ResetEvent &amp; 1) &amp;&amp; Self-&gt;_ParkEvent-&gt;fired()) {
+           Self-&gt;_ParkEvent-&gt;reset() ;
+           OrderAccess::fence() ;
+        }
+
+        if (_succ == Self) _succ = NULL ;
+
+        // Invariant: after clearing _succ a thread *must* retry _owner before parking.
+        OrderAccess::fence() ;
+    }
+
+    assert (_owner == Self      , &quot;invariant&quot;) ;
+    assert (object() != NULL    , &quot;invariant&quot;) ;
+
+    UnlinkAfterAcquire (Self, &amp;node) ;
+    if (_succ == Self) _succ = NULL ;
+
+    assert (_succ != Self, &quot;invariant&quot;) ;
+    if (_Responsible == Self) {
+        _Responsible = NULL ;
+        OrderAccess::fence(); // Dekker pivot-point
+    }
+
+    if (SyncFlags &amp; 8) {
+       OrderAccess::fence() ;
+    }
+    return ;
+}</code></pre>
+<p>释放锁</p>
+<pre><code class="c++">// 释放监控锁
+void ATTR ObjectMonitor::exit(bool not_suspended, TRAPS) {
+
+   // 获取当前释放锁线程的指针
+   Thread * Self = THREAD ;
+
+   if (THREAD != _owner) { 
+     if (THREAD-&gt;is_lock_owned((address) _owner)) {
+       assert (_recursions == 0, &quot;invariant&quot;) ;
+       _owner = THREAD ;
+       _recursions = 0 ;
+       OwnerIsThread = 1 ;
+     } else {
+       TEVENT (Exit - Throw IMSX) ;
+       assert(false, &quot;Non-balanced monitor enter/exit!&quot;);
+       if (false) {
+          THROW(vmSymbols::java_lang_IllegalMonitorStateException());
+       }
+       return;
+     }
+   }
+
+   // 释放锁重入标记
+   // 注意：如果锁重入了，调用一次 ObjectMonitor::exit 并不会释放锁，必须递减到0
+   if (_recursions != 0) {
+     _recursions--;        // this is simple recursive enter
+     TEVENT (Inflated exit - recursive) ;
+     return ; // 递减后退出方法返回
+   }
+   if ((SyncFlags &amp; 4) == 0) {
+      _Responsible = NULL ;
+   }
+
+   for (;;) {
+
+      // 虽然 _recursions = 0 但线程还持有锁标识
+      assert (THREAD == _owner, &quot;invariant&quot;) 
+
+      if (Knob_ExitPolicy == 0) { 
+         OrderAccess::release_store_ptr (&amp;_owner, NULL) ;   // drop the lock
+         OrderAccess::storeload() ;                         // See if we need to wake a successor
+         if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
+            TEVENT (Inflated exit - simple egress) ;
+            return ;
+         }
+         TEVENT (Inflated exit - complex egress) ;
+         if (Atomic::cmpxchg_ptr (THREAD, &amp;_owner, NULL) != NULL) {
+            return ;
+         }
+         TEVENT (Exit - Reacquired) ;
+      } else {
+
+         if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
+            OrderAccess::release_store_ptr (&amp;_owner, NULL) ;   // drop the lock
+            OrderAccess::storeload() ;
+
+            // Ratify the previously observed values.
+            if (_cxq == NULL || _succ != NULL) {
+                TEVENT (Inflated exit - simple egress) ;
+                return ;
+            }
+
+            if (Atomic::cmpxchg_ptr (THREAD, &amp;_owner, NULL) != NULL) {
+               TEVENT (Inflated exit - reacquired succeeded) ;
+               return ;
+            }
+            TEVENT (Inflated exit - reacquired failed) ;
+         } else {
+            TEVENT (Inflated exit - complex egress) ;
+         }
+      }
+
+      guarantee (_owner == THREAD, &quot;invariant&quot;) ;
+
+      ObjectWaiter * w = NULL ;
+      int QMode = Knob_QMode ; // Knob_QMode 默认为 0
+
+      if (QMode == 2 &amp;&amp; _cxq != NULL) {
+          w = _cxq ;
+          assert (w != NULL, &quot;invariant&quot;) ;
+          assert (w-&gt;TState == ObjectWaiter::TS_CXQ, &quot;Invariant&quot;) ;
+          ExitEpilog (Self, w) ;
+          return ;
+      }
+
+      if (QMode == 3 &amp;&amp; _cxq != NULL) {
+          w = _cxq ;
+          for (;;) {
+             assert (w != NULL, &quot;Invariant&quot;) ;
+             ObjectWaiter * u = (ObjectWaiter *) Atomic::cmpxchg_ptr (NULL, &amp;_cxq, w) ;
+             if (u == w) break ;
+             w = u ;
+          }
+          assert (w != NULL              , &quot;invariant&quot;) ;
+
+          ObjectWaiter * q = NULL ;
+          ObjectWaiter * p ;
+          for (p = w ; p != NULL ; p = p-&gt;_next) {
+              guarantee (p-&gt;TState == ObjectWaiter::TS_CXQ, &quot;Invariant&quot;) ;
+              p-&gt;TState = ObjectWaiter::TS_ENTER ;
+              p-&gt;_prev = q ;
+              q = p ;
+          }
+
+          ObjectWaiter * Tail ;
+          for (Tail = _EntryList ; Tail != NULL &amp;&amp; Tail-&gt;_next != NULL ; Tail = Tail-&gt;_next) ;
+          if (Tail == NULL) {
+              _EntryList = w ;
+          } else {
+              Tail-&gt;_next = w ;
+              w-&gt;_prev = Tail ;
+          }
+
+      }
+
+      if (QMode == 4 &amp;&amp; _cxq != NULL) {
+          w = _cxq ;
+          for (;;) {
+             assert (w != NULL, &quot;Invariant&quot;) ;
+             ObjectWaiter * u = (ObjectWaiter *) Atomic::cmpxchg_ptr (NULL, &amp;_cxq, w) ;
+             if (u == w) break ;
+             w = u ;
+          }
+          assert (w != NULL              , &quot;invariant&quot;) ;
+
+          ObjectWaiter * q = NULL ;
+          ObjectWaiter * p ;
+          for (p = w ; p != NULL ; p = p-&gt;_next) {
+              guarantee (p-&gt;TState == ObjectWaiter::TS_CXQ, &quot;Invariant&quot;) ;
+              p-&gt;TState = ObjectWaiter::TS_ENTER ;
+              p-&gt;_prev = q ;
+              q = p ;
+          }
+
+          // Prepend the RATs to the EntryList
+          if (_EntryList != NULL) {
+              q-&gt;_next = _EntryList ;
+              _EntryList-&gt;_prev = q ;
+          }
+          _EntryList = w ;
+
+          // Fall thru into code that tries to wake a successor from EntryList
+      }
+
+      w = _EntryList  ;
+      if (w != NULL) {
+          assert (w-&gt;TState == ObjectWaiter::TS_ENTER, &quot;invariant&quot;) ;
+          ExitEpilog (Self, w) ;
+          return ;
+      }
+
+      // 将同步队列转移给w
+      w = _cxq ; 
+      if (w == NULL) continue ;
+
+      // 以下操作相当于置空_cxq
+      for (;;) {
+          assert (w != NULL, &quot;Invariant&quot;) ;
+          ObjectWaiter * u = (ObjectWaiter *) Atomic::cmpxchg_ptr (NULL, &amp;_cxq, w) ;
+          if (u == w) break ;
+          w = u ;
+      }
+      TEVENT (Inflated exit - drain cxq into EntryList) ;
+
+      assert (w != NULL              , &quot;invariant&quot;) ;
+      assert (_EntryList  == NULL    , &quot;invariant&quot;) ;
+
+      if (QMode == 1) {
+         // QMode == 1 : drain cxq to EntryList, reversing order
+         // We also reverse the order of the list.
+         ObjectWaiter * s = NULL ;
+         ObjectWaiter * t = w ;
+         ObjectWaiter * u = NULL ;
+         while (t != NULL) {
+             guarantee (t-&gt;TState == ObjectWaiter::TS_CXQ, &quot;invariant&quot;) ;
+             t-&gt;TState = ObjectWaiter::TS_ENTER ;
+             u = t-&gt;_next ;
+             t-&gt;_prev = u ;
+             t-&gt;_next = s ;
+             s = t;
+             t = u ;
+         }
+         _EntryList  = s ;
+         assert (s != NULL, &quot;invariant&quot;) ;
+
+
+      } else {
+         // QMode == 0 or QMode == 2
+         _EntryList = w ; // w = _cxq
+         ObjectWaiter * q = NULL ;
+         ObjectWaiter * p ;
+         for (p = w ; p != NULL ; p = p-&gt;_next) {
+             guarantee (p-&gt;TState == ObjectWaiter::TS_CXQ, &quot;Invariant&quot;) ;
+             p-&gt;TState = ObjectWaiter::TS_ENTER ; 
+             p-&gt;_prev = q ;
+             q = p ;
+         }
+      }
+
+      if (_succ != NULL) continue;
+
+      w = _EntryList  ;
+      if (w != NULL) {
+          guarantee (w-&gt;TState == ObjectWaiter::TS_ENTER, &quot;invariant&quot;) ;
+          ExitEpilog (Self, w) ; // 唤醒 _EntryList 队列中头一条线程
+          return ;
+      }
+   }
+}</code></pre>
+<p>唤醒线程</p>
+<pre><code class="c++">// 释放监控锁时唤醒线程
+void ObjectMonitor::ExitEpilog (Thread * Self, ObjectWaiter * Wakee) {
+   assert (_owner == Self, &quot;invariant&quot;) ;
+
+   // Exit protocol:
+   // 1. ST _succ = wakee
+   // 2. membar #loadstore|#storestore;
+   // 2. ST _owner = NULL
+   // 3. unpark(wakee)
+
+   _succ = Knob_SuccEnabled ? Wakee-&gt;_thread : NULL ;
+   ParkEvent * Trigger = Wakee-&gt;_event ;
+   Wakee  = NULL ;
+
+   // 解除锁关联
+   OrderAccess::release_store_ptr (&amp;_owner, NULL) ;
+   OrderAccess::fence() ;  // ST _owner vs LD in unpark()
+
+   // 代码执行安全点
+   if (SafepointSynchronize::do_call_back()) {
+      TEVENT (unpark before SAFEPOINT) ;
+   }
+
+   // 唤醒队列（_EntryList）中的头部线程
+   Trigger-&gt;unpark() ; 
+
+}</code></pre>
 <h2 id="抽象队列同步器（AQS）"><a href="#抽象队列同步器（AQS）" class="headerlink" title="抽象队列同步器（AQS）"></a>抽象队列同步器（AQS）</h2><h3 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h3><p>&emsp;&emsp;在 JDK 1.5 这个版本中除了新增了 Instrumentation API 之外还加入了大神<code>道格利(Doug Lea)</code> 编写的 JSR-166（一整个 juc 包），该包中除了 CAS 操作之外最为重要的就是 AbstractQueuedSynchronizer。准确点来说 AQS 其实并不是和 Synchronized 对等的，因为 AQS 只负责提供抽象的同步方案(围绕着关键字段state进行操作)，而实现者只需要继承 AQS 并复写其模板方法即可实现特定的同步功能。再通俗点说 Lock 只是 AQS 的一种体现，例如在 juc 包中除了 Lock 之外还有诸如 CountDownLatch 、Semaphore 这样的同步工具类。</p>
 <p>&emsp;&emsp;因为当前文章是围绕锁展开的，所以接下来会通过 Lock 源码作为开端对 AQS 进行浅析。但在此之前还需要了解一些事。就是 juc 包下的工具类基本上很少使用 synchronized ，而大多数使用的是 CAS，可以说 CAS 支撑着整个 juc 包也不为过。CAS 中文意思叫<code>比较和交换</code>，其实就是乐观锁操作，只不过它是一条原子 CPU 指令，所以它是天然同步的。在 Java 中有一个较为低级别的类叫 Unsafe ，CAS 操作都是通过该类实现了。 除了CAS 之外 Unsafe 还提供线程阻塞和唤醒等操作，这些操作在 juc 中都被大量使用。</p>
 <h3 id="FIFO双向队列"><a href="#FIFO双向队列" class="headerlink" title="FIFO双向队列"></a>FIFO双向队列</h3><blockquote>
@@ -308,7 +868,7 @@ synchronized (sf) {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#闲聊"><span class="toc-text">闲聊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Synchronized原理"><span class="toc-text">Synchronized原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁优化"><span class="toc-text">锁优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#锁消除"><span class="toc-text">锁消除</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁粗化"><span class="toc-text">锁粗化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自旋锁"><span class="toc-text">自旋锁</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁升级"><span class="toc-text">锁升级</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#指令源码"><span class="toc-text">指令源码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#抽象队列同步器（AQS）"><span class="toc-text">抽象队列同步器（AQS）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介-1"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FIFO双向队列"><span class="toc-text">FIFO双向队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Lock和Synchronized简单比对一下"><span class="toc-text">Lock和Synchronized简单比对一下</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#闲聊"><span class="toc-text">闲聊</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Synchronized原理"><span class="toc-text">Synchronized原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁优化"><span class="toc-text">锁优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#锁消除"><span class="toc-text">锁消除</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁粗化"><span class="toc-text">锁粗化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自旋锁"><span class="toc-text">自旋锁</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁升级"><span class="toc-text">锁升级</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#指令源码"><span class="toc-text">指令源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析（Open-JDK1-8）"><span class="toc-text">源码浅析（Open JDK1.8）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#抽象队列同步器（AQS）"><span class="toc-text">抽象队列同步器（AQS）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介-1"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FIFO双向队列"><span class="toc-text">FIFO双向队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Lock和Synchronized简单比对一下"><span class="toc-text">Lock和Synchronized简单比对一下</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
