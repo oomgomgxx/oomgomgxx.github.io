@@ -473,7 +473,7 @@
 <p>模式最佳实践以及优缺点</p>
 </blockquote>
 <ul>
-<li>暂时没发现应用例子</li>
+<li>Redis 6.x 版本开始支持多线程处理网络IO，而开启该功能后 Redis 就数据单Reactor多线程模型</li>
 <li>优点1：从 Reactor 线程中抽离了最为耗时的读写事件处理操作，大大地提高程序的任务处理能力</li>
 <li>优点2：引入了多线程处理，可以充分发挥多核 CPU 性能</li>
 <li>缺点1：多线程操作引入资源同步以及 CPU 资源竞争激烈等问题</li>
@@ -577,6 +577,8 @@
         ChannelFuture future = serverBootstrap
                 .bind(port) // 调试断点位置 ------------
                 .sync();
+
+        // 当关闭后会得到通知
         future.channel().closeFuture().sync();
     }
 }</code></pre>
