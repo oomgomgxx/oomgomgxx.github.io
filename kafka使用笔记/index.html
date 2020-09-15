@@ -146,6 +146,8 @@
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/002.png" alt></p>
 <p>可以看出，磁盘的顺序访问是相当快的，所以<strong>kafka选择将内容写入磁盘</strong></p>
+<a id="more"></a>
+
 <h3 id="内存映射文件"><a href="#内存映射文件" class="headerlink" title="内存映射文件"></a>内存映射文件</h3><p>&emsp;&emsp;游戏就经常玩了，但不知道有没有这么一个疑问：<code>游戏体积这么大，而内存这么小，那么操作系统到底是怎么运行游戏的呢？</code>答案就是，操作系统会预先为程序生成一个内存镜像保存在磁盘中，在运行该程序时并不会真的将该程序全部加载进主存，而是当使用到某部分代码时才会加载进主存，而这个保存程序内存镜像的文件就是内存映射文件。操作可以可以直接将内存映射文件映射到对应的内存地址中，因此对于用户线程而言是可以直接访问到该内存地址的。而且操作系统会自动管理者块内存空间，例如操作完该内存中的数据后系统会自动将脏数据刷会文件中。</p>
 <blockquote>
 <p>参考图</p>
@@ -183,7 +185,7 @@
 <li>一个 Topic 可以有多个 Partition，除了去中心化之外还提高了并发效率</li>
 <li>发送缓存。支持批量发送操作，Producer 只有数据大小到达<code>batch.size</code>才会真正发出，目的是提高操作的吞吐量</li>
 <li>Broker 基于 Reactor 模式处理请求，一定程度提高了 IO 的处理能力 </li>
-<li>Kafka在消费完数据后它并不会马上删除，而是等到某个时间或者量批量删除，因此减少了不必要的操作，</li>
+<li>Kafka在消费完数据后它并不会马上删除，而是等到某个时间或者量批量删除，因此减少了不必要的操作，提高了吞吐量和降低了延时</li>
 <li>消息压缩。Kafka 允许在 Producer 和 Broker 这两个点对消息集合进行压缩<ul>
 <li>这是一种时间换空间的做法，Producer 压缩数据可以提高传输效率，因此如果 Producer CPU 充裕的话建议开启该功能，且使用 <code>zstd算法</code> </li>
 <li>一般情况下 Producer 端开启了压缩功能 Broker 会接收后会直接保存（除非Broker开启了压缩且和Producer的压缩类型不一致才会解包再压缩），然后 Consumer 消费会将其解压再消费</li>
@@ -196,10 +198,9 @@
 <p>参考图：图片源自网络</p>
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/006.png" alt></p>
-<p><strong>为什么需要partition？</strong></p>
-<p>&emsp;&emsp;有人可能会有这样的疑问，就是即然有了topic为什么要有partition这个概念呢？如 ActiveMQ 就没有partition概念。首选 kafka 主要为作为<code>处理实时数据</code>场景提供 <code>高吞吐</code>、<code>低延迟</code> 处理方案。partition 就是用来提 topic 的并发操作效率的，有着去中心化和负载均衡的效果</p>
+<p><strong>为什么需要 Partition？</strong></p>
+<p>&emsp;&emsp;有人可能会有这样的疑问，既然有了 Topic 为什么还要有 Partition 这个概念呢？譬如 ActiveMQ 就没有Partition。这点需要从 Kafka 的主要使用场景角度来说，Kafka 通常被用作实时处理场景，为其提供 <code>高吞吐</code>、<code>低延迟</code> 的解决方案，而 Partition 就是用来提 Topic 的并发量的，同时有着<code>去中心化容灾</code>和<code>负载均衡</code>的效果</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/004.png" alt></p>
-<p>从上图不难看出，当topic有多个partition 和多个生产者的情况下，不同的生产者是可以针对不同的 partition 进行操作的。但如果这时只有一个partition 的话，并发操作时压力就会全部落在这个 partition 上，因此会降并发操作的性能。</p>
 <h2 id="Kafka是如何存储topic数据的"><a href="#Kafka是如何存储topic数据的" class="headerlink" title="Kafka是如何存储topic数据的"></a>Kafka是如何存储topic数据的</h2><blockquote>
 <p>图片源自网络</p>
 </blockquote>
@@ -288,7 +289,7 @@ leader-epoch-checkpoint</code></pre>
 <p>&emsp;&emsp;上面已经提到，消费者是需要定期向 Broker 提交 Consumer offset 以汇报自己的消费进度的，这个动作称为<code>位移提交</code>。针对位移提交操作在<code>较新版本的Kafka Consumer</code> 中有1个专门的 Topic (__consumer__offsets)与之对应，也就是说提交消费者偏移量实质就是发送一条消息到这个 Topic 中。而这个 Topic 我们可以在 Kafka 的日志文件夹下观察到，它一共有50个文件夹，也就是说它有 50 个 Partition。</p>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/012.png" style="zoom:50%;">
 
-<p>那为什么需要这么多 Partition 呢？这是因为位移提交是一个非常频繁的操作，因此利用 Partition 的负载均衡特性可以减轻并发操作同一个 Topic 时所带来的压力。</p>
+<p>那为什么需要这么多 Partition 呢？这是因为位移提交是一个非常频繁的操作，利用 Partition 的负载均衡特性可以减轻并发操作同一个 Topic 时所带来的压力。</p>
 <p>&emsp;&emsp;注意，在早期的 Kafka Consumer 中消费者偏移量是保存在 Zookeeper 中的，这样做的愿意是为了降低 Broker 的管理成本从而提高 Boker 集群的伸缩性。但后来因为位移提交是一个频繁操作，而 Zookeeper 并不合适保存大数据量以及作频繁的数据修改，因此在后期的新版本 Kafka Consumer 中消费者偏移量从 Zookeeper 迁移会了 Broker 管理。</p>
 <h2 id="Java-kafka-Producer"><a href="#Java-kafka-Producer" class="headerlink" title="Java kafka Producer"></a>Java kafka Producer</h2><h3 id="生产者模型"><a href="#生产者模型" class="headerlink" title="生产者模型"></a>生产者模型</h3><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png" style="zoom:67%;">
 
@@ -434,7 +435,7 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 </ul>
 <p>linger.ms（重要）</p>
 <ul>
-<li>基于时间的 batch 打包策略，可配合 batch.size 使用，相当于满足该值后就作为一个 batch，适当地提高该配置值可以让 batch 被填充得更加丰满，因为正常情况下 batch 可能没满就被发送线程从缓冲池中取出将其发送了</li>
+<li>基于时间的 batch 打包策略，可配合 batch.size 使用，相当于满足该值后就作为一个 batch，适当地提高该配置值可以让 batch 被填充得更加丰满，因为正常情况下（linger.ms为0时）batch 可能没满就被发送线程从缓冲池中取出将其发送了</li>
 <li>该值默认为 0 秒，既不开启该功能</li>
 </ul>
 <p>buffer.memory（重要）</p>
@@ -578,7 +579,7 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <h2 id="Java-kafka-Consumer"><a href="#Java-kafka-Consumer" class="headerlink" title="Java kafka Consumer"></a>Java kafka Consumer</h2><blockquote>
 <p>注意：</p>
 <ul>
-<li>新版的 KafkaConsumer 是单线程架构，且不是线程安全的</li>
+<li>新版（Java编写）的 KafkaConsumer 是单线程架构，且不是线程安全的</li>
 <li>从 Kafka 0.10.1 版本后发送心跳包操作由专门的心跳线程处理，而且该线程还通过心跳包感知分区再均衡的发生</li>
 </ul>
 </blockquote>
@@ -587,26 +588,26 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <blockquote>
 <p>消费者组说明</p>
 </blockquote>
-<p>消费者组订阅topic T1，其中 T1 的 partition 数量为4。当消费者组中仅有1个消费者时</p>
+<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为4。当消费者组中仅有1个消费者时</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/007.png" alt></p>
-<p>消费者组订阅topic T1，其中 T1 的partition数量为4。当消费者组中有2个消费者时</p>
+<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为4。当消费者组中有2个消费者时</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/008.png" alt></p>
-<p>消费者组订阅topic T1，其中T1的partition数量为4。当消费者组中有4个消费者时</p>
+<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为4。当消费者组中有4个消费者时</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/009.png" alt></p>
-<p>消费者组订阅topic T1，其中T1的partition数量为4。当消费者组中有5个消费者时</p>
+<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为 4。当消费者组中有5个消费者时</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/010.png" alt></p>
-<p>2个消费者组同时订阅topic T1，其中 T1 的partition数量为4。</p>
+<p>2个消费者组同时订阅 Topic T1，其中 T1 的 Partition 数量为4。</p>
 <p>消费者组1，有4个消费者。消费者组2，有2个消费者。</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/011.png" alt></p>
 <blockquote>
-<p>小结：</p>
-<ol>
-<li>相同 Consumer Group中的不同 Consumer，在同一时刻无法消费同一个 partition</li>
-<li>Consumer Group中的 Consumer可以同时消费多个 partition</li>
-<li>即使 Consumer Group中的 Consumer数量多于 partition数量，也不会提高 Consumer Group的消费能力</li>
-<li>多个 Consumer Group同时订阅同一个 topic 时是互不干扰</li>
-</ol>
+<p>小结</p>
 </blockquote>
+<ol>
+<li>同 Consumer Group 中的不同 Consumer，在同一时刻无法消费同一个 Partition</li>
+<li>Consumer Group 中的 Consumer 可以同时消费多个 Partition，但不能消费不属自己负责的 Partition</li>
+<li>即使 Consumer Group 中的 Consumer 数量多于 Partition 数量，也不会提高 Consumer Group 的消费能力</li>
+<li>多个 Consumer Group 同时订阅同一个 Topic 时，互不干扰</li>
+</ol>
 <h3 id="分区再均衡"><a href="#分区再均衡" class="headerlink" title="分区再均衡"></a>分区再均衡</h3><blockquote>
 <p>是什么？</p>
 </blockquote>
@@ -1112,7 +1113,7 @@ testx:2:468332</code></pre><h2 id="问题配置"><a href="#问题配置" class="
 </ul>
 <h3 id="如何保证只消费1次"><a href="#如何保证只消费1次" class="headerlink" title="如何保证只消费1次"></a>如何保证只消费1次</h3><p>一条消息多次消费的原因：</p>
 <ul>
-<li>offset 没能及时提交</li>
+<li>offset 没能及时提交。譬如处理完消息后没有提交offset就宕机了</li>
 <li>生产者开启了重试功能，导致消息重复生产</li>
 </ul>
 <p>其实在上面已经提高过，对于消息被重复消费这个问题目前而言在消息系统层面是无法解决的，而唯一解决的办法就是从 Consumer 端的业务代码层面解决</p>
