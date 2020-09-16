@@ -178,6 +178,25 @@
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/003.png" alt></p>
 <p>需要说明的是，零拷贝并不是不拷贝，而是不进行 CPU Copy 而已。零拷贝的好处在于减少了用户态和内核态的切换次数，这样就减少了用户程序的呆滞时间，因此提高了用户程序的处理能力。</p>
+<h2 id="什么是Kafka？"><a href="#什么是Kafka？" class="headerlink" title="什么是Kafka？"></a>什么是Kafka？</h2><blockquote>
+<p>官方介绍</p>
+</blockquote>
+<p>Apache Kafka是一个开放源代码的<code>分布式事件流平台</code>，成千上万的公司使用它来实现高性能数据管道，流分析，数据集成和关键任务应用程序。 </p>
+<blockquote>
+<p>什么是事件流，个人理解如下：</p>
+</blockquote>
+<p><strong>事件</strong>：特指某个上下文中被关注且已发生的事情</p>
+<p><strong>事件流</strong>：事件流向过程（从一端转移到另一端的）。譬如说数据库记录被更新，因此而产生了对应的更新事件，该事件通过 Kafka 事件流平台（作为介质）转移到了其他服务节点上的过程，就是一个CDC（capture data change）事件流</p>
+<p><strong>流处理</strong>：提供一系列操作手段（修改、持久化、特殊处理等），让数据在流动的过程中产生所需的变化</p>
+<h2 id="Kafka常见使用场景"><a href="#Kafka常见使用场景" class="headerlink" title="Kafka常见使用场景"></a>Kafka常见使用场景</h2><ul>
+<li>功能异步解耦</li>
+<li>消息订阅/发布</li>
+<li>日志收集</li>
+<li>数据中转，譬如上面提到的 CDC（capture data change）</li>
+<li>流量削峰，既使用Kafka进行任务缓冲以应对突发的流量剧增情况</li>
+<li>大数据流处理</li>
+</ul>
+<p>注：以上只是部分 Kafka 的使用场景，其实不管是 Kafka 还是其他系统，使用场景都是根据系统所提供的特性而定的，简单地说就是了解系统特性的前提再发挥个人想象来决定如果使用系统，所以说 Kafka 的使用场景远不止上面这一些。</p>
 <h2 id="为什么kafka性能高？"><a href="#为什么kafka性能高？" class="headerlink" title="为什么kafka性能高？"></a>为什么kafka性能高？</h2><ul>
 <li>数据操作方式为磁盘的顺序访问</li>
 <li>通过 zero-copy 传输网络数据，减少了数据在用户态和内核态之间的复制消耗从而提高了传输效率</li>
@@ -249,13 +268,14 @@ leader-epoch-checkpoint</code></pre>
 <p>默认情况下，每个 segment 能够保存 1G 的数据，且保存时长为 7 天。 </p>
 <p><strong>为什么有segment？</strong></p>
 <p>1个 partition 多个 segment 主要是为了方便和提高查找数据的速度，因为每个 segment 文件名称中就包含了数据的起始 offset 信息，因此在二分查找时只需找到对应的 segment 就可以定位消息数据了，而并不需要扫描所有的消息数据。</p>
-<h2 id="什么是Kafak集群控制器"><a href="#什么是Kafak集群控制器" class="headerlink" title="什么是Kafak集群控制器"></a>什么是Kafak集群控制器</h2><blockquote>
+<h2 id="集群控制器"><a href="#集群控制器" class="headerlink" title="集群控制器"></a>集群控制器</h2><blockquote>
 <p>基本介绍</p>
 </blockquote>
-<p>Kafka Controller 的作用是协调 Broker 集群，而且一个集群当中只有一个 Broker 会成为 Controller （通过 Zookeeper 竞选）。Kafak Controller 的作用有以下这些：</p>
+<p>Kafka Controller 的作用是协调 Broker 集群，而一个集群当中只有一个 Broker 会成为 Controller （通过 Zookeeper 竞选）。</p>
+<p>Kafak Controller 的作用如下：</p>
 <ul>
 <li>Topic 管理<ul>
-<li>创建、删除、分区</li>
+<li>创建、删除、分区（Leader选举）</li>
 </ul>
 </li>
 <li>集群成员管理<ul>
@@ -272,7 +292,7 @@ leader-epoch-checkpoint</code></pre>
 <li>该操作可以通过<code>kafka-reassign-partitions</code>脚本完成</li>
 </ul>
 </li>
-<li>元数据服务<ul>
+<li>提供元数据服务<ul>
 <li>控制器会向其它 Broker 提供元数据服务</li>
 <li>控制器上保存了最全的集群元数据信息，其它 Broker 会定期接收控制器发来的元数据从而更新其内存中的缓存数据</li>
 </ul>
@@ -354,7 +374,7 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
     // 拦截器关闭时调用，发送完消息后关闭
     public void close();
 }</code></pre>
-<h3 id="自定义分区策略"><a href="#自定义分区策略" class="headerlink" title="自定义分区策略"></a>自定义分区策略</h3><p>上面已经提到过，Partitioner会根据 ProducerRecord 中的key来定向将消息数据持久化到指定partition中，但没有指定 key 的话，就会通过轮询方法来持久化消息数据。而如果默认的分区策略（轮询）无法满足业务需求的话就可以尝试自己动手实现分区策略，可以实现以下接口来实现：</p>
+<h3 id="自定义分区策略"><a href="#自定义分区策略" class="headerlink" title="自定义分区策略"></a>自定义分区策略</h3><p>上面已经提到过，Partitioner 会根据 ProducerRecord 中的 key 来决定将消息数据发送到哪一个 Partition 上。但如果没有指定 key，则会按照默认策略进行发送。在 KafkaProducer 2.4 版本之前，默认策略为轮询，而 2.4 版本开始则改成了黏性分区策略（没有指定 key 或 Partition 的情况下）。当然，如果默认的分区策略无法满足你的业务需求，则可以尝试自己动手实现分区策略，其分区器接口如下：</p>
 <pre><code class="java">public interface Partitioner extends Configurable, Closeable {
 
     // 分区逻辑实现
@@ -364,6 +384,26 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
     public void close();
 
 }</code></pre>
+<p>拓展：</p>
+<ul>
+<li>2.4版本的默认分区策略为 DefaultPartitioner，逻辑如下：<ul>
+<li>如果指定了分区，则发送到指定的分区中</li>
+<li>如果没有指定分区，但指定了key，则基于key的hash值来选择分区</li>
+<li>如果没有指定分区和key，则使用黏性分区策略</li>
+</ul>
+</li>
+<li>黏性分区策略<ul>
+<li>随机选择一个分区，并将没有指定分区和key的消息发送到该分区上，直到填满一个 batch 或该 batch 处于已完成状态时，则再随机选择另外一个分区进行相同的操作</li>
+<li>通过黏性分区策略，可以增大 Producer 的吞吐量，因为它可能让 batch 更加丰满</li>
+</ul>
+</li>
+</ul>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/023.png" style="zoom:50%;">
+
+
+
+
+
 <h3 id="常用配置参数"><a href="#常用配置参数" class="headerlink" title="常用配置参数"></a>常用配置参数</h3><p>bootstrap.servers</p>
 <ul>
 <li>kafka broker地址，host:ip，多个用逗号隔开</li>
@@ -435,7 +475,7 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 </ul>
 <p>linger.ms（重要）</p>
 <ul>
-<li>基于时间的 batch 打包策略，可配合 batch.size 使用，相当于满足该值后就作为一个 batch，适当地提高该配置值可以让 batch 被填充得更加丰满，因为正常情况下（linger.ms为0时）batch 可能没满就被发送线程从缓冲池中取出将其发送了</li>
+<li>基于时间的 batch 打包策略，可配合 batch.size 使用，相当于满足该值后就作为一个 batch，适当地提高该配置值可以让 batch 被填充得更加丰满，因为正常情况下（linger.ms为0时）batch 可能没满就被 Sender 线程发送出去了（例如当队列中有多个batch时，Sender 线程是不会管batch是否装满的）</li>
 <li>该值默认为 0 秒，既不开启该功能</li>
 </ul>
 <p>buffer.memory（重要）</p>
@@ -510,11 +550,11 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 </ul>
 <p>num.network.threads</p>
 <ul>
-<li>指定处理网络请求的线程数（默认为3）</li>
+<li>指定用于接收网络 IO 请求的线程数（默认为3）</li>
 </ul>
 <p>num.io.threads</p>
 <ul>
-<li>指定处理网络 IO 任务的线程数（默认为8）</li>
+<li>指定用于处理网络 IO 任务的线程数（默认为8）</li>
 <li>注意，Kafka 是使用 Reactor 模式处理客户端请求的，因此从 num.network.threads 和 num.io.threads 不难看出它采用的是<code>多Reactor多线程模式</code></li>
 </ul>
 <p>log.dirs</p>
@@ -648,7 +688,8 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <blockquote>
 <p>Broker 中的协调者指的是什么？</p>
 </blockquote>
-<p>在上文中提到，“协调者”会负责管理 Consumer Group ，而这个“协调者”实质就是指 Coordinator 。Coordinator 是一个专门为 Consumer Group 服务的功能，它有以下特点：</p>
+<p>在上文中提到<code>协调者</code>会负责管理 Consumer Group ，而这个“协调者”实质是指 Coordinator 。Coordinator 是一个专门为 Consumer Group 服务的角色（如果 Consumer 没有 Group ID 就没有对应的 Coordinator ）。</p>
+<p>其中 Coordinator 它有以下特点：</p>
 <ul>
 <li>每一个 Broker 都有自己的 Coordinator </li>
 <li>负责 Consumer Group 的再均衡操作</li>
@@ -895,17 +936,26 @@ public void listener(List&lt;String&gt; recordes, Acknowledgment ack){
     ack.acknowledge();
 }</code></pre>
 <h2 id="命令行工具"><a href="#命令行工具" class="headerlink" title="命令行工具"></a>命令行工具</h2><h3 id="Zookeeper-相关"><a href="#Zookeeper-相关" class="headerlink" title="Zookeeper 相关"></a>Zookeeper 相关</h3><blockquote>
-<p>Kafka 和 Zookeeper 的关系。其中图中 “直角方块” 代表持久性节点 而 “圆角方块” 代表临时节点</p>
+<p>关系图</p>
+</blockquote>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" style="zoom: 33%;">
+
+
+
+<blockquote>
+<p>Zookeeper中保存的 Broker 集群信息 </p>
+<p>其中图中 “直角方块” 代表持久性节点 而 “圆角方块” 代表临时节点</p>
 </blockquote>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/019.png" style="zoom:67%;">
 
 <ul>
-<li>ids 节点维护的是集群中的 broker 的唯一标识，其中包含了每个 broker 的元信息</li>
-<li>topics 节点维护的是 Topic 的 Partitions 信息，其中数字为特定分区的编号，而 state 由 Leader 创建且保存的是当前 Leader 和 其它 ISR 成员的信息，一旦 Leader 不可用该节点会被新 Leader 从新创建</li>
+<li>ids 节点维护的是集群中 Broker 的唯一标识，节点内容为 Broker 的元信息</li>
+<li>topics 节点维护的是 Topic 的 Partitions 信息，其中数字为 Partition 的编号，而 state 节点由 Replica Leader 维护，保存的是当前分区的 Replica Leader 以及其它 ISR 成员的信息。一旦 Replica Leader 不可用，该节点会被新 Replica Leader 重新创建和维护</li>
 </ul>
-<blockquote>
-<p>个人更加建议另外下载一个最新版的 Zookeeper 来管理kafka集群而不是使用它自带的zookeeper（单机 kafka 除外）。因为如果 Zookeeper 需要配置集群或者日后考虑升级的话，自带的 Zookeeper 就显然不是很方便了。</p>
-</blockquote>
+<p>注：</p>
+<ul>
+<li>个人建议另外下载一个新版的 Zookeeper 来管理 Kafka 集群而不是使用自带的，因为如果 Zookeeper 需要配置集群或日后考虑升级，自带的 Zookeeper 就显然不是很方便了</li>
+</ul>
 <p>前台启动</p>
 <pre><code class="shell">bin/zookeeper-server-start.sh config/zookeeper.properties</code></pre>
 <p>后台启动</p>
@@ -925,31 +975,32 @@ public void listener(List&lt;String&gt; recordes, Acknowledgment ack){
 <pre><code class="shell">bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic testx</code></pre>
 <p>参数：</p>
 <ul>
-<li><p>partitions：topic 对应的分区数</p>
+<li><p>partitions：Topic 的分区数</p>
 </li>
-<li><p>replication-factor：每个分区的副本数量（不要超过 broker 数量，因为超过也没用）</p>
+<li><p>replication-factor：每个分区的副本数量。注意，该值至少为1，为1时既只有 Replica Leader</p>
 </li>
 </ul>
-<p>图解例子：</p>
-<pre><code class="bash">bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 2 --partitions 1 --topic testx</code></pre>
-<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" alt></p>
+<pre><code class="bash">&gt; ./bin/kafka-topics.sh --create --zookeeper 192.168.0.201:2181 --replication-factor 2 --partitions 2 --topic test2
+Created topic test2.
+
+&gt; ./bin/kafka-topics.sh --zookeeper 192.168.0.201:2181 --describe --topic test2
+
+Topic: test2    PartitionCount: 2    ReplicationFactor: 2    Configs: 
+    Topic: test2    Partition: 0    Leader: 0    Replicas: 0,5    Isr: 0,5
+    Topic: test2    Partition: 1    Leader: 5    Replicas: 5,0    Isr: 5,0
+</code></pre>
 <ul>
-<li>从上图可以看出为什么 replication-factor 不要大于broker数量，原因很简单，就是多余</li>
+<li>注意：其中 0 和 5 分别代表集群中 Broker 的 ID 值。该值可以通过配置文件配置</li>
+<li>输出第一行的意思是：分区0的 Replica Leader 位于 Borker-0 上，其中该分区有2个副本，分别位于 Broker-0和Broker-5上（位于Broker-0上的副本其实就是Replica Leader），而该分区的同步副本集成员分别有 Broker-0 和 Broker-5 （Isr集合是包含 Replica Leader 的）</li>
 </ul>
 <p>查看 Broker 中有那些topic</p>
 <pre><code class="shell">bin/kafka-topics.sh --zookeeper localhost:2181 --list</code></pre>
-<p>查看指定 topic 的信息</p>
-<pre><code class="shell">bin/kafka-topics.sh --zookeeper localhost:2181 --describe --topic testx</code></pre>
-<p>输出以下内容</p>
-<pre><code>Topic:testx        PartitionCount:2    ReplicationFactor:1        Configs:
-Topic: testx    Partition: 0        Leader: 0    Replicas: 0        Isr: 0
-Topic: testx    Partition: 1        Leader: 0    Replicas: 0        Isr: 0</code></pre><ul>
-<li>可以从输出信息中得知，testx 这个 topic 有2个partition。因为 replication-factor 为 1，所以 leader replica 是 replica0，而 follower replica 也是 replica0</li>
-</ul>
-<p>动态修改topic分区数量</p>
+<p>动态修改分区数量</p>
 <pre><code class="shell">bin/kafka-topics.sh --alter --zookeeper localhost:2181 --partitions 3 --topic testx</code></pre>
-<p>动态修改分区的replication-factor数量</p>
-<p>&emsp;首先需要创建一个json文件，添加上下面有关topic的元数内容，这里我将这个文件叫update-topic.json</p>
+<p>动态修改分区的 replication-factor 数量</p>
+<ul>
+<li>首先需要创建一个json文件，添加上下面有关topic的元数内容，这里我将这个文件叫update-topic.json</li>
+</ul>
 <pre><code class="json">{
     &quot;version&quot;: 1,
     &quot;partitions&quot;: [
@@ -1134,13 +1185,14 @@ testx:2:468332</code></pre><h2 id="问题配置"><a href="#问题配置" class="
 </li>
 <li><p>Kafka Consumer API</p>
 </li>
-<li><p>JMX 监控 Consumer（推荐）</p>
+<li><p>JMX（推荐）</p>
 </li>
 </ul>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://stackoverflow.com/questions/48665257/why-kafka-index-files-use-memory-mapped-files-but-log-files-dont" target="_blank" rel="noopener">why kafka index files use memory mapped files ,but log files don’t?</a></li>
 <li><a href="https://www.cnblogs.com/huxiao-tee/p/4660352.html" target="_blank" rel="noopener">认真分析mmap：是什么 为什么 怎么用</a></li>
 <li><a href="https://blog.csdn.net/future_fighter/article/details/2477434" target="_blank" rel="noopener">内存映射文件</a></li>
+<li><a href="https://www.confluent.io/blog/apache-kafka-producer-improvements-sticky-partitioner/" target="_blank" rel="noopener">Apache Kafka Producer Improvements with the Sticky Partitioner</a></li>
 </ul>
 <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2020年5月9日 20:24:44 — 修改关于上下文切换、用户态和内核态、内存映射文件相关内容</li>
@@ -1187,7 +1239,7 @@ testx:2:468332</code></pre><h2 id="问题配置"><a href="#问题配置" class="
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展知识点"><span class="toc-text">拓展知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是磁盘的顺序写入？"><span class="toc-text">什么是磁盘的顺序写入？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存映射文件"><span class="toc-text">内存映射文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#上线程下文切换"><span class="toc-text">上线程下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#线程上下文切换"><span class="toc-text">线程上下文切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户态和内核态切换"><span class="toc-text">用户态和内核态切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#简单总结一下"><span class="toc-text">简单总结一下</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#零拷贝（Zero-copy）"><span class="toc-text">零拷贝（Zero-copy）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么kafka性能高？"><span class="toc-text">为什么kafka性能高？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#topic、partition、replica之间的关系"><span class="toc-text">topic、partition、replica之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是如何存储topic数据的"><span class="toc-text">Kafka是如何存储topic数据的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是Kafak集群控制器"><span class="toc-text">什么是Kafak集群控制器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#消息相关"><span class="toc-text">消息相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息的格式"><span class="toc-text">消息的格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic-offset-和-consumer-offset"><span class="toc-text">topic offset 和 consumer offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#topic-offset"><span class="toc-text">topic offset</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#consumer-offset"><span class="toc-text">consumer offset</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Producer"><span class="toc-text">Java kafka Producer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者模型"><span class="toc-text">生产者模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer-interceptor"><span class="toc-text">producer interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义分区策略"><span class="toc-text">自定义分区策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置参数"><span class="toc-text">常用配置参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Broker常用配置参数"><span class="toc-text">Broker常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Consumer"><span class="toc-text">Java kafka Consumer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group概念"><span class="toc-text">Consumer Group概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分区再均衡"><span class="toc-text">分区再均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用参数"><span class="toc-text">常用参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动提交offset"><span class="toc-text">手动提交offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动提交存在的问题"><span class="toc-text">自动提交存在的问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#同步提交"><span class="toc-text">同步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#异步提交"><span class="toc-text">异步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合提交"><span class="toc-text">混合提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot-Kafka手动提交案例"><span class="toc-text">SpringBoot Kafka手动提交案例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Zookeeper-相关"><span class="toc-text">Zookeeper 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker-相关"><span class="toc-text">Broker 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topic-相关"><span class="toc-text">Topic 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者相关"><span class="toc-text">生产者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#消费者相关"><span class="toc-text">消费者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他维护命令工具"><span class="toc-text">其他维护命令工具</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#问题配置"><span class="toc-text">问题配置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证消息不丢失"><span class="toc-text">如何保证消息不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证只消费1次"><span class="toc-text">如何保证只消费1次</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解决消息乱需问题"><span class="toc-text">如何解决消息乱需问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Kafka-Producer-的幂等性"><span class="toc-text">关于 Kafka Producer 的幂等性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对实时性要求较高，建议使用-RoketMQ"><span class="toc-text">对实时性要求较高，建议使用 RoketMQ</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#监控-Kafka-Consumer-的消费进度"><span class="toc-text">监控 Kafka Consumer 的消费进度</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展知识点"><span class="toc-text">拓展知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是磁盘的顺序写入？"><span class="toc-text">什么是磁盘的顺序写入？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存映射文件"><span class="toc-text">内存映射文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#上线程下文切换"><span class="toc-text">上线程下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#线程上下文切换"><span class="toc-text">线程上下文切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户态和内核态切换"><span class="toc-text">用户态和内核态切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#简单总结一下"><span class="toc-text">简单总结一下</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#零拷贝（Zero-copy）"><span class="toc-text">零拷贝（Zero-copy）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是Kafka？"><span class="toc-text">什么是Kafka？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka常见使用场景"><span class="toc-text">Kafka常见使用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么kafka性能高？"><span class="toc-text">为什么kafka性能高？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#topic、partition、replica之间的关系"><span class="toc-text">topic、partition、replica之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是如何存储topic数据的"><span class="toc-text">Kafka是如何存储topic数据的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#集群控制器"><span class="toc-text">集群控制器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#消息相关"><span class="toc-text">消息相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息的格式"><span class="toc-text">消息的格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic-offset-和-consumer-offset"><span class="toc-text">topic offset 和 consumer offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#topic-offset"><span class="toc-text">topic offset</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#consumer-offset"><span class="toc-text">consumer offset</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Producer"><span class="toc-text">Java kafka Producer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者模型"><span class="toc-text">生产者模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer-interceptor"><span class="toc-text">producer interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义分区策略"><span class="toc-text">自定义分区策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置参数"><span class="toc-text">常用配置参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Broker常用配置参数"><span class="toc-text">Broker常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Consumer"><span class="toc-text">Java kafka Consumer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group概念"><span class="toc-text">Consumer Group概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分区再均衡"><span class="toc-text">分区再均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用参数"><span class="toc-text">常用参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动提交offset"><span class="toc-text">手动提交offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动提交存在的问题"><span class="toc-text">自动提交存在的问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#同步提交"><span class="toc-text">同步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#异步提交"><span class="toc-text">异步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合提交"><span class="toc-text">混合提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot-Kafka手动提交案例"><span class="toc-text">SpringBoot Kafka手动提交案例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Zookeeper-相关"><span class="toc-text">Zookeeper 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker-相关"><span class="toc-text">Broker 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topic-相关"><span class="toc-text">Topic 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者相关"><span class="toc-text">生产者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#消费者相关"><span class="toc-text">消费者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他维护命令工具"><span class="toc-text">其他维护命令工具</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#问题配置"><span class="toc-text">问题配置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证消息不丢失"><span class="toc-text">如何保证消息不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证只消费1次"><span class="toc-text">如何保证只消费1次</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解决消息乱需问题"><span class="toc-text">如何解决消息乱需问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Kafka-Producer-的幂等性"><span class="toc-text">关于 Kafka Producer 的幂等性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对实时性要求较高，建议使用-RoketMQ"><span class="toc-text">对实时性要求较高，建议使用 RoketMQ</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#监控-Kafka-Consumer-的消费进度"><span class="toc-text">监控 Kafka Consumer 的消费进度</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
