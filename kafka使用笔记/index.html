@@ -138,7 +138,7 @@
 
   <!-- 文章内容 -->
   <h2 id="拓展知识点"><a href="#拓展知识点" class="headerlink" title="拓展知识点"></a>拓展知识点</h2><p>为了更好地学习和理解kafka，个人觉得有必要搞清楚一些概念</p>
-<p>在开始之前，推荐书籍《Apache Kafka实战》和《Kafka权威指南》来作为kafka的入门书籍</p>
+<p>在开始之前，推荐书籍《Apache Kafka实战》和《Kafka权威指南》来作为 kafka 的入门书籍</p>
 <h3 id="什么是磁盘的顺序写入？"><a href="#什么是磁盘的顺序写入？" class="headerlink" title="什么是磁盘的顺序写入？"></a>什么是磁盘的顺序写入？</h3><p>&emsp;&emsp;所谓的磁盘顺序写入其实是相对与随机写入而言的，指的是在写入数据时磁盘的磁头不用寻道而可以一次将数据写完，因为省略了磁头寻道的时间，所以在速度来说是非常快的，甚至可以媲美内存的随机写入; 那什么情况下会出现顺序写入呢？如文件追加内容时（kafka就采用这种方式进行顺序写入，因为kafka存放数据的日志文件不能修改只能追加）</p>
 <p>以下为<strong>磁盘</strong>、<strong>SSD</strong>、<strong>内存</strong>之间的访问速度对比图</p>
 <blockquote>
@@ -160,28 +160,34 @@
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/017.png" alt></p>
 <p>从上图我们不难看出，并不是所有虚拟内存地址都有与之对应的映射的。当程序访问到一个没有映射的虚拟地址时，就会发生一种叫<code>缺页中断</code>的操作，该操作会将物理内存地址中较为不常用的内存页替换成当前缺页的程序部分。大体步骤是系统会从内存映射文件中加载内容到主存上（物理内存地址），然后更新进程的虚拟内存空间（虚拟内存地址），最后恢复到缺页中断位置的操作。</p>
-<p>&emsp;&emsp;最后说一下<code>mmap</code>操作，mmap是一个系统函数，它能够实现文件到内存的映射（内存映射文件）。而kafka就是使用mmap将日志索引文件内容映射到内存的，所以在定位数据方面速度也是相当快的。</p>
-<blockquote>
-<p>kafka只用mmap来映射索引是因为如果同时映射索引和日志的话就会存在一直性问题，而且mmap并不能保证百分百成功将内存中的脏数据刷回磁盘。例如并发操作时修改了日志并回刷成功，但因为某些原因索引回刷失败，这就导致了数据不一致性问题</p>
+<p>&emsp;&emsp;最后说一下 mmap 操作(Java 中的 MappedByteBuffer），mmap是一个系统函数，它能将磁盘文件直接映射到进程的虚拟内存中，这样操作起文件来就像操作内存数据一样高效。当然，mmap 还是会先磁盘数据加载到 Page Cache 中再进行映射的，也就是说进程操作的数据会先落到 Page Cache 然后再由系统定时刷到磁盘上，所以 mmap 在一定程度上存在数据丢失的风险，而且 mmap 需要将数据缓存到 Page Cache，因此 mmap 并不太适合用来操作大体积文件。譬如在 Kafka 中，它只是通过 mmap 将日志索引文件映射到内存以提高检索时数据定位的效率。</p>
+<h3 id="上线程下文切换"><a href="#上线程下文切换" class="headerlink" title="上线程下文切换"></a>上线程下文切换</h3><h4 id="线程上下文切换"><a href="#线程上下文切换" class="headerlink" title="线程上下文切换"></a>线程上下文切换</h4><p>&emsp;&emsp;简单来说就是任务交替的过程。指在任务交替执行前 CPU 寄存器和程序计数器会先记录下正在执行的任务数据和任务状态，以便下次执行时恢复，而保存任务状态成功后操作系统就从线程运行时内存结构中把将要执行的任务内容加载到 CPU 寄存器和程序计数器中执行。而这整个过程就叫线程的上下文切换。</p>
+<p>&emsp;&emsp;线程的上下文切换是一个系统层面的调度操作，所以在上下文切换期间用户程序就相当于进入了呆滞状态，而需要等到切换完成后才可以继续运行。虽然单次上下文切换时间非常短暂，但是如果多线程使用不恰当，譬如线程数过多，就会导致大量的上下文切换从而消耗 CPU 资源和影响用户程序的处理能力。</p>
+<p>&emsp;&emsp;当然，可能我这么说还不是够明白。举个不太恰当的例子，譬如现在有10秒时间给用户程序用来处理客户端请求，但是因为线程太多导致切换时间花费了6秒，因此用户程序实质用来处理请求的时间就只剩下3秒了。虽然这个例子不太恰当但却能够说明上下文切换的问题，也就说我们在编程程序时应该做到尽可能地减少上下文的切换操作。除此之外，如果使用的是类Unix系统则可以使用 vmstat 命令查看应用的上下文切换情况。</p>
+<h4 id="用户态和内核态切换"><a href="#用户态和内核态切换" class="headerlink" title="用户态和内核态切换"></a>用户态和内核态切换</h4><blockquote>
+<p>基本介绍</p>
 </blockquote>
-<h3 id="上线程下文切换"><a href="#上线程下文切换" class="headerlink" title="上线程下文切换"></a>上线程下文切换</h3><h4 id="线程上下文切换"><a href="#线程上下文切换" class="headerlink" title="线程上下文切换"></a>线程上下文切换</h4><p>&emsp;&emsp;指的是在任务执行前，CPU寄存器和程序计数器会预先加载将要执行的任务内容。首先操作系统会先记录下正在执行的任务内容和状态，以便下次执行时恢复。保存成功会操作系统就会把将要执行的任务内容加载到CPU寄存器和程序计数器中（例如每条线程都有栈和程序计数器），而这个过程就被称为上下文切换（实质就是切换执行任务）。上下文切换是一个系统层面的调度操作，所以在上下文切换期间，用户程序将会进入呆滞状态，等到切换完成后才会继续运行。</p>
-<h4 id="用户态和内核态切换"><a href="#用户态和内核态切换" class="headerlink" title="用户态和内核态切换"></a>用户态和内核态切换</h4><p>&emsp;&emsp;操作系统将线程（轻量级进程）的执行空间分为：<code>用户空间</code> 和 <code>内核空间</code>。</p>
-<p>线程在用户空间时，因为用户空间权限有限所以线程在对资源操作上也是有限的。例如用户空间的线程不能直接访问除系统分配给自己的内存以外的内容，譬如：磁盘、网络模块 等，如何想要操作这部分资源就需要发起系统调用，让系统的内核线程来完成，而这时就会发生所谓的用户态和内核态切换操作。</p>
-<p>举个例子：用户线程想要读取磁盘上文件的内容，这时就需要进行系统调用。系统调用会将读取磁盘的操作交给内核线程来完成，过程如下：</p>
-<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/001.png" alt></p>
-<p>所以，应用做IO操作时并不是直接操作设备资源的，而是通过内核来去操作的。内核线程读取磁盘上的文件内容后将内容先保存到内核缓冲中，然后再将内核缓冲中的内容通过CPU Copy操作复制到用户空间，这样用户现线程会访问到磁盘文件中的内容。</p>
-<p>那么从上图我们不难看出，在1次io操作中就出现了2次用户态和内核态之间的切换操作。上面已经提到过，上下文切换或用户态内核态切换时用户程序都会进入呆滞状态来等待系统调用完成。</p>
-<h4 id="简单总结一下"><a href="#简单总结一下" class="headerlink" title="简单总结一下"></a>简单总结一下</h4><p>虽然上面提到<code>用户态和内核态切换</code>，但其实它也是线程上下文切换的一种操作。从用户程序的角度来看这是一个比较重量。虽然在单个上下文切看来并不需要花费多少时间，但是一旦发生大量的上下文切换，那么将会直接导致用户程序处理情况的能力下降。</p>
-<h3 id="零拷贝（Zero-copy）"><a href="#零拷贝（Zero-copy）" class="headerlink" title="零拷贝（Zero-copy）"></a>零拷贝（Zero-copy）</h3><p><code>零拷贝</code>通常会在网络传输上使用的。指的是内核态直接将buffer（page buffer）中的数据通过RMA Copy 传输给网络模块，而网络模块就可以直接将其发送出去了，而无需从内核态切换给用户态再执行发送操作。</p>
+<p>&emsp;&emsp;在操作系统中线程（轻量级进程）的执行空间被分为<code>用户空间</code> 和 <code>内核空间</code>。线程处于用户空间时，因为用户空间本身的权限存在局限性的缘故，处于用户空间的线程是不能访问除属于自己之外的其他资源的。譬如磁盘、网络模块等这些都不能直接访问。而如果位于用户空间状态的线程想要访问这部分资源的话，就需从用户空间中发起系统调用（系统调用函数是系统提供的可供外部操作的高层接口），而系统调用的本质就是从用户空间状态切换到内核空间状态，然后让内核线程来帮助完成这个访问操作，因为处于内核空间的线程拥有最高的资源访问权限，而这一过程就是用户态和内核态切换。</p>
+<p>&emsp;&emsp;通常用户空间中的一条线程都有与之对应的内核线程，可能是一条或者多条，这根据平台而定。譬如 Java 在 Linux 系统上每条用户空闲线程都有一条内核线程与之对应，它们是一对一的关系。</p>
 <blockquote>
-<p>零拷贝例子</p>
+<p>用户态和内核态切换例子</p>
 </blockquote>
-<p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/003.png" alt></p>
-<p>需要说明的是，零拷贝并不是不拷贝，而是不进行 CPU Copy 而已。零拷贝的好处在于减少了用户态和内核态的切换次数，这样就减少了用户程序的呆滞时间，因此提高了用户程序的处理能力。</p>
-<h2 id="什么是Kafka？"><a href="#什么是Kafka？" class="headerlink" title="什么是Kafka？"></a>什么是Kafka？</h2><blockquote>
+<p>譬如用户线程想要读取磁盘上某个文件，这时就需要发起系统调用，然后系统就会将这个读操作交给内核线程来完成，其过程大致如下：</p>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/001.png" style="zoom:67%;">
+
+<p>从上图中不难发现，如果从用户空间发起系统调用，通常是需要进行2次用户态和内核态切换的。而且内核线程会将读到的磁盘数据先缓存起来（上图不是很准确，内核的 Buffer 处应该是 Page Cache），如何再通过 CPU Copy 拷贝回用户态缓冲。至此其实不难理解为什么在 IO 操作时强烈建议使用 Buffer 来缓冲读写操作而不是直接操作，这时因为直接操作会导致频繁的上下文切换开销，而使用缓冲的话就可以增加读写操作的吞吐量从而降低切换次数多带来的性能开销。</p>
+<h3 id="零拷贝（Zero-copy）"><a href="#零拷贝（Zero-copy）" class="headerlink" title="零拷贝（Zero-copy）"></a>零拷贝（Zero-copy）</h3><p>&emsp;&emsp;零拷贝通常会在网络传输上使用。指的是内核态直接将内核缓冲的内容通过 RMA Copy 传输给网络模块然后发送出去，而这个过程无需再将数据从内核态拷贝到用户态再执行发送操作，也就是说零拷贝可以减少上下文切换的开销。</p>
+<blockquote>
+<p>零拷贝例图</p>
+</blockquote>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/003.png" style="zoom:50%;">
+
+<p>注意，零拷贝并不是不进行拷贝，而是不进行 CPU 拷贝，既无需通过 CPU 拷贝将内核 Page Cache 数据拷回用户空间再进行发送操作（上图不是很准确，内核的 Buffer 处应该是 Page Cache）。</p>
+<p>在 Kafka 中，它使用了零拷贝技术来实现数据传输接口（TransportLayer） 。据传输接口内部通过 FileChannel 的 transferTo 方法来进行零拷贝操作，因为 transferTo 方法内部实质是 sendfile 系统指令。而需要特别注意的是，Kafka 零拷贝发送消息日志只在非 SSL 协议环境下适用。</p>
+<h2 id="Kafka是什么？"><a href="#Kafka是什么？" class="headerlink" title="Kafka是什么？"></a>Kafka是什么？</h2><blockquote>
 <p>官方介绍</p>
 </blockquote>
-<p>Apache Kafka是一个开放源代码的<code>分布式事件流平台</code>，成千上万的公司使用它来实现高性能数据管道，流分析，数据集成和关键任务应用程序。 </p>
+<p>Apache Kafka是一个开放源代码的<code>分布式事件流平台</code>，成千上万的公司使用它来实现<code>高性能数据管道</code>，<code>流分析</code>，<code>数据集成</code>和关键任务应用程序。 </p>
 <blockquote>
 <p>什么是事件流，个人理解如下：</p>
 </blockquote>
@@ -211,8 +217,9 @@
 </ul>
 </li>
 </ul>
-<h2 id="topic、partition、replica之间的关系"><a href="#topic、partition、replica之间的关系" class="headerlink" title="topic、partition、replica之间的关系"></a>topic、partition、replica之间的关系</h2><p>&emsp;&emsp;通常生产者生产一个消息是存放在 Broker 的 Topic 中的，但是 Topic 只是逻辑上的概念，而消息实际存放的地方是Partition（分区）。Partition 是一个有序的序列，在物理磁盘上对应着一个只能最追加内容的文件。其中 1个 Topic 可以有1个或多个 Partition，换句话说就是1个 Topic 的数据是分拆到1个或多个 Partition 中存放的。 还有就是，Kafka只能保证单个 Partition 中的消息数据是有序的而不能保证全局有序（多个Partition）。</p>
-<p>&emsp;&emsp;而<code>Replica 指的是 Partition 的副本</code>，而且它并不是简单的冗余。在 Kafka 中 Replica 分为 2 种：<code>Leader Replica</code>、<code>Follower Replica</code>。其中<code>Follower Replica是不对客户端提供服务</code>的，它的职责只用于同步 Leader Replica 数据，而 Follower Replica 又分为 <code>ISR（in-sync replica，能够实时同步leader数据的replica）</code>和 <code>非ISR</code> 两种。其中只有 ISR 能够参与 Partion/Replica Leader 的竞选，而且在 Borker 接收到客户端的持久化请求时，只有 Leader Replica 和 ISR 集合成员都接收到时，该消息日志才会被 Broker 认为是发送成功。而实质上一开始所有的 Replica 都属于 ISR 集合，但随和运行过程中出现同步数据效率上的差异，导致其它某些 Broker 上的 Replica 无法跟上某部分 Replica 的复制进度从而被踢出 ISR 集合。但注意，被踢出 ISR 集合的 Replica 如果跟上进度将会被重新纳入到 ISR 集合中。</p>
+<h2 id="Topic、Partition、Replica-之间的关系"><a href="#Topic、Partition、Replica-之间的关系" class="headerlink" title="Topic、Partition、Replica 之间的关系"></a>Topic、Partition、Replica 之间的关系</h2><p>&emsp;&emsp;在 Kafka 中 Topic 只是逻辑概念，而物理层面实质是以 Partition 来进行日志存放的。Partition 是一个有序的序列，在物理磁盘上对应着一个文件夹，其中包含了一个或多个日志段。一个 Topic 可以有一个或多个 Partition，也就是说 Topic 的数据在多个 Partition 的情况下是分拆存放的，这是一种去中心化容灾的实现方案。 需要注意的是 Kafka 只能保证单个 Partition 内的消息是有序的，而不能保证全局有序（多个Partition）。</p>
+<p>&emsp;&emsp;Replica 是 Partition 在副本层面上的概念，一个 Partition 可以有多个 Replica。在 Kafka 中 Replica 有两种，分别是<code>Leader Replica</code>和<code>Follower Replica</code>。Leader Replica 对客户端的提供读写服务。而 Follower Replica 正常情况下是不对外提供服务的（但 2.4 版本（KIP-392）后，追随者副本也允许提供读服务了），它的职责是拉取 Leader Replica 中的消息日志进行冗余备份，以及在 Leader Replica 发生故障后接替其职责。</p>
+<p>&emsp;&emsp;其中 Follower Replica 又分为 ISR（in-sync replica，实时同步 Leader Replica 的副本集）和 非ISR 两种类型。其区别在于默认情况下只有 ISR 集合成员能够参与 Leader 竞选，还有就是在 Borker 接收到客户端的写请求后，只有 Leader Replica 以及其他 ISR 集合成员都接收到后这个消息日志才会成功被提交，而在成功提交之前，该写请求的消息日志是对消费者不可见的。而实质上一开始所有的 Replica 都属于 ISR 集合成员，但随着运行时间拉长，Broker 节点之间出现同步效率上的差异，导致某些 Broker 上的 Replica 无法跟上复制进度从而被踢出 ISR 集合（参考配置replica.lag.time.max.ms），而被踢出 ISR 集合的 Replica 只有追上复制进度后才能被重新纳入到 ISR 集合中。</p>
 <blockquote>
 <p>参考图：图片源自网络</p>
 </blockquote>
@@ -220,20 +227,20 @@
 <p><strong>为什么需要 Partition？</strong></p>
 <p>&emsp;&emsp;有人可能会有这样的疑问，既然有了 Topic 为什么还要有 Partition 这个概念呢？譬如 ActiveMQ 就没有Partition。这点需要从 Kafka 的主要使用场景角度来说，Kafka 通常被用作实时处理场景，为其提供 <code>高吞吐</code>、<code>低延迟</code> 的解决方案，而 Partition 就是用来提 Topic 的并发量的，同时有着<code>去中心化容灾</code>和<code>负载均衡</code>的效果</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/004.png" alt></p>
-<h2 id="Kafka是如何存储topic数据的"><a href="#Kafka是如何存储topic数据的" class="headerlink" title="Kafka是如何存储topic数据的"></a>Kafka是如何存储topic数据的</h2><blockquote>
+<h2 id="Kafka是如何存储Topic数据的"><a href="#Kafka是如何存储Topic数据的" class="headerlink" title="Kafka是如何存储Topic数据的"></a>Kafka是如何存储Topic数据的</h2><blockquote>
 <p>图片源自网络</p>
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/021.png" alt></p>
-<p>上面已经提到，topic只是逻辑上的概念，而真正存储消息的是partition。</p>
-<p>首先，执行命令创建名称为 test 的topic，再为toppic分配 2 个partition分区，1个replica（leader replica）</p>
+<p>上面已经提到过 Topic 只是逻辑上的概念，而真正用户规划消息日志存储的是 Partition。</p>
+<p>为了观察需要先执行命令创建一个名称为 test 的 Topic，再为其分配 2 个 Partition 分区 和每个分区对应 1 个 Replica，既这时只有 Leader Replica</p>
 <pre><code class="shell">./kafka-topics.sh --create --zookeeper 192.168.4.157:2181 --partitions 2 --rerelication-factor 1 --topic test</code></pre>
-<p>再观察配置文件的 logDir 选项的目录状况</p>
+<p>再观察配置文件中使用 logDir 指定的目录情况，如下：</p>
 <pre><code class="shell">➜  data ls -al
 ... 省略
 drwxr-xr-x 2 tandi tandi 4096  9月  8 06:30 test-0
 drwxr-xr-x 2 tandi tandi 4096  9月  8 06:30 test-1</code></pre>
-<p>可以看到生成了<code>test-0</code>、<code>test-1</code>两个文件夹，而这两个文件夹就对应 test 这个topic的两个partition。既 1 个 partition 对应着一个物理文件夹。文件夹命名序号从 0 开始。</p>
-<p>进入其中一个文件夹 test-1 再详细观察。</p>
+<p>可以看到生成了<code>test-0</code>、<code>test-1</code>两个文件夹，而这两个文件夹就对应 test 这个 Topic 的两个 Partition 分区，也就是说一个 Partition 分区其实是对应着一个物理文件夹，且分区序号从 0 开始。</p>
+<p>接着，进入其中一个文件夹 test-1 再观察一下，如下：</p>
 <pre><code class="shell">➜  test-1 ll
 00000000000000000000.index
 00000000000000000000.log
@@ -253,26 +260,39 @@ leader-epoch-checkpoint</code></pre>
 </ul>
 <p><code>leader-epoch-checkpoint</code>：</p>
 <ul>
-<li>保存 leader 写入的 offset 信息，当 follower 成为 leader 时会取出对应leader 的 offset 信息进行对比，其中 offset 较大的 follower 增晋升为 leader 的概率较高，因为它的消息数比较全。</li>
+<li>保存 Leader 写入的 offset 信息，当 Follower 成为 Leader 前会取出该信息进行对比，其中 offset 较大的 Follower 晋升为 Leader 的概率较高，因为它的消息数比较全。</li>
 </ul>
-<p><strong>partition 的 segment 文件存储结构</strong></p>
+<blockquote>
+<p>Partition Segment 日志段</p>
+</blockquote>
 <pre><code>00000000000000000000.index
 00000000000000000000.log
 00000000000000000000.timeindex
 
 00000000000000010000.index
 00000000000000010000.log
-00000000000000010000.timeindex</code></pre><p>可以简单将 segment 理解为以 offset 对数据的分组。</p>
-<p>上面的 00000000000000000000 和 00000000000000010000 均为 segment 段。</p>
-<p>例如 00000000000000010000 这串数字，是 segment 下的数据起始 offset。</p>
-<p>默认情况下，每个 segment 能够保存 1G 的数据，且保存时长为 7 天。 </p>
-<p><strong>为什么有segment？</strong></p>
-<p>1个 partition 多个 segment 主要是为了方便和提高查找数据的速度，因为每个 segment 文件名称中就包含了数据的起始 offset 信息，因此在二分查找时只需找到对应的 segment 就可以定位消息数据了，而并不需要扫描所有的消息数据。</p>
+00000000000000010000.timeindex</code></pre><p>可以简单将 segment 日志段理解为用 offset 对消息日志进行的分组。</p>
+<p>上面 00000000000000000000 和 00000000000000010000 均为 segment 段。</p>
+<p>例如 00000000000000010000 这串数字，是 segment 内第一条消息日志对应的 offset。</p>
+<p>默认情况下，每个 segment 能够保存 1G 的数据，保存时长为 7 天。 </p>
+<blockquote>
+<p>偏移量索引和时间戳索引的区别</p>
+</blockquote>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/024.png" style="zoom: 67%;">
+
+
+
+<blockquote>
+<p>为什么有 segment 日志段？</p>
+</blockquote>
+<p>一个 Partition 多个 segment 日志段，主要目的是为了优化数据的检索效率。因为 segment 日志段文件名称是以某个范围内的起始消息日志对应的 offset 来命名的，所以 Kafka 就可以利用<code>二分查找</code>来快速定位数据，而不需要扫描所有的消息数据。</p>
 <h2 id="集群控制器"><a href="#集群控制器" class="headerlink" title="集群控制器"></a>集群控制器</h2><blockquote>
 <p>基本介绍</p>
 </blockquote>
 <p>Kafka Controller 的作用是协调 Broker 集群，而一个集群当中只有一个 Broker 会成为 Controller （通过 Zookeeper 竞选）。</p>
-<p>Kafak Controller 的作用如下：</p>
+<blockquote>
+<p>Controller 的作用</p>
+</blockquote>
 <ul>
 <li>Topic 管理<ul>
 <li>创建、删除、分区（Leader选举）</li>
@@ -299,7 +319,12 @@ leader-epoch-checkpoint</code></pre>
 </li>
 </ul>
 <blockquote>
-<p>关于 Broker 的 Controller 选举</p>
+<p>Controller 管理的集群元数据</p>
+</blockquote>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/025.png" style="zoom: 67%;">
+
+<blockquote>
+<p>Controller 选举</p>
 </blockquote>
 <p>Controller 在整个集群中只有一个，它是通过 Zookeeper 提高的选举服务产生的。简单地说就是那个 Broker 先在 Zookeeper 中插入 znode 成功就成为 Broker Controller，在 Broker Controller 宕机后重新选举亦如是。</p>
 <h2 id="消息相关"><a href="#消息相关" class="headerlink" title="消息相关"></a>消息相关</h2><h3 id="消息的格式"><a href="#消息的格式" class="headerlink" title="消息的格式"></a>消息的格式</h3><p>了解下就好了：<a href="https://blog.csdn.net/u013256816/article/details/80300225" target="_blank" rel="noopener">https://blog.csdn.net/u013256816/article/details/80300225</a></p>
@@ -310,7 +335,11 @@ leader-epoch-checkpoint</code></pre>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/012.png" style="zoom:50%;">
 
 <p>那为什么需要这么多 Partition 呢？这是因为位移提交是一个非常频繁的操作，利用 Partition 的负载均衡特性可以减轻并发操作同一个 Topic 时所带来的压力。</p>
-<p>&emsp;&emsp;注意，在早期的 Kafka Consumer 中消费者偏移量是保存在 Zookeeper 中的，这样做的愿意是为了降低 Broker 的管理成本从而提高 Boker 集群的伸缩性。但后来因为位移提交是一个频繁操作，而 Zookeeper 并不合适保存大数据量以及作频繁的数据修改，因此在后期的新版本 Kafka Consumer 中消费者偏移量从 Zookeeper 迁移会了 Broker 管理。</p>
+<p>注意事项：</p>
+<ul>
+<li>__consumer__offsets 这个内部主题不仅维护了消费者偏移量，还维护了消费者的元数据。而 Group Coordinator （消费者组协调者）提供了对该主题的完整管理功能</li>
+<li>在早期的 Kafka Consumer 中消费者偏移量是保存在 Zookeeper 中的，这样做的愿意是为了降低 Broker 的管理成本从而提高 Boker 集群的伸缩性。但后来因为位移提交是一个频繁操作，而 Zookeeper 并不合适保存大数据量以及作频繁的数据修改，因此在后期的新版本 Kafka Consumer 中消费者偏移量从 Zookeeper 迁移会了 Broker 管理。</li>
+</ul>
 <h2 id="Java-kafka-Producer"><a href="#Java-kafka-Producer" class="headerlink" title="Java kafka Producer"></a>Java kafka Producer</h2><h3 id="生产者模型"><a href="#生产者模型" class="headerlink" title="生产者模型"></a>生产者模型</h3><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png" style="zoom:67%;">
 
 <blockquote>
@@ -620,7 +649,7 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <p>注意：</p>
 <ul>
 <li>新版（Java编写）的 KafkaConsumer 是单线程架构，且不是线程安全的</li>
-<li>从 Kafka 0.10.1 版本后发送心跳包操作由专门的心跳线程处理，而且该线程还通过心跳包感知分区再均衡的发生</li>
+<li>从 Kafka 0.10.1 版本后发送心跳包操作由专门的心跳线程处理，而且该线程还能通过心跳包感知分区再均衡的发生</li>
 </ul>
 </blockquote>
 <h3 id="Consumer-Group概念"><a href="#Consumer-Group概念" class="headerlink" title="Consumer Group概念"></a>Consumer Group概念</h3><p><strong>为什么需要消费者组？</strong></p>
@@ -937,8 +966,13 @@ public void listener(List&lt;String&gt; recordes, Acknowledgment ack){
 }</code></pre>
 <h2 id="命令行工具"><a href="#命令行工具" class="headerlink" title="命令行工具"></a>命令行工具</h2><h3 id="Zookeeper-相关"><a href="#Zookeeper-相关" class="headerlink" title="Zookeeper 相关"></a>Zookeeper 相关</h3><blockquote>
 <p>关系图</p>
+<p>注意：</p>
+<ul>
+<li>下图并不适合目前较新版本的Kafka集群，因为在较新版本的Kafka中元数据推送是由 Kafka Controller 来维护的，既其它 Broker 只需要从 Controller 中获取集群元数据即可而不用从 Zookeeper 中拉取。</li>
+<li>除此之外，Kafka 在 KIP-500 Z 中正考虑使用 Raft 算法来代替 Zookeeper 选举，所以在日后的版本更新中 Zookeeper 的职责可能会越来越薄弱</li>
+</ul>
 </blockquote>
-<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" style="zoom: 33%;">
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" style="zoom: 25%;">
 
 
 
@@ -1126,7 +1160,7 @@ timestamp: 1568921728321 offset: 3139</code></pre><ul>
 <p>输出如下</p>
 <pre><code>testx:0:468335
 testx:1:468334
-testx:2:468332</code></pre><h2 id="问题配置"><a href="#问题配置" class="headerlink" title="问题配置"></a>问题配置</h2><h3 id="如何保证消息不丢失"><a href="#如何保证消息不丢失" class="headerlink" title="如何保证消息不丢失"></a>如何保证消息不丢失</h3><p>数据丢失的核心原因是 Broker 没有保存成功，当然换个角度是 Producer 没有发送成功。而还需要特别注意的是 Producer中的 send 方法是异步的，既即使 send 返回后也不能保证消息发出去了，而只是发送到了缓冲中</p>
+testx:2:468332</code></pre><h2 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h2><h3 id="如何保证消息不丢失"><a href="#如何保证消息不丢失" class="headerlink" title="如何保证消息不丢失"></a>如何保证消息不丢失</h3><p>数据丢失的核心原因是 Broker 没有保存成功，当然换个角度是 Producer 没有发送成功。而还需要特别注意的是 Producer中的 send 方法是异步的，既即使 send 返回后也不能保证消息发出去了，而只是发送到了缓冲中</p>
 <p><strong>Producer配置</strong></p>
 <ul>
 <li><p>block.on.buffer.full = true</p>
@@ -1188,11 +1222,17 @@ testx:2:468332</code></pre><h2 id="问题配置"><a href="#问题配置" class="
 <li><p>JMX（推荐）</p>
 </li>
 </ul>
+<h3 id="Kafka-的-Heap-Size-应该如何设置"><a href="#Kafka-的-Heap-Size-应该如何设置" class="headerlink" title="Kafka 的 Heap Size 应该如何设置"></a>Kafka 的 Heap Size 应该如何设置</h3><ol>
+<li>业界经验值 6G</li>
+<li>系统正常情况下，通过手动触发 Full GC 并观察其存货对象的总大小，再将该值乘上1.5或2被大小，再将这个大小设置为 Heap Size 即可</li>
+</ol>
+<h3 id="Leader-副本状态总是为-1-如何解决"><a href="#Leader-副本状态总是为-1-如何解决" class="headerlink" title="Leader 副本状态总是为 -1 如何解决"></a>Leader 副本状态总是为 -1 如何解决</h3><p>删除 Zookeeper 中的<code>/Controller</code>节点，重新选举 Controller 。因为重新选举 Controller 后，Controller 会为所有 Topic 的分区重新刷新状态。</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://stackoverflow.com/questions/48665257/why-kafka-index-files-use-memory-mapped-files-but-log-files-dont" target="_blank" rel="noopener">why kafka index files use memory mapped files ,but log files don’t?</a></li>
 <li><a href="https://www.cnblogs.com/huxiao-tee/p/4660352.html" target="_blank" rel="noopener">认真分析mmap：是什么 为什么 怎么用</a></li>
 <li><a href="https://blog.csdn.net/future_fighter/article/details/2477434" target="_blank" rel="noopener">内存映射文件</a></li>
 <li><a href="https://www.confluent.io/blog/apache-kafka-producer-improvements-sticky-partitioner/" target="_blank" rel="noopener">Apache Kafka Producer Improvements with the Sticky Partitioner</a></li>
+<li>《Kafka核心源码解读》</li>
 </ul>
 <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2020年5月9日 20:24:44 — 修改关于上下文切换、用户态和内核态、内存映射文件相关内容</li>
@@ -1239,7 +1279,7 @@ testx:2:468332</code></pre><h2 id="问题配置"><a href="#问题配置" class="
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展知识点"><span class="toc-text">拓展知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是磁盘的顺序写入？"><span class="toc-text">什么是磁盘的顺序写入？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存映射文件"><span class="toc-text">内存映射文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#上线程下文切换"><span class="toc-text">上线程下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#线程上下文切换"><span class="toc-text">线程上下文切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户态和内核态切换"><span class="toc-text">用户态和内核态切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#简单总结一下"><span class="toc-text">简单总结一下</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#零拷贝（Zero-copy）"><span class="toc-text">零拷贝（Zero-copy）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是Kafka？"><span class="toc-text">什么是Kafka？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka常见使用场景"><span class="toc-text">Kafka常见使用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么kafka性能高？"><span class="toc-text">为什么kafka性能高？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#topic、partition、replica之间的关系"><span class="toc-text">topic、partition、replica之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是如何存储topic数据的"><span class="toc-text">Kafka是如何存储topic数据的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#集群控制器"><span class="toc-text">集群控制器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#消息相关"><span class="toc-text">消息相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息的格式"><span class="toc-text">消息的格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic-offset-和-consumer-offset"><span class="toc-text">topic offset 和 consumer offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#topic-offset"><span class="toc-text">topic offset</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#consumer-offset"><span class="toc-text">consumer offset</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Producer"><span class="toc-text">Java kafka Producer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者模型"><span class="toc-text">生产者模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer-interceptor"><span class="toc-text">producer interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义分区策略"><span class="toc-text">自定义分区策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置参数"><span class="toc-text">常用配置参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Broker常用配置参数"><span class="toc-text">Broker常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Consumer"><span class="toc-text">Java kafka Consumer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group概念"><span class="toc-text">Consumer Group概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分区再均衡"><span class="toc-text">分区再均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用参数"><span class="toc-text">常用参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动提交offset"><span class="toc-text">手动提交offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动提交存在的问题"><span class="toc-text">自动提交存在的问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#同步提交"><span class="toc-text">同步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#异步提交"><span class="toc-text">异步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合提交"><span class="toc-text">混合提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot-Kafka手动提交案例"><span class="toc-text">SpringBoot Kafka手动提交案例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Zookeeper-相关"><span class="toc-text">Zookeeper 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker-相关"><span class="toc-text">Broker 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topic-相关"><span class="toc-text">Topic 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者相关"><span class="toc-text">生产者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#消费者相关"><span class="toc-text">消费者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他维护命令工具"><span class="toc-text">其他维护命令工具</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#问题配置"><span class="toc-text">问题配置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证消息不丢失"><span class="toc-text">如何保证消息不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证只消费1次"><span class="toc-text">如何保证只消费1次</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解决消息乱需问题"><span class="toc-text">如何解决消息乱需问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Kafka-Producer-的幂等性"><span class="toc-text">关于 Kafka Producer 的幂等性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对实时性要求较高，建议使用-RoketMQ"><span class="toc-text">对实时性要求较高，建议使用 RoketMQ</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#监控-Kafka-Consumer-的消费进度"><span class="toc-text">监控 Kafka Consumer 的消费进度</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展知识点"><span class="toc-text">拓展知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是磁盘的顺序写入？"><span class="toc-text">什么是磁盘的顺序写入？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存映射文件"><span class="toc-text">内存映射文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#上线程下文切换"><span class="toc-text">上线程下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#线程上下文切换"><span class="toc-text">线程上下文切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户态和内核态切换"><span class="toc-text">用户态和内核态切换</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#零拷贝（Zero-copy）"><span class="toc-text">零拷贝（Zero-copy）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是什么？"><span class="toc-text">Kafka是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka常见使用场景"><span class="toc-text">Kafka常见使用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么kafka性能高？"><span class="toc-text">为什么kafka性能高？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Topic、Partition、Replica-之间的关系"><span class="toc-text">Topic、Partition、Replica 之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是如何存储Topic数据的"><span class="toc-text">Kafka是如何存储Topic数据的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#集群控制器"><span class="toc-text">集群控制器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#消息相关"><span class="toc-text">消息相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息的格式"><span class="toc-text">消息的格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic-offset-和-consumer-offset"><span class="toc-text">topic offset 和 consumer offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#topic-offset"><span class="toc-text">topic offset</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#consumer-offset"><span class="toc-text">consumer offset</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Producer"><span class="toc-text">Java kafka Producer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者模型"><span class="toc-text">生产者模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer-interceptor"><span class="toc-text">producer interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义分区策略"><span class="toc-text">自定义分区策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置参数"><span class="toc-text">常用配置参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Broker常用配置参数"><span class="toc-text">Broker常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Consumer"><span class="toc-text">Java kafka Consumer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group概念"><span class="toc-text">Consumer Group概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分区再均衡"><span class="toc-text">分区再均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用参数"><span class="toc-text">常用参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动提交offset"><span class="toc-text">手动提交offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动提交存在的问题"><span class="toc-text">自动提交存在的问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#同步提交"><span class="toc-text">同步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#异步提交"><span class="toc-text">异步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合提交"><span class="toc-text">混合提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot-Kafka手动提交案例"><span class="toc-text">SpringBoot Kafka手动提交案例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Zookeeper-相关"><span class="toc-text">Zookeeper 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker-相关"><span class="toc-text">Broker 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topic-相关"><span class="toc-text">Topic 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者相关"><span class="toc-text">生产者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#消费者相关"><span class="toc-text">消费者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他维护命令工具"><span class="toc-text">其他维护命令工具</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见问题"><span class="toc-text">常见问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证消息不丢失"><span class="toc-text">如何保证消息不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证只消费1次"><span class="toc-text">如何保证只消费1次</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解决消息乱需问题"><span class="toc-text">如何解决消息乱需问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Kafka-Producer-的幂等性"><span class="toc-text">关于 Kafka Producer 的幂等性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对实时性要求较高，建议使用-RoketMQ"><span class="toc-text">对实时性要求较高，建议使用 RoketMQ</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#监控-Kafka-Consumer-的消费进度"><span class="toc-text">监控 Kafka Consumer 的消费进度</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Kafka-的-Heap-Size-应该如何设置"><span class="toc-text">Kafka 的 Heap Size 应该如何设置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Leader-副本状态总是为-1-如何解决"><span class="toc-text">Leader 副本状态总是为 -1 如何解决</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>

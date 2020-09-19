@@ -149,7 +149,7 @@
 <li>保证节点状态一致性优先的前提下，Zookeeper 集群只要过半节点能够通信就能正常提供服务</li>
 <li>Zookeeper 在内存中存储的数据模型叫 Data Tree ，实质就是和文件系统目录结构一样呈现树状。在 Data Tree 上的节点被称为 ZNode ，ZNode 除了保存子节点之外，自身还可以存储数据，而且带有Version版本号等元数据信息</li>
 <li>Zookeeper 并不适合存储大量数据。也就是说数据应该尽量少，而且这些数据对于分布式服务协调来说是至关重要的</li>
-<li>Zookeeper 并不适合高并发写的场景。这是因为写操作只能在 Leader 节点上进行，除此之外 Zookeeper 在处理一个写请求的同时是不能处理其它读/写请求的，因为这样会引入一致性问题。所以 Zookeeper 相当于降低了系统的可用性来提高一致性。这也是为什么 Kafka 不再使用 Zookeeper 来保存消费者偏移量的原因，因为消费者提交偏移量是一个非常频繁的写操作</li>
+<li>Zookeeper 并不适合高并发写的场景。这是因为写操作只能在 Leader 节点上进行，除此之外 Leader 节点在处理一个写请求的同时，当前 Leader 节点是不能再处理其它读写请求的，因为它是（会话）串行FIFO形式形式处理请求的，所以 Zookeeper 相当于降低了系统的可用性来提高一致性。这也是为什么 Kafka 不再使用 Zookeeper 来保存消费者偏移量的原因，因为消费者提交偏移量是一个非常频繁的写操作</li>
 <li>在 Zookeeper 中，同一个会话的操作是先进先出（FIFO）按顺序被操作的</li>
 </ul>
 <blockquote>
@@ -164,7 +164,7 @@
 </blockquote>
 <p>ZooKeeper安装：<a href="https://www.apache.org/dyn/closer.cgi/zookeeper/" target="_blank" rel="noopener">官网下载地址</a></p>
 <pre><code>[root@localhost opt]# wget http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz </code></pre><p>解压后目录如下：<br><img src="/%E5%88%9D%E5%A7%8Bzookeeper/001.png" alt><br><img src="/%E5%88%9D%E5%A7%8Bzookeeper/002.png" alt></p>
-<h2 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h2><h3 id="启动server"><a href="#启动server" class="headerlink" title="启动server"></a>启动server</h3><p>如果启动时不指定配置文件则会默认使用 conf 文件夹下名为 <code>zoo.cfg</code> 的配置文件</p>
+<h2 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h2><h3 id="启动server"><a href="#启动server" class="headerlink" title="启动server"></a>启动server</h3><p>如果启动时不指定配置文件，则默认使用 conf 文件夹下名为 <code>zoo.cfg</code> 的配置文件</p>
 <pre><code class="shell">[root@localhost zookeeper-3.4.14]# bin/zkServer.sh start conf/zoo_sample.cfg
 [root@localhost zookeeper-3.4.14]# jps -l
 31623 org.apache.zookeeper.server.quorum.QuorumPeerMain
@@ -513,8 +513,12 @@ target/zooinspector-pkg/bin/zooinspector.sh</code></pre>
 ➜  apache-zookeeper-3.5.5-bin-03 echo &quot;3&quot; &gt; data/myid # 设置Zookeeper集群节点ID号</code></pre>
 <p><strong>2）修改配置文件</strong></p>
 <p>server1</p>
-<pre><code class="properties">tickTime=2000
+<pre><code class="properties"># 心跳包间隔，单位为毫秒
+tickTime=2000
+# Follower节点启动连接上Leader的时限（包含了同步Leader数据的时间），单位为秒
+# 相当说在10s内没能同步完数据并提供服务则会断开重连。在数据量较大时建议调到该值
 initLimit=10
+# 副本节点同步数据的最大延时，不能满足则会端口重连
 syncLimit=5
 # 注意：这里不要放在中文目录下，可能会出现找不到myid的问题
 dataDir=/home/tandi/zookeeper-test/apache-zookeeper-3.5.5-bin-01/data

@@ -47,18 +47,27 @@
     <link href="https://tandi.pub/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/"/>
     <id>https://tandi.pub/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/</id>
     <published>2020-05-22T07:47:07.000Z</published>
-    <updated>2020-09-03T15:30:52.646Z</updated>
+    <updated>2020-09-19T14:21:46.838Z</updated>
     
     <summary type="html">
     
-      &lt;p&gt;前段时间将 IDEA 升级到了 2020 版本，而最近使用发现经常出现卡顿的现象。虽然笔者的机器是15年买的已经有点历史了（CPU双核4线程、8G内存），但也不至于卡成这样，所以打算针对 IDEA 的 JVM 进行一次调优来舒缓一下卡顿感。而个人认为 JVM 调优是一件非常矛盾的事情，因为调优的核心思想就是在有限资源的情况下让应用运行得更顺畅（所以网上哪些连机器配置都不提就开始谈调优的人是非常不靠谱的）。直白点说就是如果你的机器配资足够高的话是根本不需要考虑调优的。 &lt;/p&gt;
-&lt;p&gt;造成 JVM 应用卡顿的原因大体有以下几种：&lt;/p&gt;
+      &lt;h2 id=&quot;闲聊&quot;&gt;&lt;a href=&quot;#闲聊&quot; class=&quot;headerlink&quot; title=&quot;闲聊&quot;&gt;&lt;/a&gt;闲聊&lt;/h2&gt;&lt;p&gt;&amp;emsp;&amp;emsp;前段时间将 IDEA 升级到了 2020 版本，而最近在使用方面可能是因为项目文件较多的缘故，发现经常出现卡顿的现象。而笔者的机器是15年购入的，虽然算起来也有段历史了（i5-5200U CPU、8G RAM），但感觉也不至于卡成这样，所以这次打算针对 IDEA 所使用的 JVM 进行一次调优，而调优的最终目的是舒缓运行过程中的卡顿感。&lt;/p&gt;
+&lt;p&gt;&amp;emsp;&amp;emsp;个人认为性能调优其实是件非常矛盾的事情，因为调优的核心思想就是如何在资源有限的情况下让应用程序运行得更好，所以有时在网上看到哪些对配置和调优目只字不提就开始谈调优的文章也是挺让人费解的。为什么要可以地提起这个，完全是希望明白一个道理，就是如果你的机器配置足够强劲（譬如内存足够让当前应用程序运行好一段时间）的话，其实你是不需要特意考虑调优的。虽然这听起来像废话，但这正正就是性能调优矛盾的地方，因为通常情况并不是这样，而是因为配置有限所以需要进行条件取舍。举个通俗的例子，譬如撇开 GC 自身性能存在差异这点不说，在同等条件下增大虚拟机 Heap Size 就意味着会延长回收垃圾时所花费的时间。如果这时你想要降低 GC 期间带来的 STW（stop the world） 时间，那么你就应该减少 Heap Size 的大小，这是一个根本不需要有任何调优经验都懂得的道理，因为地方大自然打扫所需的时间就长，而这做的事情其实就是空间和时间上取舍。当然，真正的调优并没有上面说的那么简单，譬如你降低 Heap Size 后，因为程序所需的基本条件没变，所以虽然 GC 所花费的时间是降低了，但会因为空间不足的缘故从而导致 GC 的频率上升，因此这种做法很大程度会弄巧成拙。是不是开始觉得很矛盾呢？但也正因为这个原因才有现今 GC 回收器的不断地演进。譬如从串行到并行，从并行到并发，再在并发的基础上进行优先回收，而这一种演进其实从侧面来说都是人性的体现，因为人通常的思想是“我不想降低 Heap Size，但我想停顿时间更短”，人通常是这样去想问题的。&lt;/p&gt;
+&lt;p&gt;&amp;emsp;&amp;emsp;在这给点个人的小建议，如果不太懂各种 GC 的回收原理以及调优的情况下但又想对其运行时进行优化，那么在条件允许的情况下不妨通过升级 JDK 来达到目的，因为这是在是一种白嫖的优化手段。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;造成应用程序卡顿的常见原因&lt;/p&gt;
+&lt;/blockquote&gt;
 &lt;ol&gt;
-&lt;li&gt;GC 回收导致 STW&lt;/li&gt;
+&lt;li&gt;GC 回收带来的 STW &lt;/li&gt;
 &lt;li&gt;内存分配不合理导致（资源缺乏）频繁 GC &lt;/li&gt;
-&lt;li&gt;CPU 使用率过高导致 JVM 线程执行效率降低&lt;/li&gt;
+&lt;li&gt;代码存在缺陷导致 CPU 使用率过高&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;虽然以上1点看起来很明确，但是要平衡它们却不是件容易的事儿。例如你可以增加 GC 线程让垃圾回收进行得更加迅速，但线程多了 CPU 使用率就会上升（特别是自用机器肯定会有有其它应用并行的情况出现），这也导致卡顿。又或者你可以增加 JVM 的内存容量来减少 GC 的次数（因为有足够的内存是不会触发 GC 的），但这样又会加重 GC 线程的回收负担从而让 GC 过程更加长，最后亦可能导致卡顿感加重。这就是上面为什么说 JVM 调优其实是件非常矛盾的事情。&lt;/p&gt;
+&lt;p&gt;这里需要注意和区分&lt;code&gt;效率低&lt;/code&gt;和&lt;code&gt;卡顿&lt;/code&gt;其实是两个不同的问题，不要混淆。效率低通常是因为程序自身的处理能力低下所导致的，而卡顿则是资源竞争导致的，所以总的来说解决卡顿的关注点应该是&lt;code&gt;内存&lt;/code&gt;和&lt;code&gt;CPU&lt;/code&gt;。然而在 JVM 调优层面来说，内存和CPU其实也是一种取舍关系：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;譬如你可以增加 GC 线程数量让回收更加迅速，但如果线程数设置得不合理的话，则会造成大量无用的上下文切换从而导致 GC 线程回收效率低下，或因为 CPU 使用率过高而造成卡顿。特别是并发型 GC 收集器应该加以关注&lt;/li&gt;
+&lt;li&gt;又譬如你可以增加 Heap Size 来减少 GC 的频率（因为地方大了存放垃圾的空间多因此而不用经常打扫），但这样又会加重 GC 线程的回收负担导致 GC 时间延长，最后亦可能导致卡顿感加重&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;最后多说一句，有时候面试很喜欢问如何合理地设置线程数这类问题。这里简单的答一下，设置线程数其实并没有一个标准，虽然网上有人给出一些公式，但个人认为出于应用程序本身存在区别，所以这些公式并不是放之四海而皆准的，而最合理的做法就是通过不断地反复测试来得出结论。&lt;/p&gt;
     
     </summary>
     
@@ -223,11 +232,11 @@
     <link href="https://tandi.pub/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/"/>
     <id>https://tandi.pub/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/</id>
     <published>2019-11-27T18:10:31.000Z</published>
-    <updated>2020-09-08T14:07:09.947Z</updated>
+    <updated>2020-09-17T12:47:21.324Z</updated>
     
     <summary type="html">
     
-      &lt;p&gt;&amp;emsp;&amp;emsp;先前写过一篇针对 HashMap 源码进行浅析的文章，现在回看觉得内容实在有些简陋，所以借着最近时间比较充裕，打算记录一下自己对 JDK 1.8 后 ConcurrentHashMap 的一些理解。&lt;br&gt;&amp;emsp;&amp;emsp;位运算是计算机中最为高效的计算方式，如果你平时有翻阅源码的爱好那么肯定不难发现其实很多大神写的代码中的计算操作都是用位运算来完成的。因此接下来我们就从位运算的角度切入 ConcurrentHashMap 源码，分析一下在 ConcurrentHashMap 中位运算的应用。&lt;/p&gt;
+      &lt;p&gt;&amp;emsp;&amp;emsp;先前写过一篇针对 HashMap 源码进行浅析的文章，现在回看觉得内容实在有些简陋，所以借着最近时间比较充裕，打算记录一下自己对 JDK 1.8 后 ConcurrentHashMap 的一些理解。&lt;br&gt;&amp;emsp;&amp;emsp;位运算是计算机中最为高效的运算方式，如果你平时有翻阅源码的爱好那么肯定不难发现其实很多大神写的代码中的计算操作都是用位运算来完成的。因此接下来我们就从位运算的角度切入 ConcurrentHashMap 源码，分析一下在 ConcurrentHashMap 中位运算的应用。&lt;/p&gt;
     
     </summary>
     
@@ -294,12 +303,12 @@
     <link href="https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/"/>
     <id>https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</id>
     <published>2019-09-07T18:31:39.000Z</published>
-    <updated>2020-09-16T06:12:26.465Z</updated>
+    <updated>2020-09-17T05:46:31.624Z</updated>
     
     <summary type="html">
     
       &lt;h2 id=&quot;拓展知识点&quot;&gt;&lt;a href=&quot;#拓展知识点&quot; class=&quot;headerlink&quot; title=&quot;拓展知识点&quot;&gt;&lt;/a&gt;拓展知识点&lt;/h2&gt;&lt;p&gt;为了更好地学习和理解kafka，个人觉得有必要搞清楚一些概念&lt;/p&gt;
-&lt;p&gt;在开始之前，推荐书籍《Apache Kafka实战》和《Kafka权威指南》来作为kafka的入门书籍&lt;/p&gt;
+&lt;p&gt;在开始之前，推荐书籍《Apache Kafka实战》和《Kafka权威指南》来作为 kafka 的入门书籍&lt;/p&gt;
 &lt;h3 id=&quot;什么是磁盘的顺序写入？&quot;&gt;&lt;a href=&quot;#什么是磁盘的顺序写入？&quot; class=&quot;headerlink&quot; title=&quot;什么是磁盘的顺序写入？&quot;&gt;&lt;/a&gt;什么是磁盘的顺序写入？&lt;/h3&gt;&lt;p&gt;&amp;emsp;&amp;emsp;所谓的磁盘顺序写入其实是相对与随机写入而言的，指的是在写入数据时磁盘的磁头不用寻道而可以一次将数据写完，因为省略了磁头寻道的时间，所以在速度来说是非常快的，甚至可以媲美内存的随机写入; 那什么情况下会出现顺序写入呢？如文件追加内容时（kafka就采用这种方式进行顺序写入，因为kafka存放数据的日志文件不能修改只能追加）&lt;/p&gt;
 &lt;p&gt;以下为&lt;strong&gt;磁盘&lt;/strong&gt;、&lt;strong&gt;SSD&lt;/strong&gt;、&lt;strong&gt;内存&lt;/strong&gt;之间的访问速度对比图&lt;/p&gt;
 &lt;blockquote&gt;
@@ -354,7 +363,7 @@
     <link href="https://tandi.pub/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/"/>
     <id>https://tandi.pub/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/</id>
     <published>2019-07-09T05:31:25.000Z</published>
-    <updated>2020-09-09T02:21:41.367Z</updated>
+    <updated>2020-09-16T12:23:22.577Z</updated>
     
     <summary type="html">
     

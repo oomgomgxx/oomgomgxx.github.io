@@ -766,17 +766,21 @@ public void cancelPay(){
 <li>LEADEING：Leader 的状态</li>
 </ul>
 <blockquote>
-<p>发现：zookeeper选举过程（FastLeaderElection）</p>
+<p>发现：Zookeeper选举过程（FastLeaderElection）</p>
 </blockquote>
 <p>投票过程如下：</p>
 <p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/041.png" alt></p>
 <p>如图所示，选票结构是 vote ( myid，zxid )。myid为节点在集群中的唯一标识，而zxid则是节点接收到的最后一个zxid值。</p>
 <p>选举步骤如下：</p>
 <ol>
-<li>集群进入恢复模式，节点切换成LOOKING状态并互相发送vote</li>
-<li>接收到vote后<code>首先对比zxid</code>，如果自己的zxid比接收到的小就将自己的投标目标改为最大zxid的那个节点。但如果zxid一样（例如集群第一次启动），那么就会<code>继续对比myid</code>，即改投给myid大的节点。例如图片上的示例，最后Leader将会是 Server1（1，6），而且可以发现，如果在第一轮投票中自己的vote是最大的，那么就不会再发起投票而是等待其节点投票给自己。</li>
-<li>经过第二次投票后 Leader 就可以得到确立。这时 Leader 节点会切换为 Leading，而其他节点则切换为Follower。随后集群会进入同步阶段</li>
+<li>集群进入恢复模式，节点切换成 LOOKING 状态并互相发送vote</li>
+<li>接收到 vote 后<code>首先对比zxid</code>，如果自己的zxid比接收到的小就将自己的投标目标改为最大zxid的那个节点。但如果zxid一样（例如集群第一次启动），那么就会<code>继续对比myid</code>，即改投给myid最大的节点。例如图片上的示例，最后Leader将会是 Server1（1，6），而且可以发现，如果在第一轮投票中自己的vote是最大的，那么就不会再发起投票而是等待其节点投票给自己。</li>
+<li>经过第二次投票后，因为得到过半选票，因此 Leader 就可以得到确立，这时 Leader 节点会切换为 Leading，而其他节点则切换为 Following。随后集群会进入同步阶段</li>
 </ol>
+<p>注意：</p>
+<ul>
+<li>选举过程是可能出现短暂的脑裂时间的。譬如投票时延时大，出现 A 认为 B 是 Leader，B 认为 C 是 Leader 的情况。当然，这时因为 B 知道自己不是 Leader 所以它并不会响应 A 的请求，最后 A 会断开重连恢复。但以上这种情况无疑会降低集群的可用性。为了解决这一问题 FastLeaderElection 引入了 FinalizeWait 机制，既在投票期间，节点会等待一段时间以避免延时带来不必要的问题</li>
+</ul>
 <blockquote>
 <p>同步：节点状态同步</p>
 </blockquote>
