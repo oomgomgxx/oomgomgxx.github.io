@@ -9,7 +9,7 @@
   <!-- 浏览器页签图标 -->
   <link rel="icon" href="/img/favicon.svg">
   <!-- 标题 -->
-  <title> Nginx的基本使用-学然后知不足 </title>
+  <title> Nginx使用-学然后知不足 </title>
 
   <!-- 自适应 -->
   
@@ -120,12 +120,12 @@
 <article id="post">
 
   <!-- 文章标题 -->
-  <h1>Nginx的基本使用</h1>
+  <h1>Nginx使用</h1>
 
   <!-- 文章元信息 -->
   <span class="post-metadata">
     <!-- 文章日期 -->
-    <i class="fa fa-calendar"></i>&thinsp;2017-02-28 &ensp;
+    <i class="fa fa-calendar"></i>&thinsp;2017-02-26 &ensp;
     <!-- 文章作者 -->
     作者: TanDi &ensp;
     <!-- 判断文章是都为原创文章 -->
@@ -137,1055 +137,308 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h2><ul>
-<li><em>Nginx</em> (engine x) 是一个高性能的<code>HTTP</code>和<code>反向代理</code>服务器。</li>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年12月19日14:13:43 — 重构文章</li>
 </ul>
-<h2 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h2><ul>
-<li><p>速度快：</p>
-<p>比一般的web服务器响应速度快</p>
-</li>
-</ul>
+<h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><p>是一个基于多进程事件驱动的 Web 服务器</p>
+<blockquote>
+<p>特性</p>
+</blockquote>
 <ul>
-<li><p>高扩展性：</p>
-<p>除了自带的模块还有支持第三方模块</p>
-</li>
+<li>高并发、高性能、高可用<ul>
+<li>Nginx 会确保每一个连接消耗的内存最小化</li>
+<li>Master 进程可以在 Worker 进程出错后快速拉起新的Worker 进程继续提供服务</li>
+<li>使用 Reactor 模型处理网络请求。Master 接收，Worker 处理。</li>
 </ul>
+</li>
+<li>可扩展性高（模块化设计），第三方模块丰富</li>
+<li>热部署<ul>
+<li>支持不停机(信号)维护进程，以及更新配置项和日志文件</li>
+</ul>
+</li>
+<li>源码使用<a href="https://baike.baidu.com/item/BSD%E8%AE%B8%E5%8F%AF%E5%8D%8F%E8%AE%AE" target="_blank" rel="noopener">BSD许可证</a>，给予使用者非常高的使用自由度</li>
+</ul>
+<blockquote>
+<p>常见使用场景</p>
+</blockquote>
 <ul>
-<li><p>高可用性：</p>
-<p>设计优秀稳定，每个worker相对独立；master进程可以在worker进程出错时快速“拉起”新的worker子进程为其提供服务</p>
+<li>静态资源服务器<ul>
+<li>当前文件系统作为静态资源存储点提供服务</li>
+</ul>
+</li>
+<li>反向代理服务器<ul>
+<li>基于多进程事件驱动性能强大</li>
+<li>提供静态资源缓存功能，能一定程度提高响应速度</li>
+<li>提供负载均衡能力，可合理地分摊上游服务器负载</li>
+</ul>
+</li>
+<li>微服务服务API网关<ul>
+<li>Nginx + Lua</li>
+</ul>
+</li>
+<li>流媒体服务器<ul>
+<li>可通过 nginx-rtmp 模块实现</li>
+</ul>
 </li>
 </ul>
+<h2 id="编译安装"><a href="#编译安装" class="headerlink" title="编译安装"></a>编译安装</h2><p>1）在官网选择需要的版本</p>
 <ul>
-<li><p>低内存消耗：</p>
-<p>一万个HTTP Keep-Alive连接在Nginx中只消耗2.5M内存</p>
-</li>
+<li><a href="https://nginx.org/en/download.html" target="_blank" rel="noopener">https://nginx.org/en/download.html</a></li>
 </ul>
+<p>2）下载后解压</p>
+<pre><code class="shell">&gt; wget https://nginx.org/download/nginx-1.14.2.tar.gz
+&gt; tar -zxvf nginx-1.14.2.tar.gz</code></pre>
+<p>3）生成编译文件 Makefile</p>
+<pre><code class="shell">&gt; cd nginx-1.14.2
+&gt; ./configure --prefix=/opt/nginx</code></pre>
 <ul>
-<li><p>热部署：</p>
-<p>支持不停止服务更新配置项、更新日志文等功能；可以在7*24小时（一周）不间断服务的前提下，升级Nginx的可执行文件；</p>
-</li>
+<li>可以通过<code>./configure --help</code>查看配置参数</li>
+<li>–prefix 用于指定安装路径</li>
+<li>如果需要安装指定模块，可以参考 –with- 开头的参数；反之参考 –without- 开头的参数</li>
+<li>执行完<code>./configure</code>后会在当前目录生成一个<code>objs</code>文件夹，其中 ngx_modules.c 中包含将要安装的模块</li>
 </ul>
-<h2 id="常用来做什么"><a href="#常用来做什么" class="headerlink" title="常用来做什么"></a>常用来做什么</h2><ul>
-<li>反向代理</li>
-<li>负载均衡</li>
-<li>http服务器（动静分离）</li>
-<li>正向代理</li>
+<p>3）安装依赖</p>
+<pre><code class="shell">&gt; yum install -y gcc gcc-c++ autoconf pcre pcre-devel make automake httpd-tools zlib zlib-devel openssl openssl-devel</code></pre>
+<p>4）更具 Makefile 编译和安装</p>
+<pre><code class="shell">&gt; make &amp;&amp; make install</code></pre>
+<p>5）将Nginx的命令添加到环境变量（可选操作）</p>
+<ul>
+<li>将 sbin 目录配置到 /etc/profile 中的 PATH 环境变量尾部</li>
+<li>修改完执行<code>source /etc/profile</code>刷新配置即可</li>
 </ul>
-<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h3 id="方法1：yum安装"><a href="#方法1：yum安装" class="headerlink" title="方法1：yum安装"></a>方法1：yum安装</h3><p><strong>步骤1：查看官网文档，配置yum源</strong></p>
-<blockquote>
-<p><a href="http://nginx.org/en/linux_packages.html#RHEL-CentOS" target="_blank" rel="noopener">http://nginx.org/en/linux_packages.html#RHEL-CentOS</a></p>
+<p>6）使用 vim 编辑 Nginx 配置文件时高亮显示（可选操作）</p>
+<pre><code class="shell">&gt; pwd
+/root/nginx-1.14.2
+&gt; mkdir ~/.vim
+&gt; cp -r contrib/vim/* ~/.vim</code></pre>
+<h2 id="命令使用"><a href="#命令使用" class="headerlink" title="命令使用"></a>命令使用</h2><blockquote>
+<p>nginx命令</p>
 </blockquote>
-<p>参考图：</p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/001.png" alt></p>
-<pre><code class="shell">cd /etc/yum.repos.d/
-touch nginx.repo
-vim nginx.repo
-
-添加一下内容：（稳定版）
-[nginx-stable]
-name=nginx stable repo
-baseurl=http://nginx.org/packages/centos/7/$basearch/
-gpgcheck=1
-enabled=1
-gpgkey=https://nginx.org/keys/nginx_signing.key</code></pre>
-<p><strong>步骤2：查看是否配置成功</strong></p>
-<pre><code>yum list | grep nginx</code></pre><p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/002.png" alt></p>
-<p><strong>步骤3：安装nginx</strong></p>
-<blockquote>
-<p>使用yum方法安装无需关注nginx的依赖（nginx使用c语言编写，需要使用到如同gcc等等的编译和其他依赖）</p>
-</blockquote>
-<pre><code>yum -y install nginx</code></pre><p><strong>步骤4：查看nginx安装了哪些目录文件</strong></p>
-<pre><code>rpm -ql nginx</code></pre><p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/003.png" alt></p>
-<h3 id="方法2：源码安装"><a href="#方法2：源码安装" class="headerlink" title="方法2：源码安装"></a>方法2：源码安装</h3><p><strong>步骤1：下载nginx源码</strong></p>
-<p><a href="http://nginx.org/en/download.html" target="_blank" rel="noopener">http://nginx.org/en/download.html</a></p>
-<p><strong>步骤2：安装依赖</strong></p>
-<pre><code class="shell">[root@localhost local]# cd nginx-1.14.2/
-[root@localhost nginx-1.14.2]# ll
-总用量 732
-drwxr-xr-x. 6 1001 elastic   4096 2月  15 09:55 auto
--rw-r--r--. 1 1001 elastic 288742 12月  4 22:52 CHANGES
--rw-r--r--. 1 1001 elastic 440121 12月  4 22:52 CHANGES.ru
-drwxr-xr-x. 2 1001 elastic    168 2月  15 09:55 conf
--rwxr-xr-x. 1 1001 elastic   2502 12月  4 22:52 configure
-drwxr-xr-x. 4 1001 elastic     72 2月  15 09:55 contrib
-drwxr-xr-x. 2 1001 elastic     40 2月  15 09:55 html
--rw-r--r--. 1 1001 elastic   1397 12月  4 22:52 LICENSE
-drwxr-xr-x. 2 1001 elastic     21 2月  15 09:55 man
--rw-r--r--. 1 1001 elastic     49 12月  4 22:52 README
-drwxr-xr-x. 9 1001 elastic     91 2月  15 09:55 src
-[root@localhost nginx-1.14.2]# yum list installed | grep gcc
-libgcc.x86_64                        4.8.5-36.el7                      @anaconda
-[root@localhost nginx-1.14.2]# gcc
--bash: gcc: 未找到命令
-[root@localhost nginx-1.14.2]# yum -y install gcc gcc-c++ autoconf pcre pcre-devel make automake
-[root@localhost nginx-1.14.2]# yum -y install httpd-tools
-[root@localhost nginx-1.14.2]# yum install -y zlib zlib-devel
-[root@localhost nginx-1.14.2]# yum install -y openssl openssl-devel</code></pre>
-<p><strong>步骤3：生产Makefile文件</strong></p>
-<blockquote>
-<p>用默认配置生产makefile</p>
-</blockquote>
-<pre><code class="shell">[root@localhost nginx-1.14.2]# ./configure </code></pre>
-<pre><code class="shell">生产以下信息
-Configuration summary
-  + using system PCRE library
-  + OpenSSL library is not used
-  + using system zlib library
-
-  nginx path prefix: &quot;/usr/local/nginx&quot;
-  nginx binary file: &quot;/usr/local/nginx/sbin/nginx&quot;
-  nginx modules path: &quot;/usr/local/nginx/modules&quot;
-  nginx configuration prefix: &quot;/usr/local/nginx/conf&quot;
-  nginx configuration file: &quot;/usr/local/nginx/conf/nginx.conf&quot;
-  nginx pid file: &quot;/usr/local/nginx/logs/nginx.pid&quot;
-  nginx error log file: &quot;/usr/local/nginx/logs/error.log&quot;
-  nginx http access log file: &quot;/usr/local/nginx/logs/access.log&quot;
-  nginx http client request body temporary files: &quot;client_body_temp&quot;
-  nginx http proxy temporary files: &quot;proxy_temp&quot;
-  nginx http fastcgi temporary files: &quot;fastcgi_temp&quot;
-  nginx http uwsgi temporary files: &quot;uwsgi_temp&quot;
-  nginx http scgi temporary files: &quot;scgi_temp&quot;
-</code></pre>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/004.png" alt></p>
-<p><strong>步骤4：编译并安装nginx</strong></p>
-<pre><code class="shell">make &amp;&amp; make install</code></pre>
-<blockquote>
-<p>如果出现以下错误，可能是依赖没安装好：</p>
-<p>make: *** No rule to make target build,  needed by default.  Stop.</p>
-</blockquote>
-<p><strong>步骤5：查看是否安装成功</strong></p>
-<pre><code class="shell">[root@localhost local]# cd nginx
-[root@localhost nginx]# pwd
-/usr/local/nginx
-[root@localhost nginx]# ll
-总用量 4
-drwxr-xr-x. 2 root root 4096 2月  15 10:12 conf
-drwxr-xr-x. 2 root root   40 2月  15 10:12 html
-drwxr-xr-x. 2 root root    6 2月  15 10:12 logs
-drwxr-xr-x. 2 root root   19 2月  15 10:12 sbin
-[root@localhost nginx]# cd sbin/
-[root@localhost sbin]# ll
-总用量 3660
--rwxr-xr-x. 1 root root 3746432 2月  15 10:12 nginx
-[root@localhost sbin]# ./nginx -v
-nginx version: nginx/1.14.2</code></pre>
-<p><strong>步骤6：运行nginx</strong></p>
-<pre><code>[root@localhost nginx]# sbin/nginx -c conf/nginx.conf
-或
-[root@localhost nginx]# sbin/nginx</code></pre><blockquote>
-<p>启动命令：./nginx</p>
-<p>停止命令：./nginx -s stop</p>
-<p>退出命令：./nginx -s quit</p>
-<p>重启命令：./nginx -s reload 或 systemctl restart nginx.service（yum安装才有）</p>
-</blockquote>
-<p><strong>步骤7：访问nginx</strong></p>
-<blockquote>
-<p>注意：访问之前查看防火墙相关配置，查看是否能正常访问</p>
-</blockquote>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/005.png" alt></p>
-<h2 id="操作命令"><a href="#操作命令" class="headerlink" title="操作命令"></a>操作命令</h2><pre><code>nginx -s reload|reopen|stop|quit  #重新加载配置|重启|停止|退出 nginx
-nginx -t   #测试配置是否有语法错误
-
+<pre><code class="shell">&gt; nginx -h
 nginx [-?hvVtq] [-s signal] [-c filename] [-p prefix] [-g directives]
 
--?,-h           : 打开帮助信息
--v              : 显示版本信息并退出
--V              : 显示版本和配置选项信息，然后退出
--t              : 检测配置文件是否有语法错误，然后退出
+-?,-h           : 打印帮助信息
+-v              : 打印显示版本信息
+-V              : 打印显示版本信息，以及 configure 配置项
+-t              : 测试配置文件
 -q              : 在检测配置文件期间屏蔽非错误信息
--s signal       : 给一个 nginx 主进程发送信号：stop（停止）, quit（退出）, reopen（重启）, reload（重新加载配置文件）
--p prefix       : 设置前缀路径（默认是：/usr/local/Cellar/nginx/1.2.6/）
--c filename     : 设置配置文件（默认是：/usr/local/etc/nginx/nginx.conf）
--g directives   : 设置配置文件外的全局指令</code></pre><h2 id="基本配置"><a href="#基本配置" class="headerlink" title="基本配置"></a>基本配置</h2><h3 id="nginx-conf配置说明"><a href="#nginx-conf配置说明" class="headerlink" title="nginx.conf配置说明"></a>nginx.conf配置说明</h3><pre><code># 设置nginx服务的系统使用用户
-#user  nobody;
-
-# 工作进程数量（一般和cpu个数一致就可以了）
-worker_processes  1;
-
-# 错误日志（不配置则启动一下的默认配置）
-#error_log  logs/error.log;
-#error_log  logs/error.log  notice;
-#error_log  logs/error.log  info;
-
-# nginx服务启动的pid
-#pid        logs/nginx.pid;
-
-# 事件
-events {
-    # 每个工作进程允许的最大连接数量（越多越好）
-    worker_connections  1024;
-}
-
-
-# HTTP协议模块
-# 关系：一个http下可以有多个server服务
-# 说明：在http下的配置为全局配置，所有server服务配置可用；在server内的为局部配置；配置启动就近原则
-http {
-
-    # 将某些文件包含到配置中
-    # 如下表示，将同目录下的 mime.types 配置文件包含进来
-    include        mime.types;
-    default_type  application/octet-stream;
-
-    # 日志格式
-    #log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
-    #                  &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
-    #                  &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
-
-    # 访问日志
-    access_log  logs/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-
-    # 长连接，客户端和服务端的连接超时时间
-    #keepalive_timeout  0;
-    keepalive_timeout  65;
-
-    #gzip  on;
-
-    server {
-        # 监听当前nginx所在机器的80端口
-        listen       80;
-        # 监听以localhost为域名访问当前nginx机器的请求 
-        server_name  localhost;
-
-        # 字符集
-        #charset koi8-r;
-
-        # 访问记录日志
-        #access_log  logs/host.access.log  main;
-
-        # 处理请求的资源
-        # 例如：浏览器访问url&quot;nginx机器ip:80&quot;时，默认的处理页面
-        # 相当于 GetMapping(&quot;/&quot;)
-        location / {
-            # 文件路径（html为nginx的根路径下的html文件夹）
-            root   html;
-            # 文件
-            index  index.html index.htm;
-        }
-
-
-        # 当nginx返回一下http状态码时，对应错误码的处理页面
-        #error_page  404              /404.html;
-        error_page   500 502 503 504  /50x.html;
-
-        location = /50x.html {
-            # 文件路径
-            root   html;
-        }
-    }
-
-    # 将/etc/nginx/conf.d/*.conf配置导入（*.conf，为server配置；例如default.conf）
-    # include /etc/nginx/conf.d/*.conf;
-}</code></pre><h3 id="入门案例"><a href="#入门案例" class="headerlink" title="入门案例"></a>入门案例</h3><h4 id="nginx-conf配置"><a href="#nginx-conf配置" class="headerlink" title="nginx.conf配置"></a>nginx.conf配置</h4><blockquote>
-<p>去掉了注释的配置，简化配置方便查看</p>
+-s signal       : 给Master进程发送信号：stop（停止）, quit（退出）, reopen（开启新日志）, reload（重新加载配置）
+-p prefix       : 指定nginx目录
+-c filename     : 指定配置文件
+-g directives   : 指定附加配置路径</code></pre>
+<blockquote>
+<p>kill命令</p>
 </blockquote>
-<pre><code>worker_processes  1;
-
-events {
-    worker_connections  1024;
-}
-
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-
-    # 日志格式。注意：这里配置了&quot;$http_host $request&quot;为了显示是ip访问还是域名访问
-    log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$http_host $request&quot;&#39;
-                      &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
-                      &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
-
-    access_log  logs/access.log  main;
-    sendfile        on;
-    keepalive_timeout  65;
-
-    server {
-        listen       80;
-        server_name  nginx.tandi.cc;
-
-        #charset koi8-r;
-        #access_log  logs/host.access.log  main;
-
-        location / {
-            root   html;
-            index  index.html index.htm;
-        }
-
-        error_page   404 500 502 503 504  /50x.html;
-        location = /50x.html {
-            root   html;
-        }
-    }
-}
-</code></pre><h4 id="处理文件"><a href="#处理文件" class="headerlink" title="处理文件"></a>处理文件</h4><p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/006.png" alt></p>
-<h4 id="日志文件"><a href="#日志文件" class="headerlink" title="日志文件"></a>日志文件</h4><p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/007.png" alt></p>
-<h4 id="浏览器访问测试"><a href="#浏览器访问测试" class="headerlink" title="浏览器访问测试"></a>浏览器访问测试</h4><blockquote>
-<p>做了三次测试访问，如下：</p>
-<p>第一次：192.168.1.102</p>
-<p>第二次：nginx.tandi.cc（事先在hosts配置了ip映射）</p>
-<p>第三次：192.168.1.102/tandi（/tandi，该文件夹不存在，即这次访问会出现404）</p>
-</blockquote>
-<p>第一次：192.168.1.102</p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/008.png" alt></p>
-<p>第二次：nginx.tandi.cc（事先在hosts配置了ip映射）</p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/009.png" alt></p>
-<p>第三次：192.168.1.102/tandi（/tandi，该文件夹不存在，即这次访问会出现404）</p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/010.png" alt></p>
-<h4 id="日志输出"><a href="#日志输出" class="headerlink" title="日志输出"></a>日志输出</h4><p>访问日志</p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/011.png" alt></p>
-<p>错误日志</p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/012.png" alt></p>
-<h3 id="日志配置"><a href="#日志配置" class="headerlink" title="日志配置"></a>日志配置</h3><h4 id="nginx日志种类"><a href="#nginx日志种类" class="headerlink" title="nginx日志种类"></a>nginx日志种类</h4><ul>
-<li>access_log：访问日志，记录每次的请求</li>
-<li>error.log：错误日志，记录错误的请求</li>
+<p>在 Nginx 中除了可以使用 nginx -s 给进程发送信号外，其实还可以通过命令 kill 发送</p>
+<p>1）支持的操作信号：</p>
+<pre><code class="shell">&gt; kill -l
+HUP INT QUIT ILL TRAP ABRT BUS FPE KILL USR1 SEGV USR2 PIPE ALRM TERM STKFLT CHLD CONT STOP TSTP TTIN TTOU URG XCPU XFSZ VTALRM PROF WINCH POLL PWR SYS</code></pre>
+<ul>
+<li>注意以上信号都有与之对应的编号，从1开始往右递增。</li>
 </ul>
-<h4 id="日志配置-1"><a href="#日志配置-1" class="headerlink" title="日志配置"></a>日志配置</h4><p><strong>基本语法</strong></p>
-<p>配置日志语法（log_format）：log_format 格式变量名称 日志出入表达式</p>
-<p><strong>例子:</strong></p>
-<pre><code>log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$http_host $request&quot;&#39;
-                  &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
-                  &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;</code></pre><p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/013.png" alt></p>
-<p><strong>可用于表达式的日志变量：</strong></p>
-<pre><code>$args                    #请求中的参数值
-$query_string            #同 $args
-$arg_NAME                #GET请求中NAME的值
-$is_args                 #如果请求中有参数，值为&quot;?&quot;，否则为空字符串
-$uri                     #请求中的当前URI(不带请求参数，参数位于$args)，可以不同于浏览器传递的$request_uri的值，它可以通过内部重定向，或者使用index指令进行修改，$uri不包含主机名，如&quot;/foo/bar.html&quot;。
-$document_uri            #同 $uri
-$document_root           #当前请求的文档根目录或别名
-$host                    #优先级：HTTP请求行的主机名&gt;&quot;HOST&quot;请求头字段&gt;符合请求的服务器名.请求中的主机头字段，如果请求中的主机头不可用，则为服务器处理请求的服务器名称
-$hostname                #主机名
-$https                   #如果开启了SSL安全模式，值为&quot;on&quot;，否则为空字符串。
-$binary_remote_addr      #客户端地址的二进制形式，固定长度为4个字节
-$body_bytes_sent         #传输给客户端的字节数，响应头不计算在内；这个变量和Apache的mod_log_config模块中的&quot;%B&quot;参数保持兼容
-$bytes_sent              #传输给客户端的字节数
-$connection              #TCP连接的序列号
-$connection_requests     #TCP连接当前的请求数量
-$content_length          #&quot;Content-Length&quot; 请求头字段
-$content_type            #&quot;Content-Type&quot; 请求头字段
-$cookie_name             #cookie名称
-$limit_rate              #用于设置响应的速度限制
-$msec                    #当前的Unix时间戳
-$nginx_version           #nginx版本
-$pid                     #工作进程的PID
-$pipe                    #如果请求来自管道通信，值为&quot;p&quot;，否则为&quot;.&quot;
-$proxy_protocol_addr     #获取代理访问服务器的客户端地址，如果是直接访问，该值为空字符串
-$realpath_root           #当前请求的文档根目录或别名的真实路径，会将所有符号连接转换为真实路径
-$remote_addr             #客户端地址
-$remote_port             #客户端端口
-$remote_user             #用于HTTP基础认证服务的用户名
-$request                 #代表客户端的请求地址
-$request_body            #客户端的请求主体：此变量可在location中使用，将请求主体通过proxy_pass，fastcgi_pass，uwsgi_pass和scgi_pass传递给下一级的代理服务器
-$request_body_file       #将客户端请求主体保存在临时文件中。文件处理结束后，此文件需删除。如果需要之一开启此功能，需要设置client_body_in_file_only。如果将次文件传 递给后端的代理服务器，需要禁用request body，即设置proxy_pass_request_body off，fastcgi_pass_request_body off，uwsgi_pass_request_body off，or scgi_pass_request_body off
-$request_completion      #如果请求成功，值为&quot;OK&quot;，如果请求未完成或者请求不是一个范围请求的最后一部分，则为空
-$request_filename        #当前连接请求的文件路径，由root或alias指令与URI请求生成
-$request_length          #请求的长度 (包括请求的地址，http请求头和请求主体)
-$request_method          #HTTP请求方法，通常为&quot;GET&quot;或&quot;POST&quot;
-$request_time            #处理客户端请求使用的时间,单位为秒，精度毫秒； 从读入客户端的第一个字节开始，直到把最后一个字符发送给客户端后进行日志写入为止。
-$request_uri             #这个变量等于包含一些客户端请求参数的原始URI，它无法修改，请查看$uri更改或重写URI，不包含主机名，例如：&quot;/cnphp/test.php?arg=freemouse&quot;
-$scheme                  #请求使用的Web协议，&quot;http&quot; 或 &quot;https&quot;
-$server_addr             #服务器端地址，需要注意的是：为了避免访问linux系统内核，应将ip地址提前设置在配置文件中
-$server_name             #服务器名
-$server_port             #服务器端口
-$server_protocol         #服务器的HTTP版本，通常为 &quot;HTTP/1.0&quot; 或 &quot;HTTP/1.1&quot;
-$status                  #HTTP响应代码
-$time_iso8601            #服务器时间的ISO 8610格式
-$time_local              #服务器时间（LOG Format 格式）
-$cookie_NAME             #客户端请求Header头中的cookie变量，前缀&quot;$cookie_&quot;加上cookie名称的变量，该变量的值即为cookie名称的值
-$http_NAME               #匹配任意请求头字段；变量名中的后半部分NAME可以替换成任意请求头字段，如在配置文件中需要获取http请求头：&quot;Accept-Language&quot;，$http_accept_language即可
-$http_cookie
-$http_host               #请求地址，即浏览器中你输入的地址（IP或域名）
-$http_referer            #url跳转来源,用来记录从那个页面链接访问过来的
-$http_user_agent         #用户终端浏览器等信息
-$http_x_forwarded_for
-$sent_http_NAME          #可以设置任意http响应头字段；变量名中的后半部分NAME可以替换成任意响应头字段，如需要设置响应头Content-length，$sent_http_content_length即可
-$sent_http_cache_control
-$sent_http_connection
-$sent_http_content_type
-$sent_http_keep_alive
-$sent_http_last_modified
-$sent_http_location
-$sent_http_transfer_encoding</code></pre><h2 id="nginx模块"><a href="#nginx模块" class="headerlink" title="nginx模块"></a>nginx模块</h2><h3 id="模块的种类"><a href="#模块的种类" class="headerlink" title="模块的种类"></a>模块的种类</h3><ul>
-<li><strong>nginx官方模块(nginx自带)</strong></li>
-<li><strong>第三方模块</strong></li>
+<p>2）常用信号：</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>信号</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>HUP</td>
+<td><code>平滑重启</code>。用新配置启动新进程，然后关闭旧进程</td>
+</tr>
+<tr>
+<td>2</td>
+<td>INT</td>
+<td>中断信号</td>
+</tr>
+<tr>
+<td>3</td>
+<td>QUIT</td>
+<td>平滑退出信号</td>
+</tr>
+<tr>
+<td>9</td>
+<td>KILL</td>
+<td>强制杀死进程</td>
+</tr>
+<tr>
+<td>15</td>
+<td>TERM</td>
+<td>（默认）终止信号。和 INT 一样都数据快速停止信号</td>
+</tr>
+<tr>
+<td>18</td>
+<td>CONT</td>
+<td>从 STOP 恢复运行信号</td>
+</tr>
+<tr>
+<td>19</td>
+<td>STOP</td>
+<td>暂停信号</td>
+</tr>
+<tr>
+<td>10</td>
+<td>USR1</td>
+<td>开启新日志。常用来做日志切割</td>
+</tr>
+<tr>
+<td>12</td>
+<td>USR2</td>
+<td><code>平滑升级</code>。使用新版本启动进程，然后关闭旧版本进程</td>
+</tr>
+<tr>
+<td>28</td>
+<td>WINCH</td>
+<td>平滑地<code>关闭 Worker 进程</code>。常和USR2一同使用于平滑升级</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>案例：为正在运行的 Nginx 添加新模块</p>
+</blockquote>
+<p>1）下载第三方模块</p>
+<pre><code class="shell">&gt; git clone https://github.com/replay/ngx_http_consistent_hash.git</code></pre>
+<p>2）进入源文件夹重新生成 Makefile</p>
+<pre><code class="shell">&gt; nginx -V # 查看之前的配置项，做到在原来的基础上添加
+nginx version: nginx/1.14.2
+built by gcc 8.3.1 20191121 (Red Hat 8.3.1-5) (GCC) 
+configure arguments: --prefix=/opt/nginx
+&gt; ./configure --prefix=/opt/nginx --add-module=/root/ngx_http_consistent_hash</code></pre>
+<p>3）重新根据 Makefile 编译</p>
+<pre><code class="shell">&gt; make</code></pre>
+<ul>
+<li>注意无需执行<code>make install</code> 重新安装，否则现有的 Nginx 目录会被覆盖</li>
 </ul>
-<p>使用参考网站：<a href="http://www.nginx.cn/doc/" target="_blank" rel="noopener">http://www.nginx.cn/doc/</a></p>
-<h3 id="查看nginx上的模块信息"><a href="#查看nginx上的模块信息" class="headerlink" title="查看nginx上的模块信息"></a>查看nginx上的模块信息</h3><h4 id="yum方式安装的nginx（看这）"><a href="#yum方式安装的nginx（看这）" class="headerlink" title="yum方式安装的nginx（看这）"></a>yum方式安装的nginx（看这）</h4><pre><code>[root@localhost local]# nginx -v
+<p>4）将 objs 中编译好的二进制 Nginx 命令拷贝到安装目录</p>
+<pre><code class="shell"># 先备份预防万一
+&gt; mv /opt/nginx/sbin/nginx /opt/nginx/sbin/nginx.bak
+&gt; cp objs/nginx /opt/nginx/sbin</code></pre>
+<p>5）验证</p>
+<pre><code class="shell">&gt; nginx -V
 nginx version: nginx/1.14.2
-[root@localhost local]# nginx -V
-nginx version: nginx/1.14.2
-built by gcc 4.8.5 20150623 (Red Hat 4.8.5-28) (GCC) 
-built with OpenSSL 1.0.2k-fips  26 Jan 2017
-TLS SNI support enabled
-configure arguments: --prefix=/etc/nginx --sbin-path=/usr/sbin/nginx --modules-path=/usr/lib64/nginx/modules --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --http-client-body-temp-path=/var/cache/nginx/client_temp --http-proxy-temp-path=/var/cache/nginx/proxy_temp --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp --http-scgi-temp-path=/var/cache/nginx/scgi_temp --user=nginx --group=nginx 
---with-compat 
---with-file-aio 
---with-threads 
+built by gcc 8.3.1 20191121 (Red Hat 8.3.1-5) (GCC) 
+configure arguments: --prefix=/opt/nginx --add-module=/root/ngx_http_consistent_hash # 可以看到新模块已经加入</code></pre>
+<p>6）平滑升级</p>
+<pre><code class="shell">&gt; kill -USR2 14180 # 平滑升级，这里会使用新的二进制文件启动Nginx
+&gt; kill -WINCH 14180 # 通知旧Master进程让其关闭Worker进程
+&gt; kill -QUIT 14180 # 平滑地关闭旧Master进程</code></pre>
+<h2 id="配置了解"><a href="#配置了解" class="headerlink" title="配置了解"></a>配置了解</h2><p>1）官方文档：<a href="https://nginx.org/en/docs/" target="_blank" rel="noopener">https://nginx.org/en/docs/</a></p>
+<p>2）内置变量：<a href="https://nginx.org/en/docs/varindex.html" target="_blank" rel="noopener">https://nginx.org/en/docs/varindex.html</a></p>
+<p>3）第三方模块：<a href="https://www.nginx.com/resources/wiki/modules/" target="_blank" rel="noopener">https://www.nginx.com/resources/wiki/modules/</a></p>
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/003.png" style="zoom:67%;">
 
-# 以model结尾的是模块 &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
---with-http_addition_module 
---with-http_auth_request_module 
---with-http_dav_module 
---with-http_flv_module 
---with-http_gunzip_module 
---with-http_gzip_static_module 
---with-http_mp4_module 
---with-http_random_index_module # 在root指定的目录下，随机选一个文件作为主业
---with-http_realip_module 
---with-http_secure_link_module 
---with-http_slice_module 
---with-http_ssl_module 
---with-http_stub_status_module # nginx客户端模块：监控当前nginx连接信息
---with-http_sub_module # 用于http内容替换
---with-http_v2_module 
-
---with-mail 
---with-mail_ssl_module 
-
---with-stream 
---with-stream_realip_module 
---with-stream_ssl_module 
---with-stream_ssl_preread_module 
-
---with-cc-opt=&#39;-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC&#39; --with-ld-opt=&#39;-Wl,-z,relro -Wl,-z,now -pie&#39;</code></pre><h4 id="源码安装方式的nginx"><a href="#源码安装方式的nginx" class="headerlink" title="源码安装方式的nginx"></a>源码安装方式的nginx</h4><pre><code>[root@localhost nginx]# sbin/nginx -V
-nginx version: nginx/1.14.2
-built by gcc 4.8.5 20150623 (Red Hat 4.8.5-36) (GCC) 
-built with OpenSSL 1.0.2k-fips  26 Jan 2017
-TLS SNI support enabled
-configure arguments: --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module --with-http_realip_module</code></pre><blockquote>
-<p>注意：如果安装的使用 ./configure 直接配置的markdown，那么 sbin/nginx -V 是没有 configure arguments 的；解决办法：<a href="https://blog.csdn.net/weixin_42631858/article/details/81020437" target="_blank" rel="noopener">https://blog.csdn.net/weixin_42631858/article/details/81020437</a> </p>
-<p>如下：</p>
-</blockquote>
-<p>步骤1：从新配置MakeFile</p>
-<pre><code class="shell">[root@localhost nginx-1.14.2]# ./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module --with-http_realip_module</code></pre>
-<p>步骤2：覆盖安装</p>
-<pre><code class="shell">make &amp;&amp; make install</code></pre>
-<h3 id="模块使用例子"><a href="#模块使用例子" class="headerlink" title="模块使用例子"></a>模块使用例子</h3><h4 id="http-stub-status-module配置例子"><a href="#http-stub-status-module配置例子" class="headerlink" title="http_stub_status_module配置例子"></a>http_stub_status_module配置例子</h4><blockquote>
-<p>作用：用于监控nginx客户端连接信息</p>
-</blockquote>
-<p><strong>1）配置 default.conf 文件</strong></p>
 <blockquote>
-<p>yum安装才有该文件(因为nginx.conf include了该文件)</p>
-<p>如果源码安装，直接配置 nginx.conf 即可</p>
+<p>默认配置样例</p>
 </blockquote>
-<pre><code class="shell">server {
-    listen       80;
-    server_name  localhost;
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/002.png" style="zoom: 67%;">
 
-    # configure http_stub_status_module
-    location /mystatus {
-        stub_status;
-    }
-
-    location / {
-        root   /usr/share/nginx/html;
-        index  index.html index.htm;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre>
-<p><strong>2）校验配置文件看是否有错误</strong></p>
-<pre><code class="shell]">[root@localhost ~]# nginx -tc /etc/nginx/nginx.conf 
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful</code></pre>
-<p><strong>3）重启或启动nginx服务</strong></p>
-<pre><code class="shellp">[root@localhost ~]# nginx -s reload -c /etc/nginx/nginx.conf
-或
-[root@localhost ~]# nginx  -c /etc/nginx/nginx.conf</code></pre>
-<p><strong>4）浏览器访问</strong></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/014.png" alt></p>
-<h4 id="http-random-index-module配置例子"><a href="#http-random-index-module配置例子" class="headerlink" title="http_random_index_module配置例子"></a>http_random_index_module配置例子</h4><blockquote>
-<p>作用：</p>
-<ol>
-<li>在root指定的目录下，随机选一个文件作为主页</li>
-<li>注意：不会以.开头的文件作为主页（.开头为linux隐藏文件）</li>
-</ol>
-</blockquote>
-<p><strong>1）配置default.conf</strong></p>
-<pre><code class="shell">server {
-    listen       80;
-    server_name  localhost;
-
-    # configure http_stub_status_module
-    location /mystatus {
-        stub_status;
-    }
-
-    location / {
-        root   /usr/share/nginx/html;
-
-        #  configure http_random_index_module
-        random_index on;
-        # index  index.html index.htm;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre>
-<p>注意：以下为目录下的页面</p>
-<pre><code>[root@localhost html]# ll
-总用量 8
--rw-r--r--. 1 root root 537 12月  4 23:03 50x.html
--rw-r--r--. 1 root root 612 12月  4 23:03 index.html</code></pre><p><strong>2）重启或启动nignx服务</strong></p>
-<pre><code>nginx -s reload -c /etc/nginx/nginx.conf</code></pre><p><strong>3）浏览器访问</strong></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/015.png" alt></p>
-<h4 id="连接限制和请求限制"><a href="#连接限制和请求限制" class="headerlink" title="连接限制和请求限制"></a>连接限制和请求限制</h4><blockquote>
-<ol>
-<li>http/https请求依赖于底层的tcp请求；tcp请求连接采用 3次 握手和 4次 挥手来处理连接和中断</li>
-<li>其中一个连接可以有多个请求（http1.1）</li>
-<li>一般用于防止恶意请求服务器导致服务器瘫痪或影响性能</li>
-</ol>
-</blockquote>
-<p><strong>配置语法：</strong></p>
-<p>limit_conn_zone</p>
-<pre><code>语法: limit_conn_zone $variable zone=name:size;
-作用：限制连接数
-默认值: none
-配置段: http
-
-例子：
-limit_conn_zone $binary_remote_addr zone=addr:1m;
-说明》》
-当$variable为$binary_remote_addr时，表示以客户端ip作为限制依据
-addr:1m：表示生成一个大小为1M，名字为addr的内存区域，用来存储访问的频次信息
-表示:区域名称为addr（自定义），占用空间大小为1m</code></pre><p>limit_req_zone</p>
-<pre><code>语法: limit_req_zone $variable zone=name:size rate=rate;
-作用：限制请求频率
-默认值: none
-配置段: http
-
-例子：
-limit_req_zone $binary_remote_addr zone=req_zone:2m rate=1r/s;
-说明》》
-当$variable为$binary_remote_addr时，表示以客户端ip作为限制依据
-req_zone:2m：表示生成一个大小为2M，名字为req_zone的内存区域，用来存储访问的频次信息
-rate=1r/s：表示允许相同标识的客户端的访问频次，这里限制每秒1次。还可以有比如30r/m的，即限制每2秒访问一次，即每2秒才处理一个请求
-表示:区域名称为req_zone（自定义），占用空间大小为2m，平均处理的请求频率不能超过每秒1次</code></pre><p><strong>测试例子</strong></p>
-<p><strong>1）default.conf配置</strong></p>
-<pre><code class="shell"># 定义限制条件策略
-limit_conn_zone $binary_remote_addr zone=conn_zone:1m;
-limit_req_zone $binary_remote_addr zone=req_zone:500m rate=1r/s;
-
-server {
-    listen       80;
-    server_name  localhost;
-
-    location / {
-        root   /usr/share/nginx/html;
-
-        # 表示同一时刻，只允一个ip连接
-        #limit_conn conn_zone 1;
-        # burst=3：表示在rate=1r/s基础上再延时处理3个请求
-        #limit_req zone=req_zone burst=3;
-        # burst=3 nodelay：表示在rate=1r/s基础上再不延时地处理3个请求
-        #limit_req zone=req_zone burst=3 nodelay;
-        # 频率处理限制为1个，同一时间内只处理一个请求
-        limit_req zone=req_zone;
-
-        index  index.html index.htm;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre>
-<p><strong>2）重启nginx</strong></p>
-<pre><code class="shell">nginx -s reload -c /etc/nginx/nginx.conf</code></pre>
-<p><strong>3）使用ab发送请求</strong></p>
 <blockquote>
-<p>ab 为apache的压力测试工具</p>
+<p>模块配置了解</p>
 </blockquote>
-<pre><code class="shell"># -c 表示请求数； -c 表示并发数
-# 表示1s并发20个请求
-[root@localhost nginx]# ab -n 20 -c 20 http://127.0.0.1/</code></pre>
-<p><strong>4）查看访问日志和错误日志</strong></p>
-<blockquote>
-<p>说明：如果配置起作用的话，因为配置了 rate=1r/s 所以20个连接中只会有1个被处理</p>
-<p>响应码503：表示临时的服务器维护或者过载</p>
-</blockquote>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/016.png" alt></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/017.png" alt></p>
-<h4 id="访问限制（ip限制）"><a href="#访问限制（ip限制）" class="headerlink" title="访问限制（ip限制）"></a>访问限制（ip限制）</h4><p><strong>放行配置语法：</strong></p>
-<pre><code>syntax: allow [ address | CIDR | all ]
-default: no
-context: http, server, location, limit_except # 可配置的位置
-以上描述的网络地址有权直接访问</code></pre><p><strong>禁止配置语法：</strong></p>
-<pre><code>syntax: deny [ address | CIDR | all ]
-default: no
-context: http, server, location, limit_except # 可配置的位置
-以上描述的网络地址拒绝访问</code></pre><p><strong>使用例子：</strong></p>
-<p>default.conf</p>
-<pre><code class="shell">server {
-    listen       80;
-    server_name  localhost;
-
-    location / {
-
-        # 访问限制（按照配置顺序匹配）
-        deny    192.168.1.101;    # 禁止该ip访问
-        allow    192.168.1.102;    # 允许该ip访问
-        deny    all; # 禁止其他
-
-        root   /usr/share/nginx/html;
-        index  index.html index.htm;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/018.png" alt></p>
-<p><strong>局限性</strong></p>
-<p>当客户端通过其他机器代理访问，那么限制就不生效了，因为deny只限制了客户端的ip但没有限制到其他机器的ip</p>
-<h4 id="用户登录认证"><a href="#用户登录认证" class="headerlink" title="用户登录认证"></a>用户登录认证</h4><p><strong>1）基础配置语法：</strong></p>
-<pre><code>语法： auth_basic [ text|off ]
-默认值： auth_basic off
-作用域： http, server, location, limit_except
-该指令包含用于 HTTP 基本认证 的测试名和密码。分配的参数用于认证领域。值 &quot;off&quot; 可以使其覆盖来自上层指令的继承性</code></pre><p><strong>2）用户账号文件配置语法：</strong></p>
-<pre><code>语法： auth_basic_user_file the_file
-默认值： no
-作用域： http, server, location, limit_except
-该指令为某认证领域指定 htpasswd 文件名。</code></pre><p>文件格式类似于下面的内容：</p>
-<blockquote>
-<p>密码必须使用函数 crypt(3) 加密。 你可以使用来自 Apache 的 htpasswd 工具来创建密码文件</p>
-<p>注意： htpasswd 工具centos7（基于服务器）自带，如果没有可以yum安装</p>
-</blockquote>
-<pre><code>用户名:密码
-用户名2:密码2:注释
-用户名3:密码3然後執行</code></pre><p><strong>使用例子：</strong></p>
-<p>步骤1：使用htpasswd创建加密键值对文件</p>
-<blockquote>
-<p>注意路径</p>
-<p>账号明文：tandi/tandi</p>
-<p>生产的加密账号：tandi:$apr1$eFDiGd3R$A.FV3Fr52QmmNiE7/n6Le.</p>
-</blockquote>
-<pre><code class="shell">[root@localhost nginx]# htpasswd -c ./account tandi
-New password: tandi
-Re-type new password: tandi
-Adding password for user tandi
-[root@localhost nginx]# ll
-总用量 40
--rw-r--r--. 1 root root   44 2月  17 07:13 account
-......
-[root@localhost nginx]# more account 
-tandi:$apr1$eFDiGd3R$A.FV3Fr52QmmNiE7/n6Le.</code></pre>
-<p>步骤2：配置default.conf</p>
-<pre><code class="shell">server {
-    listen       80;
-    server_name  localhost;
-
-    location / {
-        # 启用用户登录认证
-        auth_basic &quot;&gt;&gt;&gt;&gt;&gt; input your password!!! &lt;&lt;&lt;&lt;&lt;&quot;;
-        # 用户账号文件
-        auth_basic_user_file /etc/nginx/account;
-
-        root   /usr/share/nginx/html;
-        index  index.html index.htm;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre>
-<p>步骤3：检测文件语法并重启服务</p>
-<pre><code class="shell">[root@localhost nginx]# nginx -tc /etc/nginx/nginx.conf 
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
-[root@localhost nginx]# nginx -s reload
-</code></pre>
-<p>步骤4：浏览器访问</p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/019.png" alt></p>
-<p><strong>局限性</strong></p>
-<ol>
-<li>需要添加用户密码文件</li>
-<li>造成出现nginx一套账号密码和应用一套账号密码的情况，即需要同时管理多套账号密码</li>
-</ol>
-<p>解决方案：</p>
-<p>方法1：nginx+lua实现高效验证</p>
-<p>方法2：nginx+ldap打通，利用nginx-auth-ldap模块（该模块另行下载）</p>
-<h2 id="静态资源服务"><a href="#静态资源服务" class="headerlink" title="静态资源服务"></a>静态资源服务</h2><h3 id="什么是静态资源？"><a href="#什么是静态资源？" class="headerlink" title="什么是静态资源？"></a>什么是静态资源？</h3><p>服务器直接能返回无需处理的资源，如图片、视频、文件、html、css、js等等</p>
-<h3 id="提高静态资源加载效率的方案"><a href="#提高静态资源加载效率的方案" class="headerlink" title="提高静态资源加载效率的方案"></a>提高静态资源加载效率的方案</h3><ul>
-<li>浏览器缓存</li>
-<li>CDN静态资源缓存（nginx作静态资源的分发；分发到client端经过的（距离近）的CDN保存；使用sendfile配置模块）</li>
+<p>全局块（对整个Nginx起作用）</p>
+<ul>
+<li>指定 Nginx 的管理用户及其组信息</li>
+<li>指定启动时拉起的 Worker 进程的数量</li>
+<li>进程 PID 号的存放位置</li>
+<li>日志存放路径和日志类型配置</li>
+<li>引入其它配置</li>
 </ul>
-<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><h4 id="sendfile配置"><a href="#sendfile配置" class="headerlink" title="sendfile配置"></a>sendfile配置</h4><blockquote>
-<p>作用：用于读取静态资源文件</p>
+<p>events块</p>
+<ul>
+<li>指定 Worker 进程同一时刻能够连接客户端的最大数量<ul>
+<li>最大连接数 = worker_processes * worker_connections</li>
+<li>注意：worker_connections 不能超过文件系统所允许打开的最大文件数量。可以通过 <code>cat /proc/sys/fs/file-max</code> 查看</li>
+</ul>
+</li>
+<li>事件驱动模型选择</li>
+<li>是否允许同时接受多个网络连接</li>
+</ul>
+<p>http模块</p>
+<ul>
+<li>媒体类型</li>
+<li>代理配置</li>
+<li>缓存配置</li>
+<li>日志定义</li>
+<li>连接配置</li>
+<li>压缩配置</li>
+<li>零拷贝配置</li>
+</ul>
+<p>server块</p>
+<ul>
+<li>虚拟主机。可配置多个</li>
+<li>监听端口</li>
+<li>域名关联</li>
+<li>错误码页面配置</li>
+<li>安全通信配置</li>
+</ul>
+<p>location块</p>
+<ul>
+<li>虚拟主机资源。可配置多个</li>
+</ul>
+<h2 id="日志了解"><a href="#日志了解" class="headerlink" title="日志了解"></a>日志了解</h2><p>访问日志、错误日志</p>
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/007.png">
+
+<p>如果日志格式不满足需求，则可以通过 log_format、access_log 指令和配合<a href="https://nginx.org/en/docs/varindex.html" target="_blank" rel="noopener">内置变量</a>修改。例子如下：</p>
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/008.png" style="zoom:80%;">
+
+<h2 id="架构及请求处理流程"><a href="#架构及请求处理流程" class="headerlink" title="架构及请求处理流程"></a>架构及请求处理流程</h2><blockquote>
+<p>架构图</p>
 </blockquote>
-<pre><code>syntax: sendfile [ on|off ]
-default: sendfile off
-context: http, server, location</code></pre><h4 id="tcp-nopush配置"><a href="#tcp-nopush配置" class="headerlink" title="tcp_nopush配置"></a>tcp_nopush配置</h4><blockquote>
-<p>作用：在sendfile开启情况下，提高网络包的传输效率；一般用于大文件</p>
-</blockquote>
-<pre><code>syntax: tcp_nopush [on|off]
-default: tcp_nopush off
-context: http, server, location</code></pre><h4 id="gzip相关配置"><a href="#gzip相关配置" class="headerlink" title="gzip相关配置"></a>gzip相关配置</h4><pre><code>【gzip】
-语法: gzip on|off
-默认值: gzip off
-作用域: http, server, location, if (x) location
-作用：用于传输时文件压缩；例如浏览器访问静态资源时获取的静态文件会较小，所以速度就加快
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/001.png" style="zoom: 80%;">
 
-【gzip_comp_level】
-语法: gzip_comp_level 1..9
-默认值: gzip_comp_level 1
-作用域: http, server, location
-作用：gzip压缩比，1 压缩比最小处理速度最快，9 压缩比最大但处理最慢（传输快但比较消耗cpu）
-
-【gzip_types】
-语法: gzip_types mime-type [mime-type ...]
-默认值: gzip_types text/html
-作用域: http, server, location
-作用：匹配MIME类型进行压缩，（无论是否指定）&quot;text/html&quot;类型总是会被压缩的</code></pre><p><strong>使用例子</strong></p>
-<p><strong>1）nginx.conf-开启之前</strong></p>
-<pre><code class="shell">user  nginx;
-worker_processes  1;
-
-error_log  /var/log/nginx/error.log warn;
-pid        /var/run/nginx.pid;
-
-events {
-    worker_connections  1024;
-}
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
-                      &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
-                      &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-    keepalive_timeout  65;
-
-    server {
-        listen       80;
-        server_name  localhost;
-
-        location ~ .*\.(jpg|gif|png) {
-            #gzip on; # 启动gzip压缩
-            #gzip_comp_level 2; # 指定压缩级别（1-9）越小压缩越厉害，但耗费cpu
-            #gzip_types gzip_types image/jpeg; # 必须配置，
-            # 其中无论是否指定 &quot;text/html&quot;类型总是会被压缩的
-            # 该目录有文件 1.jpg 2.jpg
-            root /usr/local/nginx_img;
-        }
-
-        location ~ .*\.(txt|html) {
-            #gzip on;
-            #gzip_comp_level 1;    # 指定压缩级别（1-9）越小压缩越厉害，但耗费cpu
-            # 其中无论是否指定 &quot;text/html&quot;类型总是会被压缩的
-            #gzip_types gzip_types image/jpeg; 
-            # 该目录有文件 1.txt 2.html 
-            root /usr/local/nginx_file;
-        }
-
-        error_page   404 500 502 503 504  /50x.html;
-        location = /50x.html {
-            root   /usr/share/nginx/html;
-        }
-    }
-
-    #include /etc/nginx/conf.d/*.conf;
-}
-</code></pre>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/020.png" alt></p>
-<p><strong>2）nginx.conf-开启之后</strong></p>
-<pre><code class="shell">user  nginx;
-worker_processes  1;
-
-error_log  /var/log/nginx/error.log warn;
-pid        /var/run/nginx.pid;
-
-events {
-    worker_connections  1024;
-}
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
-                      &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
-                      &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-    keepalive_timeout  65;
-
-    server {
-        listen       80;
-        server_name  localhost;
-
-        location ~ .*\.(jpg|gif|png) {
-            gzip on; # 启动gzip压缩
-            gzip_comp_level 2; # 指定压缩级别（1-9）越小压缩越厉害，但耗费cpu
-            gzip_types gzip_types image/jpeg; # 必须配置
-            # 该目录有文件 1.jpg 2.jpg
-            root /usr/local/nginx_img;
-        }
-
-        location ~ .*\.(txt|html) {
-            gzip on;
-            gzip_comp_level 1;    # 指定压缩级别（1-9）越小压缩越厉害，但耗费cpu
-            gzip_types gzip_types text/plain;  # 必须配置
-            # 该目录有文件 1.txt 2.html 
-            root /usr/local/nginx_file;
-        }
-
-        error_page   404 500 502 503 504  /50x.html;
-        location = /50x.html {
-            root   /usr/share/nginx/html;
-        }
-    }
-
-    #include /etc/nginx/conf.d/*.conf;
-}
-</code></pre>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/021.png" alt></p>
-<h4 id="开启禁用缓存配置"><a href="#开启禁用缓存配置" class="headerlink" title="开启禁用缓存配置"></a>开启禁用缓存配置</h4><pre><code>【expires】
-语法：expires [modifiel] time;
-     expires epoch|max|off;
-默认：expires off;
-范围：http、server、location、if in location
-作用：设置缓存时间
-
-【add_header】
-add_header Cache-Control no-store;
-作用：禁用浏览器缓存，每次都需要从服务器获取新的内容</code></pre><p><strong>配置例子</strong></p>
-<p>default.conf</p>
-<pre><code class="shell">server {
-    listen       80;
-    server_name  localhost;
-
-    location ~ .*\.(jpg|gif|png) {
-        gzip on; # 启动gzip压缩
-        gzip_comp_level 2; # 指定压缩级别（1-9）越小压缩越厉害，但耗费cpu
-        gzip_types gzip_types image/jpeg; # 必须配置
-        #expires 24h; # 过期时间为24小时
-        #禁止缓存，每次都从服务器请求
-        add_header Cache-Control no-store;
-        root /usr/local/nginx_img;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre>
-<h4 id="跨域访问配置"><a href="#跨域访问配置" class="headerlink" title="跨域访问配置"></a>跨域访问配置</h4><p><strong>配置语法</strong></p>
-<pre><code>语法：add_header name value [always];
-默认：不配置
-范围：http、server、location、if in location
-作用：设置response响应头信息</code></pre><p><strong>使用例子</strong></p>
+<p>Master进程职责</p>
+<ul>
+<li>配置文件加载和解释</li>
+<li>数据结构初始化</li>
+<li>模块配置和注册</li>
+<li>信号处理</li>
+<li>平滑升级</li>
+<li>维护 Worker 进程</li>
+</ul>
+<p>Worker进程职责</p>
+<ul>
+<li>使用基于复用IO的主从Reactor模式处理网络请求</li>
+<li>模块的使用</li>
+<li>缓存的维护<ul>
+<li>AIO</li>
+<li>zero-copy（sendfile）</li>
+<li>mmap</li>
+</ul>
+</li>
+</ul>
 <blockquote>
-<p> 例子准备：需要虚拟机两台（或者一台不同端口），都装有nginx</p>
+<p>请求处理流程</p>
 </blockquote>
-<p>机器1-配置文件</p>
-<pre><code>server {
-    listen       80;
-    server_name  localhost;
+<p><strong>整体处理流程</strong></p>
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/004.png" style="zoom: 80%;">
 
-    location / {
-        root /usr/share/nginx/html;
-        index index.html;
-    }
+<p><strong>复用IO请求处理理解：</strong></p>
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/005.png" style="zoom: 80%;">
 
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre><p>机器1-造成跨域的html</p>
-<pre><code class="html">&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;head&gt;
-&lt;meta charset=&quot;utf-8&quot;/&gt;
-&lt;title&gt;Welcome to nginx!&lt;/title&gt;
-&lt;!-- jquery在线引用 --&gt;
-&lt;script src=&quot;http://libs.baidu.com/jquery/2.1.4/jquery.min.js&quot;&gt;&lt;/script&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;h1&gt;Welcome to nginx!&lt;/h1&gt;
-&lt;script&gt;
-    $(function(){
-        $.ajax({
-            type: &quot;GET&quot;,
-            url: &quot;http://192.168.1.100/index.html&quot;,
-            success: function(data){
-                alert(&quot;跨域请求成功&quot;);
-            },
-            error: function(){
-                alert(&quot;跨域请求失败！！！！&quot;);
-            }
-        });
-    });
-&lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;</code></pre>
-<p>机器2-配置文件</p>
-<pre><code>server {
-        listen       80;
-        server_name  localhost;
-
-        location / {
-            # 允许所有请求跨域
-            #add_header Access-Control-Allow-Origin *; 
-            # 允许ip为192.168.1.102跨域到当前机器
-            #add_header Access-Control-Allow-Origin http://192.168.1.102; 
-            # 允许跨域的请求方法
-            #add_header Access-Control-Allow-Methods GET,POST,PUT,DELETE,OPTIONS;
-
-            root /usr/share/nginx/html;
-            index index.html;
-        }
-
-        error_page   404 500 502 503 504  /50x.html;
-        location = /50x.html {
-                root   /usr/share/nginx/html;
-        }
-}</code></pre><p><strong>跨域之前</strong></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/022.png" alt></p>
-<p><strong>跨域之后</strong></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/023.png" alt></p>
-<h4 id="防盗链"><a href="#防盗链" class="headerlink" title="防盗链"></a>防盗链</h4><blockquote>
-<p>什么是防盗链？</p>
-<p>即没有登录就直接访问</p>
-</blockquote>
-<p><strong>配置语法</strong>:</p>
-<pre><code>语法：valid_referers none|blocked|server_names|string ...;
-默认：不配置
-范围：server、location</code></pre><p><strong>简单使用例子：</strong></p>
-<pre><code>server {
-    listen       80;
-    server_name  localhost;
-
-    location / {
-        root /usr/share/nginx/html;
-        index index.html;
-    }
+<p><strong>指令处理顺序：</strong></p>
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/006.png" style="zoom: 80%;">
 
 
-    location ~ .*\.(jpg|gif|png) {
 
-        # 防盗链配置
-        # 不带referers信息且允许非标准的请求访问
-        #valid_referers none blocked 192.168.1.102;
-        # 仅允许http://192.168.1.102访问
-        valid_referers blocked http://192.168.1.102;
-        if ($invalid_referer) {
-            return 403;
-        }
-
-        root /usr/local/nginx_img;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre><p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/024.png" alt></p>
-<h4 id="防爬虫"><a href="#防爬虫" class="headerlink" title="防爬虫"></a>防爬虫</h4><p>参考：<a href="http://blog.51cto.com/9025736/2061947" target="_blank" rel="noopener">http://blog.51cto.com/9025736/2061947</a></p>
-<h2 id="http代理服务"><a href="#http代理服务" class="headerlink" title="http代理服务"></a>http代理服务</h2><h3 id="正向代理"><a href="#正向代理" class="headerlink" title="正向代理"></a>正向代理</h3><p><strong>例子1-vpn：</strong></p>
-<p>vpn就是正向代理，国内无法访问google，这时需要使用一台能够访问google的机器作为代理服务器，那么我们的机器连接上该机器即可达到访问google的目的</p>
-<p><strong>例子2-内网上网：</strong></p>
-<p>有一些公司只允许使用内容，目的是提高安全性，而整个公司可能只有一台作为关口可以连接网络的服务器，这只需要在浏览器将这台服务器配置成代理才能够上网</p>
-<p><strong>图解：</strong></p>
-<blockquote>
-<p>图片源自网络</p>
-</blockquote>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/025.png" alt></p>
-<h3 id="反向代理"><a href="#反向代理" class="headerlink" title="反向代理"></a>反向代理</h3><p><strong>说明：</strong></p>
-<ol>
-<li><p>反向代理和正向代理相反，反向代理代理的是”内网”中的服务器，即代理的对象不同，这里的“内网“指的是不直接对外提供服务的服务器；</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><p><a href="https://programming.vip/docs/details-of-event-driven-process-of-nginx-based-on-epoll-model.html" target="_blank" rel="noopener">Details of event driven process of nginx based on epoll model</a></p>
 </li>
-<li><p>而反向代理服务器，就是作为这些（1-多台）”内网”服务器的关口服务器，来代表他们对外提供服务，但需要清楚的是处理请求的还是”内网“中的服务器；</p>
+<li><p><a href="https://www.nginx.com/blog/inside-nginx-how-we-designed-for-performance-scale/" target="_blank" rel="noopener">Inside NGINX: How We Designed for Performance &amp; Scale</a></p>
 </li>
-<li><p>常见的反向代理就是，有多台提供服务的服务器（对用户透明），这时使用一个反向代理服务器来代理这多台提供服务的服务器对外提供服务；如淘宝这些大型购物网站</p>
+<li><p><a href="https://www.nginx.com/blog/thread-pools-boost-performance-9x/" target="_blank" rel="noopener">Thread Pools in NGINX Boost Performance 9x!</a></p>
 </li>
-</ol>
-<p><strong>图解：</strong></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/026.png" alt></p>
-<h3 id="正向代理配置例子"><a href="#正向代理配置例子" class="headerlink" title="正向代理配置例子"></a>正向代理配置例子</h3><blockquote>
-<p>以下配置按照正反代理概念，即可称为正向代理也可称为反向代理</p>
-<p>正向代理：因为客户端无法直接访问机器2，这时机器1代理客户端访问机器2，相当充当于vpn角色</p>
-<p>反向代理：机器2不对外提供服务，机器1代理机器2对外提供服务</p>
-</blockquote>
-<p><strong>机器1：</strong></p>
-<pre><code>server {
-    listen       80;
-    server_name  nginx.tandi.cc;
-    # 配置dns服务器的目的是，用于域名解析
-    #resolver 8.8.8.8；
+</ul>
 
-    location / {
-        # 代理来自客户端的请求
-        # 当前nginx服务器相当于vpn
-        # proxy_pass http://192.168.1.100;
-        proxy_pass http://$http_host$request_uri;
-    }
-
-    error_page   404 500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}</code></pre><p><strong>机器2：</strong></p>
-<pre><code>server {
-    listen       80;
-    server_name  localhost;
-
-    location / {
-        # 只允许该ip访问（机器1）
-        allow   192.168.1.102;  
-        # 禁止其他ip访问
-        deny    all; 
-
-        root /usr/share/nginx/html;
-        index index.html;
-    }
-}</code></pre><p><strong>未配置浏览器代理：</strong><br><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/027.png" alt></p>
-<p><strong>配置浏览器代理：</strong></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/028.png" alt></p>
-<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/029.png" alt></p>
-<h2 id="扩展知识"><a href="#扩展知识" class="headerlink" title="扩展知识"></a>扩展知识</h2><h3 id="linux中awk命令的使用"><a href="#linux中awk命令的使用" class="headerlink" title="linux中awk命令的使用"></a>linux中awk命令的使用</h3><blockquote>
-<p>表示查看文件access.log并筛选出ip</p>
-</blockquote>
-<pre><code class="shell">文件内容如下
-127.0.0.1 - - [17/Feb/2019:06:16:06 +0800] &quot;GET /index.html HTTP/1.0&quot; 200 612 &quot;-&quot; &quot;ApacheBench/2.3&quot; &quot;-&quot;
-127.0.0.1 - - [17/Feb/2019:06:16:06 +0800] &quot;GET /index.html HTTP/1.0&quot; 503 537 &quot;-&quot; &quot;ApacheBench/2.3&quot; &quot;-&quot;
-....
-
-例子1
-    awk -F &#39;- -&#39; &#39;{print $1}&#39;
-    表示：每一行以&#39;- -&#39;作为切割点并打印出第一个部分
-    [root@localhost nginx]# cat /var/log/nginx/access.log | awk -F &#39;- -&#39; &#39;{print $1}&#39;
-
-例子2
-    表示：RN表示 cat -n 中的行号
-    [root@localhost nginx]# cat -n /var/log/nginx/access.log | awk -F &#39;- -&#39; &#39;{print RN $1}&#39;
-</code></pre>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
     文章作者: TanDi <br/>
     文章链接: 
     <a href="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/">
-      Nginx的基本使用
+      Nginx使用
     </a> <br/>
     版权声明: 转载请注明来自 
     <a href="https://tandi.pub">
@@ -1206,7 +459,7 @@ add_header Cache-Control no-store;
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
           admin: ['oomgomgxx'],
-          id: md5('Nginx的基本使用'),
+          id: md5('Nginx使用'),
           distractionFreeMode: false
         })
         gitalk.render('gitalk-container')           
@@ -1220,7 +473,7 @@ add_header Cache-Control no-store;
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么"><span class="toc-text">是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#优势"><span class="toc-text">优势</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用来做什么"><span class="toc-text">常用来做什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#安装"><span class="toc-text">安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#方法1：yum安装"><span class="toc-text">方法1：yum安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#方法2：源码安装"><span class="toc-text">方法2：源码安装</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#操作命令"><span class="toc-text">操作命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本配置"><span class="toc-text">基本配置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#nginx-conf配置说明"><span class="toc-text">nginx.conf配置说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#入门案例"><span class="toc-text">入门案例</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#nginx-conf配置"><span class="toc-text">nginx.conf配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#处理文件"><span class="toc-text">处理文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#日志文件"><span class="toc-text">日志文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#浏览器访问测试"><span class="toc-text">浏览器访问测试</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#日志输出"><span class="toc-text">日志输出</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#日志配置"><span class="toc-text">日志配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#nginx日志种类"><span class="toc-text">nginx日志种类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#日志配置-1"><span class="toc-text">日志配置</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#nginx模块"><span class="toc-text">nginx模块</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#模块的种类"><span class="toc-text">模块的种类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查看nginx上的模块信息"><span class="toc-text">查看nginx上的模块信息</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#yum方式安装的nginx（看这）"><span class="toc-text">yum方式安装的nginx（看这）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#源码安装方式的nginx"><span class="toc-text">源码安装方式的nginx</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#模块使用例子"><span class="toc-text">模块使用例子</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#http-stub-status-module配置例子"><span class="toc-text">http_stub_status_module配置例子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#http-random-index-module配置例子"><span class="toc-text">http_random_index_module配置例子</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#连接限制和请求限制"><span class="toc-text">连接限制和请求限制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#访问限制（ip限制）"><span class="toc-text">访问限制（ip限制）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户登录认证"><span class="toc-text">用户登录认证</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#静态资源服务"><span class="toc-text">静态资源服务</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是静态资源？"><span class="toc-text">什么是静态资源？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#提高静态资源加载效率的方案"><span class="toc-text">提高静态资源加载效率的方案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#配置"><span class="toc-text">配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#sendfile配置"><span class="toc-text">sendfile配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#tcp-nopush配置"><span class="toc-text">tcp_nopush配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#gzip相关配置"><span class="toc-text">gzip相关配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#开启禁用缓存配置"><span class="toc-text">开启禁用缓存配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#跨域访问配置"><span class="toc-text">跨域访问配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#防盗链"><span class="toc-text">防盗链</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#防爬虫"><span class="toc-text">防爬虫</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#http代理服务"><span class="toc-text">http代理服务</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#正向代理"><span class="toc-text">正向代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#反向代理"><span class="toc-text">反向代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#正向代理配置例子"><span class="toc-text">正向代理配置例子</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#扩展知识"><span class="toc-text">扩展知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#linux中awk命令的使用"><span class="toc-text">linux中awk命令的使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编译安装"><span class="toc-text">编译安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令使用"><span class="toc-text">命令使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置了解"><span class="toc-text">配置了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#日志了解"><span class="toc-text">日志了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#架构及请求处理流程"><span class="toc-text">架构及请求处理流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>

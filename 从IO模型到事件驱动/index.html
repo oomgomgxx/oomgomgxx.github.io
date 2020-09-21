@@ -146,7 +146,8 @@
 <h2 id="IO的5种模型"><a href="#IO的5种模型" class="headerlink" title="IO的5种模型"></a>IO的5种模型</h2><h3 id="阻塞IO"><a href="#阻塞IO" class="headerlink" title="阻塞IO"></a>阻塞IO</h3><blockquote>
 <p>图解</p>
 </blockquote>
-<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/001.png" alt></p>
+<img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/001.png" style="zoom:80%;">
+
 <blockquote>
 <p>特点</p>
 </blockquote>
@@ -194,7 +195,8 @@
 <h3 id="非阻塞IO"><a href="#非阻塞IO" class="headerlink" title="非阻塞IO"></a>非阻塞IO</h3><blockquote>
 <p>图解</p>
 </blockquote>
-<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/002.png" alt></p>
+<img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/002.png" style="zoom:80%;">
+
 <blockquote>
 <p>特点</p>
 </blockquote>
@@ -212,7 +214,8 @@
 <h3 id="复用IO"><a href="#复用IO" class="headerlink" title="复用IO"></a>复用IO</h3><blockquote>
 <p>图解</p>
 </blockquote>
-<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/003.png" alt></p>
+<img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/003.png" style="zoom:80%;">
+
 <blockquote>
 <p>特点</p>
 </blockquote>
@@ -289,36 +292,37 @@
 <blockquote>
 <p>Selector 多路复用器实现方式</p>
 </blockquote>
-<p>select实现</p>
-<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/004.png" alt></p>
+<p>select 流程以及特点：</p>
+<img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/004.png" style="zoom:80%;">
+
 <ul>
-<li>无状态，每次调用都会重新装载感兴趣文件描述符内容</li>
-<li>有最大文件描述符限制（相当于并发能力存在局限），默认为线程能够打开的最大文件描述符数（可以执行 <code>ulimit -n</code> 查看）</li>
-<li>可移性植高，原因是很多类 Unix 系统都支持</li>
-<li>效率较低，每次调用都需要轮询所有感兴趣的文件描述符数据，所以操作<code>时间复杂度为O(n)</code>，会随着文件描述符数增加而导致性能下降</li>
+<li>无状态，每次调用都会重新将感兴趣的文件描述符内容复制给内核处理</li>
+<li>调用时内核都需要逐一遍历事件集，导致并发越高性能越低。且 select 需要在返回的集合中轮询出就绪的文件描述符</li>
+<li>存在文件描述数量符限制（既并发能力存在局限）。可以执行 <code>ulimit -n</code> 查看</li>
+<li>可移性植高，基本上类 Unix 系统都支持</li>
 </ul>
-<p>poll实现</p>
-<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/005.png" alt></p>
+<p>poll 特点：</p>
 <ul>
-<li>无状态，每次调用都会重新装载感兴趣文件描述符内容</li>
-<li>相对 select 来说 poll 的轮序信息粒度更细，而且无最大文件描述符限制（直接受限于系统最大文件描述符数，可以用 <code>cat /proc/sys/fs/file-max</code> 查看），因此更具效率</li>
-<li>和 select 一样，每次调用都需要轮询所有感兴趣的文件描述符数据，所以操作<code>时间复杂度为O(n)</code>，会随着文件描述符数增加而导致性能下降</li>
+<li>无状态，每次调用都会重新将感兴趣的文件描述符内容复制给内核处理</li>
+<li>poll 是增强版的 select，区别在于定义的不一样，poll 采用链式结构解决了文件描述符数量限制问题</li>
+<li>和 select 一样每次调用都需要轮询集合来得到就绪文件描述符，同样会出现并发越高性能越低的状况</li>
 <li>可移植性比 select 低</li>
 </ul>
-<p>epoll实现</p>
-<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/006.png" alt></p>
+<p>epoll 流程以及特点：</p>
+<img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/006.png" style="zoom:80%;">
+
 <ul>
-<li>epoll 维护了一个动态文件描述符集（采用红黑树存储和事件驱动方式得到就绪文件描述符，即socket），因此 epoll 是存在状态的（即保留上一次调用但未处理的信息），它减少了文件描述符信息的复制，相当于减少了系统调用开销</li>
-<li>无最大文件描述符限制（直接受限于系统最大文件描述符数，可以用 <code>cat /proc/sys/fs/file-max</code> 查看）</li>
-<li>epoll 将用户程序感兴趣的事件注册在红黑树上 ，而当事件发生时会将对应的事件添加到就绪链表中。所以按理论来说 epoll 的轮序操作<code>时间复杂度为 O(log n)</code></li>
-<li>利用<code>事件回调</code>来降低轮询操作，大大地提升了并发性</li>
+<li>无文件描述符数量限制</li>
+<li>有状态。多次调用 epoll 无需重复拷贝感兴趣的文件描述符信息，因为 epoll 会在内核中生成红黑树来动态维护</li>
+<li>epoll 将用户程序感兴趣的事件注册在红黑树上，当有就绪的文件描述符时会通过事件回调机制将其就绪事件添加到就绪链表中。那么进行 epoll_wait 时就只需要轮询链表即可</li>
+<li>epoll 通过动态维护集合以及事件驱动机制大大降低了系统的性能开销</li>
 </ul>
 <blockquote>
 <p>select、poll、epoll、kqueue 性能对比</p>
 </blockquote>
 <img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/009.png" style="zoom:67%;">
 
-<p>从上图不难看出，随着文件描述符数递增，kqueue 的性能最佳（主要缺点在移植性上），其次是 epoll 。而 select 和 poll 性能上一言难尽（select 和 poll 性能差不多是有原因的，如果去看源码就可以发现它们的实现方式是大同小异的）</p>
+<p>从上图不难看出，随着文件描述符数递增，kqueue 的性能最佳，其次是 epoll 。而 select 和 poll 如出一辙，并发越高性能越差。</p>
 <h3 id="信号驱动IO"><a href="#信号驱动IO" class="headerlink" title="信号驱动IO"></a>信号驱动IO</h3><blockquote>
 <p>图解</p>
 </blockquote>
@@ -493,7 +497,11 @@
 <p>模式最佳实践以及优缺点</p>
 </blockquote>
 <ul>
-<li>Memcache 和 Netty 以及 Nginx 都采用了主从 Reactor 模式</li>
+<li>Memcache 以及 Nginx(Worker进程) 都采用了主从 Reactor 模式<ul>
+<li>在 Nginx 中该模型叫 Run-Loop 而不叫 Reactor，但只是名字有别而已</li>
+<li>要注意的是 Nginx 使用的是多进程而不是线程。虽然多线程模型能够节省资源，但缺点是位于同一个进程内，线程之间能够访问同一地址空间，彼此容易互相影响，譬如虚拟内存发生缺页中断则有可能影响所有的线程。Nginx 使用多进程加异步操作处理网络请求，这种高可用高可靠的服务器需求</li>
+</ul>
+</li>
 <li>优点1：Reactor 通过多线程对职责进行了进一步的划分，这样领到模式的整体结构更加清晰以及实现起来比单Reactor多线程更加容易</li>
 <li>优点2：父子 Reactor 线程交互简单，且每个线程都有独自的 Selector ，所以处理非同步资源时性能要比前两种都好</li>
 <li>缺点：多线程会导致 CPU 资源竞争激烈，因此线程并不是越多越好。</li>
@@ -625,7 +633,6 @@
 <li>《Unix网络编程》</li>
 <li>《LINUX系统编程》</li>
 <li>《操作系统概念》</li>
-<li>网络编程-盛延敏 </li>
 <li><a href="https://zh.wikipedia.org/wiki/Epoll" target="_blank" rel="noopener">epoll</a></li>
 <li><a href="http://gee.cs.oswego.edu/dl/cpjslides/nio.pdf" target="_blank" rel="noopener">Scalable IO in Java - Doug Lea</a></li>
 <li><a href="http://www.laputan.org/pub/sag/proactor.pdf" target="_blank" rel="noopener">Proactor</a></li>
