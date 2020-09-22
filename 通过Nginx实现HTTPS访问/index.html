@@ -168,15 +168,16 @@
 </blockquote>
 <pre><code class="properties"># 将http导向https
 server {
-    listen  80;
-    listen  [::]:80;
+    listen 80;
+    listen [::]:80;
     # 填写申请证书的域名
-    server_name  tandi.wiki www.tandi.wiki;
-    return 301   https://www.tandi.wiki$request_uri;
+    server_name tandi.wiki www.tandi.wiki;
+    #return 301 https://www.tandi.wiki$request_uri?;
+    rewrite ^ https://www.tandi.wiki$request_uri?;
 }
 
 server {
-    listen       443 ssl http2;
+    listen  443 ssl http2;
     # 填写申请证书的域名
     server_name  tandi.wiki www.tandi.wiki;
     root    站点的位置;
