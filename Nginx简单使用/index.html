@@ -9,7 +9,7 @@
   <!-- 浏览器页签图标 -->
   <link rel="icon" href="/img/favicon.svg">
   <!-- 标题 -->
-  <title> Nginx使用-学然后知不足 </title>
+  <title> Nginx快速入门-学然后知不足 </title>
 
   <!-- 自适应 -->
   
@@ -120,7 +120,7 @@
 <article id="post">
 
   <!-- 文章标题 -->
-  <h1>Nginx使用</h1>
+  <h1>Nginx快速入门</h1>
 
   <!-- 文章元信息 -->
   <span class="post-metadata">
@@ -140,38 +140,50 @@
   <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2019年12月19日14:13:43 — 重构文章</li>
 </ul>
-<h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><p>是一个基于多进程模型及事件驱动的轻量服务器</p>
+<h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><p>Nginx（ 发音：Engine  X）是一个基于多进程模型及事件驱动的轻量服务器。</p>
+<p>本文不会对 Nginx 的配置作过多的阐述，各模块的配置建议参考官方文档：<a href="https://nginx.org/en/docs/" target="_blank" rel="noopener">https://nginx.org/en/docs/</a></p>
 <blockquote>
 <p>特性</p>
 </blockquote>
 <ul>
-<li>高并发、高性能、高可用<ul>
-<li>Nginx 会确保每一个连接消耗的内存最小化</li>
-<li>Master 进程可以在 Worker 进程出错后快速拉起新的Worker 进程继续提供服务</li>
-<li>使用 Reactor 模型处理网络请求（在 Nginx 中准确来说应该叫 Run-Loop）</li>
+<li>高并发<ul>
+<li>使用 Reactor 模型处理网络请求（在 Nginx 中叫 Run-Loop）</li>
 </ul>
 </li>
-<li>可扩展性高（模块化设计），第三方模块丰富</li>
+<li>高性能<ul>
+<li>确保每一个连接消耗的内存最小化</li>
+</ul>
+</li>
+<li>高可靠<ul>
+<li>Master 进程可以在 Worker 进程出错后快速拉起新的 Worker 进程继续提供服务</li>
+</ul>
+</li>
+<li>可扩展性高<ul>
+<li>模块化设计，第三方模块丰富</li>
+</ul>
+</li>
 <li>热部署<ul>
 <li>支持不停机(信号)维护进程，以及更新配置项和日志文件</li>
 </ul>
 </li>
 <li>源码使用<a href="https://baike.baidu.com/item/BSD%E8%AE%B8%E5%8F%AF%E5%8D%8F%E8%AE%AE" target="_blank" rel="noopener">BSD许可证</a>，给予使用者非常高的使用自由度</li>
+<li><code>提供HTTP/TCP/UDP等7层和四层(ngx_stream_core_module)负载均衡实现</code></li>
 </ul>
 <blockquote>
 <p>常见使用场景</p>
 </blockquote>
 <ul>
-<li>静态资源服务器<ul>
+<li>HTTP静态资源服务器<ul>
 <li>当前文件系统作为静态资源存储点提供服务</li>
 </ul>
 </li>
-<li>反向代理服务器<ul>
+<li>反向代理服务器（最常用）<ul>
 <li>基于多进程事件驱动性能强大</li>
 <li>提供静态资源缓存功能，能一定程度提高响应速度</li>
 <li>提供负载均衡能力，可合理地分摊上游服务器负载</li>
 </ul>
 </li>
+<li>网站请求动静分离</li>
 <li>微服务服务API网关<ul>
 <li>Nginx + Lua</li>
 </ul>
@@ -358,7 +370,7 @@ configure arguments: --prefix=/opt/nginx --add-module=/root/ngx_http_consistent_
 <img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/002.png" style="zoom: 67%;">
 
 <blockquote>
-<p>模块配置了解</p>
+<p>配置模块的基本作用</p>
 </blockquote>
 <p>全局块（对整个Nginx起作用）</p>
 <ul>
@@ -480,13 +492,114 @@ Reading: 0 Writing: 1 Waiting: 0 </code></pre><ul>
 <li>Zabbix</li>
 <li>Nginx-UI</li>
 </ul>
+<h2 id="使用keepalived提供高可用解决方案"><a href="#使用keepalived提供高可用解决方案" class="headerlink" title="使用keepalived提供高可用解决方案"></a>使用keepalived提供高可用解决方案</h2><blockquote>
+<p>VRRP简介</p>
+</blockquote>
+<p>&emsp;&emsp;虚拟路由器冗余协议（VRRP）可用于解决路由器单点故障问题。该协议会在指定网卡上创建一个虚拟IP地址，然后通过自动切其换网关来完成高可用实现。譬如虚拟IP开始会以Master作为网关来处理请求，而一旦Master宕机，则虚拟IP的网关将会被切换到热备节点上，以顶替Master节点的工作。</p>
+<p>&emsp;&emsp;Keepalived 提供了 VRRP 功能实现，因此 Keepalived 可以为任何服务提供高可用解决方案。换句话说如果服务本身没有高可用解决方案的话，就可以考虑使用 Keepalived 来实现。 </p>
+<blockquote>
+<p>在Nginx服务上安装整合Keepalived</p>
+</blockquote>
+<p>0）例子环境</p>
+<pre><code>192.168.0.210 nginx、keepalived1
+192.168.0.211 nginx、keepalived2</code></pre><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/010.png" style="zoom:80%;">
+
+<p>1）安装keepalived</p>
+<pre><code class="shell">yum install -y keepalived</code></pre>
+<p>2）配置keepalived的vrrp</p>
+<p>vim /etc/keepalived/keepalived.conf</p>
+<p>keepalived1配置</p>
+<pre><code>global_defs {
+   router_id nginx_master # keepalived集群节点唯一键
+}
+vrrp_instance VI_1 {
+    state MASTER # 配置状态
+    interface enp0s3 # 绑定网卡，和Nginx一致即可
+    virtual_router_id 51
+    priority 100 # 提供服务的优先级别
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    # 虚拟IP
+    # 注意：网段必须可以被外接访问
+    virtual_ipaddress {
+        192.168.0.222
+    }
+}</code></pre><p>keepalived2配置</p>
+<pre><code>global_defs {
+   router_id nginx_backup
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface enp0s3
+    virtual_router_id 51
+    priority 50
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {
+        192.168.0.222
+    }
+}</code></pre><p>3）应用并启动Keepalived服务</p>
+<pre><code>systemctl enable keepalived.service
+systemctl start keepalived.service</code></pre><p>4）测试步骤：启动两台Keepalived服务器上的Nginx，并设置测试标记</p>
+<pre><code>192.168.0.210 &gt; echo &quot;nginx 192.168.0.210&quot; &gt; /opt/nginx/html/index.html
+192.168.0.211 &gt; echo &quot;nginx 192.168.0.211&quot; &gt; /opt/nginx/html/index.html</code></pre><p>5）测试步骤：在随便一台机器上使用虚拟IP访问，譬如：<a href="http://192.168.0.222/" target="_blank" rel="noopener">http://192.168.0.222/</a></p>
+<p>两台Keepalived正常服务时</p>
+<pre><code>&gt; curl 192.168.0.222                                      
+nginx 192.168.0.210</code></pre><p>关闭 192.168.0.210 上的Keepalived服务后</p>
+<pre><code>&gt; systemctl stop keepalived.service
+&gt; curl 192.168.0.222
+nginx 192.168.0.211</code></pre><p>重启 192.168.0.210 上的Keepalived服务后</p>
+<pre><code>&gt; systemctl start keepalived.service
+&gt; curl 192.168.0.222
+nginx 192.168.0.210</code></pre><blockquote>
+<p>为 Keepalived 实现故障检测功能</p>
+</blockquote>
+<p>需要注意的是 Keepalived 并不能自主检测服务是否还处于可用状态。譬如以当前案例为例，如果 Nginx 因为某些原因被停掉了，Keepalived 是无法感知的，因此它不会为虚拟IP切换网关，从而导致整个 Nginx 代理的上游服务不可用。</p>
+<p>为了解决上面的问题，我们可以为 Keepalived 提供一个服务的健康监测脚本（/root/nginx_health_check.sh）：</p>
+<pre><code class="shell">#!/bin/bash
+if [ `systemctl status nginx.service | grep &quot;running&quot; | wc -l` -ne 1 ]
+    then
+        echo &quot;Nginx服务已停止&quot;
+        systemctl stop keepalived.service
+else
+    echo &quot;Nginx正常提供服务&quot;
+fi</code></pre>
+<p>将脚本文件配置到 Keepalived，在配置文件中追加以下内容：</p>
+<pre><code># 脚本位置
+vrrp_script check_nginx {
+    script &quot;/root/nginx_health_check.sh&quot;
+    interval 2 # 每两秒执行一次脚本
+}
+# 应用脚本
+track_script {
+    check_nginx
+}</code></pre><blockquote>
+<p>关于 Keepalived 脑裂问题</p>
+</blockquote>
+<p>因为 Keepalived 不在文章讨论范围，因此可以另行参考以下两边文章进行了解：</p>
+<ul>
+<li><a href="https://blog.csdn.net/wdirdo/article/details/103011816" target="_blank" rel="noopener">keepalived脑裂</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/1027323" target="_blank" rel="noopener">split-brain 脑裂问题（Keepalived）</a></li>
+</ul>
+<p>检测是否出现脑裂可以使用 ip 命令进行查看。正常情况下只有一个 Keepalived 服务器能够获取到虚拟IP，因此如果虚拟IP出现在多台 Keepalived 上就说明出现脑裂了。</p>
+<img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/011.png">
+
+
+
+
+
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><p><a href="https://programming.vip/docs/details-of-event-driven-process-of-nginx-based-on-epoll-model.html" target="_blank" rel="noopener">Details of event driven process of nginx based on epoll model</a></p>
-</li>
-<li><p><a href="https://www.nginx.com/blog/inside-nginx-how-we-designed-for-performance-scale/" target="_blank" rel="noopener">Inside NGINX: How We Designed for Performance &amp; Scale</a></p>
-</li>
-<li><p><a href="https://www.nginx.com/blog/thread-pools-boost-performance-9x/" target="_blank" rel="noopener">Thread Pools in NGINX Boost Performance 9x!</a></p>
-</li>
+<li><a href="https://programming.vip/docs/details-of-event-driven-process-of-nginx-based-on-epoll-model.html" target="_blank" rel="noopener">Details of event driven process of nginx based on epoll model</a></li>
+<li><a href="https://www.nginx.com/blog/inside-nginx-how-we-designed-for-performance-scale/" target="_blank" rel="noopener">Inside NGINX: How We Designed for Performance &amp; Scale</a></li>
+<li><a href="https://www.nginx.com/blog/thread-pools-boost-performance-9x/" target="_blank" rel="noopener">Thread Pools in NGINX Boost Performance 9x!</a></li>
+<li>《Nginx高性能Web服务器详解》</li>
 </ul>
 
 
@@ -495,7 +608,7 @@ Reading: 0 Writing: 1 Waiting: 0 </code></pre><ul>
     文章作者: TanDi <br/>
     文章链接: 
     <a href="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/">
-      Nginx使用
+      Nginx快速入门
     </a> <br/>
     版权声明: 转载请注明来自 
     <a href="https://tandi.pub">
@@ -516,7 +629,7 @@ Reading: 0 Writing: 1 Waiting: 0 </code></pre><ul>
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
           admin: ['oomgomgxx'],
-          id: md5('Nginx使用'),
+          id: md5('Nginx快速入门'),
           distractionFreeMode: false
         })
         gitalk.render('gitalk-container')           
@@ -530,7 +643,7 @@ Reading: 0 Writing: 1 Waiting: 0 </code></pre><ul>
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编译安装"><span class="toc-text">编译安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令使用"><span class="toc-text">命令使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置了解"><span class="toc-text">配置了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#日志了解"><span class="toc-text">日志了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用负载均衡策略"><span class="toc-text">常用负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#架构及请求处理流程"><span class="toc-text">架构及请求处理流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控Nginx"><span class="toc-text">监控Nginx</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编译安装"><span class="toc-text">编译安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令使用"><span class="toc-text">命令使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置了解"><span class="toc-text">配置了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#日志了解"><span class="toc-text">日志了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用负载均衡策略"><span class="toc-text">常用负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#架构及请求处理流程"><span class="toc-text">架构及请求处理流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控Nginx"><span class="toc-text">监控Nginx</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用keepalived提供高可用解决方案"><span class="toc-text">使用keepalived提供高可用解决方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
