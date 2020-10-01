@@ -166,8 +166,10 @@
 <blockquote>
 <p>注：</p>
 <ul>
-<li>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将较的内存划分为若干个 Region 区来细化管理，所以如果机器内存较为充裕且能够分给 IDEA 较大的内存，那么就能更加体现 G1 的优势 </li>
-<li>但个人在思考一个问题，就是为什么 IDEA 都基于 JRE 11 了，但却依然默认使用 CMS 。对于这个问题，笔者认为在内存较小的情况下 CMS 和 G1 其实在性能方面是差不了多少的，要不然这问题说不过去。因为 G1 一样有并发标记操作，而且导致 STW 的阶段操作比 CMS 多（但 G1 有优先回收策略，因此个人认为可以忽略这点），其次是 IDEA 提供商无法保证用户机器内存都足够充裕，所以默认最好最稳健的方案就是 CMS + Parallel 了，这也是正所谓的”合适由于行业领先”原则。</li>
+<li>从 JDK 9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将较的内存划分为若干个 Region 区来细化管理，所以如果能够给堆分配较大的内存的话就更能够体现 G1 的优势（官方建议6G或以上）</li>
+<li>但个人在思考一个问题，就是为什么 IDEA 都基于 JRE 11 了，但却依然默认使用 CMS 。对于这个问题，笔者认为在内存较小的情况下 CMS 和 G1 其实在性能方面是差不了多少的，要不然这问题说不过去。因为 G1 一样有并发标记操作，而且导致 STW 的阶段操作比 CMS 多（但 G1 有优先回收策略，因此个人认为可以忽略这点），其次是 IDEA 提供商无法保证用户机器内存都足够充裕，所以默认最好最稳健的方案就是 CMS + Parallel 了，这也是正所谓的”合适由于行业领先”原则</li>
+<li>CMS 从 JDK 14 开始被移除，因此不管是学习还是使用，个人都更加推荐 G1 或 者更前卫的 ZGC，但 ZGC 在 JDK 15 才被正式使用，而且需要在 Linux 64位机器或Windows 10 1803 版本及以上版本系统才能使用，所以目前而言使用 G1 其实已经能够满足大部分需求</li>
+<li>ZGC 是一个单代堆管理、并发、极低停顿的垃圾回收器，且 GC 回收所需时间不会随着堆的增大而延长（只受到GC Roots数量影响），据介绍 ZGC 一次回收操作可控制在10毫秒内。除此之外，ZGC 堆内存最大允许为4T（据悉日后支持16T），但因为回收阶段基本上都是和应用程序并发执行，所以会一定程度降低应用程序的吞吐量。而 ZGC 之所以能够实现极低的停顿时间，是因为采用了<code>着色指针</code>和<code>读屏障</code>等机制来准确定位对象地址从而得到了更好的并发性</li>
 </ul>
 </blockquote>
 <p>优化过后的配置如下：</p>
@@ -175,17 +177,17 @@
 -Xverify:none
 -XX:ParallelGCThreads=4
 -XX:ConcGCThreads=2
--XX:MetaspaceSize=1g
+-XX:MetaspaceSize=512m
 -XX:MaxMetaspaceSize=1g
 -Xms1024m
 -Xmx1024m
 -XX:+UseG1GC
--XX:G1HeapRegionSize=1m
+-XX:G1HeapRegionSize=2m
 -XX:+UseStringDeduplication
 -XX:CICompilerCount=2
--XX:+AlwaysPreTouch
 -XX:+UseAdaptiveSizePolicy
--XX:ReservedCodeCacheSize=300m</code></pre>
+-XX:ReservedCodeCacheSize=256m
+-XX:InitialCodeCacheSize=256m</code></pre>
 <p>配置说明：</p>
 <p>-server</p>
 <ul>
@@ -194,13 +196,14 @@
 </ul>
 <p>-Xverify:none</p>
 <ul>
-<li>不对加载的类进行字节码校验</li>
-<li>关闭校验能够一定程度提升类加载过程的效率，特别是类较多的情况下</li>
+<li>加载类时不进行字节码校验</li>
+<li>可以一定程度提升类的加载效率，特别是类较多的情况下</li>
 <li>注意：该配置在 JDK 13 被废弃</li>
 </ul>
 <p>-Xms1536m</p>
 <ul>
 <li>启动时堆的初始化大小</li>
+<li>默认为主存的 1/64 </li>
 </ul>
 <p>-Xmx1536m</p>
 <ul>
@@ -211,13 +214,13 @@
 <li>如果是一般的项目，因为通常都是一台服务器只部署一个项目应用，所以通常只是内部线程的资源竞争，所以应用所需要的运行条件比较稳定（突然流量除外）。在这种情况下比较合理的做法是在 IDEA 正常运行的情况下，手动执行一次 Full GC（譬如用 VisualVM 触发）然后计算出存活对象实例的总大小，然后在这基础上乘以 1.5 到 2 倍用来做 MaxHeapSize 阈值即可</li>
 </ul>
 </li>
-<li>注意：如果不指定 Xmx 默认情况下 MaxHeapSize  只占系统内存的四分一，所以强烈建议设置，不论是何种应用</li>
+<li>注意：如果不指定 Xmx 默认情况下 MaxHeapSize  只占系统内存的 1/4  ，所以强烈建议设置，不论是何种应用</li>
 </ul>
 <p>-XX:MetaspaceSize 和 -XX:MaxMetaspaceSize</p>
 <ul>
 <li>指定元空间大小</li>
 <li>元空间是 Java 8 HostSpot虚拟机中方法区的新实现，用于代替之前的永久代方法区实现。之所以替换永久代的主要原因个人认为是因为 HostSpot 虚拟机为了方便管理而将永久代实现在了堆中（逻辑划分与堆进行隔离），然而这中设计不太符合普遍的 GC 标准，譬如不能直接适配收购回来的垃圾回收器实现，其次是因为永久代（ -XX:MaxPermSize ）存在默认的上限，用意出现 OOM，因此特别是类较多的情况下需要额外花心思来维护。而元空间位于直接内存，受直接内存限制，且默认没有上限值（上限就是物理内存大小）</li>
-<li>建议：两个配置最好一致，原因同上</li>
+<li>建议：如果是一般项目两个配置最好一致，原因同上</li>
 <li>注意：强烈建议设置 -XX:MetaspaceSize 参数，因为一旦 MetaspaceSize（默认 20 多兆）被填满就会触发 Full GC 。如果不设置则可能会出现在程序启动期间就连续执行多次 Full GC 的情况，所以设置该值可以有效地降低启动时 Full GC 的频率</li>
 </ul>
 <p><del>-Xmn512m</del></p>
@@ -239,21 +242,21 @@
 <li>启用 Garbage First 垃圾回收器</li>
 <li>因为 G1 的 GC 停顿时间更加可控。可以通过 <code>MaxGCPauseMillis</code> 设置 GC 停顿期望值，默认为 200 ms</li>
 </ul>
-<p>-XX:G1HeapRegionSize=1m</p>
+<p>-XX:G1HeapRegionSize=2m</p>
 <ul>
-<li>指定 G1 Region 区的大小，默认值为1m。这里单纯为了方便理解而显式配置</li>
+<li>指定 G1 Region 区的大小。该配置项默认值为1m</li>
 <li>适当增加该值可以提高内存的使用率，但与此同时增大 Region 就意味着增加回收成本，所以应该根据实际的情况来设置。该配置纯粹是个经验值，譬如网上建议 Xmx 为 4G 时可以将该值设置为 4m</li>
 <li>注意：该值必须是 2 的 n 幂，而且范围在 1 MB 到 32 MB 之间。默认情况下该值为 1M，既 0 次幂</li>
 </ul>
 <p>-XX:ParallelGCThreads=4</p>
 <ul>
-<li>GC 回收时的并行回收线程数</li>
+<li>STW 时的 GC 工作线程</li>
 <li>建议：<ul>
-<li>该值不应该超过 CPU 的核心线程数。经过观察线程数多了会导致竞争反而会降低回收效率</li>
-<li>譬如我当前机器的 CPU 是双核四线程，所以这里设置为 4 </li>
+<li>该值尽量少于 CPU 核心线程数，因为这样可以减少 CPU 资源竞争从而提高程序的吞吐量</li>
+<li>当然，如果 CPU 较强，或者对 GC 停顿有所要求，则可以适当提高该值。譬如当前双核四线程 CPU 可以设置5 或 6 条线程</li>
 </ul>
 </li>
-<li>该值默认为0，如果不显式设置且使用的是 G1 的话，则会自动通过 G1 的启发式推断来设置该值</li>
+<li>该值默认为 CPU 核心线程数数量</li>
 </ul>
 <p>-XX:ConcGCThreads=2</p>
 <ul>
@@ -279,37 +282,36 @@
 </ul>
 <p>-XX:CICompilerCount=2 </p>
 <ul>
-<li>JIT 编译线程数</li>
-<li>这里设置为 2</li>
-<li>建议：不要设置过大，因为在 IDEA 启动时会伴随大量的 JIT 编译和多次 Young GC 出现，所以 CPU 非常容易到达100%，这是 IDEA 启动时卡顿的关键点所在。这里因为考虑到运行过程的 GC 回收效率，所以 ParallelGCThreads 不能少，因此这里只能降低 CICompilerCount 来舒缓一下 CPU 使用率来降低启动时卡顿感了。当然其实 2 条线程也足够了</li>
+<li>JIT 编译热点代码时的工作线程数</li>
+<li>建议：数量不宜过多，因为在 IDEA 启动时会伴随大量的 JIT 编译和多次 Young GC，所以 CPU 很容易到达100%，这是 IDEA 启动卡顿的重要原因之一</li>
 </ul>
 <p><del>-XX:MaxTenuringThreshold=10</del></p>
 <ul>
 <li><del>对象晋升老年代的岁数。默认值为15，既表示对象经历15次 GC 后依然没被回收就晋升到老年代</del></li>
 <li><del>注意：如果使用的是 CMS ，该值默认为 6 而不是 15。使用 CMS 时可以通过命令<code>jinfo -flag MaxTenuringThreshold 线程PID</code> 观察到。个人认为之所以 CMS 被设置为 6 而不是 15 是因为 CMS 有并发标记可以有效地回收老年代实例，从而降低 Full GC 的原因，所以就算提前晋升也关系不大。但作为使用者必须理解，不管是 15 还 6 ，这都是通过大量测试得出来的经验值，所以不要问为什么是 15 和 6 而不是其他这种傻不拉几的问题</del></li>
 </ul>
-<p>-XX:ReservedCodeCacheSize=500m</p>
+<p>-XX:InitialCodeCacheSize=256m，-XX:ReservedCodeCacheSize=256m</p>
 <ul>
 <li>存放 JIT 编译内容的缓存大小</li>
 <li>注意：<ul>
-<li>该值在 64bit server 模式下默认为240m。如果编译内容到达该阈值的话 JIT 就不会再编译了，所以这样会降低 IDEA 的执行效率，直白点说就是可能会会流畅度降低</li>
+<li>该值在 64bit server 模式下默认大小为240m。如果热点代码编译内容达到该阈值，JIT 将不会继续编译。因此为了尽量提高执行效率，可以适当地增大该值</li>
 <li>这部分内存应该是位于方法区的，而又因为 JDK 1.8 后元空间位于直接内存，所以可以推断出 ReservedCodeCacheSize 受直接内存所控</li>
 </ul>
 </li>
 </ul>
-<p>-XX:+AlwaysPreTouch</p>
+<p><del>-XX:+AlwaysPreTouch</del></p>
 <ul>
-<li>在 JVM 进程启动时就马上分配所需的全部内存，而不是需要时才分配</li>
-<li>该配置可以一定程度地提升程序运行期间的稳定性</li>
-<li>建议：理论上来说该配置会带来一定的启动损耗。但个人认为可以忽略，强烈建议开启该配置</li>
+<li><del>在 JVM 初始化期间获取所有的内存，而不是访问时才获取（通过提前访问内存页实现）</del></li>
+<li><del>该配置可以一定程度地提升程序运行期间的稳定性</del></li>
+<li><del>建议：该配置会带来一定的启动延时，如果是一般项目，建议开启</del></li>
 </ul>
 <p>-XX:+UseStringDeduplication</p>
 <ul>
-<li>开启字符串去重功能以节省内存</li>
+<li>开启字符串去重功能，以提高内存的使用率</li>
 <li>字符串去重操作会在 GC 期间进行，默认情况下只有经历 3 次 GC 还存活的字符串才会列为关注对象（可以-XX:StringDeduplicationAgeThreshold 设置该阈值）</li>
 <li>建议：<ul>
 <li>开启字符串去重功能会加大 GC 垃圾回收的工作量，既一定程度上延长 GC 停留时间，所以这是一个<code>时间换空间</code>的操作。个人认为如果内存不充裕且对 GC 停顿时间不太苛刻的话建议开启该功能</li>
-<li>如果有留意过 Spring 的 STS Eclipse 的话，它是默认配置了这个参数的，因此既是你是不明所以，但跟着 Spring 走准没错</li>
+<li>如果有留意过 Spring 的 STS Eclipse 的话，它默认就开启了该配置项，因此即使你是不明所以，但跟着 Spring 走也准没错</li>
 </ul>
 </li>
 <li>注意：该功能在  Java8u20  版本才引入，而且只在 G1 上生效</li>
@@ -320,20 +322,11 @@
 <li>该配置默认开启，这里单纯为了可读性而显式配置</li>
 </ul>
 <blockquote>
-<p>调优过后的情况大致如下</p>
-<p>注：因为后期修改过配置，譬如下面没加字符串去重，但大致一样，可以参考一下</p>
+<p>小结</p>
 </blockquote>
-<p><strong>当前系统资源</strong></p>
-<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/007.png" alt></p>
-<p><strong>IDEA运行时长</strong></p>
-<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/006.png" alt></p>
-<p><strong>IDEA运行情况</strong></p>
-<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/002.png" alt></p>
 <ul>
-<li>首先结论是启动时的卡顿感已经明显降低，调优目的已经达到</li>
-<li>因为一直没有关闭电脑，所以可以看到 IDEA 已经运行了将近 65 个小时了。在这期间 Young GC 执行了 2232 次，用时将近两分钟，相当于每次 Young GC  花费时间在 53 毫秒左右。而 Full GC 执行了 14 次用时将近 12.6 秒，既相当于每次 900 毫秒左右。从数据上不难看出一次 Full GC 下来的耗时通常是 Young GC 的好几倍</li>
 <li>Full GC 是很难避免的，因为 Full GC 是一个有效地防止内存溢出的机制，换句话来说内存越小触发 Full GC 的几率就越大。其次随着应用程序运行时间拉长，期间可能会产生大量长期驻留在堆的对象，又或者程序本身存在缺陷导致内存泄露等原因都可能会导致频繁地 Full GC</li>
-<li>最后多说一句，如果项目应用堆内存较为紧张的话，可以考虑利用定期手动触发 Full GC 的方式来清理内存，以避免内存溢出 ，譬如可以在系统访问流量较低的时间段利用定时任务触发 System.gc() 。一个比较好的例子就是 Tomcat 中有个预防内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 就是采用这种方式来检测内存泄露的（多次 Full GC 后内存使用量都不见降低时，由内存泄露引起的记录较大）。除此之外，如果使用的是 CMS 的话可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code>来提高 Full GC 的并发效率。但是反过来如果你想禁止这种手动触发 Full GC 的操作，则可以开启 <code>-XX:+DisableExplicitGC</code> 配置，就可以避免诸如 Tomcat 监听类每小时触发一次 Full GC 的问题</li>
+<li>最后多说一句，如果项目应用堆内存较为紧张的话，可以考虑利用定期手动触发 Full GC 的方式来清理内存，以避免内存溢出 ，譬如可以在系统访问流量较低的时间段利用定时任务触发 System.gc() 。一个比较好的例子就是 Tomcat 中有个预防内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 就是采用这种方式来检测内存泄露的（多次 Full GC 后内存使用量都不见降低时，由内存泄露引起的记录较大）。除此之外，如果使用的是 G1/CMS 的话可以开启 <code>+XX:+ExplicitGCInvokesConcurrent</code>来优化并发 GC 效率。但反过来，如果你想禁止这种手动触发 Full GC 的操作，则可以开启 <code>-XX:+DisableExplicitGC</code> 配置，就可以避免诸如 Tomcat 监听类每小时触发一次 Full GC 的问题</li>
 </ul>
 <h2 id="IDEA设置优化"><a href="#IDEA设置优化" class="headerlink" title="IDEA设置优化"></a>IDEA设置优化</h2><p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/003.png" alt></p>
 <p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/004.png" alt></p>
