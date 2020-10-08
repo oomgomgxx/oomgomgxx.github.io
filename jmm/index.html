@@ -170,6 +170,36 @@
 <p>3）CPU 高速缓存层次结构</p>
 <img src="/jmm/004.png" style="zoom:67%;">
 
+<p>4）CPU缓存的伪共享问题</p>
+<ol>
+<li><p>CPU读取主存的单位是缓存行</p>
+</li>
+<li><p>缓存行的大小有 32、64、128，而常见的 Intel/AMD 处理器的缓存大小通常为 64 字节</p>
+</li>
+<li><p>同一时刻不存在多条（不同核的）线程同时访问存有相同变量的缓存行的情况。这是因为缓存一致性协议的缘故，当一条线程修改（L1/L2）缓存行后，其余核心相同变量所在的缓存行就会被无效（Invalid），而这就是缓存的CPU伪共享问题</p>
+</li>
+<li><p>解决 CPU 缓存的伪共享问题可以提高缓存的并发性能，而该问题可以通过填充缓存行来解决。以 64 bit缓存行为例：</p>
+<p>手动填充：</p>
+<pre><code class="java">class A { // 64bit系统+指针压缩优化=对象头大小为12byte
+    private long a = 100L; // 对象有用变量
+    private long b,c,d,e,f; // 对象无用变量，专门用于填充
+    // 到目前位置该对象的总大小为：12+8+40=60
+    // 注意，但因为JVM本身会对对象进行字节填充对齐（默认为8的倍数），所以这里60个字节到最后会被填充成64个字节
+}</code></pre>
+<p>声明式填充</p>
+<ul>
+<li>允许普通模块使用（存在字段时才生效）：-XX:-RestrictContended</li>
+<li>条件对齐大小：-XX:ContendedPaddingWidth，默认填充单位为 128 个字节</li>
+</ul>
+<pre><code class="java">@Contended
+class A { // 12个字节
+    private long a = 100L; // 8个字节
+    // 到目前位置该对象的总大小为：12+8=20
+    // 但因为使用了@Contended所以会增加128个字节
+    // 即20+128=148，但148不是8的倍数，因此会再对齐为152，即当前实例最终大小为152个字节
+}</code></pre>
+</li>
+</ol>
 <h2 id="CPU与内存模型和JMM对比"><a href="#CPU与内存模型和JMM对比" class="headerlink" title="CPU与内存模型和JMM对比"></a>CPU与内存模型和JMM对比</h2><blockquote>
 <p>CPU与内存模型</p>
 </blockquote>
@@ -270,6 +300,7 @@
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://zh.wikipedia.org/wiki/%E5%BF%AB%E5%8F%96%E4%B8%80%E8%87%B4%E6%80%A7" target="_blank" rel="noopener">缓存一致性</a></li>
 <li><a href="https://zh.wikipedia.org/wiki/%E5%90%8C%E6%AD%A5%E5%B1%8F%E9%9A%9C" target="_blank" rel="noopener">同步屏障</a></li>
+<li><a href="https://docs.roguewave.com/threadspotter/2011.2/manual_html_linux/manual_html/ch03s02.html" target="_blank" rel="noopener">Cache Lines and Cache Size</a></li>
 </ul>
 
 
