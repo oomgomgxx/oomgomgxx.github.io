@@ -9,7 +9,7 @@
   <!-- 浏览器页签图标 -->
   <link rel="icon" href="/img/favicon.svg">
   <!-- 标题 -->
-  <title> Websocket协议的使用-学然后知不足 </title>
+  <title> 了解WebSocket协议-学然后知不足 </title>
 
   <!-- 自适应 -->
   
@@ -120,12 +120,12 @@
 <article id="post">
 
   <!-- 文章标题 -->
-  <h1>Websocket协议的使用</h1>
+  <h1>了解WebSocket协议</h1>
 
   <!-- 文章元信息 -->
   <span class="post-metadata">
     <!-- 文章日期 -->
-    <i class="fa fa-calendar"></i>&thinsp;2018-04-13 &ensp;
+    <i class="fa fa-calendar"></i>&thinsp;2018-04-12 &ensp;
     <!-- 文章作者 -->
     作者: TanDi &ensp;
     <!-- 判断文章是都为原创文章 -->
@@ -137,24 +137,28 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="什么是websocket"><a href="#什么是websocket" class="headerlink" title="什么是websocket"></a>什么是websocket</h2><blockquote>
+  <h2 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h2><blockquote>
 <p>了解更多：<a href="https://tools.ietf.org/html/rfc6455" target="_blank" rel="noopener">https://tools.ietf.org/html/rfc6455</a></p>
 </blockquote>
 <ul>
-<li>WebSocket是一种计算机通信协议，通过单个TCP连接提供<strong>全双工通信通道</strong>，简单来说就是是一种持久连接，实现两端通讯的通信协议</li>
-<li>WebSocket是一种与HTTP不同的协议。这两个协议都位于应用层且基于传输层的TCP协议</li>
-<li>为了兼容HTTP，WebSocket会先从HTTP握手一次才升级成WebSocket（在TCP握手成功之后）</li>
-<li>WebSocket协议支持Web浏览器与Web服务器之间的交互，且做到较低的资源开销，便于实现与服务器的实时数据传输（例如在线聊天、消息推送提醒等等）</li>
+<li>是一种应用层通信协议。可通过单个TCP连接进行<strong>全双工通信</strong></li>
+<li>为了兼容HTTP协议，目前版本的 WebSocket 会从 HTTP 握手之上升级为 WebSocket 通信（TCP握手成功之后）</li>
 </ul>
 <blockquote>
-<p><strong>扩展1：什么是单工、半双工、全双工？</strong><br>单工通信 - 信息只能单向传送为单工；<br>半双工通信 - 信息能双向传送但不能同时双向传送称为半双工；<br>全双工通信 - 信息能够同时双向传送则称为全双工。</p>
-<p><strong>扩展2：OSI 7层模型</strong></p>
-<p><img src="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/001.png" alt></p>
+<p>扩展</p>
 </blockquote>
-<h2 id="为什么需要websocket"><a href="#为什么需要websocket" class="headerlink" title="为什么需要websocket"></a>为什么需要websocket</h2><p>http是一种：无状态、无连接、单向（即无法实现服务器主动向客户端传输数据）的应用层通信协议。所以如果想要实现服务端“主动”向客户端传递数据消息这样的功能的话，就需要客户端使用XMLHttpRequest或&lt;iframe&gt;和长轮询来实现，这样频繁请求不但效率不高还消耗资源（不断请求连接）；所以websocket就是为了解决这种问题而产生的，websocket只需要通过一次tcp连接就可以实现全双工通信，对于一些客户端和服务器频繁互动的操作显然websocket大大减少了不必要的网络流量和延迟</p>
-<h2 id="websocket通信模型图"><a href="#websocket通信模型图" class="headerlink" title="websocket通信模型图"></a>websocket通信模型图</h2><p><img src="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/002.png" alt></p>
-<h2 id="websocket握手"><a href="#websocket握手" class="headerlink" title="websocket握手"></a>websocket握手</h2><p>websocket连接以http连接开始其生命周期，在这个过程中，从http到websocket的协议切换称为WebSocket握手</p>
-<p><strong>1）浏览器向服务器发送请求，通过Upgrade标头表明它希望将协议从http切换到websocket</strong></p>
+<ol>
+<li>什么是单工、半双工、全双工<br>单工通信 - 信息只能单向传送为单工<br>半双工通信 - 信息能双向传送但不能同时双向传送称为半双工<br>全双工通信 - 信息能够同时双向传送则称为全双工</li>
+</ol>
+<ol start="2">
+<li>OSI模型</li>
+</ol>
+<p><img src="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/001.png" alt></p>
+<h2 id="为什么需要"><a href="#为什么需要" class="headerlink" title="为什么需要"></a>为什么需要</h2><p>HTTP是一种：无状态、无连接、单向（即无法实现服务器主动向客户端传输数据）的应用层通信协议，所以如果想要实现服务器推送功能，就需要客户端使用 XMLHttpRequest 或 &lt;iframe&gt; 等技术进行轮询来实现，但这样频繁请求，不但效率不高而且还消耗资源，而 WebSocket 就能够很容易地实现这功能。</p>
+<p>WebSocket 只需要通过一次 TCP 连接就可以实现全双工通信，对于一些客户端和服务器频繁互动的操作显然WebSocket 就可以大大减少了不必要的网络开销。</p>
+<h2 id="通信模型图"><a href="#通信模型图" class="headerlink" title="通信模型图"></a>通信模型图</h2><p><img src="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/002.png" alt></p>
+<h2 id="握手过程"><a href="#握手过程" class="headerlink" title="握手过程"></a>握手过程</h2><p>WebSocket 连接以 HTTP 连接开始其生命周期，而从 HTTP 到 WebSocket 的协议的切换称为 WebSocket 握手</p>
+<p><strong>1）浏览器向服务器发送请求，通过Upgrade标头表明它希望将协议从HTTP升级为WebSocket通信</strong></p>
 <pre><code>GET ws://echo.websocket.org/?encoding=text HTTP/1.1
 Origin: http://websocket.org
 Cookie: __utma=99as
@@ -162,10 +166,9 @@ Connection: Upgrade
 Host: echo.websocket.org
 Sec-WebSocket-Key: uRovscZjNol/umbTt5uKmw==
 Upgrade: websocket
-Sec-WebSocket-Version: 13</code></pre><p><strong>2）如果服务器支持websocket协议，则它会同意通过Upgrade标头切换协议，将http切换到websocket</strong></p>
+Sec-WebSocket-Version: 13</code></pre><p><strong>2）如果服务器支持WebSocket协议，则它会同意协议升级操作，并会将当前的HTTP连接升级到WebSocket</strong></p>
 <blockquote>
-<p>在切换这个过程中，http连接中断，并由同一底层的tcp/ip连接上的websocket连接替换掉http连接</p>
-<p>默认情况下，websocket连接使用与http（80）和https（443）相同的端口</p>
+<p>默认情况下，Websocket 连接使用与 HTTP（80）和 HTTPS（443） 相同的端口</p>
 </blockquote>
 <pre><code>HTTP/1.1 101 WebSocket Protocol Handshake
 Date: Fri, 10 Feb 2012 17:38:18 GMT
@@ -175,7 +178,7 @@ Upgrade: WebSocket
 Access-Control-Allow-Origin: http://websocket.org
 Access-Control-Allow-Credentials: true
 Sec-WebSocket-Accept: rLHCkw/SKsO9GAH/ZSFhBATDKrU=
-Access-Control-Allow-Headers: content-type</code></pre><h2 id="websocket和server-sent-event（sse）区别"><a href="#websocket和server-sent-event（sse）区别" class="headerlink" title="websocket和server sent event（sse）区别"></a>websocket和server sent event（sse）区别</h2><blockquote>
+Access-Control-Allow-Headers: content-type</code></pre><h2 id="WebSocket和Server-Sent-Event（SSE）区别"><a href="#WebSocket和Server-Sent-Event（SSE）区别" class="headerlink" title="WebSocket和Server Sent Event（SSE）区别"></a>WebSocket和Server Sent Event（SSE）区别</h2><blockquote>
 <p>原文章：<a href="http://www.importnew.com/21967.html" target="_blank" rel="noopener">http://www.importnew.com/21967.html</a></p>
 </blockquote>
 <ol>
@@ -186,8 +189,8 @@ Access-Control-Allow-Headers: content-type</code></pre><h2 id="websocket和serve
 <li>由于都是基于浏览器使用,因此建议的数据传输都是文本型.虽然websocket支持二进制frame传输,不过一些都不建议使用.sse只能传输文本</li>
 <li>不管是websocket还是sse,在用于通信时,都建议只用于进行数据的推送,而不是进行完整的应用处理.这里可以理解为,常规的业务处理仍然交给后端的服务来处理.这样,即可以使用之前的业务开发的优势,又可以使用推送的优势.而不是走向另一个级端,即所有的信息都想通过推送来传递</li>
 </ol>
-<h2 id="websocket入门案例"><a href="#websocket入门案例" class="headerlink" title="websocket入门案例"></a>websocket入门案例</h2><h3 id="spring-websocket-websocket-js"><a href="#spring-websocket-websocket-js" class="headerlink" title="spring-websocket + websocket js"></a>spring-websocket + websocket js</h3><h4 id="前端"><a href="#前端" class="headerlink" title="前端"></a>前端</h4><blockquote>
-<p>无需导入其他插件，websocket 是html5规范中的协议，目前普遍的浏览器都支持</p>
+<h2 id="WebSocket快速入门案例"><a href="#WebSocket快速入门案例" class="headerlink" title="WebSocket快速入门案例"></a>WebSocket快速入门案例</h2><h3 id="Spring-H5"><a href="#Spring-H5" class="headerlink" title="Spring + H5"></a>Spring + H5</h3><h4 id="前端"><a href="#前端" class="headerlink" title="前端"></a>前端</h4><blockquote>
+<p>无需导入插件，因为 websocket 是 HTML5 规范中的内容，目前普遍的浏览器都支持</p>
 </blockquote>
 <pre><code class="html">&lt;!DOCTYPE HTML&gt;
 &lt;!-- js脚本 --&gt;
@@ -263,10 +266,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     }
 }</code></pre>
 <h4 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h4><p><img src="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/003.png" alt></p>
-<h3 id="spring-boot-starter-websocket-websocket-js"><a href="#spring-boot-starter-websocket-websocket-js" class="headerlink" title="spring-boot-starter-websocket + websocket js"></a>spring-boot-starter-websocket + websocket js</h3><h4 id="前端-1"><a href="#前端-1" class="headerlink" title="前端"></a>前端</h4><blockquote>
-<p>无需导入其他插件，websocket 是html5规范中的协议，目前普遍的浏览器都支持</p>
-</blockquote>
-<pre><code class="html">&lt;!DOCTYPE HTML&gt;
+<h3 id="SpringBoot-H5"><a href="#SpringBoot-H5" class="headerlink" title="SpringBoot + H5"></a>SpringBoot + H5</h3><h4 id="前端-1"><a href="#前端-1" class="headerlink" title="前端"></a>前端</h4><pre><code class="html">&lt;!DOCTYPE HTML&gt;
 &lt;!-- js脚本 --&gt;
 &lt;script&gt;
 
@@ -334,15 +334,271 @@ public class WebSocketConfig {
     }
 }</code></pre>
 <h4 id="效果-1"><a href="#效果-1" class="headerlink" title="效果"></a>效果</h4><p><img src="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/004.png" alt></p>
-<h2 id="使用websocket实现在线聊天室"><a href="#使用websocket实现在线聊天室" class="headerlink" title="使用websocket实现在线聊天室"></a>使用websocket实现在线聊天室</h2><p>传送门：<a href="https://www.cnblogs.com/tandi19960505/p/8036329.html" target="_blank" rel="noopener">https://www.cnblogs.com/tandi19960505/p/8036329.html</a></p>
+<h3 id="Spring-SockJS-STOMP协议"><a href="#Spring-SockJS-STOMP协议" class="headerlink" title="Spring + SockJS + STOMP协议"></a>Spring + SockJS + STOMP协议</h3><ul>
+<li><p>SockJS 可以支持哪些不能使用 WebSocket 的浏览器</p>
+</li>
+<li><p>采用 Spring + SockJS + STOMP协议 方案，可以提高 WebSocket 通信的可定制程度</p>
+</li>
+</ul>
+<h4 id="前端-2"><a href="#前端-2" class="headerlink" title="前端"></a>前端</h4><blockquote>
+<p>Thymeleaf模板</p>
+</blockquote>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;zh_CN&quot; xmlns:th=&quot;http://www.thymeleaf.org&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;index&lt;/title&gt;
+    &lt;!-- sockjs + stomp --&gt;
+    &lt;script src=&quot;https://cdn.bootcss.com/sockjs-client/1.1.4/sockjs.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdn.bootcss.com/stomp.js/2.3.3/stomp.min.js&quot;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body onload=&quot;disconnect()&quot;&gt;
 
+    &lt;script type=&quot;text/javascript&quot;&gt;
+        var stompClient = null;
+        function setConnected(connected) {
+            document.getElementById(&#39;connect&#39;).disabled = connected;
+            document.getElementById(&#39;disconnect&#39;).disabled = !connected;
+            document.getElementById(&#39;conversationDiv&#39;).style.visibility = connected ? &#39;visible&#39; : &#39;hidden&#39;;
+            document.getElementById(&#39;response&#39;).innerHTML = &#39;&#39;;
+        }
+        function connect() {
+            // 可以看到SockJS可以采用的是HTTP协议进行连接，这是为了兼用不支持WebSocket的浏览器
+            var url = &#39;http://localhost:8080/thymeleaf_demo/chat&#39;;
+            var socket = new SockJS(url);
+
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function () {
+                // 打开输入框，因为已经连接成功
+                setConnected(true);
+                // 设置订阅端点
+                stompClient.subscribe(&#39;/topic/messages&#39;, function (response) {
+                    showMessageOutput(JSON.parse(response.body));
+                });
+
+                // stompClient.subscribe(&#39;/app/chat&#39;, function (response) {
+                //     showMessageOutput(JSON.parse(response.body));
+                // });
+
+            });
+        }
+
+        function disconnect() {
+            if (stompClient != null) {
+                stompClient.disconnect();
+            }
+            setConnected(false);
+            console.log(&quot;Disconnected&quot;);
+        }
+
+        function sendMessage() {
+            console.info(&quot;send message&quot;)
+            var from = document.getElementById(&#39;from&#39;).value;
+            var text = document.getElementById(&#39;text&#39;).value;
+            var send = JSON.stringify({&#39;from&#39;: from, &#39;text&#39;: text});
+            stompClient.send(&quot;/app/chat&quot;, {}, send);
+        }
+
+        function showMessageOutput(messageOutput) {
+            var response = document.getElementById(&#39;response&#39;);
+            var p = document.createElement(&#39;p&#39;);
+            p.style.wordWrap = &#39;break-word&#39;;
+            p.appendChild(document.createTextNode(messageOutput.from + &quot;: &quot;
+                + messageOutput.text + &quot; (&quot; + messageOutput.time + &quot;)&quot;));
+            response.appendChild(p);
+        }
+    &lt;/script&gt;
+
+    &lt;div&gt;
+        &lt;div&gt;
+            &lt;input type=&quot;text&quot; id=&quot;from&quot; placeholder=&quot;Choose a nickname&quot; value=&quot;张三&quot;/&gt;
+        &lt;/div&gt;
+        &lt;br/&gt;
+        &lt;div&gt;
+            &lt;button id=&quot;connect&quot; onclick=&quot;connect();&quot;&gt;Connect&lt;/button&gt;
+            &lt;button id=&quot;disconnect&quot; disabled=&quot;disabled&quot; onclick=&quot;disconnect();&quot;&gt;
+                Disconnect
+            &lt;/button&gt;
+        &lt;/div&gt;
+        &lt;br/&gt;
+        &lt;div id=&quot;conversationDiv&quot;&gt;
+            &lt;input type=&quot;text&quot; id=&quot;text&quot; placeholder=&quot;Write a message...&quot;/&gt;
+            &lt;button id=&quot;sendMessage&quot; onclick=&quot;sendMessage();&quot;&gt;Send&lt;/button&gt;
+            &lt;p id=&quot;response&quot;&gt;&lt;/p&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<h4 id="后台-2"><a href="#后台-2" class="headerlink" title="后台"></a>后台</h4><p>依赖</p>
+<pre><code class="xml">&lt;!-- 依赖版本 --&gt;
+&lt;properties&gt;
+    &lt;thymeleaf-version&gt;3.0.11.RELEASE&lt;/thymeleaf-version&gt;
+    &lt;spring-framework-version&gt;5.2.6.RELEASE&lt;/spring-framework-version&gt;
+&lt;/properties&gt;
+
+&lt;!-- spring mvc --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-webmvc&lt;/artifactId&gt;
+    &lt;version&gt;${spring-framework-version}&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;!-- servlet 3 --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;javax.servlet&lt;/groupId&gt;
+    &lt;artifactId&gt;javax.servlet-api&lt;/artifactId&gt;
+    &lt;version&gt;3.1.0&lt;/version&gt;
+    &lt;scope&gt;provided&lt;/scope&gt;
+&lt;/dependency&gt;
+
+&lt;!-- spring websocket + stomp + sockjs --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-websocket&lt;/artifactId&gt;
+    &lt;version&gt;${spring-framework-version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-messaging&lt;/artifactId&gt;
+    &lt;version&gt;${spring-framework-version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
+    &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
+    &lt;version&gt;2.11.2&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<p>配置</p>
+<pre><code class="java">@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker(&quot;/topic&quot;); // 消息代理(MQ)前缀
+        registry.setApplicationDestinationPrefixes(&quot;/app&quot;); // 当前消息代理“目标”前缀，用于客户端发送时使用
+    }
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint(&quot;/chat&quot;);
+        registry.addEndpoint(&quot;/chat&quot;).withSockJS();
+        // 以上连个端点是有区别且不会覆盖的，而其中一个有使用 sockjs 是为了“弹性”，即客户端可用 sockjs 也可以不用
+    }
+}</code></pre>
+<p>实体类</p>
+<pre><code class="java">@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Message {
+    private String from;
+    private String text;
+}
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class OutputMessage {
+    private String from;
+    private String text;
+    private String time;
+}</code></pre>
+<p>使用</p>
+<pre><code class="java">package pub.td.controller;
+
+import com.sun.xml.internal.fastinfoset.Encoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring5.SpringTemplateEngine;
+import pub.td.websocket.Message;
+import pub.td.websocket.OutputMessage;
+
+import javax.annotation.Resource;
+import javax.mail.Address;
+import javax.mail.internet.MimeMessage;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+@Controller
+public class TestController {
+
+    @GetMapping(&quot;/&quot;)
+    public String test(Model model) {
+        model.addAttribute(&quot;name&quot;, &quot;Sam&quot;);
+        model.addAttribute(&quot;age&quot;, 18);
+        return &quot;index&quot;;
+    }
+
+    private SimpMessagingTemplate simpMessagingTemplate;
+    public TestController(SimpMessagingTemplate simpMessagingTemplate) {
+        this.simpMessagingTemplate = simpMessagingTemplate;
+    }
+
+    /** 自定义响应 */
+    @ResponseBody // 注意：使用@ResponseBody将处理器转为Restful风格，否则默认会找thymeleaf处理
+    @GetMapping(&quot;/send&quot;)
+    public void sendMessage() {
+        String time = new SimpleDateFormat(&quot;HH:mm&quot;).format(new Date());
+        OutputMessage message = new OutputMessage(&quot;服务端&quot;, &quot;sendMessage处理器&quot;, time);
+        simpMessagingTemplate.convertAndSend(&quot;/topic/messages&quot;, message);
+    }
+
+    /** 处理请求，和简单响应 */
+
+    /**
+     * 接收到Stomp的send数据时触发
+     */
+    @MessageMapping(&quot;/chat&quot;) // 表示这是一个端点处理器,用于接收客户端发送过来的stomp消息
+    @SendTo(&quot;/topic/messages&quot;) // 将return发送到消息代理的&quot;/topic/messages&quot;端点
+    public OutputMessage send(Message message) throws Exception {
+        System.out.println(message);
+        String time = new SimpleDateFormat(&quot;HH:mm&quot;).format(new Date());
+//        if (time != null) {
+//            throw new RuntimeException(&quot;测试 @MessageExceptionHandler&quot;);
+//        }
+        return new OutputMessage(&quot;服务端&quot;, &quot;send处理器&quot;, time);
+    }
+
+    /**
+     * Stomp客户端订阅时触发
+     * 特别注意，以当前案例为例子 @SubscribeMapping 只能处理 /app 前缀的请求
+     */
+//    @SubscribeMapping(&quot;/chat&quot;)
+//    public OutputMessage subscribe() {
+//        System.out.println(&quot;subscribe触发&quot;);
+//        String time = new SimpleDateFormat(&quot;HH:mm&quot;).format(new Date());
+//        return new OutputMessage(&quot;服务端&quot;, &quot;响应测试&quot;, time);
+//    }
+
+    /** @MessageMapping 的异常处理 */
+    @MessageExceptionHandler(Exception.class)
+    public void handleNullPointerException(Exception exception) {
+        System.out.println(&quot;抛出了异常：handleNullPointerException&quot;);
+        System.out.println(exception.getMessage());
+    }
+
+}</code></pre>
+<h4 id="效果-2"><a href="#效果-2" class="headerlink" title="效果"></a>效果</h4><p><img src="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/005.png" alt></p>
+<h2 id="内容修改"><a href="#内容修改" class="headerlink" title="内容修改"></a>内容修改</h2><h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
     文章作者: TanDi <br/>
     文章链接: 
     <a href="/websocket%E5%8D%8F%E8%AE%AE%E5%8F%8A%E4%BD%BF%E7%94%A8/">
-      Websocket协议的使用
+      了解WebSocket协议
     </a> <br/>
     版权声明: 转载请注明来自 
     <a href="https://tandi.pub">
@@ -363,7 +619,7 @@ public class WebSocketConfig {
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
           admin: ['oomgomgxx'],
-          id: md5('Websocket协议的使用'),
+          id: md5('了解WebSocket协议'),
           distractionFreeMode: false
         })
         gitalk.render('gitalk-container')           
@@ -377,7 +633,7 @@ public class WebSocketConfig {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是websocket"><span class="toc-text">什么是websocket</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么需要websocket"><span class="toc-text">为什么需要websocket</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#websocket通信模型图"><span class="toc-text">websocket通信模型图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#websocket握手"><span class="toc-text">websocket握手</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#websocket和server-sent-event（sse）区别"><span class="toc-text">websocket和server sent event（sse）区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#websocket入门案例"><span class="toc-text">websocket入门案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#spring-websocket-websocket-js"><span class="toc-text">spring-websocket + websocket js</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#前端"><span class="toc-text">前端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#后台"><span class="toc-text">后台</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#效果"><span class="toc-text">效果</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#spring-boot-starter-websocket-websocket-js"><span class="toc-text">spring-boot-starter-websocket + websocket js</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#前端-1"><span class="toc-text">前端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#后台-1"><span class="toc-text">后台</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#效果-1"><span class="toc-text">效果</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用websocket实现在线聊天室"><span class="toc-text">使用websocket实现在线聊天室</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么"><span class="toc-text">是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么需要"><span class="toc-text">为什么需要</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#通信模型图"><span class="toc-text">通信模型图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#握手过程"><span class="toc-text">握手过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#WebSocket和Server-Sent-Event（SSE）区别"><span class="toc-text">WebSocket和Server Sent Event（SSE）区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#WebSocket快速入门案例"><span class="toc-text">WebSocket快速入门案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-H5"><span class="toc-text">Spring + H5</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#前端"><span class="toc-text">前端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#后台"><span class="toc-text">后台</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#效果"><span class="toc-text">效果</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SpringBoot-H5"><span class="toc-text">SpringBoot + H5</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#前端-1"><span class="toc-text">前端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#后台-1"><span class="toc-text">后台</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#效果-1"><span class="toc-text">效果</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-SockJS-STOMP协议"><span class="toc-text">Spring + SockJS + STOMP协议</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#前端-2"><span class="toc-text">前端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#后台-2"><span class="toc-text">后台</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#效果-2"><span class="toc-text">效果</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修改"><span class="toc-text">内容修改</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
