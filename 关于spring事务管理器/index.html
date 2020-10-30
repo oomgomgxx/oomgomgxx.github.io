@@ -278,7 +278,7 @@ public class DemogApplication implements ApplicationRunner {
     }
 }</code></pre>
 <h3 id="源码阅读小知识"><a href="#源码阅读小知识" class="headerlink" title="源码阅读小知识"></a>源码阅读小知识</h3><ul>
-<li>Spring AOP 依靠 动态代理 + 方法拦截器 来织入 Advisor 逻辑。大致过程是通过生命周期中的 BeanPostProcessor#postProcessAfterInitialization 方法判断是否存在 Advisor ，如果存在则返回包含事务拦截器的代理。事务拦截器用于主要执行代理方法时对其进行拦截判断织入 Advisor 逻辑</li>
+<li>Spring AOP 依靠 动态代理 + 方法拦截器（位于org.aopalliance.intercept，并继承了Advice接口） 来织入 Advisor 逻辑。大致过程是通过生命周期中的 BeanPostProcessor#postProcessAfterInitialization 方法判断是否存在 Advisor ，如果存在则返回包含事务拦截器的代理。事务拦截器用于主要执行代理方法时对其进行拦截判断织入 Advisor 逻辑</li>
 <li>用户自定义的 JpaRepository 会被容器封装成一个FactoryBean</li>
 <li>反射中 Method 是 AnnotatedElement 的实现</li>
 <li>Advisor 相当于一个切面中的方法</li>
