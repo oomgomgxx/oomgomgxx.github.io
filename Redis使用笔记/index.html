@@ -141,7 +141,7 @@
 <p>Redis 命令参考：<a href="http://doc.redisfans.com/" target="_blank" rel="noopener">http://doc.redisfans.com/</a></p>
 <p>Redis 文档：<a href="http://www.redis.cn/documentation.html" target="_blank" rel="noopener">http://www.redis.cn/documentation.html</a></p>
 <p>lua入门：<a href="https://moonbingbing.gitbooks.io/openresty-best-practices/" target="_blank" rel="noopener">https://moonbingbing.gitbooks.io/openresty-best-practices/</a></p>
-<h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><p>Redis是一款C语言开发的键值对（key-value）NoSQL。</p>
+<h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><p>Redis是一款C语言开发的键值对NoSQL</p>
 <p>Redis具有以下特性：</p>
 <ul>
 <li>开源</li>
@@ -186,12 +186,12 @@ localhost:6379&gt;</code></pre>
 127.0.0.1:6379&gt; keys na*
 1) &quot;name&quot;</code></pre>
 <ul>
-<li><p>scan、sscan、hscan、zscan 等命令是用于代替 keys 这种较为耗时的命令的。和 keys、smembers 等操作之间的区别如下：</p>
+<li><p>scan、sscan、hscan、zscan 等命令可用于代替较为耗时的范围操作（譬如 keys、lrange、smembers 等等），其区别如下：</p>
 <ul>
-<li>keys、smembers 实时性强但阻塞时间也常</li>
-<li>scan系列命令阻塞时间短，但有以下两个缺点<ol>
+<li>keys、lrange、smembers 等范围操作实时性强，但阻塞时间也长</li>
+<li>scan 系列命令阻塞时间短，但有以下两个缺点<ol>
 <li>可能返回重复数据，去重操作需要应用程序解决</li>
-<li>不能保证返回数据列表的实时性，譬如操作中途可能被新增或者修改后scan系列命令可能感知到也可能感知不到</li>
+<li>不能保证返回数据集合的实时性。譬如操作中途数据被新增或修改，scan命令可能无法马上感知到</li>
 </ol>
 </li>
 </ul>
@@ -425,7 +425,7 @@ OK
 (integer) 13
 127.0.0.1:6379&gt; get name
 &quot;hellozhangsan&quot;</code></pre>
-<h3 id="list"><a href="#list" class="headerlink" title="list"></a>list</h3><blockquote>
+<h3 id="list（有序）"><a href="#list（有序）" class="headerlink" title="list（有序）"></a>list（有序）</h3><blockquote>
 <p>基于<code>双向链表</code>或<code>压缩列表</code></p>
 <ul>
 <li>压缩队列是一种节约内存的特殊双端链表。两端操作为O(1)，push/pop</li>
@@ -765,7 +765,7 @@ OK
 (integer) 1
 127.0.0.1:6379&gt; smembers myset2
 1) &quot;b&quot;</code></pre>
-<h3 id="zset"><a href="#zset" class="headerlink" title="zset"></a>zset</h3><blockquote>
+<h3 id="zset（有序）"><a href="#zset（有序）" class="headerlink" title="zset（有序）"></a>zset（有序）</h3><blockquote>
 <p>基于<code>压缩列表</code>或<code>跳表</code></p>
 <ul>
 <li><p>压缩队列是一种节约内存的特殊双端链表。两端操作为O(1)，push/pop</p>
@@ -874,9 +874,10 @@ OK
 <pre><code class="shell">127.0.0.1:6379&gt; zpopmax myzset
 1) &quot;b&quot;</code></pre>
 <p>zpopmin/bzpopmin：删除并返回最低分值得元素，和zpopmax用法一样</p>
-<h3 id="stream（redis-5-x）"><a href="#stream（redis-5-x）" class="headerlink" title="stream（redis 5.x）"></a>stream（redis 5.x）</h3><ul>
-<li>xadd：添加stream</li>
-</ul>
+<h3 id="stream（redis-5-x）"><a href="#stream（redis-5-x）" class="headerlink" title="stream（redis 5.x）"></a>stream（redis 5.x）</h3><blockquote>
+<p>在 Redis 中除了 List 能够实现消息队列功能之外，还提供了 stream 来实现</p>
+</blockquote>
+<p><strong>添加stream</strong></p>
 <p>格式：xadd key ID field string</p>
 <pre><code class="shell"># 使用自动生成id：*
 127.0.0.1:6379&gt; xadd test:person * name zhangsan
@@ -886,19 +887,13 @@ OK
 # 自定义id
 127.0.0.1:6379&gt; xadd test2:person 0-1 name lisi age 19
 &quot;0-1&quot;</code></pre>
-<ul>
-<li>xlen：查看key的长度</li>
-</ul>
+<p><strong>查看指定 key 的 stream 数量</strong></p>
 <pre><code class="shell">127.0.0.1:6379&gt; xlen test:person
 (integer) 2</code></pre>
-<ul>
-<li>xdel：按照key和id删除一个stream</li>
-</ul>
+<p><strong>按照 key 和 id 删除一个 stream</strong></p>
 <pre><code class="shell">127.0.0.1:6379&gt; xdel test2:person 0-1
 (integer) 1</code></pre>
-<ul>
-<li>xread：查看指定stream后的1个或多个stream</li>
-</ul>
+<p><strong>读取指定 stream 后的 1 个或多个 stream</strong></p>
 <p>格式：xread [COUNT count] [BLOCK ms] streams key [key…] id [id…]</p>
 <pre><code class="shell"># 查看key为test:person且id为1571756285397-0后的stream
 127.0.0.1:6379&gt; xread streams test:person 1571756285397-0
@@ -909,6 +904,7 @@ OK
 # 添加一个stream
 127.0.0.1:6379&gt; xadd test:person * city qy
 &quot;1571757314013-0&quot;
+
 # 查看key为test:person且id为1571756285397-0后的stream
 127.0.0.1:6379&gt; xread streams test:person 1571756285397-0
 1) 1) &quot;test:person&quot;
@@ -917,16 +913,15 @@ OK
             2) &quot;18&quot;
       2) 1) &quot;1571757314013-0&quot;
          2) 1) &quot;city&quot;
-            2) &quot;qy&quot;     
+            2) &quot;qy&quot;    
+
 # 查看指定数量的stream
 127.0.0.1:6379&gt; xread COUNT 1 streams test:person 1571756285397-0
 1) 1) &quot;test:person&quot;
    2) 1) 1) &quot;1571756296247-0&quot;
          2) 1) &quot;age&quot;
             2) &quot;18&quot;</code></pre>
-<ul>
-<li>xrange：查看范围stream</li>
-</ul>
+<p><strong>读取指定范围的 stream</strong></p>
 <p>格式：xrange key startid endid</p>
 <p>特殊字符：+表示最大，-表示最小</p>
 <pre><code class="shell"># 查看从1571756285397-0到1571756296247-0
@@ -937,6 +932,7 @@ OK
 2) 1) &quot;1571756296247-0&quot;
    2) 1) &quot;age&quot;
       2) &quot;18&quot;
+
 # 从1571756285397-0开始查看
 127.0.0.1:6379&gt; xrange test:person 1571756285397-0 +
 1) 1) &quot;1571756285397-0&quot;
@@ -945,6 +941,7 @@ OK
 2) 1) &quot;1571756296247-0&quot;
    2) 1) &quot;age&quot;
       2) &quot;18&quot;
+
 # 查看所有
 127.0.0.1:6379&gt; xrange test:person - +
 1) 1) &quot;1571756285397-0&quot;
@@ -953,9 +950,7 @@ OK
 2) 1) &quot;1571756296247-0&quot;
    2) 1) &quot;age&quot;
       2) &quot;18&quot;</code></pre>
-<ul>
-<li>xgroup：创建生产者，消息为stream</li>
-</ul>
+<p><strong>创建生产者（消息为stream）</strong></p>
 <pre><code class="shell"># 城市名称为 广州
 127.0.0.1:6379&gt; xadd city * name guangzhou
 &quot;1571757812063-0&quot;
@@ -965,14 +960,17 @@ OK
 # 城市名称为 佛山
 127.0.0.1:6379&gt; xadd city * name foshan
 &quot;1571757823298-0&quot;
-# 创建城市组 组名：guangdongsheng 从对应key的id为1571757812063-0到尾的所有stream成员
+
+# 创建城市组
+# 1. 组名为 guangdongsheng
+# 2. 当前（生产者）组包含了id为1571757812063-0之后的所有city消息（stream）
 127.0.0.1:6379&gt; xgroup create city guangdongsheng 1571757812063-0
 OK</code></pre>
-<ul>
-<li>xreadgroup：消费stream</li>
-</ul>
-<pre><code class="shell"># 查看组名为guangdongsheng且key为city的生产者组最近产生的stream信息
-# &gt;表示最近（未被消费）的信息。zhangsan为消费者名称，自定义
+<p><strong>消费 stream</strong></p>
+<pre><code class="shell"># 查看指定生产者组所生成的消息（stream）
+# &gt;：表示最近（未被消费）的信息
+# zhangsan：消费者名称，自定义
+# streams city：表示只查看key为city的消息（stream）
 127.0.0.1:6379&gt; xreadgroup group guangdongsheng zhangsan streams city &gt;
 1) 1) &quot;city&quot;
    2) 1) 1) &quot;1571757817679-0&quot;
@@ -981,7 +979,8 @@ OK</code></pre>
       2) 1) &quot;1571757823298-0&quot;
          2) 1) &quot;name&quot;
             2) &quot;foshan&quot;
-# 消费指定id后的stream消息
+
+# 消费指定id后的消息（stream）
 127.0.0.1:6379&gt; xreadgroup group guangdongsheng zhangsan streams city 1571757812063-0
 1) 1) &quot;city&quot;
    2) 1) 1) &quot;1571757817679-0&quot;
@@ -990,7 +989,7 @@ OK</code></pre>
       2) 1) &quot;1571757823298-0&quot;
          2) 1) &quot;name&quot;
             2) &quot;foshan&quot;
-# 可以看出stream被消费者消费完就没了
+# 可以看出消息只要被消费一次后就会被删除
 127.0.0.1:6379&gt; xreadgroup group guangdongsheng zhangsan streams city &gt;
 (nil)
 
@@ -1150,21 +1149,28 @@ used_cpu_sys:0.03
 used_cpu_user:0.01
 used_cpu_sys_children:0.00
 used_cpu_user_children:0.00</code></pre>
-<h2 id="事务相关"><a href="#事务相关" class="headerlink" title="事务相关"></a>事务相关</h2><p>Redis中的事务和传统的 ACID 事务不同，它只能保证命令的要么都执行或要么都不执行，且事务期间即使出错也不会回滚。Redis提供了 <code>multi</code> 和 <code>exec</code> 两个命令进行事务操作。</p>
-<p>用法如下：</p>
-<pre><code class="shell"># 第1次事务
-127.0.0.1:6379&gt; multi
-OK
-127.0.0.1:6379&gt; set num 1
-QUEUED
-127.0.0.1:6379&gt; incr num 1
-(error) ERR wrong number of arguments for &#39;incr&#39; command
-127.0.0.1:6379&gt; incr num
-QUEUED
-127.0.0.1:6379&gt; exec
-(error) EXECABORT Transaction discarded because of previous errors.
-# 第2次事务
-127.0.0.1:6379&gt; multi
+<h2 id="事务相关"><a href="#事务相关" class="headerlink" title="事务相关"></a>事务相关</h2><blockquote>
+<p>简介</p>
+</blockquote>
+<ul>
+<li><p>Redis 事务和传统关系型数据的 ACID 事务不同，它只能保证原子性，且不提供回滚操作</p>
+</li>
+<li><p>注意，在 Redis 2.6.5+ 版本才正式支持 ACID 的原子性。在这之前，事务期间即使发生异常也不会影响之前已经执行的命令，即这时的事务只是一个批量执行操作</p>
+</li>
+<li><p>Redis 提供以下命令实现事务操作：</p>
+<ul>
+<li>multi：该命令执行后表示客户端将要提交一系列操作，而这些操作将会在 exec 时按队列形式一同执行。注意，命令在 exec 前会先暂存到队列中</li>
+<li>watch：乐观锁，用于监听key。即如果 exec 之前发现 key 被修改，事务将失败</li>
+<li>discard：丢弃暂存队列中的命令</li>
+<li>exec：执行暂存队列中的命令</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>基本用法</p>
+</blockquote>
+<p>multi 和 exec 用法</p>
+<pre><code class="shell">127.0.0.1:6379&gt; multi
 OK
 127.0.0.1:6379&gt; set num 1
 QUEUED
@@ -1173,8 +1179,7 @@ QUEUED
 127.0.0.1:6379&gt; exec
 1) OK
 2) (integer) 2</code></pre>
-<p>从上面不难看出，事务发生错误并不会回滚之前执行了的操作，除此之外 Redis 还提供了一个 <code>watch</code> 命令用于监听指定的 key 是否有该表，即 wathc 实质是一个乐观锁，而一旦监听到 key 发生了改变，事务就会失败。</p>
-<p>用法如下：</p>
+<p>watch 用法</p>
 <pre><code class="shell">127.0.0.1:6379&gt; set num 1
 OK
 127.0.0.1:6379&gt; watch num # 监听num
@@ -1183,22 +1188,38 @@ OK
 OK
 127.0.0.1:6379&gt; incr num 
 QUEUED
+
 # 客户端2 ----
 127.0.0.1:6379&gt; incr num
 (integer) 2
-# 客户端2 ----
+
+# 客户端1 ----
 127.0.0.1:6379&gt; incr num 
 QUEUED
 127.0.0.1:6379&gt; exec
-(nil) # 因为watch监听到由其他客户端修改num，所以当前事务失效
+(nil) # num被修改事务失效
 127.0.0.1:6379&gt; get num
 &quot;2&quot;</code></pre>
-<h2 id="Redis的常见应用场景"><a href="#Redis的常见应用场景" class="headerlink" title="Redis的常见应用场景"></a>Redis的常见应用场景</h2><blockquote>
+<blockquote>
+<p>Java客户端</p>
+</blockquote>
+<pre><code class="java">Jedis jedis = new Jedis(&quot;localhost&quot;, 6379);
+Transaction transaction = jedis.multi();
+
+// ...
+
+transaction.watch(&quot;key&quot;); // 乐观锁，一旦key被修改事务将失败
+transaction.exec();// 提交
+transaction.discard(); // 丢失当前位于暂存队列的命令
+transaction.execGetResponse(); // 执行并返回
+transaction.close(); // 关闭事务</code></pre>
+<h2 id="Redis常见应用场景"><a href="#Redis常见应用场景" class="headerlink" title="Redis常见应用场景"></a>Redis常见应用场景</h2><blockquote>
 <p>字符串类型</p>
 </blockquote>
 <ul>
 <li>键值缓存</li>
 <li>计数器</li>
+<li>幂等令牌</li>
 <li>分布式ID</li>
 <li>分布式锁（不推荐）</li>
 <li>全局会话管理</li>
@@ -1208,7 +1229,7 @@ QUEUED
 </blockquote>
 <ul>
 <li>分布式队列：lpush、brpop</li>
-<li>历史检索：ltrim</li>
+<li>返回最近的历史检索：ltrim</li>
 </ul>
 <blockquote>
 <p>字典</p>
@@ -1222,11 +1243,16 @@ QUEUED
 <ul>
 <li>共同好友：交集</li>
 <li>好友推荐：差集</li>
+<li>差集/交集/并集等数量统计</li>
+<li>每天的用户登录/签到信息</li>
+<li>商品或文章的评论列表 </li>
+<li>单个网页的访问信息 </li>
 </ul>
 <blockquote>
 <p>有序集合</p>
 </blockquote>
 <ul>
+<li>时间序列数据</li>
 <li>热点数据</li>
 <li>排行榜</li>
 <li>点赞</li>
@@ -1284,7 +1310,7 @@ OK</code></pre>
 <li>可能会出现旧版本 Redis 无法兼容新版本 RDB 文件的情况，从而导致无法恢复数据的问题</li>
 </ul>
 <h3 id="AOF"><a href="#AOF" class="headerlink" title="AOF"></a>AOF</h3><blockquote>
-<p>AOF（append only file），注意，它是一种写后日志，优点是不会阻塞”当前命令”执行（但会阻塞后面命令），但因为写是写后日志，所以存在丢失更新风险</p>
+<p>AOF（append only file）是一种写后日志，优点是不会阻塞当前命令执行（但会阻塞后面命令）以及不会记录错误的命令，但因为是写后日志所以存在丢失更新风险</p>
 </blockquote>
 <p><strong>aof流程</strong></p>
 <img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png" style="zoom:67%;">
@@ -1354,11 +1380,15 @@ AOF is valid # 表示当前aof文件是可用的</code></pre>
 <p>原因</p>
 </blockquote>
 <ul>
-<li>基于内存读写</li>
-<li>单线程避免了上下文切换和锁竞争导致等待的消耗</li>
-<li>采用 Reactor 线程模型，基于IO多路复用技术和事件处理机制处理网络请求</li>
-<li>底层数据结构高效，常用命令（SET/GET等等）可以做到时间查询复杂度O(1)</li>
-<li>客户端和服务端采用高效且简单的 RESP 协议，因此正反序列化高效</li>
+<li>基于内存操作</li>
+<li>使用全局哈希表进行定位，其时间查询复杂度可达O(1)<ul>
+<li>注意，Redis采用全局哈希表定位元素，而“元素”并非真实值而是一个指针，因此实际操作的时间复杂度还要看具体（指针）对应的元素所用的数据结构</li>
+</ul>
+</li>
+<li>数据结构操作高效。除了范围查询这种较为耗时的操作外（O(n)），其他操作一般可达到O(1)，譬如单一的元素操作以及统计操作等，而范围查询也可以采用SCAN系列命令代替，因为SCAN可以将发批量数据分为小批量操作从而减少阻塞时间</li>
+<li>单线程写操作，避免了高并发时大量的上下文切换以及锁资源竞争带来的耗时</li>
+<li>采用 Reactor 线程模型，即基于多路复用IO模型提高网络请求的处理效率</li>
+<li>客户端和服务端采用简单高效的 RESP 协议通信</li>
 </ul>
 <blockquote>
 <p>Redis 6.x 新特性：多线程处理网络IO</p>
@@ -1372,90 +1402,105 @@ io-threads 3</code></pre>
 <p>注意</p>
 </blockquote>
 <ol>
-<li>虽然 Redis 6.x 引入了多线程来处理网络IO，但 Redis 在执行<code>写操作是依然时依然是由主线程来完成的</code>，所以写操作会按照串行化执行，因此为了避免阻塞应该尽量减少诸如<code>keys</code>、<code>hgetall</code>这等较为耗时的操作</li>
-<li>Redis 6.x 引入的多线程处理网络IO功能中的<code>网络IO处理线程只负责处理&quot;客户端读操作&quot;以及&quot;回写数据给客户端&quot;</code></li>
+<li>虽然 Redis 6.x 引入了多线程来处理网络IO，但 Redis 在执行写操作时依然是由主线程单独来完成的，而网络IO处理线程只负责处理读操作和回写操作</li>
+<li>在 Redis 6.x 前，我们一直说 Redis 是单线程的，其实这里的单线程指的是 Redis 在执行命令时是单线程的，而并非指 Redis 的所有操作都只有一条线程来完成。这并不难理解，譬如持久化、节点数据同步等都会额外fork出新的进程来处理的（在Linux中线程被称为轻量级进程）</li>
 </ol>
+<h2 id="常见会阻塞主线程的操作"><a href="#常见会阻塞主线程的操作" class="headerlink" title="常见会阻塞主线程的操作"></a>常见会阻塞主线程的操作</h2><ul>
+<li>集合全量查询和聚合操作</li>
+<li>大key（包含大量value值）的删除</li>
+<li>清空数据库</li>
+<li>AOF日志同步写</li>
+<li>从库加载RDB文件</li>
+</ul>
 <h2 id="关于分布式缓存"><a href="#关于分布式缓存" class="headerlink" title="关于分布式缓存"></a>关于分布式缓存</h2><h3 id="缓存剔除策略"><a href="#缓存剔除策略" class="headerlink" title="缓存剔除策略"></a>缓存剔除策略</h3><ol>
-<li>算法剔除（FIFO[无]、LRU、LFU、最小TTL）</li>
+<li>算法剔除（FIFO、LRU、LFU、最小TTL）</li>
 <li>超时剔除（expire命令）</li>
 <li>主动更新（代码控制，推荐）</li>
 </ol>
 <h3 id="相关的配置"><a href="#相关的配置" class="headerlink" title="相关的配置"></a>相关的配置</h3><p>配置最大可用内存。默认为0，表示不设置限制</p>
-<pre><code>maxmemory &lt;bytes&gt;</code></pre><p>指定当 maxmemory 满了的时候，使用什么策略来提出内存数据</p>
+<pre><code>maxmemory &lt;bytes&gt;</code></pre><p>指定当 maxmemory 满了时，使用什么策略来淘汰缓存</p>
 <pre><code>maxmemory-policy noeviction</code></pre><ul>
-<li>volatile-lru：从具有过期设置（expire）的key中使用近似的LRU剔除（最近最少使用）缓存后再保存新的缓存</li>
-<li>volatile-lfu：从具有过期设置（expire）的key中使用近似的LFU剔除（最少命中）缓存后再保存新的缓存</li>
-<li>volatile-random：从具有过期设置（expire）的key中随机剔除缓存后再保存新的缓存</li>
-<li>volatile-ttl：从具有过期设置（expire）的key中剔除ttl时间较小的缓存后再保存新的缓存</li>
-<li>allkeys-lru：使用近似的LRU剔除缓存后再保存新的缓存</li>
-<li>allkeys-lfu：使用近似的LFU剔除缓存后再保存新的缓存</li>
-<li>allkeys-random：随机剔除缓存后再保存新的缓存</li>
-<li>noeviction：不剔除，只在写操作是返回错误告知</li>
+<li><p>volatile-lru：从具有过期设置（expire）的 key 中，使用 LRU 剔除（最近最少使用）</p>
+</li>
+<li><p>volatile-lfu：从具有过期设置（expire）的 key 中，使用 LFU 剔除（最少命中）</p>
+</li>
+<li><p>volatile-random：从具有过期设置（expire）的 key 中，随机剔除</p>
+</li>
+<li><p>volatile-ttl：从具有过期设置（expire）的 key 中，剔除 ttl 时间较小的</p>
+</li>
+<li><p>allkeys-lru（推荐）：使用 LRU 剔除缓存后再保存新的缓存</p>
+</li>
+<li><p>allkeys-lfu：使用 LFU 剔除缓存后再保存新的缓存</p>
+</li>
+<li><p>allkeys-random：随机剔除缓存</p>
+</li>
+<li><p>noeviction：不剔除，只在写操作时返回错误告知</p>
+</li>
 </ul>
-<blockquote>
-<p>LFU是在 Redis 4.x 加入的</p>
-</blockquote>
+<p>常用缓存剔除/淘汰算法</p>
 <p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/010.png" alt></p>
 <p>指定每次对比样本的数量</p>
-<pre><code>maxmemory-samples 5</code></pre><blockquote>
-<p>因为Redis中实现的LRU、LFU、以及最小TTL都不是精准算法，因此提供了 maxmemory-samples用于指定剔除时对比的样本数。</p>
-<p>官方注释表示，设置为10非常接近真实算法所达的精准度，但是会消耗更多的CPU资源</p>
-</blockquote>
+<pre><code>maxmemory-samples 5</code></pre><ul>
+<li>因为 Redis 实现的LRU、LFU、以及最小TTL等算法都不是精准的（这时为了减轻数据淘汰对缓存性能的影响），因此提供了 maxmemory-samples 用于指定剔除缓存时用来对比的样本数</li>
+<li>Redis 会在第一次剔除缓存时生成样本集合，然后让将要剔除的缓存与集合中<code>访问时间戳最小的缓存</code>进行对比，如果少于则剔除。（Redis的LRU实现默认会记录每个数据的最近一次访问的时间戳 ）</li>
+<li>该值越大越精准，但也更消耗CPU</li>
+</ul>
 <p>指定副本节点复制缓存时是否忽略 maxmemory 设置</p>
-<pre><code>replica-ignore-maxmemory yes</code></pre><blockquote>
-<p>非常重要的是，Redis 5.x开始replica-ignore-maxmemory默认为yes，表示副本在复制时将会忽略主节点的maxmemory设置，换句话来说就是副本节点不会对剔除缓存。</p>
-</blockquote>
-<h3 id="分布式缓存需要注意问题"><a href="#分布式缓存需要注意问题" class="headerlink" title="分布式缓存需要注意问题"></a>分布式缓存需要注意问题</h3><h4 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h4><p>缓存穿透指的是访问了不存在的数据导致间接绕过了缓存层（因为数据根本不存在）;</p>
-<p>举个例子，根据id=nihao来获取对象信息，但数据库并没有id=nihao的对象，这时如果有人故意攻击，拿着一个不存在的id不断请求应用，这就会导致所有请求落在数据库上，从而间接导致缓存层失效; </p>
+<pre><code>replica-ignore-maxmemory yes</code></pre><ul>
+<li>非常重要的是，Redis 5.x开始replica-ignore-maxmemory默认为yes，表示副本在复制时将会忽略主节点的maxmemory设置，换句话来说就是副本节点不会对剔除缓存。</li>
+</ul>
+<h3 id="缓存容量设置多少合适？"><a href="#缓存容量设置多少合适？" class="headerlink" title="缓存容量设置多少合适？"></a>缓存容量设置多少合适？</h3><p>根据<a href="https://baike.baidu.com/item/%E4%BA%8C%E5%85%AB%E5%AE%9A%E5%BE%8B/747076?fromtitle=%E5%85%AB%E4%BA%8C%E5%AE%9A%E5%BE%8B&fromid=12672033" target="_blank" rel="noopener">二八定律</a>，可将缓存大小设置为总数量的20%~30%。</p>
+<p>二八定律指的是在总数量中通常是20%占据了80%的访问量，而其余的80%虽然是大多数，但访问率却不高。</p>
+<h3 id="分布式缓存需要注意问题"><a href="#分布式缓存需要注意问题" class="headerlink" title="分布式缓存需要注意问题"></a>分布式缓存需要注意问题</h3><h4 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h4><p>缓存穿透指的是访问了不存在的数据，导致间接绕过了缓存层（因为数据根本不存在）。出现这种情的通常原因是发生了<code>误操作删除了数据</code>或<code>恶意攻击</code>。</p>
 <p>解决方法：</p>
 <ul>
-<li><strong>缓存空值：</strong><ul>
-<li>访问数据库时如果数据库没有数据，则返回一个null给缓存层，避免拿着不存在的值不停地访问应用从而造成压力。</li>
-<li>最好给这个空值设置超时时间，这个可以避免大量空值占用空间。</li>
+<li><strong>DB没数据时，让其缓存空值，避免再访问数据库</strong><ul>
+<li>最好给这个空值设置超时时间，这样可以避免大量空值占用空间</li>
 </ul>
 </li>
-<li><strong>BloomFilter(布隆过滤器)：</strong></li>
-<li>原理是先将数据的 key 通过哈希算法映射到 BloomFilter 的比特向量中。而请求时，然后查询时先到 BloomFilter 检查是否存当前查询缓存的映射，如果存在则访问，不存则直接返回。<ul>
-<li>注意 BloomFilter 使用的是哈希函数进行映射的，因此存在一定的误判性，即 BloomFilter 并非百分百准确。</li>
-<li>在 Google Guava 工具库中提供了对 BloomFilter 的相关实现</li>
-<li>BloomFilter 原理展示：<a href="https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/" target="_blank" rel="noopener">https://tandi960505.github.io/bloomfilter-tutorial/zh_CN/</a> </li>
+<li><strong>使用布隆过滤器进行缓存预判</strong><pre><code>- 原理是在缓存数据时，将缓存对应的 key 值通过哈希函数将其映射到布隆过滤器上，以示存在该缓存。然后在查询时，使用同样的哈希函数对 key 进行映射判断，如果已存在则访问缓存或数据库，如果不存在则直接返回请求而不访问缓存和数据库
+    - 注意，布隆过滤器通常采用一个或多个哈希函数对 key 值进行映射。而因为存在哈希冲突的情况，因此存在一定的误判性，即可能出现不存在 key 的缓存，也能访问缓存层和数据的情况。而且这种误判可能性会随着数据库增大而增大
+    - 在 Google Guava 工具库中提供了对 BloomFilter 的相关实现
+    - [BloomFilter 原理展示](https://llimllib.github.io/bloomfilter-tutorial/)</code></pre><ul>
+<li><strong>对请求进行合法性检测，排除恶意请求</strong></li>
 </ul>
 </li>
 </ul>
-<h4 id="无底洞问题"><a href="#无底洞问题" class="headerlink" title="无底洞问题"></a>无底洞问题</h4><p>无底洞问题由 Facebook 发现，指的是当时 Facebook 用的 Memcache 节点数已多达3000个，开发人员发现水平扩容节点不但没有得来想要的效果，反而降低了性能。</p>
-<p>其原因主要是 key 散乱在不同的缓存节点上导致了网络的开销。</p>
-<p>所以预防这个问题基本思想就是，<code>减少网络通讯的次数</code>和<code>让相关的key落在相同的节点上</code>。所以可以使用<code>管道</code>、mget、m* 这样的命令来解决。</p>
+<h4 id="无底洞问题"><a href="#无底洞问题" class="headerlink" title="无底洞问题"></a>无底洞问题</h4><p>无底洞问题指的是当时 Facebook 用的 Memcache 节点数已多达3000个了，开发人员发现水平扩容节点不但没有得来想要的性能，反而降低了性能。</p>
+<p>其原因主要是 key 散乱在不同的缓存节点上，导致了较大的网络的开销。所以预防这个问题基本思路是，<code>减少网络通讯的次数</code>以及<code>让相关的缓存落在相同的节点上</code>，所以可以使用 管道、mget、m* 这样的命令来解决。</p>
 <blockquote>
 <p>图片源自《Redis开发与运维》</p>
 </blockquote>
 <p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/011.png" alt></p>
-<h4 id="缓存击穿（热点key失效）"><a href="#缓存击穿（热点key失效）" class="headerlink" title="缓存击穿（热点key失效）"></a>缓存击穿（热点key失效）</h4><p>其实这个名字个人觉得不是很恰当，缓存击穿指的是当大量并发访问同一个key的时候，这个key恰好失效了，导致所有并发请求落到数据库; </p>
+<h4 id="缓存击穿（热点key失效）"><a href="#缓存击穿（热点key失效）" class="headerlink" title="缓存击穿（热点key失效）"></a>缓存击穿（热点key失效）</h4><p>缓存击穿这个名字个人认为并不恰当。缓存击穿指的是当大量并发访问同一个key的时候，这个key恰好失效了，导致所有并发请求落到数据库从而带来访问压力。因此“热点key失效”这个称呼更加合适。</p>
 <p>解决的思路：</p>
 <ul>
-<li>进行<code>互斥处理</code>来等待先发现key为空的线程将该key重新放入缓存后其他线程再获取。(多服务节点下可使用分布式锁)</li>
-<li>key不过期。使用后台线程来定时更新缓存</li>
+<li>恢复缓存时采用<code>互斥</code>处理，令其他线程进入等待，让最先发现缓存失效的线程将其恢复</li>
+<li>热点缓存不过期，但需要主动更或定时更新缓存以保持一致性</li>
 </ul>
-<h4 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h4><p>缓存雪崩类似于缓存击穿。指的是缓存层突然失效。</p>
+<h4 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h4><p>缓存雪崩指的是缓存层失效。譬如<code>宕机</code>或是<code>大量缓存同时失效</code>，从而导致大量请求落入数据库</p>
 <blockquote>
 <p>图片源自《Redis开发与运维》</p>
 </blockquote>
 <p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/012.png" alt></p>
 <p>解决方法：</p>
 <ul>
-<li>保证缓存层的高可用</li>
-<li>后端请求限流</li>
+<li>缓存层的高可用，避免缓存层节点不可用</li>
+<li>错开缓存的超时时间，避免设置同样的超时值</li>
+<li>当出现雪崩时，后端进行服务降级，让非核心数据返回预设值</li>
+<li>当出现雪崩时，后端进行请请求限流保护系统</li>
 <li>提前测试缓存雪崩后的应对能力</li>
 </ul>
 <h4 id="数据库和缓存之间的双写一致性问题"><a href="#数据库和缓存之间的双写一致性问题" class="headerlink" title="数据库和缓存之间的双写一致性问题"></a>数据库和缓存之间的双写一致性问题</h4><blockquote>
 <p>使用缓存就意味着存在数据一致性问题。</p>
 </blockquote>
 <h5 id="问题赘述"><a href="#问题赘述" class="headerlink" title="问题赘述"></a>问题赘述</h5><p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/010.png" alt></p>
-<p>上图是Redis缓存的剔除策略。通常在实际使用中会混搭来满足需求。而缓存双写一致性问题发生在主动更新上。</p>
+<p>上图是Redis缓存的剔除策略，通常在实际使用中会混搭来满足需求，而缓存双写一致性问题发生在主动更新上。</p>
 <p>怎样更新才能更好地保证数据库和缓存的最终一致性？还有就是需要考虑缓存更新失败的情况。</p>
-<h5 id="主动更新方案对比"><a href="#主动更新方案对比" class="headerlink" title="主动更新方案对比"></a>主动更新方案对比</h5><p><strong>1）先更新数据库，再更新缓存（在缓存足够情况下，也推荐）</strong></p>
+<h5 id="主动更新方案对比"><a href="#主动更新方案对比" class="headerlink" title="主动更新方案对比"></a>主动更新方案对比</h5><p><strong>1）先更新数据库，再更新缓存</strong></p>
 <ul>
-<li><code>浪费内存</code>。因为并不是所有数据都需要缓存</li>
-<li>可能缓存到脏数据。如下：</li>
+<li>浪费内存，因为并不是所有数据都需要缓存</li>
+<li>可能缓存到脏数据</li>
 </ul>
 <table>
 <thead>
@@ -1483,8 +1528,8 @@ io-threads 3</code></pre>
 </tbody></table>
 <p><strong>2）先更新缓存，再更新数据库</strong></p>
 <ul>
-<li><code>浪费内存</code>，因为并不是所有数据都需要缓存</li>
-<li>可能缓存到脏数据。如下：</li>
+<li>浪费内存，因为并不是所有数据都需要缓存</li>
+<li>可能导致数据库保存到脏数据</li>
 </ul>
 <table>
 <thead>
@@ -1510,9 +1555,9 @@ io-threads 3</code></pre>
 <td></td>
 </tr>
 </tbody></table>
-<p><strong>3）先更新数据库，再删除缓存（推荐）</strong></p>
+<p><strong>3）先更新数据库，再删除缓存（优先考虑）</strong></p>
 <ul>
-<li>可能缓存到脏数据（读写分离延迟 或 更新缓存失败）。如下读写分离问题：</li>
+<li>可能读取到脏数据</li>
 </ul>
 <table>
 <thead>
@@ -1526,21 +1571,17 @@ io-threads 3</code></pre>
 <td></td>
 </tr>
 <tr>
+<td></td>
+<td>读取缓存</td>
+</tr>
+<tr>
 <td>删除缓存</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>读取从节点数据更新缓存</td>
-</tr>
-<tr>
-<td>同步完成</td>
 <td></td>
 </tr>
 </tbody></table>
 <p><strong>4）先删除缓存，再更新数据库</strong></p>
 <ul>
-<li>可能缓存到脏数据。如下：</li>
+<li>可能缓存到脏数据</li>
 </ul>
 <table>
 <thead>
@@ -1562,8 +1603,13 @@ io-threads 3</code></pre>
 <td></td>
 </tr>
 </tbody></table>
-<h5 id="解决缓存更新失败问题"><a href="#解决缓存更新失败问题" class="headerlink" title="解决缓存更新失败问题"></a>解决缓存更新失败问题</h5><ul>
-<li>使用消息队列来异步执行缓存操作和开启失败重试处理</li>
+<h5 id="解决更新失败问题"><a href="#解决更新失败问题" class="headerlink" title="解决更新失败问题"></a>解决更新失败问题</h5><p>先操作数据库成功，但缓存操作失败</p>
+<ul>
+<li>重试缓存操作</li>
+</ul>
+<p>先操作缓存成功，但数据库操作失败</p>
+<ul>
+<li>重试数据库操作</li>
 </ul>
 <h2 id="关于Redis的内存碎片问题"><a href="#关于Redis的内存碎片问题" class="headerlink" title="关于Redis的内存碎片问题"></a>关于Redis的内存碎片问题</h2><h3 id="什么是内存碎片和造成内存碎片的原因是什么"><a href="#什么是内存碎片和造成内存碎片的原因是什么" class="headerlink" title="什么是内存碎片和造成内存碎片的原因是什么"></a>什么是内存碎片和造成内存碎片的原因是什么</h3><p>内存碎片可以简单理解为无法使用的内存空缺。产生内存碎片的原因主要有2个：</p>
 <ol>
@@ -1573,11 +1619,11 @@ io-threads 3</code></pre>
 <h3 id="拓展知识"><a href="#拓展知识" class="headerlink" title="拓展知识"></a>拓展知识</h3><ol>
 <li><p>内存池是一种<a href="https://baike.baidu.com/item/内存分配/9796631" target="_blank" rel="noopener">内存分配</a>方式。通常我们习惯直接使用new、malloc等API申请分配内存，这样做的缺点在于：由于所申请内存块的大小不定，当频繁使用时会造成大量的<a href="https://baike.baidu.com/item/内存碎片/3883950" target="_blank" rel="noopener">内存碎片</a>并进而降低性能。— 百度百科</p>
 </li>
-<li><p>因为Redis没有实现自己的内存池，因此需要依赖系统自身的内存分配器（如Linux上的libc库）来进行内存的管理。换句话来说，操作系统内存分配器性能和处理内存碎片的能力对Redis有一定能影响。</p>
+<li><p>因为Redis没有实现自己的内存池，因此需要依赖系统自身的内存分配器（如Linux上的glibc库）来进行内存的管理。换句话来说，操作系统内存分配器性能和处理内存碎片的能力对Redis有一定能影响。</p>
 </li>
 <li><p>在较新版本的Redis中使用 <code>Jemalloc</code>代替了系统默认的内存分配器。（在Redis5.x中Jemalloc也得到了升级，对内存分配和碎片整理更加高效）</p>
 </li>
-<li><p>主动回收内容有两种情况：<code>key过时（expire）</code>、<code>内容到达maxmemory出发驱逐策略</code></p>
+<li><p>主动回收内容有两种情况：<code>key过时（expire）</code>、<code>内容到达maxmemory触发驱逐策略</code></p>
 </li>
 </ol>
 <h3 id="查看是否存在内存碎片"><a href="#查看是否存在内存碎片" class="headerlink" title="查看是否存在内存碎片"></a>查看是否存在内存碎片</h3><p>命令：<code>info memory</code></p>
@@ -1587,21 +1633,31 @@ io-threads 3</code></pre>
 <p><img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" alt></p>
 <p>可以看到内存碎片的公式为：<code>内存碎片 = 进程占用的物理内存总量 / 实际数据内存占用量</code></p>
 <p><code>该值最好的状态是接近1，该值越大表示存在内存碎片越多。</code></p>
-<h3 id="解决内存碎片问题方案"><a href="#解决内存碎片问题方案" class="headerlink" title="解决内存碎片问题方案"></a>解决内存碎片问题方案</h3><p>Redis4.x 版本之前，只能通过重启 Redis 解决，这个就可以重新配置内存。</p>
-<p>Redis4.x 版本之后，通过设置<code>activedefrag yes</code>开启自动整理内存碎片功能，此后 Redis 会尽最大努力解决内存碎片问题。</p>
-<h2 id="有趣的功能"><a href="#有趣的功能" class="headerlink" title="有趣的功能"></a>有趣的功能</h2><h3 id="发布-订阅"><a href="#发布-订阅" class="headerlink" title="发布/订阅"></a>发布/订阅</h3><p><strong>[订阅频道]</strong></p>
-<p>格式：subscribe 频道名称，例子如下：</p>
+<h3 id="解决内存碎片问题方案"><a href="#解决内存碎片问题方案" class="headerlink" title="解决内存碎片问题方案"></a>解决内存碎片问题方案</h3><p>Redis4.x 版本之前，只能通过重启 Redis 解决，即回收再分配</p>
+<p>Redis4.x 版本之后，可通过设置<code>activedefrag yes</code>开启自动整理内存碎片功能，此后 Redis 会尽最大努力解决内存碎片问题。</p>
+<h2 id="有趣的功能"><a href="#有趣的功能" class="headerlink" title="有趣的功能"></a>有趣的功能</h2><h3 id="发布-订阅"><a href="#发布-订阅" class="headerlink" title="发布/订阅"></a>发布/订阅</h3><blockquote>
+<p>订阅</p>
+</blockquote>
+<p>格式：subscribe 频道名称</p>
 <pre><code class="shell">subscribe channel:test</code></pre>
-<p><strong>[在指定频道发送消息]</strong></p>
-<p>格式：publish 频道名称 消息，例子如下：</p>
+<blockquote>
+<p>发布</p>
+</blockquote>
+<p>格式：publish 频道名称</p>
 <pre><code class="shell">publish channel:test hello</code></pre>
-<p><strong>[取消订阅]</strong></p>
-<p>格式：unsubscribe 频道名称，例子如下：</p>
+<blockquote>
+<p>取消订阅</p>
+</blockquote>
+<p>格式：unsubscribe 频道名称</p>
 <pre><code class="shell">unsubscribe channel:test</code></pre>
-<p><strong>[查看当前有订阅者的频道有那些]</strong></p>
+<blockquote>
+<p>查看频道的订阅者</p>
+</blockquote>
 <pre><code class="shell">pubsub channels</code></pre>
-<p><strong>[查看频道的订阅者数量]</strong></p>
-<p>格式：pubsub numsub 频道名称，例子如下：</p>
+<blockquote>
+<p>查看频道的订阅数</p>
+</blockquote>
+<p>格式：pubsub numsub 频道名称</p>
 <pre><code class="shell">127.0.0.1:6379&gt; pubsub numsub channel:test
 1) &quot;channel:test&quot;
 2) (integer) 2 # 有两个订阅者</code></pre>
@@ -1987,7 +2043,7 @@ public void testExecuteMethod() {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么？"><span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#入门案例"><span class="toc-text">入门案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#下载和安装"><span class="toc-text">下载和安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服务端的3种启动方式"><span class="toc-text">服务端的3种启动方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#停止服务端"><span class="toc-text">停止服务端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#客户端连接服务端"><span class="toc-text">客户端连接服务端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实时监控"><span class="toc-text">实时监控</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用key命令"><span class="toc-text">常用key命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Redis支持的-6-种数据类型"><span class="toc-text">Redis支持的 6 种数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#string"><span class="toc-text">string</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#list"><span class="toc-text">list</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#hash"><span class="toc-text">hash</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#zset"><span class="toc-text">zset</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#stream（redis-5-x）"><span class="toc-text">stream（redis 5.x）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他命令"><span class="toc-text">其他命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事务相关"><span class="toc-text">事务相关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Redis的常见应用场景"><span class="toc-text">Redis的常见应用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#数据持久化策略"><span class="toc-text">数据持久化策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#RDB（默认）"><span class="toc-text">RDB（默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AOF"><span class="toc-text">AOF</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据文件校验"><span class="toc-text">数据文件校验</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis重启时持久化数据文件的加载流程"><span class="toc-text">Redis重启时持久化数据文件的加载流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么单线程还那么快？"><span class="toc-text">为什么单线程还那么快？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于分布式缓存"><span class="toc-text">关于分布式缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#缓存剔除策略"><span class="toc-text">缓存剔除策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#相关的配置"><span class="toc-text">相关的配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式缓存需要注意问题"><span class="toc-text">分布式缓存需要注意问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存穿透"><span class="toc-text">缓存穿透</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#无底洞问题"><span class="toc-text">无底洞问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存击穿（热点key失效）"><span class="toc-text">缓存击穿（热点key失效）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存雪崩"><span class="toc-text">缓存雪崩</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#数据库和缓存之间的双写一致性问题"><span class="toc-text">数据库和缓存之间的双写一致性问题</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#问题赘述"><span class="toc-text">问题赘述</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#主动更新方案对比"><span class="toc-text">主动更新方案对比</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#解决缓存更新失败问题"><span class="toc-text">解决缓存更新失败问题</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于Redis的内存碎片问题"><span class="toc-text">关于Redis的内存碎片问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是内存碎片和造成内存碎片的原因是什么"><span class="toc-text">什么是内存碎片和造成内存碎片的原因是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展知识"><span class="toc-text">拓展知识</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查看是否存在内存碎片"><span class="toc-text">查看是否存在内存碎片</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#解决内存碎片问题方案"><span class="toc-text">解决内存碎片问题方案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#有趣的功能"><span class="toc-text">有趣的功能</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#发布-订阅"><span class="toc-text">发布&#x2F;订阅</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GEO"><span class="toc-text">GEO</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用配置"><span class="toc-text">常用配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java版客户端"><span class="toc-text">Java版客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Jedis"><span class="toc-text">Jedis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-Data-Redis"><span class="toc-text">Spring Data Redis</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#可视化客户端"><span class="toc-text">可视化客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis-Desktop-Manager"><span class="toc-text">Redis Desktop Manager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TablePlus"><span class="toc-text">TablePlus</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#是什么？"><span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#入门案例"><span class="toc-text">入门案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#下载和安装"><span class="toc-text">下载和安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服务端的3种启动方式"><span class="toc-text">服务端的3种启动方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#停止服务端"><span class="toc-text">停止服务端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#客户端连接服务端"><span class="toc-text">客户端连接服务端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实时监控"><span class="toc-text">实时监控</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用key命令"><span class="toc-text">常用key命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Redis支持的-6-种数据类型"><span class="toc-text">Redis支持的 6 种数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#string"><span class="toc-text">string</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#list（有序）"><span class="toc-text">list（有序）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#hash"><span class="toc-text">hash</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#zset（有序）"><span class="toc-text">zset（有序）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#stream（redis-5-x）"><span class="toc-text">stream（redis 5.x）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他命令"><span class="toc-text">其他命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事务相关"><span class="toc-text">事务相关</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Redis常见应用场景"><span class="toc-text">Redis常见应用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#数据持久化策略"><span class="toc-text">数据持久化策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#RDB（默认）"><span class="toc-text">RDB（默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AOF"><span class="toc-text">AOF</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据文件校验"><span class="toc-text">数据文件校验</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis重启时持久化数据文件的加载流程"><span class="toc-text">Redis重启时持久化数据文件的加载流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么单线程还那么快？"><span class="toc-text">为什么单线程还那么快？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见会阻塞主线程的操作"><span class="toc-text">常见会阻塞主线程的操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于分布式缓存"><span class="toc-text">关于分布式缓存</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#缓存剔除策略"><span class="toc-text">缓存剔除策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#相关的配置"><span class="toc-text">相关的配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#缓存容量设置多少合适？"><span class="toc-text">缓存容量设置多少合适？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式缓存需要注意问题"><span class="toc-text">分布式缓存需要注意问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存穿透"><span class="toc-text">缓存穿透</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#无底洞问题"><span class="toc-text">无底洞问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存击穿（热点key失效）"><span class="toc-text">缓存击穿（热点key失效）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#缓存雪崩"><span class="toc-text">缓存雪崩</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#数据库和缓存之间的双写一致性问题"><span class="toc-text">数据库和缓存之间的双写一致性问题</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#问题赘述"><span class="toc-text">问题赘述</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#主动更新方案对比"><span class="toc-text">主动更新方案对比</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#解决更新失败问题"><span class="toc-text">解决更新失败问题</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于Redis的内存碎片问题"><span class="toc-text">关于Redis的内存碎片问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是内存碎片和造成内存碎片的原因是什么"><span class="toc-text">什么是内存碎片和造成内存碎片的原因是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展知识"><span class="toc-text">拓展知识</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#查看是否存在内存碎片"><span class="toc-text">查看是否存在内存碎片</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#解决内存碎片问题方案"><span class="toc-text">解决内存碎片问题方案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#有趣的功能"><span class="toc-text">有趣的功能</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#发布-订阅"><span class="toc-text">发布&#x2F;订阅</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GEO"><span class="toc-text">GEO</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用配置"><span class="toc-text">常用配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java版客户端"><span class="toc-text">Java版客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Jedis"><span class="toc-text">Jedis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-Data-Redis"><span class="toc-text">Spring Data Redis</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#可视化客户端"><span class="toc-text">可视化客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Redis-Desktop-Manager"><span class="toc-text">Redis Desktop Manager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TablePlus"><span class="toc-text">TablePlus</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
