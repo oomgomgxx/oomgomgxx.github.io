@@ -386,10 +386,10 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent, boolean evict) {
                     p.next = newNode(hash, key, value, null);
 
                     // 如果这时链表长度于等于7（从0开始，即大于等于8个节点）
-                    // 则将链表数化成红黑树
+                    // 则将链表树化成红黑树
                     if (binCount &gt;= TREEIFY_THRESHOLD - 1)
-                        // 查看是否有必要树化
-                        // 树化要求：tab.length &lt; MIN_TREEIFY_CAPACITY（默认64）
+                        // 再次判断是否有必要树化
+                        // 树化要求：tab.length &gt;= MIN_TREEIFY_CAPACITY（默认64）
                         // 如果tab.length不足64，就需要resize，直至tab.length&gt;64才可以树化
                         treeifyBin(tab, hash);
                     //【问题1】为什么需要引入红黑树？

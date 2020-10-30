@@ -1153,12 +1153,9 @@ used_cpu_user_children:0.00</code></pre>
 <p>简介</p>
 </blockquote>
 <ul>
-<li><p>Redis 事务和传统关系型数据的 ACID 事务不同，它只能保证原子性，且不提供回滚操作</p>
-</li>
-<li><p>注意，在 Redis 2.6.5+ 版本才正式支持 ACID 的原子性。在这之前，事务期间即使发生异常也不会影响之前已经执行的命令，即这时的事务只是一个批量执行操作</p>
-</li>
-<li><p>Redis 提供以下命令实现事务操作：</p>
-<ul>
+<li>Redis 事务和传统关系型数据的 ACID 事务不同，它只能保证原子性，且不提供回滚操作</li>
+<li>Redis 提供的原子性概念是：事务中的命令要么全部被执行，要么全部都不执行。不难理解，Redis 的原子性并并不是 ACID 中的原子性（要么都成功，要么都失败），它强调的是执行与否</li>
+<li>Redis 提供以下命令实现事务操作：<ul>
 <li>multi：该命令执行后表示客户端将要提交一系列操作，而这些操作将会在 exec 时按队列形式一同执行。注意，命令在 exec 前会先暂存到队列中</li>
 <li>watch：乐观锁，用于监听key。即如果 exec 之前发现 key 被修改，事务将失败</li>
 <li>discard：丢弃暂存队列中的命令</li>
@@ -1200,6 +1197,12 @@ QUEUED
 (nil) # num被修改事务失效
 127.0.0.1:6379&gt; get num
 &quot;2&quot;</code></pre>
+<blockquote>
+<p>错误</p>
+</blockquote>
+<img src="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/014.png" style="zoom: 80%;">
+
+<p>不难看出，如果 exec 之前入队的命令发生错误，则会抛弃该命令，而 exec 依然能够执行所有正常入队的命令</p>
 <blockquote>
 <p>Java客户端</p>
 </blockquote>
