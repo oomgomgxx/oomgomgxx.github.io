@@ -137,75 +137,51 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>&emsp;&emsp;限流其实很好理解，就是一种保护系统有效地正常运作的手段。这样的操作在日常生活中也很常见，例如车流限 和 人流限制。</p>
-<p>&emsp;&emsp;对系统而言，限流通常是指只允许系统能够承受的访问量限度内进来请求处理，超出系统访问能力的请求将<br>被丢弃。限流的主要手动可以划分为两种，分别是 <code>基于请求的限流</code> 和  <code>基于资源的限流</code> </p>
+  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>&emsp;&emsp;限流是一种应对突发流量而造成服务器过载的手段。譬如某系统只能处理 100 个并发请求，所以一旦超过这个数量，系统的性能就可能急需下跌，甚至可能拖垮系统。当然，除了限流操作之外也可以采用负载均衡策略来降低服务器的并发负载，譬如通过 Nginx 进行服务集群的反向代理。</p>
+<p>限流操作有多种，大体可以划分为两类：</p>
 <ul>
-<li><p>基于请求限流：请求阈值、请求频率、接口调用频率</p>
-</li>
-<li><p>基于资源限流：线程数 、数据库连接数、请求队列长度</p>
-</li>
+<li>请求限流：请求并发数、请求频率、接口限流</li>
+<li>资源限流：线程数、数据库连接数</li>
 </ul>
-<h2 id="信号量：Semaphore"><a href="#信号量：Semaphore" class="headerlink" title="信号量：Semaphore"></a>信号量：Semaphore</h2><h3 id="有什么用"><a href="#有什么用" class="headerlink" title="有什么用"></a>有什么用</h3><ul>
-<li>限制同一时刻最大执行线程数</li>
+<p>&emsp;&emsp;对于应用而言，如果在高并发场景下不做任何保护就很容易出现过载的情况，这时应用服务器性能会急剧下降，甚至可能拖垮应用。</p>
+<h2 id="信号量：Semaphore"><a href="#信号量：Semaphore" class="headerlink" title="信号量：Semaphore"></a>信号量：Semaphore</h2><h3 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h3><ul>
+<li>限制同一时刻最大的并发线程数</li>
 </ul>
-<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>Semaphore类位于JDK的JUC包。看到 JUC 基本可以断定是基于AQS来实现的（自旋+CAS）。</p>
-<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/001.png" alt></p>
-<p>从上图源码中很直观地得知，Semaphore使用<code>共享锁</code>来实现功能，并支持<code>公平</code>和<code>非公平</code>两种抢锁模式。其中Semaphore需要接收有一个名为<code>permits(许可证)</code>的参数来指定可用许可证数量（实质就是共享锁数量）。当线程获取到许可证就可以继续往下操作，如果获取不到许可证就会一直自旋。</p>
-<p>以非公平锁为例，源码如下：</p>
-<pre><code class="java">// tryAcquireShared(1)
-final int nonfairTryAcquireShared(int acquires) {
-    for (;;) {
-        // 获取可用许可剩余数量
-        int available = getState();
-        // 减去被获取的许可数
-        int remaining = available - acquires;
-        // 当可用许可小于0 或 成功获取到许可 就返回remaining变量
-        if (remaining &lt; 0 || compareAndSetState(available, remaining))
-            return remaining;
-    }
-}
-
-// sync.acquireSharedInterruptibly(1)
-public final void acquireSharedInterruptibly(int arg)
-    throws InterruptedException {
-    if (Thread.interrupted())
-        throw new InterruptedException();
-    // 小于0表示许可已经被获取完，进入链表等待其他线程释放许可
-    if (tryAcquireShared(arg) &lt; 0)
-        doAcquireSharedInterruptibly(arg);
-}
-
-// Semaphore.acquire()
-public void acquire() throws InterruptedException {
-    sync.acquireSharedInterruptibly(1);
-}</code></pre>
-<h3 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h3><p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/002.png" alt></p>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>Semaphore 类位于 JUC 包，其功能基于 AQS 实现的，即自旋 + CAS 操作。创建 Semaphore 时，其构造函数需要接收一个 int 型参数用来指定 permits（许可证）的数量（即同一时刻允许多少线程并发）。在业务方法执行期间，只有获取到许可的线程才可以继续往下执行，否则自旋等待。</p>
+<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/007.png" alt></p>
+<h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/002.png" alt></p>
 <p>可以观察到，当许可被用完，其他线程就没办法执行临界代码了，而是一直在尝试获取许可。</p>
-<h2 id="速率限制器：RateLimiter"><a href="#速率限制器：RateLimiter" class="headerlink" title="速率限制器：RateLimiter"></a>速率限制器：RateLimiter</h2><h3 id="有什么用-1"><a href="#有什么用-1" class="headerlink" title="有什么用"></a>有什么用</h3><ul>
-<li>限制处理速率</li>
+<h2 id="速率限制器：RateLimiter"><a href="#速率限制器：RateLimiter" class="headerlink" title="速率限制器：RateLimiter"></a>速率限制器：RateLimiter</h2><h3 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h3><ul>
+<li>限制操作的执行速率</li>
 </ul>
-<h3 id="常见的限制速率算法"><a href="#常见的限制速率算法" class="headerlink" title="常见的限制速率算法"></a>常见的限制速率算法</h3><h4 id="Fixed-Window（固定窗口）"><a href="#Fixed-Window（固定窗口）" class="headerlink" title="Fixed Window（固定窗口）"></a>Fixed Window（固定窗口）</h4><p>&emsp;&emsp;固定窗口算法很容易理解，例如接口1分钟内只能处理100个请求，这里用变量counter来记录请求数，当counter到达100后当前这1分钟将不再接收请求（丢弃）。直到下一个1分钟counter自动回零再继续接收请求，当然峰值依然是100，如此类推。</p>
+<h3 id="常见速率限制算法"><a href="#常见速率限制算法" class="headerlink" title="常见速率限制算法"></a>常见速率限制算法</h3><h4 id="Fixed-Window（固定窗口）"><a href="#Fixed-Window（固定窗口）" class="headerlink" title="Fixed Window（固定窗口）"></a>Fixed Window（固定窗口）</h4><p>&emsp;&emsp;固定窗口算法很容易理解，例如接口1分钟内只能处理100个请求，这里用变量counter来记录请求数，当counter到达100后当前这1分钟将不再接收请求（丢弃）。直到下一个1分钟counter自动回零再继续接收请求，当然峰值依然是100，如此类推。</p>
 <p>&emsp;&emsp;但该算法有个比较严重的临界问题。举个较为极端点的例子，如第一分钟的前58s都没有请求，到59s时突然来了100个请求（counter最大100）。但是59s过后意味着进入下一个一分钟，这时counter归零可以重新再接收100个请求。因此在59s到0s这个间隙期间最大的请求峰值是200而不是100。</p>
 <blockquote>
 <p>图片源自网络</p>
 </blockquote>
-<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/003.png" alt></p>
+<img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/003.png" style="zoom:67%;">
+
+
+
 <h4 id="Slide-Window（滑动窗口）"><a href="#Slide-Window（滑动窗口）" class="headerlink" title="Slide Window（滑动窗口）"></a>Slide Window（滑动窗口）</h4><p>&emsp;&emsp;滑动窗口算法是固定窗口算法的改良版本。</p>
 <blockquote>
 <p>图片源自网络</p>
 </blockquote>
-<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/004.png" alt></p>
+<img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/004.png" style="zoom:67%;">
+
 <p>如图所示，红色框表示滑动窗口。特点是可移动，且它将窗口按照时间来分段。例如1分钟分为6段。每段都含有各自的counter。换句话来说就是对固定窗口进行了拆分，通过这种方式来缩小固定窗口的缺陷。譬如接口峰值为60个请求，所以固定窗口临界点会出现120个请求。但这点在滑动窗口就不一样了，在滑动窗口中每一段都有自己的counter，如图所示有6段，所以有6个counter，即每个counter在滑动窗口中（一分钟）都可以接受10个请求。虽然滑动窗口依然存在临界问题，但数量降低至20而不是120。</p>
 <h4 id="Leaky-Bucket（漏桶）"><a href="#Leaky-Bucket（漏桶）" class="headerlink" title="Leaky Bucket（漏桶）"></a>Leaky Bucket（漏桶）</h4><p>&emsp;&emsp;漏桶算法中的漏桶通常用一个FIFO队列来实现，如下图：</p>
 <blockquote>
 <p>图片源自网络</p>
 </blockquote>
-<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/005.png" alt></p>
+<img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/005.png" style="zoom:67%;">
+
 <p>水滴就是请求，当请求数量大于漏桶（队列）容量时，就溢出（丢弃）。换句话来说就是通过漏桶的容量来限制速率。</p>
 <h4 id="Token-Bucket（令牌桶）"><a href="#Token-Bucket（令牌桶）" class="headerlink" title="Token Bucket（令牌桶）"></a>Token Bucket（令牌桶）</h4><blockquote>
 <p>图片源自网络</p>
 </blockquote>
-<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/006.png" alt></p>
+<img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/006.png" style="zoom: 33%;">
+
 <p>令牌桶的思想如下：</p>
 <ol>
 <li>存放token的桶固定容量为k。</li>
@@ -245,19 +221,24 @@ public void acquire() throws InterruptedException {
 
     // 平滑突发
     //RateLimiter rateLimiter = RateLimiter.create(10);
-    // 平滑预热突发。预热2秒钟
+    // 平滑预热突发。预热2秒钟，有10个令牌
     RateLimiter rateLimiter = RateLimiter.create(10, 2, TimeUnit.SECONDS);
 
     for (;;) {
-            // 有足够令牌返回0，否则阻塞。
+            // 有足够令牌返回0，否则等待
             // 阻塞过后获取到令牌返回等待令牌的那段艰苦时间
-            System.out.println(rateLimiter.acquire());
+            System.out.println(rateLimiter.acquire()); // 返回等待时间
             //System.out.println(rateLimiter.acquire(3)); // 获取指定数量的令牌
             //System.out.println(rateLimiter.tryAcquire()); // 尝试获取1个令牌
             //System.out.println(rateLimiter.tryAcquire(2, TimeUnit.SECONDS)); //尝试获取1个令牌但只等待2秒
     }
 
 }</code></pre>
+<h2 id="何时使用限流"><a href="#何时使用限流" class="headerlink" title="何时使用限流"></a>何时使用限流</h2><ul>
+<li>当使用了负载均衡后依然无法解决负载过高问题，譬如后端服务器数量有限不足以应对突然的高并发数</li>
+<li>防止恶意高频调用</li>
+<li>除此之外，还可以参考熔断器 Hystrix 的限流方案，譬如它采用滑动窗口算法来判断是否到达某个阈值以转换断路器的状态，还有采用 Semaphore 控制并发线程数量</li>
+</ul>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://www.net.t-labs.tu-berlin.de/teaching/computer_networking/06.06.htm" target="_blank" rel="noopener">Scheduling and Policing Mechanisms</a></li>
 </ul>
@@ -303,7 +284,7 @@ public void acquire() throws InterruptedException {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#信号量：Semaphore"><span class="toc-text">信号量：Semaphore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#有什么用"><span class="toc-text">有什么用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#用法"><span class="toc-text">用法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#速率限制器：RateLimiter"><span class="toc-text">速率限制器：RateLimiter</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#有什么用-1"><span class="toc-text">有什么用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常见的限制速率算法"><span class="toc-text">常见的限制速率算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Fixed-Window（固定窗口）"><span class="toc-text">Fixed Window（固定窗口）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Slide-Window（滑动窗口）"><span class="toc-text">Slide Window（滑动窗口）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Leaky-Bucket（漏桶）"><span class="toc-text">Leaky Bucket（漏桶）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Token-Bucket（令牌桶）"><span class="toc-text">Token Bucket（令牌桶）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#漏桶-vs-令牌桶"><span class="toc-text">漏桶 vs 令牌桶</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Guava令牌桶算法实现"><span class="toc-text">Guava令牌桶算法实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#信号量：Semaphore"><span class="toc-text">信号量：Semaphore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#作用"><span class="toc-text">作用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#速率限制器：RateLimiter"><span class="toc-text">速率限制器：RateLimiter</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#作用-1"><span class="toc-text">作用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常见速率限制算法"><span class="toc-text">常见速率限制算法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Fixed-Window（固定窗口）"><span class="toc-text">Fixed Window（固定窗口）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Slide-Window（滑动窗口）"><span class="toc-text">Slide Window（滑动窗口）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Leaky-Bucket（漏桶）"><span class="toc-text">Leaky Bucket（漏桶）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Token-Bucket（令牌桶）"><span class="toc-text">Token Bucket（令牌桶）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#漏桶-vs-令牌桶"><span class="toc-text">漏桶 vs 令牌桶</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Guava令牌桶算法实现"><span class="toc-text">Guava令牌桶算法实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#何时使用限流"><span class="toc-text">何时使用限流</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
