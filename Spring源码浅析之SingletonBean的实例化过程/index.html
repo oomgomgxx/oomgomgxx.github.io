@@ -137,10 +137,8 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <p>温故而知新</p>
-<a id="more"></a>
-
-<h2 id="案例代码"><a href="#案例代码" class="headerlink" title="案例代码"></a>案例代码</h2><p>实体类</p>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><p>2020年04月12日10:35:23 — 修改对初始化流程的理解</p>
+<h2 id="分析案例"><a href="#分析案例" class="headerlink" title="分析案例"></a>分析案例</h2><p>实体类</p>
 <pre><code class="java">@Data
 @NoArgsConstructor
 public class Person {
@@ -210,26 +208,34 @@ public class JavaConfig {
 <pre><code class="java">@Override
 public void refresh() throws BeansException, IllegalStateException {
     synchronized (this.startupShutdownMonitor) {
-        // 预初始化。如将placeholder配置添加到上下文的environment中
+        // 预初始化
+        // PropertySources
+        // 1. OriginTrackMapPropertySource：加载SpringBoot的配置文件（application.yml）
+        // 2. OriginAwareSystemEnvironmentPropertySource：加载系统环境变量
+        // 3. PropertiesPropertySource：加载系统属性
         prepareRefresh();
 
-        // 创建基础容器BeanFactory（ConfigurableListableBeanFactory）
-        // 加载XML配置的BeanDefinition
+        // 创建基础容器（ConfigurableListableBeanFactory）
         ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
-        // 初始化IoC基础容器。如往BeanFactory中添加Spring内部使用的Bean
+        // 初始化容器，譬如添加内部Bean
         prepareBeanFactory(beanFactory);
 
         try {
-            // 添加与环境相关的BeanPostProcessor，例如有针对servlet容器的BeanPostProcessor
+            // 这是一个模板方法，可以针对性地做些特殊处理
+            // 此时已经加载了所有JavaConfig（或XMl）的BeanDefinition
             postProcessBeanFactory(beanFactory);
 
-            // 实例化和执行BeanFactoryPostProcessor的bean
-            // 如ConfigurationClassPostProcessor扫描@Configuration标注的类来解析BeanDefinition
+            // 注册并执行ConfigurationClassPostProcessor
+            // 解除出配置类（譬如@Configuration）
             invokeBeanFactoryPostProcessors(beanFactory);
 
-            // 注册与当前上下文相关的BeanPostProcessor
-            // 如手动实现的BeanPostProcessors或是处理@Autowired的AutowiredAnnotationBeanPostProcessor，还是处理@Resource的CommonAnnotationBeanPostProcessor
+            // 创建并注册BeanPostProcessor
+            // 在注册时会通过BeanFactory.getBean()获取或创建（默认反射创建）
+            // 1. 手动实现的BeanPostProcessors
+            // 2. AutowiredAnnotationBeanPostProcessor：用于处理@Autowired、@Value、@Inject
+            // 3. CommonAnnotationBeanPostProcessor：用于处理@Resource、@PreConstruct、@PostDestroy
+            // 4. PersistenceBeanPostProcessor(JPA包)：用于处理@PersistenceContext
             registerBeanPostProcessors(beanFactory);
 
             // 国际化相关初始化
@@ -238,16 +244,17 @@ public void refresh() throws BeansException, IllegalStateException {
             // 事件相关初始化
             initApplicationEventMulticaster();
 
-            // 刷新启动子上下文
+            // 这是一个模板方法，可以针对性地做些特殊处理
+            // 此时bean还没有实例化
             onRefresh();
 
-            // 注册当前上下文的事件监听者bean
+            // 注册当前上限文中的事件监听者
             registerListeners();
 
-            // 【注意】实例化非延时加载外的单例Bean
+            // 【注】实例化非延时加载外的单例Bean
             finishBeanFactoryInitialization(beanFactory);
 
-            // 发布当前容器上下文刷新启动成功事件
+            // 发布上下文刷启动事件
             finishRefresh();
         }
 
@@ -261,59 +268,77 @@ public void refresh() throws BeansException, IllegalStateException {
         }
     }
 }</code></pre>
-<h3 id="finishBeanFactoryInitialization-实例化SingletonBean"><a href="#finishBeanFactoryInitialization-实例化SingletonBean" class="headerlink" title="finishBeanFactoryInitialization() - 实例化SingletonBean"></a>finishBeanFactoryInitialization() - 实例化SingletonBean</h3><pre><code class="java">protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
-    // 省略...
+<blockquote>
+<p>解析出配置类</p>
+</blockquote>
+<p>invokeBeanFactoryPostProcessors -&gt; invokeBeanFactoryPostProcessors -&gt;  invokeBeanDefinitionRegistryPostProcessors(ConfigurationClassPostProcessor) -&gt; postProcessBeanDefinitionRegistry</p>
+<img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/004.png" style="zoom: 67%;">
+
+<img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/005.png" style="zoom: 50%;">
+
+
+
+<h3 id="finishBeanFactoryInitialization-实例化Bean"><a href="#finishBeanFactoryInitialization-实例化Bean" class="headerlink" title="finishBeanFactoryInitialization() - 实例化Bean"></a>finishBeanFactoryInitialization() - 实例化Bean</h3><pre><code class="java">protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
+    // ...
 
     // 实例化非延时加载外的单例Bean
     beanFactory.preInstantiateSingletons();
 }</code></pre>
-<p>preInstantiateSingletons方法</p>
+<p>beanFactory.preInstantiateSingletons()</p>
 <pre><code class="java">public void preInstantiateSingletons() throws BeansException {
 
-    // 返回通过资源解析器解析文件（xml、class等等）得到的bean名称
+    // 返回通过资源解析器解析配置（xml、class）得到的bean的名字
     List&lt;String&gt; beanNames = new ArrayList&lt;&gt;(this.beanDefinitionNames);
 
     // Trigger initialization of all non-lazy singleton beans...
     for (String beanName : beanNames) {
         RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
-        // 实例化【非抽象】、【非延时加载】且【为单例】的Bean
-        if (!bd.isAbstract() &amp;&amp; bd.isSingleton() &amp;&amp; !bd.isLazyInit()) {
-            // FactoryBean实例
-            if (isFactoryBean(beanName)) {
+        // 实例化条件：
+        // 1、非抽象 2、非延时加载 3、单例
+        if (!bd.isAbstract() &amp;&amp; bd.isSingleton() &amp;&amp; !bd.isLazyInit()) {   
+
+            // 情况1：Bean实例通过FactoryBean接口产生
+            if (isFactoryBean(beanName)) { 
                 Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
-                if (bean instanceof FactoryBean) { // 如Jpa中Repository接口
+                if (bean instanceof FactoryBean) { // 譬如 JPA 中 Repository 接口
                     final FactoryBean&lt;?&gt; factory = (FactoryBean&lt;?&gt;) bean;    
-                    // 省略...
+                    // ...
                     if (isEagerInit) {
                         getBean(beanName);
                     }
                 }
             }
+
+            // 情况2：其他
             else {
-                // 普通bean实例
                 getBean(beanName);
             }
         }
     }</code></pre>
-<p>getBean()内调用的是AbstractBeanFactory#doGetBean</p>
+<p>AbstractBeanFactory#doGetBean </p>
 <pre><code class="java">protected &lt;T&gt; T doGetBean(final String name, @Nullable final Class&lt;T&gt; requiredType,
                           @Nullable final Object[] args, boolean typeCheckOnly) throws BeansException {
 
     final String beanName = transformedBeanName(name);
     Object bean;
 
-    // 首先到Map中找，看看是否已经存在对应的Bean。如果是第一次则返回null
+    // 先到容器中检查是有存在该bean（存在表示已经创建并注册）
     Object sharedInstance = getSingleton(beanName);
     if (sharedInstance != null &amp;&amp; args == null) {
         bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
     }
-    else {        
-        // 省略 ...
+    else {
+        // 如果有父容器，且当前容器并没有该Bean的定义，则尝试在父容器中获取
+        BeanFactory parentBeanFactory = getParentBeanFactory();
+        if (parentBeanFactory != null &amp;&amp; !containsBeanDefinition(beanName)) {
+            // ...
+        }
+
         try {
             final RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
             checkMergedBeanDefinition(mbd, beanName, args);
 
-            // 实例化Bean之前要先实例化其dependsOn
+            // 实例化Bean之前，先确保其依赖已经被实例化（@DependsOn）
             String[] dependsOn = mbd.getDependsOn();
             if (dependsOn != null) {
                 for (String dep : dependsOn) {
@@ -321,16 +346,15 @@ public void refresh() throws BeansException, IllegalStateException {
                     getBean(dep);
                 }
             }
-            // 创建singleton实例
+            // 情况1：创建Singleton Bean
             if (mbd.isSingleton()) {
                 sharedInstance = getSingleton(beanName, () -&gt; {
-                    // 【重点代码】
-                    return createBean(beanName, mbd, args);
+                    return createBean(beanName, mbd, args); // 创建Bean
                 });
                 bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
             }
-            else if (mbd.isPrototype()) {
-                // 创建prototype实例
+            // 情况2：创建Prototype Bean（当前不会被调用）
+            else if (mbd.isPrototype()) {        
                 Object prototypeInstance = null;
                 try {
                     beforePrototypeCreation(beanName);
@@ -348,56 +372,50 @@ public void refresh() throws BeansException, IllegalStateException {
     }
     return (T) bean;
 }</code></pre>
-<p>createBean()实际实现位于AbstractAutowireCapableBeanFactory#doCreateBean</p>
+<p>createBean() 实际实现调用 AbstractAutowireCapableBeanFactory#doCreateBean 来创建</p>
 <pre><code class="java">protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
         throws BeanCreationException {
-
-    // 实例化bean实例过程
+    // Instantiate the bean.
     BeanWrapper instanceWrapper = null;
-
-    // 从cache中找
+    // 如果是Singleton bean，则先尝试在cache中获取
     if (mbd.isSingleton()) {
         instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
     }
-    // 如果cache中没有，则创建bean实例
+    // 创建bean实例
     if (instanceWrapper == null) {
-        // 【重点代码】创建Bean
         instanceWrapper = createBeanInstance(beanName, mbd, args);
     }
 
     final Object bean = instanceWrapper.getWrappedInstance(); // bean实例
-    Class&lt;?&gt; beanType = instanceWrapper.getWrappedClass(); // bean实例的类型
+    Class&lt;?&gt; beanType = instanceWrapper.getWrappedClass(); // bean实例对应的类型
 
-    // 初始化bean实例过程.
     Object exposedObject = bean;
-    // 【重点代码】填充bean属性
+    // 【注】填充依赖
     populateBean(beanName, mbd, instanceWrapper);
-
-    // 【重点代码】初始化bean
-    exposedObject = initializeBean(beanName, exposedObject, mbd);
-
-    // 注册bean的销毁处理逻辑
-    registerDisposableBeanIfNecessary(beanName, bean, mbd);
-
+    // 【注】初始化
+    exposedObject = initializeBean(beanName, exposedObject, mbd); // 注意：这里为提前暴露
+    // 注册销毁逻辑
+    registerDisposableBeanIfNecessary(beanName, bean, mbd);     
+    // 暴露实例
     return exposedObject;
 }</code></pre>
-<p>createBeanInstance()内调用的是AbstractAutowireCapableBeanFactory#createBeanInstance</p>
+<p>createBeanInstance() 内调用的是 AbstractAutowireCapableBeanFactory#createBeanInstance</p>
 <pre><code class="java">protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
-    // Make sure bean class is actually resolved at this point.
+    // 在创建bean前先解析对应的类
     Class&lt;?&gt; beanClass = resolveBeanClass(mbd, beanName);
 
-    // 实例化方案
+    // 构建实例的方案 //////////////////////////
 
-    // Supplier方式。Spring5开始支持Lambda注册bean，例如：
-    // context.registerBean(&quot;mySecondService&quot;, MyService.class, () -&gt; new MyService());
+    // 情况1：bean从Supplier中产生
+    // context.registerBean(&quot;myService&quot;, MyService.class, () -&gt; new MyService());
     Supplier&lt;?&gt; instanceSupplier = mbd.getInstanceSupplier();
     if (instanceSupplier != null) {
         return obtainFromSupplier(instanceSupplier, beanName);
     }
 
-    // 实例工厂方法或静态工厂方法
-    //【注意】@bean标注的方法就是使用该形式创建实例的,也就是说相当于一个工厂方法
-    // 而工厂方法所在的类就是一个FactoryBean
+    // 情况2：bean从工厂方法中产生（譬如@Bean标注在方法上或@Component注解在上）
+    // 特别注意：此时因为还没进行属性填充，所以如果在new时手动指定了属性值
+    // 而这个属性值又被@Value/@Autowired等Spring注解所标注，则手动指定的属性值会在填充阶段覆盖
     if (mbd.getFactoryMethodName() != null) {
         return instantiateUsingFactoryMethod(beanName, mbd, args);
     }
@@ -414,37 +432,23 @@ public void refresh() throws BeansException, IllegalStateException {
         }
     }
 
-    // 构造器
+    // 情况3：手动注册
     if (resolved) {
+        // 构造器带有参数，实例化并注入依赖
         if (autowireNecessary) { 
             return autowireConstructor(beanName, mbd, null, null);
         }
+        // 无参实例化
         else {
-            // 普通无参构造器方式
             return instantiateBean(beanName, mbd);
         }
     }
 
-    // Candidate constructors for autowiring?
-    Constructor&lt;?&gt;[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
-    if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
-            mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
-        return autowireConstructor(beanName, mbd, ctors, args);
-    }
+    // ...
 
-    // Preferred constructors for default construction?
-    ctors = mbd.getPreferredConstructors();
-    if (ctors != null) {
-        return autowireConstructor(beanName, mbd, ctors, null);
-    }
-
-    // 普通无参构造器方式
     return instantiateBean(beanName, mbd);
 }</code></pre>
-<p>instantiateUsingFactoryMethod()内调用的是ConstructorResolver#instantiate</p>
-<blockquote>
-<p>因为当前bean采用工厂方法创建策略</p>
-</blockquote>
+<p>instantiateUsingFactoryMethod() 内调用的是 ConstructorResolver#instantiate</p>
 <pre><code class="java">private Object instantiate(String beanName, RootBeanDefinition mbd,
         @Nullable Object factoryBean, Method factoryMethod, Object[] args) {
 
@@ -460,15 +464,14 @@ public void refresh() throws BeansException, IllegalStateException {
     }
 }</code></pre>
 <ul>
-<li>至此可以看到，对于SingletonBean实例化操作其实是位于beanFactory.getInstantiationStrategy().instantiate()</li>
-<li>目前Spring中创建Bean实例的策略主要有2种：<ul>
+<li>可以看到 Singleton Bean 实例化逻辑位于 beanFactory.getInstantiationStrategy().instantiate()</li>
+<li>目前 Spring 中实例化 Bean 的策略主有两种：<ul>
 <li>SimpleInstantiationStrategy：采用反射进行实例化</li>
-<li>CglibSubclassingInstantiationStrategy（默认）：通过Cglib实例化，继承自SimpleInstantiationStrategy</li>
+<li>CglibSubclassingInstantiationStrategy（默认）：通过 CGLIB 生成子类实例化（继承自SimpleInstantiationStrategy），即这时返回的是一个代理</li>
 </ul>
 </li>
 </ul>
-<p><strong>关于InstantiationStrategy</strong></p>
-<p>InstantiationStrategy接口</p>
+<p>关于InstantiationStrategy：InstantiationStrategy接口</p>
 <pre><code class="java">public interface InstantiationStrategy {
     // 无参构造器方式
     Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner)
@@ -487,26 +490,13 @@ public void refresh() throws BeansException, IllegalStateException {
 <p>无参构造器方式 - SimpleInstantiationStrategy#instantiate</p>
 <pre><code class="java">@Override
 public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
-    // 不存在MethodOverrides时采用反射创建实例，反之使用Cglib
-    // 注意,这里的MethodOverrides不是Java中的方法重载，而是Spring配置中的lookup-method和replace-method
+    // 不存在方法重写（方法注入）时，采用反射创策略，反之使用CGLIB
+    // 特别注意：这里的方法重写不是Java中@Override，而是Spring中的lookup-method和replace-method
+    // 1. lookup-method（@Lookup）用于将prototype依赖注入到一个singleton bean对应的getter中。如果不用lookup-method，则注入依赖时spring会将prototype依赖隐式转为singleton
+    // 2. replaced-method 用于对bea的方法进行替换
     if (!bd.hasMethodOverrides()) {
         Constructor&lt;?&gt; constructorToUse;
-        synchronized (bd.constructorArgumentLock) {
-            constructorToUse = (Constructor&lt;?&gt;) bd.resolvedConstructorOrFactoryMethod;
-            if (constructorToUse == null) {
-                final Class&lt;?&gt; clazz = bd.getBeanClass();
-                try {
-                    if (System.getSecurityManager() != null) {
-                        constructorToUse = AccessController.doPrivileged(
-                            (PrivilegedExceptionAction&lt;Constructor&lt;?&gt;&gt;) clazz::getDeclaredConstructor);
-                    }
-                    else {
-                        constructorToUse = clazz.getDeclaredConstructor();
-                    }
-                    bd.resolvedConstructorOrFactoryMethod = constructorToUse;
-                }
-            }
-        }
+        // ...
         return BeanUtils.instantiateClass(constructorToUse);
     }
     else {
@@ -518,15 +508,8 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
 <pre><code class="java">@Override
 public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
                           final Constructor&lt;?&gt; ctor, Object... args) {
-    // 不存在MethodOverrides时采用反射创建实例，反之使用Cglib
     if (!bd.hasMethodOverrides()) {
-        if (System.getSecurityManager() != null) {
-            // use own privileged to change accessibility (when security is on)
-            AccessController.doPrivileged((PrivilegedAction&lt;Object&gt;) () -&gt; {
-                ReflectionUtils.makeAccessible(ctor);
-                return null;
-            });
-        }
+        // ...
         return BeanUtils.instantiateClass(ctor, args);
     }
     else {
@@ -537,21 +520,11 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
 <pre><code class="java">@Override
 public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
                           @Nullable Object factoryBean, final Method factoryMethod, Object... args) {
-
-    if (System.getSecurityManager() != null) {
-        AccessController.doPrivileged((PrivilegedAction&lt;Object&gt;) () -&gt; {
-            ReflectionUtils.makeAccessible(factoryMethod);
-            return null;
-        });
-    }
-    else {
-        ReflectionUtils.makeAccessible(factoryMethod);
-    }
-
+    // ...
     Method priorInvokedFactoryMethod = currentlyInvokedFactoryMethod.get();
     try {
         currentlyInvokedFactoryMethod.set(factoryMethod);
-        // 返回实例
+        // 执行工厂方法返回实例
         Object result = factoryMethod.invoke(factoryBean, args);
         if (result == null) {
             result = new NullBean();
@@ -567,19 +540,16 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
         }
     }
 }</code></pre>
-<h3 id="populateBean-填充实例属性"><a href="#populateBean-填充实例属性" class="headerlink" title="populateBean() - 填充实例属性"></a>populateBean() - 填充实例属性</h3><blockquote>
-<p>AbstractAutowireCapableBeanFactory#populateBean</p>
-</blockquote>
+<h3 id="populateBean-填充实例依赖"><a href="#populateBean-填充实例依赖" class="headerlink" title="populateBean() - 填充实例依赖"></a>populateBean() - 填充实例依赖</h3><p>AbstractAutowireCapableBeanFactory#populateBean</p>
 <pre><code class="java">protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
-
-    // 省略...
-
+    // ...
     PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
 
-    // 【注意】判断属性注入的模式
+    // 判断依赖注入的模式：by name（@Qualifier） 或 by type（默认）
     int resolvedAutowireMode = mbd.getResolvedAutowireMode();
-    // 以下为 by name 和 by type
-    // 如果不是则可能有两种情况，1是当前Bean没有外部依赖，2是默认注入模式，既AUTOWIRE_CONSTRUCTOR 构造器注入
+    // 如果两个都不是，有两种情况：
+    // 1. 没有依赖
+    // 2. 默认注入模式（构造器注入）
     if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
         MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
         // Add property values based on autowire by name if applicable.
@@ -601,11 +571,11 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
         if (pvs == null) {
             pvs = mbd.getPropertyValues();
         }
-        // 【注入属性的主要逻辑】
-        // InstantiationAwareBeanPostProcessor执行注入相关操作，属于BeanPostProcessor。
-        // 典型案例就是@Autowired、@Value、@Inject等注解处理AutowiredAnnotationBeanPostProcessor
+        // 依赖注入逻辑 ///////////////////
+
+        // 通过 InstantiationAwareBeanPostProcessor 实现来执行注入操作
+        // 譬如处理 @Autowired、@Value、@Inject 等注解的 AutowiredAnnotationBeanPostProcessor 类
         for (BeanPostProcessor bp : getBeanPostProcessors()) {
-            // InstantiationAwareBeanPostProcessor属于高优先级别的BeanPostProcessor
             if (bp instanceof InstantiationAwareBeanPostProcessor) {
                 InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
                 PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
@@ -623,9 +593,7 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
         }
     }
 }</code></pre>
-<h3 id="initializeBean-接口方法回调"><a href="#initializeBean-接口方法回调" class="headerlink" title="initializeBean() - 接口方法回调"></a>initializeBean() - 接口方法回调</h3><blockquote>
-<p>AbstractAutowireCapableBeanFactory#initializeBean</p>
-</blockquote>
+<h3 id="initializeBean-生命周期模板方法回调"><a href="#initializeBean-生命周期模板方法回调" class="headerlink" title="initializeBean() - 生命周期模板方法回调"></a>initializeBean() - 生命周期模板方法回调</h3><p>AbstractAutowireCapableBeanFactory#initializeBean</p>
 <pre><code class="java">protected Object initializeBean(final String beanName, final Object bean, @Nullable RootBeanDefinition mbd) {
     if (System.getSecurityManager() != null) {
         AccessController.doPrivileged((PrivilegedAction&lt;Object&gt;) () -&gt; {
@@ -634,20 +602,30 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
         }, getAccessControlContext());
     }
     else {
-        // 步骤1：回调bean的Aware方法
+        // 步骤1：回调特定的Aware接口方法
+         // BeanNameAware -&gt; BeanClassLoaderAware -&gt; BeanFactoryAware
         invokeAwareMethods(beanName, bean);
     }
 
     Object wrappedBean = bean;
     if (mbd == null || !mbd.isSynthetic()) {
-        // 步骤2：回调bean自定义BeanPostProcessor的postProcessBeforeInitialization
+        // 步骤2：以下方法位于 AbstractAutowireCapableBeanFactory ，有以下功能
+        // 1）回调当前bean实现的ApplicationContextAware接口方法
+        // 2）回调当前bean实现的ServletContextAware接口方法
+        // 3) 回调当前bean的依赖所实现的BeanPostProcessor方法
+        // 4）回调CommonAnnotationBeanPostProcessor处理@PostConstruct
         wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+
+        // BeanPostProcessor的作用
+        // 1. postProcessAfterInitialization()：在当前bean的使用bean初始化前调用（@PostConstruct前）。注意，此时当前bean已经被注入到使用bean中了
+        // 2. postProcessAfterInitialization()：在当前bean的使用bean初始化后调用
+        // 3. BeanPostProcessor回调时可以获取到使用bean的实例引用
     }
 
     try {
         // 步骤3：回调初始化方法
-        // 注意，以下方法会先执行InitializingBean的afterPropertiesSet
-        // 然后执行自定义初始化方法（@PostConstruct）
+        // 1）先回调通过InitializingBean的afterPropertiesSet实现的初始化方法
+        // 2) 再回调init-method指定的初始化方法
         invokeInitMethods(beanName, wrappedBean, mbd);
     }
     catch (Throwable ex) {
@@ -656,26 +634,25 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
                 beanName, &quot;Invocation of init method failed&quot;, ex);
     }
     if (mbd == null || !mbd.isSynthetic()) {
-        // 步骤4：回调自定义BeanPostProcessor的postProcessAfterInitialization
+        // 步骤4：回调BeanPostProcessor的后置方法（postProcessAfterInitialization）
         wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
     }
 
     return wrappedBean;
 }</code></pre>
-<blockquote>
 <p>AbstractAutowireCapableBeanFactory#invokeInitMethods</p>
-</blockquote>
 <pre><code class="java">protected void invokeInitMethods(String beanName, final Object bean, @Nullable RootBeanDefinition mbd)
     throws Throwable {
 
     boolean isInitializingBean = (bean instanceof InitializingBean);
-    // 步骤1：先执行InitializingBean的afterPropertiesSet方法
+    // 先回调通过InitializingBean的afterPropertiesSet实现的初始化方法，如果有的话
+    // 注意，如果afterPropertiesSet方法被标注了@PostConstruct注解，则会提前执行而不是在这里执行
     if (isInitializingBean &amp;&amp; (mbd == null || !mbd.isExternallyManagedInitMethod(&quot;afterPropertiesSet&quot;))) {
-        // 省略...
+        // ...
         ((InitializingBean) bean).afterPropertiesSet();
     }
 
-    // 步骤2：再执行自定义初始化方法
+    // 再回调init-method指定的初始化方法，如果有的话
     if (mbd != null &amp;&amp; bean.getClass() != NullBean.class) {
         String initMethodName = mbd.getInitMethodName();
         if (StringUtils.hasLength(initMethodName) &amp;&amp;
@@ -685,11 +662,8 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
         }
     }
 }</code></pre>
-<h3 id="Spring-Bean生命周期流程图"><a href="#Spring-Bean生命周期流程图" class="headerlink" title="Spring Bean生命周期流程图"></a>Spring Bean生命周期流程图</h3><blockquote>
-<p>SringBoot环境</p>
-</blockquote>
-<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/003.png" alt></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+<h3 id="Bean生命周过程"><a href="#Bean生命周过程" class="headerlink" title="Bean生命周过程"></a>Bean生命周过程</h3><p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/003.png" alt></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -731,7 +705,7 @@ public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, Bean
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#案例代码"><span class="toc-text">案例代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AnnotationConfigApplicationContext类简介"><span class="toc-text">AnnotationConfigApplicationContext类简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#类之间的关系"><span class="toc-text">类之间的关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于BeanFactory和ApplicationContext的区别"><span class="toc-text">关于BeanFactory和ApplicationContext的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#refresh-刷新启动容器"><span class="toc-text">refresh() - 刷新启动容器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#finishBeanFactoryInitialization-实例化SingletonBean"><span class="toc-text">finishBeanFactoryInitialization() - 实例化SingletonBean</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#populateBean-填充实例属性"><span class="toc-text">populateBean() - 填充实例属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#initializeBean-接口方法回调"><span class="toc-text">initializeBean() - 接口方法回调</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Spring-Bean生命周期流程图"><span class="toc-text">Spring Bean生命周期流程图</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#分析案例"><span class="toc-text">分析案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AnnotationConfigApplicationContext类简介"><span class="toc-text">AnnotationConfigApplicationContext类简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#类之间的关系"><span class="toc-text">类之间的关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于BeanFactory和ApplicationContext的区别"><span class="toc-text">关于BeanFactory和ApplicationContext的区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#refresh-刷新启动容器"><span class="toc-text">refresh() - 刷新启动容器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#finishBeanFactoryInitialization-实例化Bean"><span class="toc-text">finishBeanFactoryInitialization() - 实例化Bean</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#populateBean-填充实例依赖"><span class="toc-text">populateBean() - 填充实例依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#initializeBean-生命周期模板方法回调"><span class="toc-text">initializeBean() - 生命周期模板方法回调</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Bean生命周过程"><span class="toc-text">Bean生命周过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
