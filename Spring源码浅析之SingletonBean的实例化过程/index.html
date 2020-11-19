@@ -216,6 +216,7 @@ public void refresh() throws BeansException, IllegalStateException {
         prepareRefresh();
 
         // 创建基础容器（ConfigurableListableBeanFactory）
+        // 注意：这里包含了设置父容器（BeanFactory）的逻辑
         ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
         // 初始化容器，譬如添加内部Bean
@@ -227,7 +228,7 @@ public void refresh() throws BeansException, IllegalStateException {
             postProcessBeanFactory(beanFactory);
 
             // 注册并执行ConfigurationClassPostProcessor
-            // 解除出配置类（譬如@Configuration）
+            // 注意：这里会解析出配置类的BeanDefinition（譬如@Configuration）
             invokeBeanFactoryPostProcessors(beanFactory);
 
             // 创建并注册BeanPostProcessor
@@ -252,6 +253,11 @@ public void refresh() throws BeansException, IllegalStateException {
             registerListeners();
 
             // 【注】实例化非延时加载外的单例Bean
+            // 默认实例化顺序的规则如下(可用@Order或@DependsOn修改)：
+            // 1. 先实例化配置类
+            // 2. 定义类配置类上的注解，譬如@EnableWebMvc、@Import之类
+            // 3. 按照配置类的定义从上到下实
+            // 4. 按需实例化。譬如优先级较低的bean被以上bean依赖了，就会提前实例化
             finishBeanFactoryInitialization(beanFactory);
 
             // 发布上下文刷启动事件
@@ -432,7 +438,7 @@ public void refresh() throws BeansException, IllegalStateException {
         }
     }
 
-    // 情况3：手动注册
+    // 情况3：构造器创建，譬如@Controller
     if (resolved) {
         // 构造器带有参数，实例化并注入依赖
         if (autowireNecessary) { 

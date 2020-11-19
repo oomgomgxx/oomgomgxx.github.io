@@ -299,7 +299,7 @@ public class DemogApplication implements ApplicationRunner {
 <li>实例化操作实际位于容器 refresh 期间中的 AbstractApplicationContext#finishBeanFactoryInitialization 方法</li>
 </ul>
 <h4 id="AOP代理实例的返回过程"><a href="#AOP代理实例的返回过程" class="headerlink" title="AOP代理实例的返回过程"></a>AOP代理实例的返回过程</h4><ul>
-<li>需要说的是，AOP 代理并不是在实例化是创建的，而是初始化时通过BeanPostProcessor的后处理方法回调判断创建的。这个处理类叫 AnnotationAwareAspectJAutoProxyCreator</li>
+<li>AOP 代理并不是在实例化是创建的，而是初始化时通过 BeanPostProcessor 的后处理方法回调判断创建的。这个处理类叫 AnnotationAwareAspectJAutoProxyCreator</li>
 </ul>
 <img src="/%E5%85%B3%E4%BA%8Espring%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8/5.png" style="zoom:67%;">
 
@@ -336,14 +336,14 @@ public class DemogApplication implements ApplicationRunner {
     // 生成代理实例
     return proxyFactory.getProxy(getProxyClassLoader());
 }</code></pre>
-<p>getProxy方法实质调用了 DefaultAopProxyFactory#createAopProxy ，如下操作</p>
+<p>getProxy 方法实质调用了 DefaultAopProxyFactory#createAopProxy ，如下操作</p>
 <pre><code class="java">public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 
     @Override
     public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
         // 1. 判断是否配置了优化
-        // 2. 判断是否配置ProxyTargetClass来强制使用Cglib
-        // 3. 是不是没有实现接口
+        // 2. 判断是否设置了ProxyTargetClass=ture强制使用Cglib
+        // 3. 目标没有实现接口
         // 以上随便满足一条则采用Cglib，否则使用JDK动态代理
         if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
             Class&lt;?&gt; targetClass = config.getTargetClass();
@@ -435,7 +435,7 @@ public class DemogApplication implements ApplicationRunner {
 <blockquote>
 <p>至于 JDK 动态代理和 Cglib 动态代理到底哪个效率更高这个问题有人专门做了这样的测试，大致结论是在 JDK1.8 之后 JDK 动态代理效率并不差于 Cglib 动态代理，甚至更加高效。这篇文章在本文下方的参考处有连接。</p>
 </blockquote>
-<p>继续debug，观察 invoke 方法的执行流程</p>
+<p>继续 Debug，观察 invoke 方法的执行流程</p>
 <img src="/%E5%85%B3%E4%BA%8Espring%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8/22.png" style="zoom:67%;">
 
 <p>给进入 proceed 并添加条件断点以快速定位 TransactionInterceptor</p>
@@ -660,7 +660,7 @@ public class JmsController {
 <li>对于JtaTransactionManager而言，因为实现的是2pc协议，因此在JavaEE中就需要实现XA协议，但spring中的JtaTransactionManager只是一个编程接口而并非是一个实现；</li>
 <li>在JavaEE中一般可以通过以下方式来获取TX协议和XA协议的实现和支持：<ul>
 <li>Jboos和WebLogic等重量级的服务器就提供：应用管理器、事务管理器、资源管理器的实现</li>
-<li>实现了XA协议的第三方工具库：<code>atomikos</code>、bitronix</li>
+<li>实现了XA协议的第三方工具库：atomikos、bitronix</li>
 </ul>
 </li>
 </ul>
@@ -908,7 +908,12 @@ public void save(Person person){
 } </code></pre>
 <p><strong>与2PC的区别</strong></p>
 <p>ChainedTransactionManager 并不能做到2pc的效果，它只能做到在事务链中某个节点事务回滚后位于该阶段后的事务都不会继续提交。</p>
-<h2 id="导致事务失效的几种情况"><a href="#导致事务失效的几种情况" class="headerlink" title="导致事务失效的几种情况"></a>导致事务失效的几种情况</h2><h3 id="Transactional注解标注在非public修饰的方法上"><a href="#Transactional注解标注在非public修饰的方法上" class="headerlink" title="@Transactional注解标注在非public修饰的方法上"></a>@Transactional注解标注在非public修饰的方法上</h3><ul>
+<h2 id="导致事务失效的几种情况"><a href="#导致事务失效的几种情况" class="headerlink" title="导致事务失效的几种情况"></a>导致事务失效的几种情况</h2><h3 id="目标类没有被代理"><a href="#目标类没有被代理" class="headerlink" title="目标类没有被代理"></a>目标类没有被代理</h3><p>具体情况有以下这些：</p>
+<ul>
+<li>Bean 没有被容器管理</li>
+<li>使用了父子容器，但 @EnableAspectJAutoProx 在父容器中配置，而 @Aspect 切面切对应的目标 Bean 却在子容器中被管理（譬如 Controller ）</li>
+</ul>
+<h3 id="Transactional注解标注在非public修饰的方法上"><a href="#Transactional注解标注在非public修饰的方法上" class="headerlink" title="@Transactional注解标注在非public修饰的方法上"></a>@Transactional注解标注在非public修饰的方法上</h3><ul>
 <li><p>在上面的源码分析 《回过头看看到底是如何获取 Advisors 的》小节中我们得知了如何返回当前拦截方法的所有 Advisors 。大概过程就是先找到上前上下文的所有 Advisors 然后再通过切入点表达式进行匹配出符合的 Advisors。而在这个匹配过程中有一个潜在条件，如下图：</p>
 <p><img src="/%E5%85%B3%E4%BA%8Espring%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8/26.png" alt></p>
 </li>
@@ -925,7 +930,7 @@ public void save(Person person){
 </ul>
 </li>
 </ul>
-<h3 id="Transactional方法被同类的非事务方法调用"><a href="#Transactional方法被同类的非事务方法调用" class="headerlink" title="@Transactional方法被同类的非事务方法调用"></a>@Transactional方法被同类的非事务方法调用</h3><p>如下：</p>
+<h3 id="Transactional方法被同类中的非代理方法调用"><a href="#Transactional方法被同类中的非代理方法调用" class="headerlink" title="@Transactional方法被同类中的非代理方法调用"></a>@Transactional方法被同类中的非代理方法调用</h3><p>如下：</p>
 <pre><code class="java">@Component
 public void Test{
 
@@ -939,9 +944,9 @@ public void Test{
     }
 }</code></pre>
 <ul>
-<li><p>以上失效情况其实很好解释，因为 t1 方法并没有被 @Transactional 标注，所以 t1 方法并没有 TransactionAttributeSource 信息，因此方法在执行过程中并不会织入事务操作。</p>
+<li><p>以上失效情况很好理解，因为 t1 方法没有被 @Transactional 标注，即不会有 TransactionAttributeSource 信息，因此该方法并不会织入事务，简单说就是没有被代理</p>
 </li>
-<li><p>解决方法有两种：</p>
+<li><p>解决方案有以下两种：</p>
 <ul>
 <li><p>添加@Transactional注解到 t1 方法上</p>
 </li>
@@ -965,7 +970,7 @@ public void Test{
 </ul>
 </li>
 </ul>
-<h3 id="手动处理异常而没有设置回滚标记"><a href="#手动处理异常而没有设置回滚标记" class="headerlink" title="手动处理异常而没有设置回滚标记"></a>手动处理异常而没有设置回滚标记</h3><p>如下：</p>
+<h3 id="手动处理了异常而没有设置回滚标记"><a href="#手动处理了异常而没有设置回滚标记" class="headerlink" title="手动处理了异常而没有设置回滚标记"></a>手动处理了异常而没有设置回滚标记</h3><p>如下：</p>
 <pre><code class="java">@Component
 public void Test{
 
@@ -1044,6 +1049,10 @@ TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();</code></p
 </ul>
 <h3 id="数据库（引擎）不支持事务"><a href="#数据库（引擎）不支持事务" class="headerlink" title="数据库（引擎）不支持事务"></a>数据库（引擎）不支持事务</h3><p>例如MySQL中除了InnoDB，基本上都不支持事务操作。</p>
 <p><img src="/%E5%85%B3%E4%BA%8Espring%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8/30.png" alt></p>
+<h2 id="拓展"><a href="#拓展" class="headerlink" title="拓展"></a>拓展</h2><blockquote>
+<p>同步事务</p>
+</blockquote>
+<p>&emsp;&emsp;如果在 Spring 事务中需要进行同步处理，则同步块范围必须大于事务范围，否则无法达到同步效果。这是因为事务代理是环绕着目标方法来进行管理的，所以这时就可能会出现这么一种情况，即方法退出了（同步锁被释放）但事务还在进行，而又因为是 Singleton 域，所以并发时就会共享到同一个事务，从而导致混乱。所以在使用 synchronized 时，应该做到包裹着被代理的方法，而不是直接使用在方法上或方法内。</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://zhuanlan.zhihu.com/p/67041662" target="_blank" rel="noopener">Spring AOP中的JDK和CGLib动态代理哪个效率更高？</a></li>
 </ul>
@@ -1092,7 +1101,7 @@ TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();</code></p
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#知识小回顾"><span class="toc-text">知识小回顾</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring对事务的抽象"><span class="toc-text">Spring对事务的抽象</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PlatformTransactionManager"><span class="toc-text">PlatformTransactionManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TransactionDefinition"><span class="toc-text">TransactionDefinition</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TransactionStatus"><span class="toc-text">TransactionStatus</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-AOP事务织入源码浅析"><span class="toc-text">Spring AOP事务织入源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#案例代码"><span class="toc-text">案例代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码阅读小知识"><span class="toc-text">源码阅读小知识</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#EntityManager实例化时机"><span class="toc-text">EntityManager实例化时机</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AOP代理实例的返回过程"><span class="toc-text">AOP代理实例的返回过程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#回过头看看到底是如何获取-Advisors-的"><span class="toc-text">回过头看看到底是如何获取 Advisors 的</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#JpaRepositoryFactoryBean是何时调用getObject方法的"><span class="toc-text">JpaRepositoryFactoryBean是何时调用getObject方法的</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#观察AOP动态代理是如何实现Advisor织入"><span class="toc-text">观察AOP动态代理是如何实现Advisor织入</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring提供的事务管理器"><span class="toc-text">Spring提供的事务管理器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#常用的事务管理器"><span class="toc-text">常用的事务管理器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JpaTransactionManager"><span class="toc-text">JpaTransactionManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JmsTransactionManager"><span class="toc-text">JmsTransactionManager</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#jms事务注意"><span class="toc-text">jms事务注意</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#使用JmsTransactionManager控制jms事务"><span class="toc-text">使用JmsTransactionManager控制jms事务</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JtaTransactionManager"><span class="toc-text">JtaTransactionManager</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#jta事务说明"><span class="toc-text">jta事务说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#jta接口规范"><span class="toc-text">jta接口规范</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#使用例子-DB-MQ"><span class="toc-text">使用例子 - DB+MQ</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringData提供的链式事务管理器"><span class="toc-text">SpringData提供的链式事务管理器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#导致事务失效的几种情况"><span class="toc-text">导致事务失效的几种情况</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Transactional注解标注在非public修饰的方法上"><span class="toc-text">@Transactional注解标注在非public修饰的方法上</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Transactional方法被同类的非事务方法调用"><span class="toc-text">@Transactional方法被同类的非事务方法调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动处理异常而没有设置回滚标记"><span class="toc-text">手动处理异常而没有设置回滚标记</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#事务方法抛出了检测性异常"><span class="toc-text">事务方法抛出了检测性异常</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#嵌套事务操作时错误设置事务传播方式"><span class="toc-text">嵌套事务操作时错误设置事务传播方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据库（引擎）不支持事务"><span class="toc-text">数据库（引擎）不支持事务</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#知识小回顾"><span class="toc-text">知识小回顾</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring对事务的抽象"><span class="toc-text">Spring对事务的抽象</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PlatformTransactionManager"><span class="toc-text">PlatformTransactionManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TransactionDefinition"><span class="toc-text">TransactionDefinition</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TransactionStatus"><span class="toc-text">TransactionStatus</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-AOP事务织入源码浅析"><span class="toc-text">Spring AOP事务织入源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#案例代码"><span class="toc-text">案例代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码阅读小知识"><span class="toc-text">源码阅读小知识</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#EntityManager实例化时机"><span class="toc-text">EntityManager实例化时机</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AOP代理实例的返回过程"><span class="toc-text">AOP代理实例的返回过程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#回过头看看到底是如何获取-Advisors-的"><span class="toc-text">回过头看看到底是如何获取 Advisors 的</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#JpaRepositoryFactoryBean是何时调用getObject方法的"><span class="toc-text">JpaRepositoryFactoryBean是何时调用getObject方法的</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#观察AOP动态代理是如何实现Advisor织入"><span class="toc-text">观察AOP动态代理是如何实现Advisor织入</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring提供的事务管理器"><span class="toc-text">Spring提供的事务管理器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#常用的事务管理器"><span class="toc-text">常用的事务管理器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JpaTransactionManager"><span class="toc-text">JpaTransactionManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JmsTransactionManager"><span class="toc-text">JmsTransactionManager</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#jms事务注意"><span class="toc-text">jms事务注意</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#使用JmsTransactionManager控制jms事务"><span class="toc-text">使用JmsTransactionManager控制jms事务</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JtaTransactionManager"><span class="toc-text">JtaTransactionManager</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#jta事务说明"><span class="toc-text">jta事务说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#jta接口规范"><span class="toc-text">jta接口规范</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#使用例子-DB-MQ"><span class="toc-text">使用例子 - DB+MQ</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SpringData提供的链式事务管理器"><span class="toc-text">SpringData提供的链式事务管理器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#导致事务失效的几种情况"><span class="toc-text">导致事务失效的几种情况</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#目标类没有被代理"><span class="toc-text">目标类没有被代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Transactional注解标注在非public修饰的方法上"><span class="toc-text">@Transactional注解标注在非public修饰的方法上</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Transactional方法被同类中的非代理方法调用"><span class="toc-text">@Transactional方法被同类中的非代理方法调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动处理了异常而没有设置回滚标记"><span class="toc-text">手动处理了异常而没有设置回滚标记</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#事务方法抛出了检测性异常"><span class="toc-text">事务方法抛出了检测性异常</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#嵌套事务操作时错误设置事务传播方式"><span class="toc-text">嵌套事务操作时错误设置事务传播方式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据库（引擎）不支持事务"><span class="toc-text">数据库（引擎）不支持事务</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展"><span class="toc-text">拓展</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
 </div>
 
       </div>
