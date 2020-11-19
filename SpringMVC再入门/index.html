@@ -453,7 +453,7 @@ public void service(ServletRequest req, ServletResponse res)
         resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, errMsg);
     }
 }</code></pre>
-<h4 id="是如何接入-Servlet-规范的？"><a href="#是如何接入-Servlet-规范的？" class="headerlink" title="是如何接入 Servlet 规范的？"></a>是如何接入 Servlet 规范的？</h4><p>关于 Spring MVC 我们接触得最多的 Servlet 肯定就是 DispatchServelt 了，所以我们可以先从它入手</p>
+<h4 id="Spring-MVC是如何接入-Servlet-规范的？"><a href="#Spring-MVC是如何接入-Servlet-规范的？" class="headerlink" title="Spring MVC是如何接入 Servlet 规范的？"></a>Spring MVC是如何接入 Servlet 规范的？</h4><p>关于 Spring MVC 我们接触得最多的 Servlet 肯定就是 DispatchServelt 了，所以我们可以先从它入手</p>
 <pre><code class="java">public class DispatcherServlet extends FrameworkServlet {
     //...</code></pre>
 <p>可以看到它继承了一个叫 FrameworkServlet 的父类，如下</p>
@@ -481,14 +481,14 @@ public void service(ServletRequest req, ServletResponse res)
         // 其他请求由父类处理
         // 在这我们知道，当前FrameworkServlet的父类是HttpServletBean
         // 但HttpServletBean并没有实现service，因此这里的service是位于HttpServlet
-        // 而HttpServlet的serivce只作分配工作（按HTTP请求方法分派）
+        // 而HttpServlet的serivce只作分发工作（按HTTP请求方法分派）
         super.service(request, response);
     }
 }</code></pre>
 <p>现在我们可以再看看 FrameworkServlet 是否有 doXXX 方法实现</p>
 <img src="/SpringMVC%E5%86%8D%E5%85%A5%E9%97%A8/004.png" style="zoom:50%;">
 
-<p>也就是说，当请求到来时会执行 HttpServlet#serivce 方法，而请求就会被分派到 FrameworkServlet#doXXX 处理。那么我们可以到里面看看它都做了什么</p>
+<p>也就是说，当请求到来时会执行 HttpServlet#serivce 方法进行分发到 FrameworkServlet#doXXX 处理。那我们可以再到里面看看它都做了些什么</p>
 <pre><code class="java">@Override
 protected final void doGet(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
@@ -507,7 +507,7 @@ protected final void doPut(HttpServletRequest request, HttpServletResponse respo
     processRequest(request, response);
 }
 // 其他方法一样...</code></pre>
-<p>我们看到它 doXXX 其实并没有直接处理而是交给了 processRequest </p>
+<p>可以看到它实现的 doXXX 其实并没有直接处理，而是将请求交给了 processRequest </p>
 <pre><code class="java">protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
     //...
@@ -516,7 +516,7 @@ protected final void doPut(HttpServletRequest request, HttpServletResponse respo
     }
     //...
 }</code></pre>
-<p>processRequest 也没有处理，而是又交给了 doService。注意，这里的 doService 其实是一个抽象方法，而其<strong>实现位于 DispatchServlet</strong> ， 如下</p>
+<p>processRequest 也没有处理，又交给了 doService。注意，这里的 doService 其实是一个抽象方法，而其<strong>实现位于 DispatchServlet</strong> ， 如下</p>
 <pre><code class="java">@Override
 protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
     logRequest(request);
@@ -570,7 +570,7 @@ protected void doService(HttpServletRequest request, HttpServletResponse respons
         }
     }
 }</code></pre>
-<p>DispatchServlet#doDispatch</p>
+<p>DispatchServlet#doDispatch ，分派器的核心代码</p>
 <pre><code class="java">protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
     HttpServletRequest processedRequest = request;
@@ -1519,7 +1519,7 @@ public void pointcut() {}</code></pre>
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#快速搭建基于-Servlet-3-的-Web-项目"><span class="toc-text">快速搭建基于 Servlet 3 的 Web 项目</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、让-Maven-支持-Web-环境"><span class="toc-text">一、让 Maven 支持 Web 环境</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、构建一个基于-Spring-父子容器的-Web-项目"><span class="toc-text">二、构建一个基于 Spring 父子容器的 Web 项目</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、测试是否搭建成功"><span class="toc-text">三、测试是否搭建成功</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-MVC-分派器原理"><span class="toc-text">Spring MVC 分派器原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#父子容器是如何组装的？"><span class="toc-text">父子容器是如何组装的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分派器剖析"><span class="toc-text">分派器剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#回顾-Servlet-规范"><span class="toc-text">回顾 Servlet 规范</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#是如何接入-Servlet-规范的？"><span class="toc-text">是如何接入 Servlet 规范的？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#装配过程"><span class="toc-text">装配过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求数据是如何流入处理器的？"><span class="toc-text">请求数据是如何流入处理器的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用-WebMvcConfigurer-配置"><span class="toc-text">常用 WebMvcConfigurer 配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Listener、Filter、Interceptor、AOP-的作用和区别"><span class="toc-text">Listener、Filter、Interceptor、AOP 的作用和区别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用-Tomcat-Embed-运行项目"><span class="toc-text">使用 Tomcat-Embed 运行项目</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Listener"><span class="toc-text">Listener</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Filter"><span class="toc-text">Filter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Interceptor"><span class="toc-text">Interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AOP（-Aspect-Oriented-Programming-）"><span class="toc-text">AOP（ Aspect Oriented Programming ）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#快速搭建基于-Servlet-3-的-Web-项目"><span class="toc-text">快速搭建基于 Servlet 3 的 Web 项目</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、让-Maven-支持-Web-环境"><span class="toc-text">一、让 Maven 支持 Web 环境</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、构建一个基于-Spring-父子容器的-Web-项目"><span class="toc-text">二、构建一个基于 Spring 父子容器的 Web 项目</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、测试是否搭建成功"><span class="toc-text">三、测试是否搭建成功</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-MVC-分派器原理"><span class="toc-text">Spring MVC 分派器原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#父子容器是如何组装的？"><span class="toc-text">父子容器是如何组装的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分派器剖析"><span class="toc-text">分派器剖析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#回顾-Servlet-规范"><span class="toc-text">回顾 Servlet 规范</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Spring-MVC是如何接入-Servlet-规范的？"><span class="toc-text">Spring MVC是如何接入 Servlet 规范的？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#装配过程"><span class="toc-text">装配过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#请求数据是如何流入处理器的？"><span class="toc-text">请求数据是如何流入处理器的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用-WebMvcConfigurer-配置"><span class="toc-text">常用 WebMvcConfigurer 配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Listener、Filter、Interceptor、AOP-的作用和区别"><span class="toc-text">Listener、Filter、Interceptor、AOP 的作用和区别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用-Tomcat-Embed-运行项目"><span class="toc-text">使用 Tomcat-Embed 运行项目</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Listener"><span class="toc-text">Listener</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Filter"><span class="toc-text">Filter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Interceptor"><span class="toc-text">Interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AOP（-Aspect-Oriented-Programming-）"><span class="toc-text">AOP（ Aspect Oriented Programming ）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
