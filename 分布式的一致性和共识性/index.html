@@ -481,7 +481,9 @@ public void cancelPay(){
 </blockquote>
 <img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/014.png" style="zoom:67%;">
 
-<p>从图中可以得知的信息是，Redis集群是通过 Gossip 协议来广播节点状态的。在Redis集群中每一个节点都对应着不同的槽位段。例如现在Client向A节点获取一个缓存，但是A节点根据key计算后发现这个缓存并在在自己的槽位管控范围内，因此它就会根据先前通过Gossip协议交换回来的信息来通知 Client 重定向到对应的节点中查找缓存。</p>
+<p>从图中可以得知的信息是，Redis 集群是通过 Gossip 协议来广播节点状态（包含槽位信息和节点状态）。</p>
+<p>在 Redis 集群中每一个节点都对应着不同的槽位段。例如现在 Client 向 A 节点获取一个缓存，但是 A 节点根据 key 计算后发现这个缓存并不在自己的槽位内，这时它就会根据先前通过 Gossip 协议交换回来的信息来通知 Client ，让其重定向到对应的节点中查找缓存。</p>
+<p><strong>注：其实 Redis Cluster 是 Gossip 和 Raft 混用。它采用 Gossip 进行通信，用 Raft 做主从的故障转移</strong></p>
 <h3 id="Paxos算法"><a href="#Paxos算法" class="headerlink" title="Paxos算法"></a>Paxos算法</h3><h4 id="算法的诞生"><a href="#算法的诞生" class="headerlink" title="算法的诞生"></a>算法的诞生</h4><blockquote>
 <p>故事摘自 Leslie Lamport 的《The Part-Time Parliamen》</p>
 </blockquote>
@@ -918,14 +920,18 @@ public void cancelPay(){
 <h4 id="Redis"><a href="#Redis" class="headerlink" title="Redis"></a>Redis</h4><blockquote>
 <p>如何降低数据复制丢失和延时所带来的风险？</p>
 </blockquote>
-<p>&emsp;&emsp;因为<code>Redis高可用的基础是复制</code>，而且 Redis 高可用方案目前来说属于 AP 系统（据悉 Redis 正在开发基于 Raft 算法的一种新集群模式，如果采用 Raft 算法，集群可用性将会降低，但会从 AP 摇身一变为 CP 系统）。</p>
-<p>&emsp;&emsp;首先要给出结论是目前 Redis 的高可用解决方案不能避免数据丢失，只能是尽量降低丢失数据的量。在 Redis 复制中有如下2个关键配置，我们可以利用其特性来降低复制丢失数据的风险。</p>
+<p>&emsp;&emsp;因为<code>Redis高可用的基础是复制</code>，而且 Redis 高可用方案目前来说属于 AP 系统（据悉 Redis 正在开发基于 Raft 算法的一种新集群模式，而如果采用 Raft 算法，集群可用性将会降低，但会从 AP 摇身一变为 CP 系统）。</p>
+<p>&emsp;&emsp;首先要给出结论：目前版本的 Redis 高可用解决方案不能完全避免数据丢失，而只能做到尽量降低丢失数据可能。在 Redis 复制机制中有如下两个关键配置项，我们可以利用它们来降低复制时丢失数据的风险。</p>
 <pre><code class="properties"># 要求复制延迟低于指定时间值（秒），否则拒绝提供写服务
 min-replicas-max-lag 10
 # 要求健康节点数（副本节点）要达到一定的数量，否则拒绝提供写服务
 min-replicas-to-write 3</code></pre>
-<p>&emsp;&emsp;以上论述可能和 Quorum NWR 不是很占边，但是上面所提及到的配置亦属于提高读一致的操作，通过确保副本节点的健康和限制网络延时来间接实现 W 功能。换句话说 min-replicas-max-lag 的值越低，且 min-replicas-to-write 的值越大时，那么读一致性就越高。当然以上配置是不能根治复制延时和数据丢失的，因为在极端情况下客户端依然会读到未能同步的副本节点上的数据。譬如未复制成功但主节点宕机了，然后副本节点成为主节点提供服务就会造成丢失数据；又譬如使用副本节点来扩展主节点的读性能，就必然会出现一致性问题，当然这个可以用  Quorum NWR 策略来解决，但遗憾的是 Redis 并没有这种功能。</p>
-<p>&emsp;&emsp;个人认为它没有使用 Quorum NWR 的原因是因为 Redis 高可用本身的设计理念就是 AP 系统，即可用性优先的分布式集群，所以如果使用 Quorum NWR 的话实质就和理念相违背了，当然这纯属是个人猜测。</p>
+<p>以上配置项特性表面上和 Quorum NWR 不是很占边，但事实上亦属于提高读一致的操作。即通过<strong>确保副本健康节点的数量</strong>和<strong>限制网络延时</strong>来间接实现 W 功能。换句话说 min-replicas-max-lag 的值越低，以及 min-replicas-to-write 的值越大时，那么读一致性就越高。而在前面已经提到过，Redis 目前并不能完全解决<strong>复制延时</strong>和<strong>数据丢失</strong>等问题。</p>
+<ul>
+<li>主节点在未复制成功的前提下宕机了，然后副本节点成为主节点提供服务，这时就会造成丢失数据</li>
+<li>通过副本节点来提高读性能时，因为网络的不定性必然会出现一致性问题</li>
+</ul>
+<p>个人认为，Redis 之所以没有直接支持 Quorum NWR 的原因是与其设计理念有关，因为 Redis 是一个可用性优先的系统，而如果使用 Quorum NWR 就会导致可用性降低（是哟功能 min-replicas-max-lag、min-replicas-to-write 可会一定程度降低可用性 ）。</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://managementfromscratch.wordpress.com/2016/04/01/introduction-to-gossip/" target="_blank" rel="noopener">INTRODUCTION TO GOSSIP</a></li>
 <li><a href="http://www.taohui.pub/wp-content/uploads/2018/05/The_Part-Time_ParliamentPaxos算法中文翻译-3.pdf" target="_blank" rel="noopener">The Part-Time Parliamen中文译文</a> </li>
