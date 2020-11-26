@@ -137,29 +137,27 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="论述"><a href="#论述" class="headerlink" title="论述"></a>论述</h2><ol>
-<li><p><strong>Java语言层面是屏蔽了指针的所以不存在引用传递</strong>。</p>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="论述"><a href="#论述" class="headerlink" title="论述"></a>论述</h2><ol>
+<li><p><strong>Java语言层面是屏蔽了指针的，所以并不存在引用传递</strong>。</p>
 </li>
-<li><p>网上一般的论述是拷贝了对象的地址所以是值传递，但这种说法是站不住脚的，因为这和值传递的概念不符。值传递的特点是通过拷贝值来隔离两个不用的栈帧域，让其在操作期间互不干扰。但在Java中普通的引用类型并不如是，因此实质也不是值传递。</p>
+<li><p>网上一般的论述是拷贝了对象的地址所以是值传递，但这种说法是站不住脚的，因为这和值传递的概念不符。值传递的特点是通过拷贝值来隔离两个不同的栈帧域，让其在操作期间互不干扰。但在 Java 中普通的引用类型并不如是，因此实质也不是值传递。</p>
 </li>
 </ol>
 <a id="more"></a>
 
 <ol start="3">
-<li><p>准确点来说，Java的基本数据类为值传递，而引用类型则为<strong>共享对象传递</strong>。</p>
-</li>
-<li><p>String引用类型在Java中有着特殊实现。特点是不可变，且有运行时字符串常量池来提高字符串的利用率。因为字符串在程序中的出现率颇高，为了提高利用率才使用池来维护，其次因为池是线程共享的，所以为了避免出现并发修改带来同步问题的情况发生而设计成不可变。除此之外，字符串字面量本身都有与之对应的String对象实例，而且可以是1到多个，所以传递String本质还是传递共享对象，只不过是字符串字面量的指向没变而已。</p>
-</li>
+<li>准确点来说，Java 的基本数据类为值传递，而引用类型则为<strong>共享对象传递</strong>。</li>
+<li>String 引用类型在 Java 中有着特殊实现。特点是不可变，且有运行时字符串常量池来提高字符串的利用率。因为字符串在程序中的出现率颇高，所以为了提高其复用率就使用池化思想来维护。其次因为池本身是线程共享的，所以为了避免出现并发修改所带来的同步问题，因此还特意使用 final 标注，以示其不可变。除此之外，字符串字面量本身都有与之对应的 String 对象实例，而且可以是1到多的关系。因此我们可以这样理解，<strong>传递 String 对象引用时依然是在传递共享对象</strong>，只不过是<strong>字符串字面量</strong>的指向没有改变而已，所以就导致 String 在传递时显得就像值传递一样。</li>
 </ol>
 <blockquote>
 <p>图片源自维基百科</p>
 </blockquote>
 <p><img src="/Java%E4%B8%AD%E4%B8%8D%E5%8F%AA%E6%9C%89%E5%80%BC%E4%BC%A0%E9%80%92/001.png" alt="img"></p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>个人理解网上之所以总是在值传递和引用传递之间徘徊是因为被概念所限制了思想（毕竟国人搞概念还是世界首屈一指的）。个人认为不论是值传递也好，引用传递也好，还是共享对象传递也好，都不重要，因为本质上它们只是对变量传递过程的一种描述而已，无需过度解读。解决问题应该了解其本质，譬如我们只需要知道在Java中普通的引用实例在栈帧中的操作可能会相互影响，这就足够了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>个人认为网上之所以总是在值传递和引用传递之间徘徊，是因为被概念所限制了思想（即只知道值传递或引用传递）。但不论是<strong>值传递</strong>、<strong>引用传递</strong>，还是<strong>共享对象传递</strong>其实都不重要，因为本质上来说它们只是<strong>对变量传递过程的一种行为描述</strong>而已，所以无需过度解读而只需要了解其本质。譬如在开发时，我们只需要知道在 Java 中普通的引用类型实例在不同栈帧中的操作是会相互影响的，这就已经足够了。</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://zh.wikipedia.org/wiki/%E6%B1%82%E5%80%BC%E7%AD%96%E7%95%A5" target="_blank" rel="noopener">wikipedia - 求值策略</a></li>
 </ul>
-<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -201,7 +199,7 @@
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#论述"><span class="toc-text">论述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-text">总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#论述"><span class="toc-text">论述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-text">总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
