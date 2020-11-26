@@ -263,8 +263,8 @@ nginx [-?hvVtq] [-s signal] [-c filename] [-p prefix] [-g directives]
 <blockquote>
 <p>kill命令</p>
 </blockquote>
-<p>在 Nginx 中除了可以使用 nginx -s 给进程发送信号外，其实还可以通过命令 kill 发送</p>
-<p>1）支持的操作信号：</p>
+<p>在 Nginx 中除了可以使通过 nginx -s 给进程发送信号外，其实还可以通过命令 kill 发送</p>
+<p>1）kill 支持的操作信号：</p>
 <pre><code class="shell">&gt; kill -l
 HUP INT QUIT ILL TRAP ABRT BUS FPE KILL USR1 SEGV USR2 PIPE ALRM TERM STKFLT CHLD CONT STOP TSTP TTIN TTOU URG XCPU XFSZ VTALRM PROF WINCH POLL PWR SYS</code></pre>
 <ul>
@@ -282,12 +282,12 @@ HUP INT QUIT ILL TRAP ABRT BUS FPE KILL USR1 SEGV USR2 PIPE ALRM TERM STKFLT CHL
 <tbody><tr>
 <td>1</td>
 <td>HUP</td>
-<td><code>平滑重启</code>。用新配置启动新进程，然后关闭旧进程</td>
+<td>平滑启动/重启信号。用新配置启动新进程，然后关闭旧进程</td>
 </tr>
 <tr>
 <td>2</td>
 <td>INT</td>
-<td>中断信号</td>
+<td>中断信号（ctrl+c）</td>
 </tr>
 <tr>
 <td>3</td>
@@ -297,12 +297,12 @@ HUP INT QUIT ILL TRAP ABRT BUS FPE KILL USR1 SEGV USR2 PIPE ALRM TERM STKFLT CHL
 <tr>
 <td>9</td>
 <td>KILL</td>
-<td>强制杀死进程</td>
+<td>强制关闭信号（程序无时间回收资源）</td>
 </tr>
 <tr>
 <td>15</td>
 <td>TERM</td>
-<td>（默认）终止信号。和 INT 一样都数据快速停止信号</td>
+<td>（默认）终止信号，正常退出（程序有时间回收资源）</td>
 </tr>
 <tr>
 <td>18</td>
@@ -327,7 +327,7 @@ HUP INT QUIT ILL TRAP ABRT BUS FPE KILL USR1 SEGV USR2 PIPE ALRM TERM STKFLT CHL
 <tr>
 <td>28</td>
 <td>WINCH</td>
-<td>平滑地<code>关闭 Worker 进程</code>。常和USR2一同使用于平滑升级</td>
+<td>平滑地<code>关闭 Worker 进程</code>。常和 USR2 一同使用来实现平滑升级</td>
 </tr>
 </tbody></table>
 <blockquote>
