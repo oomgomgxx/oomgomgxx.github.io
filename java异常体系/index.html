@@ -125,7 +125,7 @@
   <!-- 文章元信息 -->
   <span class="post-metadata">
     <!-- 文章日期 -->
-    <i class="fa fa-calendar"></i>&thinsp;2019-03-15 &ensp;
+    <i class="fa fa-calendar"></i>&thinsp;2019-03-17 &ensp;
     <!-- 文章作者 -->
     作者: TanDi &ensp;
     <!-- 判断文章是都为原创文章 -->
@@ -137,7 +137,7 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="throwable"><a href="#throwable" class="headerlink" title="throwable"></a>throwable</h2><h3 id="简单了解"><a href="#简单了解" class="headerlink" title="简单了解"></a>简单了解</h3><ul>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="throwable"><a href="#throwable" class="headerlink" title="throwable"></a>throwable</h2><h3 id="简单了解"><a href="#简单了解" class="headerlink" title="简单了解"></a>简单了解</h3><ul>
 <li>throwable是java中所有<strong>错误（Error）</strong>和<strong>异常（Exception）</strong>的超类</li>
 <li>包含了一些<strong>错误（Error）</strong>和<strong>异常（Exception）</strong>的基本操作</li>
 </ul>
@@ -691,20 +691,34 @@ public class Error extends Throwable {
 }</code></pre>
 <h3 id="Error类体系"><a href="#Error类体系" class="headerlink" title="Error类体系"></a>Error类体系</h3><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/002.png" alt></p>
 <h3 id="VirtualMachineError-虚拟机相关"><a href="#VirtualMachineError-虚拟机相关" class="headerlink" title="VirtualMachineError-虚拟机相关"></a>VirtualMachineError-虚拟机相关</h3><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/005.png" alt></p>
-<h4 id="StackOverflowError（栈溢出）"><a href="#StackOverflowError（栈溢出）" class="headerlink" title="StackOverflowError（栈溢出）"></a>StackOverflowError（栈溢出）</h4><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/006.png" alt></p>
-<h4 id="OutOfMemoryError（内存溢出）"><a href="#OutOfMemoryError（内存溢出）" class="headerlink" title="OutOfMemoryError（内存溢出）"></a>OutOfMemoryError（内存溢出）</h4><h5 id="java-heap溢出"><a href="#java-heap溢出" class="headerlink" title="java heap溢出"></a>java heap溢出</h5><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/007.png" alt></p>
-<h5 id="PermGen溢出（jdk1-7及以下）"><a href="#PermGen溢出（jdk1-7及以下）" class="headerlink" title="PermGen溢出（jdk1.7及以下）"></a>PermGen溢出（jdk1.7及以下）</h5><p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/008.png" alt></p>
+<h4 id="StackOverflowError（栈溢出）"><a href="#StackOverflowError（栈溢出）" class="headerlink" title="StackOverflowError（栈溢出）"></a>StackOverflowError（栈溢出）</h4><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/006.png" style="zoom:67%;">
+
+
+
+<h4 id="OutOfMemoryError（内存溢出）"><a href="#OutOfMemoryError（内存溢出）" class="headerlink" title="OutOfMemoryError（内存溢出）"></a>OutOfMemoryError（内存溢出）</h4><h5 id="Java-Heap溢出"><a href="#Java-Heap溢出" class="headerlink" title="Java Heap溢出"></a>Java Heap溢出</h5><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/007.png" style="zoom:67%;">
+
+
+
+<h5 id="PermGen溢出（jdk1-7）"><a href="#PermGen溢出（jdk1-7）" class="headerlink" title="PermGen溢出（jdk1.7）"></a>PermGen溢出（jdk1.7）</h5><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/008.png" style="zoom:67%;">
+
 <p><strong>同样一段代码在jdk1.8下运行</strong></p>
 <ol>
-<li>原因是在jdk1.8中，PermGen（永久代）已经被移除，被metaspace（元空间）替代；原来的PermGen实质是堆内存中的一部分，也叫no heap，用于存储：class元信息、方法信息、静态变量、常量池等等</li>
-<li>metaspace用于存储class元信息，而相对于PermGen的其他内容将存储到堆中</li>
-<li>metaspace位于物理内存，所以受限制于物理内存</li>
+<li>原因是在jdk1.8 中 PermGen（永久代）被移除，取而代之的是 Metaspace（元空间）</li>
+<li>原 PermGen 实质是堆内存中的一部分，所以叫 No Heap，用于存储：Class元信息、方法信息、静态变量、常量池等</li>
+<li>Metaspace主要用于存储Class元信息和方法信息，而相对于 PermGen 而言其他内容则转移到了堆中</li>
+<li>Metaspace默认没有设置内存上限，但受限制于物理（主）内存</li>
 </ol>
-<p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/009.png" alt></p>
+<img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/009.png" style="zoom:67%;">
+
+
+
 <h5 id="Metaspace溢出（jdk1-8）"><a href="#Metaspace溢出（jdk1-8）" class="headerlink" title="Metaspace溢出（jdk1.8）"></a>Metaspace溢出（jdk1.8）</h5><blockquote>
 <p>使用 -XX:MaxMetaspaceSize=64m 限制元空间大小，否者会一直消耗物理内存</p>
 </blockquote>
-<p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/010.png" alt></p>
+<img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/010.png" style="zoom:67%;">
+
+
+
 <h2 id="exception"><a href="#exception" class="headerlink" title="exception"></a>exception</h2><h3 id="Exception类源码"><a href="#Exception类源码" class="headerlink" title="Exception类源码"></a>Exception类源码</h3><pre><code class="java">package java.lang;
 
 public class Exception extends Throwable {
@@ -839,8 +853,13 @@ public static Class&lt;?&gt; forName(String className) throws ClassNotFoundExcep
 <li>将Person.class删除</li>
 <li>java Main运行Main类，出现如下异常</li>
 </ol>
-<p><img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/011.png" alt></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+<img src="/java%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB/011.png" style="zoom:67%;">
+
+
+
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -882,7 +901,7 @@ public static Class&lt;?&gt; forName(String className) throws ClassNotFoundExcep
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#throwable"><span class="toc-text">throwable</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简单了解"><span class="toc-text">简单了解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Throwable类源码浅析"><span class="toc-text">Throwable类源码浅析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在java中throwable有哪些类型和关系？"><span class="toc-text">在java中throwable有哪些类型和关系？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用throwable模拟产生一个跟踪栈"><span class="toc-text">使用throwable模拟产生一个跟踪栈</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#error"><span class="toc-text">error</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Error类源码"><span class="toc-text">Error类源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Error类体系"><span class="toc-text">Error类体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VirtualMachineError-虚拟机相关"><span class="toc-text">VirtualMachineError-虚拟机相关</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#StackOverflowError（栈溢出）"><span class="toc-text">StackOverflowError（栈溢出）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#OutOfMemoryError（内存溢出）"><span class="toc-text">OutOfMemoryError（内存溢出）</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#java-heap溢出"><span class="toc-text">java heap溢出</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#PermGen溢出（jdk1-7及以下）"><span class="toc-text">PermGen溢出（jdk1.7及以下）</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Metaspace溢出（jdk1-8）"><span class="toc-text">Metaspace溢出（jdk1.8）</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exception"><span class="toc-text">exception</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Exception类源码"><span class="toc-text">Exception类源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Exception体系"><span class="toc-text">Exception体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RuntimeException体系"><span class="toc-text">RuntimeException体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义异常"><span class="toc-text">自定义异常</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#异常记载"><span class="toc-text">异常记载</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ClassNotFoundException"><span class="toc-text">ClassNotFoundException</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NoClassDefFoundError"><span class="toc-text">NoClassDefFoundError</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#throwable"><span class="toc-text">throwable</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简单了解"><span class="toc-text">简单了解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Throwable类源码浅析"><span class="toc-text">Throwable类源码浅析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#在java中throwable有哪些类型和关系？"><span class="toc-text">在java中throwable有哪些类型和关系？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用throwable模拟产生一个跟踪栈"><span class="toc-text">使用throwable模拟产生一个跟踪栈</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#error"><span class="toc-text">error</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Error类源码"><span class="toc-text">Error类源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Error类体系"><span class="toc-text">Error类体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VirtualMachineError-虚拟机相关"><span class="toc-text">VirtualMachineError-虚拟机相关</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#StackOverflowError（栈溢出）"><span class="toc-text">StackOverflowError（栈溢出）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#OutOfMemoryError（内存溢出）"><span class="toc-text">OutOfMemoryError（内存溢出）</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Java-Heap溢出"><span class="toc-text">Java Heap溢出</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#PermGen溢出（jdk1-7）"><span class="toc-text">PermGen溢出（jdk1.7）</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Metaspace溢出（jdk1-8）"><span class="toc-text">Metaspace溢出（jdk1.8）</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exception"><span class="toc-text">exception</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Exception类源码"><span class="toc-text">Exception类源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Exception体系"><span class="toc-text">Exception体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RuntimeException体系"><span class="toc-text">RuntimeException体系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义异常"><span class="toc-text">自定义异常</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#异常记载"><span class="toc-text">异常记载</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ClassNotFoundException"><span class="toc-text">ClassNotFoundException</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NoClassDefFoundError"><span class="toc-text">NoClassDefFoundError</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>

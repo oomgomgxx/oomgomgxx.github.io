@@ -137,7 +137,10 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="JDK都包含些什么"><a href="#JDK都包含些什么" class="headerlink" title="JDK都包含些什么"></a>JDK都包含些什么</h2><blockquote>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年10月23日22:53:01 — 删除即时编译器和GC相关内容（迁移到新文章）</li>
+</ul>
+<h2 id="JDK都包含些什么"><a href="#JDK都包含些什么" class="headerlink" title="JDK都包含些什么"></a>JDK都包含些什么</h2><blockquote>
 <p>图片源自网络</p>
 </blockquote>
 <p><img src="/jvm%E6%B7%B1%E5%85%A5/1.png" alt></p>
@@ -481,7 +484,8 @@ Constant pool:
 </ul>
 <ul>
 <li><p>以下为类加载器的<strong>双亲委派模型</strong></p>
-<p><img src="/jvm%E6%B7%B1%E5%85%A5/4.png" alt></p>
+<img src="/jvm%E6%B7%B1%E5%85%A5/4.png" style="zoom:50%;">
+
 <blockquote>
 <p>启动类加载器：用于加载 JAVA_HOME\lib 或者通过 -Xbootclasspath 指定路径下的class文件或jar</p>
 <p>扩展类加载器：用于加载 JAVA_HOME\lib\ext 目录下的class文件或jar</p>
@@ -511,13 +515,15 @@ Constant pool:
 <blockquote>
 <p>图片原子网络</p>
 </blockquote>
-<p><img src="/jvm%E6%B7%B1%E5%85%A5/5.png" alt></p>
+<img src="/jvm%E6%B7%B1%E5%85%A5/5.png" style="zoom:67%;">
+
 <p>可以看出，在JVM内存模型规范中，可以将整个JVM运行时数据库划分为<strong>两种类型</strong>：</p>
 <p><strong>线程共享数据区域：</strong></p>
 <ol>
 <li><p>方法区</p>
 <ul>
-<li>用于存放已被加载的：类信息、静态变量、即时编译产生的代码</li>
+<li>方法区会在JVM启动时被创建</li>
+<li>用于存放已被加载的：类信息、成员（静态）变量和（静态）方法、即时编译产生的代码</li>
 <li>方法区其实位于堆内存中，但它却叫No-Heap（非堆），这个主要是因为方法区存储的内容和JVM其管理策略方面和其它的堆内存稍有不同（谈GC再说这问题）</li>
 <li>需要注意1：在<code>Sun HotSpot虚拟机</code>的实现中，方法区被称为<code>永久代</code>，寓意为用于存放<code>“永久”</code>信息的区域</li>
 <li>需要注意2：在<code>JDK8</code>中，<code>永久代</code>被<code>MetaSpace（元空间）</code>所取替，即JDK8后方法区的实现叫元空间；永久代被取替的主要原因是，GC本来就很少光顾永久代（只有Full GC时才清理垃圾），而永久代又有<code>-XX:MaxPermSize</code>上限，所以大大加大了内存溢出（OutOfMemoryError）的机率；而MetaSpace（元空间）位于物理内存，如果不限定空间上限，原则上受限于物理内存的大小，由此降低了内存溢出的可能</li>
@@ -715,10 +721,7 @@ Constant pool:
 <li>用于存放大岁数对象和一些大对象（内存超过 XX:PretenureSizeThreshold 值的就会被视为大对象，会被直接晋升到老年代）</li>
 <li>老年代中存放的都是些长寿对象，所以出现垃圾的机会是远小于新生代，因此一般采用效率不高但能够整理内存的标记压缩算法</li>
 </ul>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
-<li>2019年10月23日22:53:01 — 删除即时编译器和GC相关内容（迁移到新文章）</li>
-</ul>
-
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -760,7 +763,7 @@ Constant pool:
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK都包含些什么"><span class="toc-text">JDK都包含些什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的基本结构"><span class="toc-text">类的基本结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的加载过程"><span class="toc-text">类的加载过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于类加载器"><span class="toc-text">关于类加载器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#了解JVM"><span class="toc-text">了解JVM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM运行时数据区域"><span class="toc-text">JVM运行时数据区域</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM是如何给对象分配内存的"><span class="toc-text">JVM是如何给对象分配内存的</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM是什么时候得知对象的大小？"><span class="toc-text">JVM是什么时候得知对象的大小？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于指针碰撞和空闲列表的概念"><span class="toc-text">关于指针碰撞和空闲列表的概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#堆中的内存是如何分配给对象的？"><span class="toc-text">堆中的内存是如何分配给对象的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于虚拟机分配内存的线程安全问题"><span class="toc-text">关于虚拟机分配内存的线程安全问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于内存逃逸分析"><span class="toc-text">关于内存逃逸分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于什么是“垃圾”和垃圾回收算法"><span class="toc-text">关于什么是“垃圾”和垃圾回收算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是垃圾"><span class="toc-text">什么是垃圾</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于对象引用问题"><span class="toc-text">关于对象引用问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对象的自我拯救"><span class="toc-text">对象的自我拯救</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#垃圾回收算法"><span class="toc-text">垃圾回收算法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#堆内存的划分"><span class="toc-text">堆内存的划分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#新生代"><span class="toc-text">新生代</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#老年代"><span class="toc-text">老年代</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JDK都包含些什么"><span class="toc-text">JDK都包含些什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的基本结构"><span class="toc-text">类的基本结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#类的加载过程"><span class="toc-text">类的加载过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于类加载器"><span class="toc-text">关于类加载器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#了解JVM"><span class="toc-text">了解JVM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM运行时数据区域"><span class="toc-text">JVM运行时数据区域</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM是如何给对象分配内存的"><span class="toc-text">JVM是如何给对象分配内存的</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM是什么时候得知对象的大小？"><span class="toc-text">JVM是什么时候得知对象的大小？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于指针碰撞和空闲列表的概念"><span class="toc-text">关于指针碰撞和空闲列表的概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#堆中的内存是如何分配给对象的？"><span class="toc-text">堆中的内存是如何分配给对象的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于虚拟机分配内存的线程安全问题"><span class="toc-text">关于虚拟机分配内存的线程安全问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于内存逃逸分析"><span class="toc-text">关于内存逃逸分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于什么是“垃圾”和垃圾回收算法"><span class="toc-text">关于什么是“垃圾”和垃圾回收算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是垃圾"><span class="toc-text">什么是垃圾</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于对象引用问题"><span class="toc-text">关于对象引用问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对象的自我拯救"><span class="toc-text">对象的自我拯救</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#垃圾回收算法"><span class="toc-text">垃圾回收算法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#堆内存的划分"><span class="toc-text">堆内存的划分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#新生代"><span class="toc-text">新生代</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#老年代"><span class="toc-text">老年代</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
