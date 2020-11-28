@@ -182,15 +182,7 @@
 &lt;/dependency&gt;</code></pre>
 <h3 id="二、构建一个基于-Spring-父子容器的-Web-项目"><a href="#二、构建一个基于-Spring-父子容器的-Web-项目" class="headerlink" title="二、构建一个基于 Spring 父子容器的 Web 项目"></a>二、构建一个基于 Spring 父子容器的 Web 项目</h3><p>在 resources/META-INF/services 中添加一个名为 <code>javax.servlet.ServletContainerInitializer</code> 的文件，内容如下</p>
 <pre><code>com.td.WebServletContainerInitializer</code></pre><p>WebServletContainerInitializer 如下</p>
-<pre><code class="java">import org.springframework.web.WebApplicationInitializer;
-
-import javax.servlet.ServletContainerInitializer;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.HandlesTypes;
-import java.util.Set;
-
-// 指定Web容器启动时需要处理的接口
+<pre><code class="java">// 指定Web容器启动时需要处理的接口
 // WebApplicationInitializer是Spring用于在Web环境下进行容器配置的接口
 // 注意：如果使用了Spring-Web则可以不配置@HandlesTypes，因为这件事它帮我们做了
 @HandlesTypes(WebApplicationInitializer.class)
@@ -1247,7 +1239,9 @@ public void addCorsMappings(CorsRegistry registry) {
 <h3 id="Interceptor"><a href="#Interceptor" class="headerlink" title="Interceptor"></a>Interceptor</h3><blockquote>
 <p>基本介绍</p>
 </blockquote>
-<p>&emsp;&emsp;在 Spring Web 模块中提供了两种类型的拦截器，分别是 HandlerInterceptor、WebRequestInterceptor。在处理器被执行前后 Spring 会对其进行适配调用，而两者的区别是 WebRequestInterceptor 只能获取WebRequest 、ModelMap 进行修改而不能阻断请求，而 HandlerInterceptor 更强大，更像 Filter 。</p>
+<p>&emsp;&emsp;在 Spring Web 模块中提供了两种类型的拦截器，分别是 HandlerInterceptor、WebRequestInterceptor。在处理器被执行前后 Spring 会对其进行适配调用，而两者的区别是 WebRequestInterceptor 只能获取WebRequest 、ModelMap 进行修改而不能阻断请求，而 HandlerInterceptor 更强大，更像 Filter。</p>
+<p>注意，如果需要实现拦截器，则可以通过直接继承 HandlerInterceptorAdapter 而不是实现 HandlerInterceptor，因为这样可以省略不必要的实现（接口隔离原则）。</p>
+<p>题外话，可以看到很多时候都是通过使用抽象类来简单实现其接口，从而做到接口隔离原则。但在JDK1.8后，Java添加了接口新特性默认方法，即以后无需再多写一个抽象来来实现接口隔离原则，而只需要使用默认方法提供默认实现即可。</p>
 <img src="/SpringMVC%E5%86%8D%E5%85%A5%E9%97%A8/012.png">
 
 <blockquote>

@@ -137,10 +137,13 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="关于引用的小知识"><a href="#关于引用的小知识" class="headerlink" title="关于引用的小知识"></a>关于引用的小知识</h2><pre><code class="java">public class Test {
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年3月20日15:22:14 — 修改为更通俗的表述</li>
+</ul>
+<h2 id="关于引用的小知识"><a href="#关于引用的小知识" class="headerlink" title="关于引用的小知识"></a>关于引用的小知识</h2><pre><code class="java">public class Test {
     public static void main(String[] args) throws InterruptedException {
 
-        // 软引用生命周期：内存不足的前提下第二次gc前，即第一次gc回收还不能满足分配后再次gc才会回收软引用
+        // 软引用生命周期：内存不足的前提下第二次gc前。即第一次gc回收过后，依然不能满足所需内存才会回收软引用
         SoftReference&lt;Person&gt; softReference = new SoftReference&lt;&gt;(new Person(&quot;Sam&quot;));
         System.gc();
         System.out.println(softReference.get() == null ? &quot;对象已被回收&quot; : &quot;对象依然存活&quot;);
@@ -155,7 +158,7 @@
 
         System.out.println(&quot;-------------------- 弱引用 end -------------------------&quot;);
 
-        // 虚引用生命周期：该等级的引用不会对引用本身产生任何作用，只用于监听引用是否被回收
+        // 虚引用生命周期：该等级的引用不会对引用本身产生任何副作用，只用于监听引用是否被回收
         Person sam = new Person(&quot;Sam&quot;);
         ReferenceQueue&lt;Person&gt; queue = new ReferenceQueue&lt;&gt;();
         PhantomReference&lt;Person&gt; personPhantomReference = new PhantomReference&lt;&gt;(sam, queue);
@@ -172,7 +175,7 @@
         }).start();
 
         TimeUnit.SECONDS.sleep(3);
-        sam = null; // 消除强引用让gc回收，否者上面的用户线程会应为sam没被会后而一直循环
+        sam = null; // 消除强引用让gc回收
         System.gc();
 
         // 等待gc
@@ -194,18 +197,9 @@
     }
 }
 
+@Data
 class Person {
     private String name;
-    public Person(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String toString() {
-        return &quot;Person{&quot; +
-                &quot;name=&#39;&quot; + name + &#39;\&#39;&#39; +
-                &#39;}&#39;;
-    }
 }</code></pre>
 <blockquote>
 <p>拓展内容1：三种引用的使用场景</p>
@@ -216,40 +210,52 @@ class Person {
 <blockquote>
 <p>拓展内容2：FinalReference  </p>
 </blockquote>
-<p>除了以上 3 种比较特别的引用之外还有一种特别的引用  FinalReference  。FinalReference 接口是包级别的，说白了就是对外不公开只是内部使用的接口。JVM 会在垃圾回收之前（第一次标记之后）将实现了 Object 的 finalze 方法的实例包装为 FinalReference 放进 ReferenceQueue 中进行调用，而完成这项工作的精灵线程叫 Finalizer 线程 </p>
-<h2 id="ThreadLocal-和-Thread-之间的关系"><a href="#ThreadLocal-和-Thread-之间的关系" class="headerlink" title="ThreadLocal 和 Thread 之间的关系"></a>ThreadLocal 和 Thread 之间的关系</h2><p><img src="/%E5%85%B3%E4%BA%8EThreadLocal%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E5%92%8CThreadLocalMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/001.png" alt></p>
-<h2 id="内存泄露问题与-ThreadLocalMap-源码浅析"><a href="#内存泄露问题与-ThreadLocalMap-源码浅析" class="headerlink" title="内存泄露问题与 ThreadLocalMap 源码浅析"></a>内存泄露问题与 ThreadLocalMap 源码浅析</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><pre><code class="java">ThreadLocalMap(ThreadLocal&lt;?&gt; firstKey, Object firstValue) {
+<p>除了以上3种引用之外，还有一种特别的引用FinalReference。FinalReference接口是包级别的，说白了就是对外不公开只是内部使用的接口。</p>
+<p>JVM会在垃圾回收之前（第一次标记之后）将实现了Object的finalze方法的实例包装为FinalReference放进ReferenceQueue中进行统一调用，而完成这项工作的精灵线程叫Finalizer线程。 </p>
+<h2 id="ThreadLocal-和-Thread-之间的关系"><a href="#ThreadLocal-和-Thread-之间的关系" class="headerlink" title="ThreadLocal 和 Thread 之间的关系"></a>ThreadLocal 和 Thread 之间的关系</h2><ul>
+<li><p>在ThreadLocal 中有个内部类叫 ThreadLocalMap，其存储格式为键值对存储</p>
+</li>
+<li><p>操作 ThreadLocal 实质就是对 ThreadLocalMap 操作</p>
+</li>
+<li><p>每个 Thread 对象中都有一个与当前线程所管理的 ThreadLocalMap，所以 ThreadLocal 之所以被叫做线程变量，其实就是这个原因，因为 ThreadLocalMap 是线程独占的并不存在并发问题</p>
+</li>
+<li><p>一个 Thread（ThreadLocalMap）中可以存储多个 ThreadLocal</p>
+<ul>
+<li>添加线程变量：<code>ThreadLocalMap#set(ThreadLocal, Object)</code></li>
+<li>获取线程变量：<code>ThreadLocalMap#getEntity(ThreadLocal)</code></li>
+</ul>
+</li>
+<li><p>如果要在线程池中使用 ThreadLocal，则应该在任务结束时主动调用 <code>ThreadLocal#remove()</code> 将当前 ThreadLocal 在 Thread（ThreadLocalMap）中删除，否则可能会因为线程重用的缘故而导致 Value 值无法被及时回收从而导致内存泄露。</p>
+</li>
+</ul>
+<h2 id="ThreadLocalMap源码浅析与内存泄露问题"><a href="#ThreadLocalMap源码浅析与内存泄露问题" class="headerlink" title="ThreadLocalMap源码浅析与内存泄露问题"></a>ThreadLocalMap源码浅析与内存泄露问题</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><pre><code class="java">ThreadLocalMap(ThreadLocal&lt;?&gt; firstKey, Object firstValue) {
     // 初始化entry数组，大小默认为INITIAL_CAPACITY，即16
     table = new Entry[INITIAL_CAPACITY];
-    // 计算第一个Entry的下标
+    // 计算第一个Entry在数组中的下标值
     int i = firstKey.threadLocalHashCode &amp; (INITIAL_CAPACITY - 1);
     table[i] = new Entry(firstKey, firstValue);
     // 计算Entry个数
     size = 1;
-    // 计算初始化阈值。公式：len*2 / 3
+    // 计算阈值。公式：len*2 / 3
     setThreshold(INITIAL_CAPACITY);
 }</code></pre>
 <h3 id="Entry类的内存泄露问题"><a href="#Entry类的内存泄露问题" class="headerlink" title="Entry类的内存泄露问题"></a>Entry类的内存泄露问题</h3><h4 id="Entry类"><a href="#Entry类" class="headerlink" title="Entry类"></a>Entry类</h4><pre><code class="java">static class Entry extends WeakReference&lt;ThreadLocal&lt;?&gt;&gt; {
-    /** The value associated with this ThreadLocal. */
     Object value;
     Entry(ThreadLocal&lt;?&gt; k, Object v) {
         super(k);
         value = v;
     }
 }</code></pre>
-<h4 id="为什么要将-key-定义为弱引用"><a href="#为什么要将-key-定义为弱引用" class="headerlink" title="为什么要将 key 定义为弱引用"></a>为什么要将 key 定义为弱引用</h4><p>&emsp;&emsp;原因是为了更好地回收对应的 value 值。这样说的原因是因为 ThreadLocalMap 的 set 和 get 方法是具有一定的清理能力的，其清理操作主要是针对 key 为 null 的 Entry（参考下面的源码分析），步骤是先往链表左边检索然后再从左往右清理其 key为 null 的 Entry。</p>
-<p>&emsp;&emsp;这里需要再次强调和回顾一下 ThreadLocal、ThreadLocalMap、Thread 三者的关系，因为这是最重要的理论基础。ThreadLocalMap 虽然是 ThreadLocal 的内部类，但实质 ThreadLocalMap是作用在 Thread 实例上的。简单地说每个 Thread 实例都有对应的一个 ThreadLocalMap ，而 ThreadLocalMap 可以用来存储多个 ThreadLocal 实例，这也是为什么有些人将 ThreadLocal 叫作线程变量的原因。</p>
-<p>&emsp;&emsp;在上面我们已经得知了有关弱引用实例的生命周期范围，因此简单地说是当 ThreadLocal 用完被手动置空的话（即丢失了强引用）那么这个 ThreadLocal 实例就只能活到第二次 gc 了。然而 ThreadLocal 被回收掉的话那么在下一次再调用 ThreadLocalMap 的 set 或 get 方法时其对应的 value 值就会被发现然后被置空释放。</p>
-<p>&emsp;&emsp;接下来我们假设 key 为强引用会发生什么事情。如果 key 被定义为强引用也就是说即使用户程序中手动置空了 ThreadLocal 实例 gc 都不会将其回收掉，因为对于强引用而言 JVM 宁可不惜抛出 OOM 都不会去回收被强应用的实例空间。所以结论就是如果 key 被定义为强引用就导致 ，ThreadLocal 在 Thread 生命周期结束之前无法被回收，从而间接地导致 value 也没法被回收，这样一来的话就会导致所谓的内存泄露。所以看到网上有些人说是弱引用导致的内存泄露，这显然是不正确的，因为弱引用有利于置空 Entry 的 key 从而避免内存泄露。</p>
-<h4 id="为什么出现内存泄露"><a href="#为什么出现内存泄露" class="headerlink" title="为什么出现内存泄露"></a>为什么出现内存泄露</h4><p>&emsp;&emsp;首先需要说的是 ThreadLocalMap 的生命周期与 Thread 绑定。所以当 Thread 被回收 ThreadLocalMap 很自然也就会一同回收，因此并不会出现什么内存泄露的问题。所以当前问题的关键点就是Thread 的生命周期范围，既如果 Thread 生命周期很长的话 ThreadLocalMap 就会存在内存泄露的风险。那么什么一种清理下会延长 Thread 的生命周期呢？答案就是线程池。在线程池中线程是可能长期驻留的，所以如果在线程池中使用 ThreadLocal 的话就会存在内存泄露的风险。</p>
-<p>&emsp;&emsp;还需要注意的是，虽然 ThreadLocalMap 的 set/get 方法具有一定的清理能力的，但需要强调这种清理能力是有限度的，因为它并不能保证所有 key 为 null 的 Entry 都被清理掉。例如 set 方法中如果当前操作的 ThreadLocal【没有发生冲突】或【发生了冲突但从当前下标开始散列表的右边不存在 key 为 null 的Entry】时，是不会往左遍历的。换句来话就是在这样的情况下左边即使有 key 为 null 的 Entry 都不会被发现然后清理掉。</p>
-<p>最后可以得出如下结论：</p>
-<ul>
-<li>在线程池中使用 ThreadLocal 会存在内存泄露的风险</li>
-<li>虽然 ThreadLocalMap 的 set/get 方法有一定的清理能力，但我们不能依靠它来解决内存泄露问题</li>
-<li>之所以发生内存泄露的根本原因是 ThreadLocalMap 没有发现 key 为 null 的 Entry 从而无法置空 value 的引用，因此 gc 就没办法会都掉 value 的内存，因为 value 和 key 不一样，value 是强引用的。</li>
-</ul>
-<h4 id="如何解决内存泄露"><a href="#如何解决内存泄露" class="headerlink" title="如何解决内存泄露"></a>如何解决内存泄露</h4><p>&emsp;&emsp;从上面我们得知发生内存泄露的主要原因是因为 ThreadLocalMap 没有发现 key 为 null 的 Entry 。所以解决内存泄露隐患的最好解决方案就是在使用完 ThreadLocal 之后主动地调用 ThreadLocal 的 remove 方法来明确让 ThreadLocalMap  释放对应的 value 空间。<br>&emsp;&emsp;除此之外在网上我看到有人建议将 ThreadLocal 修饰成 static，我想这人大概的想法是提升 ThreadLocal 的生命周期范围使得其得到更好的管控。但事实上这种操作对内存泄露问题没有半点帮助，这是因为不管 ThreadLocal 的生命周期有多广，请不要忘记 ThreadLocal 本质上是一个线程变量，既即使是同一个 ThreadLocal 在面对不同的 Thread 时它所对应的 ThreadLocalMap 都是不同的，因此还是建议养成良好的习惯，既用完就显示调用 remove 释放 value 内存。</p>
+<h4 id="为什么要将-key-定义为弱引用？"><a href="#为什么要将-key-定义为弱引用？" class="headerlink" title="为什么要将 key 定义为弱引用？"></a>为什么要将 key 定义为弱引用？</h4><p>&emsp;&emsp;个人认为原因是为了更好地回收 ThreadLocal 与之对应的 value 值。因为 ThreadLocalMap 的 set/get 方法是具有一定的清理能力的，而其清理操作主要针对 key 为 null 的 Entry（参考下面的源码分析）。大致步骤是先往数组左边检索，然后再从左往右清理其 key 为 null 的 Entry。</p>
+<p>&emsp;&emsp;在上面我们已经得知了弱引用实例的生命周期范围，所以简单地说就是如果当 ThreadLocal 用完后被手动置空的话（即丢失了强引用），那么这个 ThreadLocal 就只能活到下一次gc，而当 ThreadLocal 被回收掉，那么在下一次再调用 set/get 方法时就会被发现 key 为 null 然后其value就会被清除。</p>
+<p>&emsp;&emsp;现在我们假设如果 key 被定义为强引用看看又会发生什么事情。key如果为强引用，也就是说即使在程序中手动置空 ThreadLocal 引用 gc 也不能将其回收，主要是因为 ThreadLocalMap 中还强引用着这个已经“用完”的 ThreadLocal，因此对于 JVM 而言宁可抛出 OOM 都不会回收强引用的其空间。但我们现在明确知道这个 ThreadLocal（以及其关联的Value）已经“用完”了，但其空间却不能回收，这时如果 Thread 的生命周期非常长的话，就会导致内存泄露问题的发生。所以看到网上有些人说是因为弱引用而导致内存泄露，这显然是不正确的。</p>
+<h4 id="为什么会出现内存泄露？"><a href="#为什么会出现内存泄露？" class="headerlink" title="为什么会出现内存泄露？"></a>为什么会出现内存泄露？</h4><p>&emsp;&emsp;ThreadLocalMap 的生命周期与 Thread 绑定，所以当 Thread 被回收后 ThreadLocalMap 很自然就被回收了，所以并不会出现什么内存泄露的问题。明白这一点很重要，因为问题的关键点就在 Thread 的生命周期被延长后，才导致 ThreadLocalMap 存在内存泄露的风险。譬如线程池中的线程可能长期驻留在内存中，因此导致 ThreadLocalMap 中的内容无法被回收。</p>
+<p>&emsp;&emsp;虽然 ThreadLocalMap 的 set/get 方法具有一定的清理能力的，但这里需要强调一下这种清理能力是有限度的，因为它并不能保证所有 key 为 null 的 Entry 都被完全清理掉。例如在 ThreadLocalMap#set(ThreadLocal, Object) 中，ThreadLocal<strong>没有发生冲突</strong>或<strong>发生了冲突但在当前下标的右边不存在key为null的Entry</strong>时，是不会往左遍历的。也就是说在这两种情况下左边即使有 key 为 null 的 Entry 都不会被发现和清理，所以就会导致内存泄露。</p>
+<h4 id="如何避免内存泄露？"><a href="#如何避免内存泄露？" class="headerlink" title="如何避免内存泄露？"></a>如何避免内存泄露？</h4><p>&emsp;&emsp;发生内存泄露问题的本质是 Thread 生命周期被延长而导致 ThreadLocalMap 生命周期也被延长，且在操作过后 ThreadLocalMap 并没有发现 key 为 null 的 Entry，这时就会导致内存泄露问题。所以最好的解决方法就是：</p>
+<ol>
+<li>尽量不要在线程池中使用 ThreadLocal </li>
+<li>使用完 ThreadLocal 后要主动调用 ThreadLocal 的 remove 方法，将自己在当前 Thread 的 ThreadLocalMap 中移除来主动释放空间</li>
+</ol>
 <h3 id="set"><a href="#set" class="headerlink" title="set"></a>set</h3><pre><code class="java">private void set(ThreadLocal&lt;?&gt; key, Object value) {
     Entry[] tab = table;
     int len = tab.length;
@@ -258,26 +264,28 @@ class Person {
     // 出现了Hash冲突
     for (Entry e = tab[i];
          e != null;
-         e = tab[i = nextIndex(i, len)]) { // 注意：这时是往右遍历
+         e = tab[i = nextIndex(i, len)]) { // 注意：从当前下标往右遍历
+
+        // 返回遍历到的ThreadLocal
         ThreadLocal&lt;?&gt; k = e.get();
 
-        // 同一个key直接替换即可
+        // 发现key是同一个ThreadLocal，直接替换即可
         if (k == key) {
             e.value = value;
             return;
         }
 
-        // 发生了哈希冲突，且发现了某个key为null的冲突Entry
+        // 遍历时发现了key（ThreadLoca）为null，替换并执行清理操作
         if (k == null) {
-            // 用当前的 ThreadLocal 将其替换掉
-            // 注意这时会进行一次全散列表清理（从左往右）
+            // 用当前设入的 ThreadLocal 将其替换掉
+            // 注意，这时会进行一次全散列表清理（从左往右）
             replaceStaleEntry(key, value, i);
             return;
         }
     }
 
     // 【没有发生冲突】或【发生了冲突但从i开始散列表右边不存在key为null的Entry】
-    // 那么就将当前ThreadLocal的Entry保存到散列表最右边
+    // 那么就将当前Entry保存到散列表的最右边
     tab[i] = new Entry(key, value);
     int sz = ++size;
 
@@ -286,15 +294,15 @@ class Person {
     // !cleanSomeSlots(i, sz)：为true时表示i开始往右并没有需要清理的Entry，即没法腾出空间
     // sz &gt;= threshold，即表示已经到达容许限制
     if (!cleanSomeSlots(i, sz) &amp;&amp; sz &gt;= threshold)
-        rehash();
+        rehash(); // 扩容
 }</code></pre>
 <ul>
-<li><strong>重点注意：</strong>当【没有发生冲突】或【发生了冲突但从i开始散列表的右边不存在key为null的Entry】时，是不会往左遍历的，换句话就是左边即使有 key 为 null 的 Entry 也不会被发现，这时就存在内存泄露的风险。而处于右边的 key 为 null 的 Entry 能够被清理是因为每一次 set 操作都会进行一次cleanSomeSlots 操作，因为 cleanSomeSlots 是往右清理的。</li>
+<li>可以注意到，当【没有发生冲突】或【发生了冲突但从i开始散列表的右边不存在key为null的Entry】时，是不会往左遍历的，所以这时左边即使有 key 为 null 的 Entry 也不会被发现，即存在内存泄露风险</li>
+<li>处于右边且 key 为 null 的 Entry 之所以能够被清理是因为每一次 set 操作都会进行一次 cleanSomeSlots，而 cleanSomeSlots 是往右清理的</li>
 </ul>
-<h3 id="rehash-和expungeStaleEntries"><a href="#rehash-和expungeStaleEntries" class="headerlink" title="rehash()和expungeStaleEntries()"></a>rehash()和expungeStaleEntries()</h3><pre><code class="java">private void rehash() {
-    // 压缩哈希表
+<h3 id="rehash和expungeStaleEntries"><a href="#rehash和expungeStaleEntries" class="headerlink" title="rehash和expungeStaleEntries"></a>rehash和expungeStaleEntries</h3><pre><code class="java">private void rehash() {
+    // 压缩散列表
     expungeStaleEntries();
-
     // 如果这时size已经到达阈值，则扩容为原来的2倍
     if (size &gt;= threshold - threshold / 4)
         resize(); 
@@ -303,10 +311,10 @@ class Person {
 private void expungeStaleEntries() {
     Entry[] tab = table;
     int len = tab.length;
-    // rehash操作会对哈希表进行一次全表清理
+    // rehash操作会对散列表进行一次全表清理
     for (int j = 0; j &lt; len; j++) {
         Entry e = tab[j];
-        // 从哈希表最左边的key为null的Entry开始清理
+        // 从散列表最左边且key为null的Entry位置开始清理
         if (e != null &amp;&amp; e.get() == null)
             expungeStaleEntry(j);
     }
@@ -324,10 +332,10 @@ private void expungeStaleEntries() {
          i = prevIndex(i, len))
 
         if (e.get() == null)
-            // slotToExpunge记录了哈希表最左边且key为的Entry下标
+            // slotToExpunge记录了散列表最左边且key为null的Entry下标
             slotToExpunge = i; 
 
-    // 往左遍历完后再往右遍历（不包含staleSlot）
+    // 再往右遍历（不包含staleSlot）
     for (int i = nextIndex(staleSlot, len);
          (e = tab[i]) != null;
          i = nextIndex(i, len)) {
@@ -463,10 +471,7 @@ private int expungeStaleEntry(int staleSlot) {
     // 不存在该key对应的Entry
     return null;
 }</code></pre>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
-<li>2020年3月20日15:22:14 — 修改为更通俗的表述</li>
-</ul>
-
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -508,7 +513,7 @@ private int expungeStaleEntry(int staleSlot) {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#关于引用的小知识"><span class="toc-text">关于引用的小知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocal-和-Thread-之间的关系"><span class="toc-text">ThreadLocal 和 Thread 之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内存泄露问题与-ThreadLocalMap-源码浅析"><span class="toc-text">内存泄露问题与 ThreadLocalMap 源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#构造方法"><span class="toc-text">构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Entry类的内存泄露问题"><span class="toc-text">Entry类的内存泄露问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Entry类"><span class="toc-text">Entry类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么要将-key-定义为弱引用"><span class="toc-text">为什么要将 key 定义为弱引用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么出现内存泄露"><span class="toc-text">为什么出现内存泄露</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#如何解决内存泄露"><span class="toc-text">如何解决内存泄露</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#rehash-和expungeStaleEntries"><span class="toc-text">rehash()和expungeStaleEntries()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#replaceStaleEntry"><span class="toc-text">replaceStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#expungeStaleEntry"><span class="toc-text">expungeStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#cleanSomeSlots"><span class="toc-text">cleanSomeSlots</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntry"><span class="toc-text">getEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntryAfterMiss"><span class="toc-text">getEntryAfterMiss</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于引用的小知识"><span class="toc-text">关于引用的小知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocal-和-Thread-之间的关系"><span class="toc-text">ThreadLocal 和 Thread 之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocalMap源码浅析与内存泄露问题"><span class="toc-text">ThreadLocalMap源码浅析与内存泄露问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#构造方法"><span class="toc-text">构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Entry类的内存泄露问题"><span class="toc-text">Entry类的内存泄露问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Entry类"><span class="toc-text">Entry类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么要将-key-定义为弱引用？"><span class="toc-text">为什么要将 key 定义为弱引用？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么会出现内存泄露？"><span class="toc-text">为什么会出现内存泄露？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#如何避免内存泄露？"><span class="toc-text">如何避免内存泄露？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#rehash和expungeStaleEntries"><span class="toc-text">rehash和expungeStaleEntries</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#replaceStaleEntry"><span class="toc-text">replaceStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#expungeStaleEntry"><span class="toc-text">expungeStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#cleanSomeSlots"><span class="toc-text">cleanSomeSlots</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntry"><span class="toc-text">getEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntryAfterMiss"><span class="toc-text">getEntryAfterMiss</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>

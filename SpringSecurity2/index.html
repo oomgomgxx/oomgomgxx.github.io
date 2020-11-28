@@ -9,7 +9,7 @@
   <!-- 浏览器页签图标 -->
   <link rel="icon" href="/img/favicon.svg">
   <!-- 标题 -->
-  <title> SpringSecurity-Oauth2实现QQ登录-学然后知不足 </title>
+  <title> 使用SpringSecurity-Oauth2实现QQ登录-学然后知不足 </title>
 
   <!-- 自适应 -->
   
@@ -120,7 +120,7 @@
 <article id="post">
 
   <!-- 文章标题 -->
-  <h1>SpringSecurity-Oauth2实现QQ登录</h1>
+  <h1>使用SpringSecurity-Oauth2实现QQ登录</h1>
 
   <!-- 文章元信息 -->
   <span class="post-metadata">
@@ -137,580 +137,21 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="servlet3转springboot"><a href="#servlet3转springboot" class="headerlink" title="servlet3转springboot"></a>servlet3转springboot</h2><blockquote>
-<p>Servlet3+JSP项目（webdemo3）：<a href="https://github.com/tandi960505/webdemo3" target="_blank" rel="noopener">https://github.com/tandi960505/webdemo3</a></p>
-</blockquote>
-<h3 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h3><p><img src="/SpringSecurity2/001.png" alt></p>
-<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><h4 id="SecurityConfig"><a href="#SecurityConfig" class="headerlink" title="SecurityConfig"></a>SecurityConfig</h4><pre><code class="java">package wiki.td.config;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
-import wiki.td.entity.Role;
-import wiki.td.entity.User;
-import wiki.td.entity.UserPrincipal;
-import wiki.td.handler.LoginSuccessHandler;
-import wiki.td.repository.RoleRepository;
-import wiki.td.repository.UserRepository;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-
-@EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private RoleRepository roleRepository;
-
-    /** 认证参照对象（实质就是数据库中的用户信息） */
-    @Override
-    public UserDetailsService userDetailsService() {
-        return new UserDetailsService() {
-
-            /* 使用用户名称到数据库中查找用户 */
-            @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                User user = userRepository.findUserByUserName(username);
-                List&lt;Role&gt; roles = roleRepository.findRolesByUserId(user.getuId());
-                return new UserPrincipal(user, roles);
-            }
-        };
-    }
-
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-
-        // 密码加密工具类
-        Map&lt;String, PasswordEncoder&gt; encoders = new HashMap&lt;&gt;();
-        encoders.put(&quot;pbkdf2&quot;, new Pbkdf2PasswordEncoder());
-
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userDetailsService());
-        authenticationProvider.setPasswordEncoder(new DelegatingPasswordEncoder(&quot;pbkdf2&quot;, encoders));
-        return authenticationProvider;
-    }
-
-
-    /** 配置内置用户 */
-//    @Autowired
-//    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-//        auth.inMemoryAuthentication().withUser(&quot;tandi01&quot;).password(&quot;{noop}123456&quot;).roles(&quot;USER&quot;);
-//        auth.inMemoryAuthentication().withUser(&quot;tandi02&quot;).password(&quot;{noop}123456&quot;).roles(&quot;ADMIN&quot;);
-//        auth.inMemoryAuthentication().withUser(&quot;tandi03&quot;).password(&quot;{noop}123456&quot;).roles(&quot;DBA&quot;);
-//    }
-
-
-    /** 权限拦截 */
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        // 要求用户访问某个uri时，需要有指定的角色
-        http
-            .authorizeRequests()
-                .antMatchers(&quot;/user/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_USER&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
-                .antMatchers(&quot;/admin/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) &quot;)
-                .antMatchers(&quot;/dba/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
-                .and()
-            .formLogin()
-                .loginPage(&quot;/login&quot;)
-                .usernameParameter(&quot;username&quot;)
-                .passwordParameter(&quot;password&quot;)
-                .successHandler(new LoginSuccessHandler())
-                .permitAll()
-                .and()
-            .logout()
-                .logoutUrl(&quot;/logout&quot;)
-                .logoutSuccessUrl(&quot;/login&quot;)
-                .permitAll()
-                .and()
-
-                /**
-                 * 关闭csrf(跨站请求伪造)保护, Spring Security3默认关闭csrf，SpringSecurity4默认启动了csrf
-                 * 原因是不关闭会进入CsrfFilter进行处理，从而会使用CsrfToken来认证而不是session
-                 * */
-            .csrf().disable();
-    }
-
-}</code></pre>
-<h4 id="HelloController"><a href="#HelloController" class="headerlink" title="HelloController"></a>HelloController</h4><pre><code class="java">package wiki.td.controller;
-
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-
-@Controller
-public class HelloController {
-
-    /** 登录页面 */
-    @GetMapping({&quot;/login&quot;})
-    public void loginPage() {}
-
-    @GetMapping({&quot;/logout&quot;})
-    public void logout() {}
-
-
-    @GetMapping({&quot;/&quot;, &quot;/index&quot;, &quot;/home&quot;})
-    public String indexPage() {
-        return &quot;index&quot;;
-    }
-
-    @GetMapping({&quot;/user&quot;})
-    public String userPage() {
-        return &quot;user&quot;;
-    }
-
-    @GetMapping({&quot;/admin&quot;})
-    public String adminPage() {
-        return &quot;admin&quot;;
-    }
-
-    @GetMapping({&quot;/dba&quot;})
-    public String dbaPage() {
-        return &quot;dba&quot;;
-    }
-
-}</code></pre>
-<h4 id="entity"><a href="#entity" class="headerlink" title="entity"></a>entity</h4><pre><code class="java">@Entity
-@Table(name=&quot;role&quot;)
-public class Role {
-
-    @Id
-    private Integer rId;
-    private String rName;
-
-    public Integer getrId() {
-        return rId;
-    }
-
-    public void setrId(Integer rId) {
-        this.rId = rId;
-    }
-
-    public String getrName() {
-        return rName;
-    }
-
-    public void setrName(String rName) {
-        this.rName = rName;
-    }
-
-    @Override
-    public String toString() {
-        return &quot;Role{&quot; +
-                &quot;rId=&quot; + rId +
-                &quot;, rName=&#39;&quot; + rName + &#39;\&#39;&#39; +
-                &#39;}&#39;;
-    }
-}</code></pre>
-<pre><code class="java">@Entity
-@Table(name=&quot;user&quot;)
-public class User {
-
-    @Id
-    private Integer uId;
-    private String userName;
-    private String passWord;
-
-    public Integer getuId() {
-        return uId;
-    }
-
-    public void setuId(Integer uId) {
-        this.uId = uId;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassWord() {
-        return passWord;
-    }
-
-    public void setPassWord(String passWord) {
-        this.passWord = passWord;
-    }
-
-    @Override
-    public String toString() {
-        return &quot;User{&quot; +
-                &quot;uId=&quot; + uId +
-                &quot;, userName=&#39;&quot; + userName + &#39;\&#39;&#39; +
-                &quot;, passWord=&#39;&quot; + passWord + &#39;\&#39;&#39; +
-                &#39;}&#39;;
-    }
-}</code></pre>
-<pre><code class="java">@Entity
-@Table(name=&quot;user_role&quot;)
-public class UserRole {
-
-    @Id
-    private Integer uId;
-    private Integer rId;
-
-    public Integer getuId() {
-        return uId;
-    }
-
-    public void setuId(Integer uId) {
-        this.uId = uId;
-    }
-
-    public Integer getrId() {
-        return rId;
-    }
-
-    public void setrId(Integer rId) {
-        this.rId = rId;
-    }
-
-    @Override
-    public String toString() {
-        return &quot;UserRole{&quot; +
-                &quot;uId=&quot; + uId +
-                &quot;, rId=&quot; + rId +
-                &#39;}&#39;;
-    }
-}</code></pre>
-<h4 id="自定义UserDetails"><a href="#自定义UserDetails" class="headerlink" title="自定义UserDetails"></a>自定义UserDetails</h4><pre><code class="java">package wiki.td.entity;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-
-public class UserPrincipal implements UserDetails {
-
-    private User user;
-    private List&lt;Role&gt; roles;
-
-    public UserPrincipal(User user, List&lt;Role&gt; roles) {
-        this.user = user;
-        this.roles = roles;
-    }
-
-    /** 权限 */
-    @Override
-    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
-        return roles.stream().map(role -&gt; new SimpleGrantedAuthority(role.getrName())).collect(Collectors.toList());
-    }
-
-    @Override
-    public String getPassword() {
-        return user.getPassWord();
-    }
-
-    @Override
-    public String getUsername() {
-        return user.getUserName();
-    }
-
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        //账号可用
-        return true;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public List&lt;Role&gt; getRoles() {
-        return roles;
-    }
-
-    public void setRoles(List&lt;Role&gt; roles) {
-        this.roles = roles;
-    }
-}</code></pre>
-<h4 id="自定义登录成功处理器"><a href="#自定义登录成功处理器" class="headerlink" title="自定义登录成功处理器"></a>自定义登录成功处理器</h4><pre><code class="java">package wiki.td.handler;
-
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
-import org.springframework.security.web.savedrequest.SavedRequest;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-
-public class LoginSuccessHandler implements AuthenticationSuccessHandler {
-
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        // 用户登录成功后访问不同的页面:
-        // 1. 获取用户登录前访问的 URL
-        // 2. 如果 url 不为空，访问登录前的页面
-        // 3. 如果 url 为空，登录后根据用户的角色访问对应的页面
-        SavedRequest savedRequest = new HttpSessionRequestCache().getRequest(request, response);
-        String redirectUrl = (savedRequest == null) ? &quot;&quot; : savedRequest.getRedirectUrl();
-
-        if (!redirectUrl.isEmpty()) {
-            response.sendRedirect(redirectUrl);
-            return;
-        }
-
-        // 获取登录用户信息
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        for (GrantedAuthority authority : auth.getAuthorities()) {
-
-            // 用户的权限
-            String role = authority.getAuthority();
-
-            if (role != null &amp;&amp; !&quot;&quot;.equals(role)) {
-                switch (role) {
-                    case &quot;ROLE_ADMIN&quot;:
-                        redirectUrl = &quot;/admin&quot;;
-                        break;
-                    case &quot;ROLE_DBA&quot;:
-                        redirectUrl = &quot;/dba&quot;;
-                        break;
-                    default:
-                        redirectUrl = &quot;/user&quot;;
-                        break;
-                }
-            }
-        }
-
-        response.sendRedirect(redirectUrl);
-    }
-}</code></pre>
-<h4 id="jpa-repository"><a href="#jpa-repository" class="headerlink" title="jpa repository"></a>jpa repository</h4><pre><code class="java">public interface RoleRepository extends JpaRepository&lt;Role, Integer&gt; {
-
-    @Query(&quot;SELECT r From Role r join UserRole ur on r.rId = ur.rId WHERE ur.uId = :userId&quot;)
-    List&lt;Role&gt; findRolesByUserId(@Param(&quot;userId&quot;) Integer userId);
-}</code></pre>
-<pre><code class="java">public interface UserRepository extends JpaRepository&lt;User, Integer&gt; {
-
-    User findUserByUserName(String userName);
-}</code></pre>
-<h4 id="application-yml"><a href="#application-yml" class="headerlink" title="application.yml"></a>application.yml</h4><pre><code class="yaml">spring:
-  # jpa
-  jpa:
-    show-sql: true
-    hibernate:
-      ddl-auto: update
-      # 将默认的_改成驼峰法
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-
-  # 热部署
-  devtools:
-    restart:
-      enabled: true
-    livereload:
-      enabled: true
-
-  # 模板
-  thymeleaf:
-    cache: false
-
-  # 数据源
-  datasource:
-    username: root
-    password: 123456
-    url: jdbc:mysql://127.0.0.1:3306/ss?serverTimezone=UTC
-    driver-class-name: com.mysql.jdbc.Driver
-
-server:
-  port: 80</code></pre>
-<h4 id="pom"><a href="#pom" class="headerlink" title="pom"></a>pom</h4><pre><code class="xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
-    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
-    &lt;parent&gt;
-        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-        &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
-        &lt;version&gt;2.1.4.RELEASE&lt;/version&gt;
-        &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
-    &lt;/parent&gt;
-    &lt;groupId&gt;wiki.td&lt;/groupId&gt;
-    &lt;artifactId&gt;webdemo4&lt;/artifactId&gt;
-    &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
-    &lt;name&gt;webdemo4&lt;/name&gt;
-    &lt;description&gt;Demo project for Spring Boot&lt;/description&gt;
-
-    &lt;repositories&gt;
-        &lt;repository&gt;
-            &lt;id&gt;alimaven&lt;/id&gt;
-            &lt;name&gt;aliyun maven&lt;/name&gt;
-            &lt;url&gt;http://maven.aliyun.com/nexus/content/groups/public/&lt;/url&gt;
-            &lt;releases&gt;
-                &lt;enabled&gt;true&lt;/enabled&gt;
-            &lt;/releases&gt;
-            &lt;snapshots&gt;
-                &lt;enabled&gt;false&lt;/enabled&gt;
-            &lt;/snapshots&gt;
-        &lt;/repository&gt;
-    &lt;/repositories&gt;
-
-    &lt;properties&gt;
-        &lt;java.version&gt;1.8&lt;/java.version&gt;
-    &lt;/properties&gt;
-
-    &lt;dependencies&gt;
-
-        &lt;!-- devtools --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-            &lt;artifactId&gt;spring-boot-devtools&lt;/artifactId&gt;
-            &lt;optional&gt;true&lt;/optional&gt;
-        &lt;/dependency&gt;
-
-        &lt;!-- spring security --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-            &lt;artifactId&gt;spring-boot-starter-security&lt;/artifactId&gt;
-        &lt;/dependency&gt;
-
-        &lt;!-- thymeleaf --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-            &lt;artifactId&gt;spring-boot-starter-thymeleaf&lt;/artifactId&gt;
-        &lt;/dependency&gt;
-
-        &lt;!-- web --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-            &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
-        &lt;/dependency&gt;
-
-        &lt;!-- spring data jpa --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-            &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
-        &lt;/dependency&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;mysql&lt;/groupId&gt;
-            &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
-            &lt;scope&gt;runtime&lt;/scope&gt;
-        &lt;/dependency&gt;
-
-        &lt;!-- lombok --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.projectlombok&lt;/groupId&gt;
-            &lt;artifactId&gt;lombok&lt;/artifactId&gt;
-            &lt;optional&gt;true&lt;/optional&gt;
-        &lt;/dependency&gt;
-
-        &lt;!-- test --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-            &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
-            &lt;scope&gt;test&lt;/scope&gt;
-        &lt;/dependency&gt;
-    &lt;/dependencies&gt;
-
-    &lt;build&gt;
-        &lt;plugins&gt;
-            &lt;plugin&gt;
-                &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-                &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
-            &lt;/plugin&gt;
-        &lt;/plugins&gt;
-    &lt;/build&gt;
-
-&lt;/project&gt;</code></pre>
-<h2 id="使用注解配置权限控制"><a href="#使用注解配置权限控制" class="headerlink" title="使用注解配置权限控制"></a>使用注解配置权限控制</h2><blockquote>
-<p>以下为差异代码，其他参考上一章节</p>
-</blockquote>
-<p>SecurityConfig</p>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="使用注解控制权限"><a href="#使用注解控制权限" class="headerlink" title="使用注解控制权限"></a>使用注解控制权限</h2><p>SecurityConfig</p>
 <pre><code class="java">@EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true) // 开启注解@secured
+@EnableGlobalMethodSecurity(securedEnabled = true) 
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     // ...
-
-    /** 权限拦截 */
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        // 要求用户访问某个uri时，需要有指定的角色
-        http
-            .authorizeRequests()
-//                .antMatchers(&quot;/user/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_USER&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
-//                .antMatchers(&quot;/admin/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) &quot;)
-//                .antMatchers(&quot;/dba/**&quot;).access(&quot;hasRole(&#39;ROLE_ADMIN&#39;) or hasRole(&#39;ROLE_DBA&#39;)&quot;)
-
-                // &quot;/&quot;, &quot;/index&quot;, &quot;/home&quot; 可以自由访问
-                .antMatchers(&quot;/&quot;, &quot;/index&quot;, &quot;/home&quot;).permitAll()
-                // 其他get、post请求都需要认证
-                .antMatchers(HttpMethod.GET).authenticated()
-                .antMatchers(HttpMethod.POST).authenticated()
-                .and()
-            .formLogin()
-                .loginPage(&quot;/login&quot;)
-                .usernameParameter(&quot;username&quot;)
-                .passwordParameter(&quot;password&quot;)
-                .successHandler(new LoginSuccessHandler())
-                .permitAll()
-                .and()
-            .logout()
-                .logoutUrl(&quot;/logout&quot;)
-                .logoutSuccessUrl(&quot;/login&quot;)
-                .permitAll()
-                .and()
-
-                /**
-                 * 关闭csrf(跨站请求伪造)保护, Spring Security3默认关闭csrf，SpringSecurity4默认启动了csrf
-                 * 原因是不关闭会进入CsrfFilter进行处理，从而会使用CsrfToken来认证而不是session
-                 * */
-            .csrf().disable();
-    }
-
 }</code></pre>
 <p>HelloController</p>
 <pre><code class="java">@Controller
 public class HelloController {
 
-    /** 登录页面 */
-    @GetMapping({&quot;/login&quot;})
+    @GetMapping(&quot;login&quot;)
     public void loginPage() {}
 
-    @GetMapping({&quot;/logout&quot;})
+    @GetMapping(&quot;logout&quot;)
     public void logout() {}
-
 
     @GetMapping({&quot;/&quot;, &quot;/index&quot;, &quot;/home&quot;})
     public String indexPage() {
@@ -734,45 +175,37 @@ public class HelloController {
     public String dbaPage() {
         return &quot;dba&quot;;
     }
-
 }</code></pre>
 <p>error.html</p>
 <pre><code class="html">&lt;!DOCTYPE html&gt;
 &lt;html xmlns:th=&quot;http://www.thymeleaf.org&quot;&gt;
-&lt;body&gt;
-&lt;h2&gt;springboot当发生异常时自动跳转到请求路径/error&lt;/h2&gt;
-
-&lt;br&gt;
-status: &lt;span th:text=&quot;${#response.status}&quot; /&gt;
-&lt;/body&gt;
+    &lt;body&gt;
+    &lt;h2&gt;springboot当发生异常时自动跳转到请求路径/error&lt;/h2&gt;
+    &lt;br&gt;
+    status: &lt;span th:text=&quot;${#response.status}&quot; /&gt;
+    &lt;/body&gt;
 &lt;/html&gt;</code></pre>
-<h2 id="手动实现第三方登录功能-QQ"><a href="#手动实现第三方登录功能-QQ" class="headerlink" title="手动实现第三方登录功能-QQ"></a>手动实现第三方登录功能-QQ</h2><h3 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h3><ol>
+<h2 id="功能实现"><a href="#功能实现" class="headerlink" title="功能实现"></a>功能实现</h2><h3 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h3><ol>
 <li>登录<a href="https://connect.qq.com/" target="_blank" rel="noopener">qq互联</a>申请开发者资格</li>
-<li>使用内网穿透工具，如natapp，花生壳等，将当前局域网开发机器的80端口暴露到公网上方便开发调试和创建应用；如果在有公网ip的机器上开发并已绑定了自己的域名的话，这步可以省略</li>
-<li>在qq互联中创建一个应用从而得到appid和appkey；创建应用时可以使用网穿透工具提供的二级域名进行创建和配置回调地址；如果在有公网ip的机器上开发并已绑定了自己的域名的话，可以直接使用自己的域名创建应用并配置回调地址</li>
-<li>阅读qq互联提供的<a href="http://wiki.connect.qq.com/%E7%BD%91%E7%AB%99%E5%BA%94%E7%94%A8%E6%8E%A5%E5%85%A5%E6%B5%81%E7%A8%8B" target="_blank" rel="noopener">网站应用接入流程文档</a></li>
+<li>使用内网穿透工具（例如Natapp，花生壳）将当前局域网开发机器的 80 端口暴露到公网上</li>
+<li>在qq互联中创建一个应用得到 appid 和 appkey，并设置其回调地址（使用内网穿透暴露的局域网机器）</li>
+<li>阅读qq互联提供的<a href="http://wiki.connect.qq.com/%E7%BD%91%E7%AB%99%E5%BA%94%E7%94%A8%E6%8E%A5%E5%85%A5%E6%B5%81%E7%A8%8B" target="_blank" rel="noopener">网站应用接入流程文档</a>（必须阅读）</li>
 </ol>
-<h3 id="模拟场景"><a href="#模拟场景" class="headerlink" title="模拟场景"></a>模拟场景</h3><ul>
-<li>实现第三方qq登录</li>
-<li>以qq登录的用户默认分配角色为ROLE_USER</li>
+<h3 id="案例场景"><a href="#案例场景" class="headerlink" title="案例场景"></a>案例场景</h3><ul>
+<li>实现第三方登录（qq）</li>
+<li>使用qq登录的用户默认给其分配一个 ROLE_USER 角色</li>
 </ul>
-<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><blockquote>
-<p>代码的编写和qq提供的文档密切相关，所以开发之前应该详细阅读</p>
-</blockquote>
-<h4 id="步骤1：在登录页面添加qq登录按钮"><a href="#步骤1：在登录页面添加qq登录按钮" class="headerlink" title="步骤1：在登录页面添加qq登录按钮"></a>步骤1：在登录页面添加qq登录按钮</h4><pre><code class="html">第三方登录：
-&lt;a href=&quot;https://graph.qq.com/oauth2.0/authorize?response_type=code&amp;client_id=101571894&amp;redirect_uri=http://tandi.natapp1.cc/qq/callback&amp;state=test&quot;&gt;
+<h3 id="案例代码"><a href="#案例代码" class="headerlink" title="案例代码"></a>案例代码</h3><h4 id="步骤1：在登录页面中添加qq登录按钮"><a href="#步骤1：在登录页面中添加qq登录按钮" class="headerlink" title="步骤1：在登录页面中添加qq登录按钮"></a>步骤1：在登录页面中添加qq登录按钮</h4><pre><code class="html">&lt;a href=&quot;https://graph.qq.com/oauth2.0/authorize?response_type=code&amp;client_id=101571894&amp;redirect_uri=http://tandi.natapp1.cc/qq/callback&amp;state=test&quot;&gt;
     &lt;img src=&quot;http://qzonestyle.gtimg.cn/qzone/vas/opensns/res/img/Connect_logo_7.png&quot;/&gt;
 &lt;/a&gt;</code></pre>
-<h4 id="步骤2：创建用来存储信息的实体"><a href="#步骤2：创建用来存储信息的实体" class="headerlink" title="步骤2：创建用来存储信息的实体"></a>步骤2：创建用来存储信息的实体</h4><pre><code class="java">@Data
+<h4 id="步骤2：创建用来存储用户相关信息的实体"><a href="#步骤2：创建用来存储用户相关信息的实体" class="headerlink" title="步骤2：创建用来存储用户相关信息的实体"></a>步骤2：创建用来存储用户相关信息的实体</h4><pre><code class="java">@Data
 public class QQToken {
-
     private String accessToken;
     private String refreshToken;
     private String expiresIn;
 }</code></pre>
 <pre><code class="java">@Data
 public class QQUser {
-
     private String ret;
     private String msg;
     private String nickname;
@@ -783,61 +216,42 @@ public class QQUser {
     private String figureurl_qq_2;
     private String gender;
 }</code></pre>
-<h4 id="步骤3：创建qq登录认证过滤器"><a href="#步骤3：创建qq登录认证过滤器" class="headerlink" title="步骤3：创建qq登录认证过滤器"></a>步骤3：创建qq登录认证过滤器</h4><pre><code class="java">package wiki.td.weibo;
-
-import org.apache.http.client.utils.URIBuilder;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.web.client.RestTemplate;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+<h4 id="步骤3：创建qq登录认证过滤器"><a href="#步骤3：创建qq登录认证过滤器" class="headerlink" title="步骤3：创建qq登录认证过滤器"></a>步骤3：创建qq登录认证过滤器</h4><pre><code class="java">// AbstractAuthenticationProcessingFilter的别名叫PRE_AUTH_FILTER，即认证前置过滤器
+@Component
 public class QQAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
-
+    // 授权码模式
     private final static String GRANT_TYPE = &quot;authorization_code&quot;;
+    // appid
     private final static String CLIENT_ID = &quot;101571894&quot;;
+    // appkey
     private final static String CLIENT_SECRET = &quot;b909357a9d447329f66c47f3fa3333b7&quot;;
+    // 回调地址（当前应用所在服务器的回调接口，表示登录成功）
     private final static String REDIRECT_URI = &quot;http://tandi.natapp1.cc/qq/callback&quot;;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    public QQAuthenticationFilter(){
+
+    }
 
     public QQAuthenticationFilter(String defaultFilterProcessesUrl) {
         super(new AntPathRequestMatcher(defaultFilterProcessesUrl, &quot;GET&quot;));
     }
 
-    @Autowired
-    private RestTemplate restTemplate;
-
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
-
-        // 获取到 authentication code
+        // 获取回调返回的授权码
         String code = request.getParameter(&quot;code&quot;);
-
+        // 根据授权码获取token
         QQToken qqToken = getQQToken(code);
-
+        // 根据token返回openId
         String openId = getOpenId(qqToken.getAccessToken());
 
-        if (openId != null &amp;&amp; !&quot;&quot;.equals(openId)) {
+        if (StringUtils.isNotBlank(openId)) {
 
-            // 生成一个未校验的验证spring security token
-            // 参数1：相当于账号
-            // 参数2：相当于密码
-            UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(qqToken.getAccessToken(), openId);
-
+            UsernamePasswordAuthenticationToken authRequest 
+                = new UsernamePasswordAuthenticationToken(qqToken.getAccessToken(), openId);
             // 返回验证结果
             return this.getAuthenticationManager().authenticate(authRequest);
         }
@@ -904,33 +318,10 @@ public class QQAuthenticationFilter extends AbstractAuthenticationProcessingFilt
         if (matcher.find()){
             return matcher.group(1);
         }
-
         return null;
     }
-
 }</code></pre>
-<h4 id="步骤4：创建qq登录认证过滤器管理"><a href="#步骤4：创建qq登录认证过滤器管理" class="headerlink" title="步骤4：创建qq登录认证过滤器管理"></a>步骤4：创建qq登录认证过滤器管理</h4><pre><code class="java">package wiki.td.weibo;
-
-import com.google.gson.Gson;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.utils.URIBuilder;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-@Slf4j
-public class QQAuthenticationManager  implements AuthenticationManager {
+<h4 id="步骤4：创建qq登录认证过滤器管理"><a href="#步骤4：创建qq登录认证过滤器管理" class="headerlink" title="步骤4：创建qq登录认证过滤器管理"></a>步骤4：创建qq登录认证过滤器管理</h4><pre><code class="java">public class QQAuthenticationManager implements AuthenticationManager {
 
     private static final List&lt;GrantedAuthority&gt; AUTHORITIES = new ArrayList&lt;&gt;();
     static {
@@ -939,11 +330,6 @@ public class QQAuthenticationManager  implements AuthenticationManager {
 
     private final static String CLIENT_ID = &quot;101571894&quot;;
 
-    /**
-     * @param authentication 过滤器创建的 UsernamePasswordAuthenticationToken
-     * @return
-     * @throws AuthenticationException
-     */
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String accessToken = authentication.getName();
@@ -961,10 +347,8 @@ public class QQAuthenticationManager  implements AuthenticationManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return null;
     }
-
 
     private QQUser getUserInfo(String accessToken, String openId) throws IOException {
 
@@ -991,59 +375,21 @@ public class QQAuthenticationManager  implements AuthenticationManager {
     }
 
 }</code></pre>
-<h4 id="步骤5：将qq登录认证过滤器添加到过滤器链"><a href="#步骤5：将qq登录认证过滤器添加到过滤器链" class="headerlink" title="步骤5：将qq登录认证过滤器添加到过滤器链"></a>步骤5：将qq登录认证过滤器添加到过滤器链</h4><pre><code class="java">package wiki.td.config;
-
-//...
-
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true) // 开启注解@secured
+<h4 id="步骤5：将qq登录认证过滤器添加到过滤器链"><a href="#步骤5：将qq登录认证过滤器添加到过滤器链" class="headerlink" title="步骤5：将qq登录认证过滤器添加到过滤器链"></a>步骤5：将qq登录认证过滤器添加到过滤器链</h4><pre><code class="java">@EnableWebSecurity
+@EnableGlobalMethodSecurity(securedEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    //...
+    @Autowired
+    private QQAuthenticationFilter qqAuthenticationFilter;
 
-
-    /** 权限拦截 */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        // 要求用户访问某个uri时，需要有指定的角色
-        http
-            .authorizeRequests()
-                // &quot;/&quot;, &quot;/index&quot;, &quot;/home&quot; 可以自由访问
-                .antMatchers(&quot;/&quot;, &quot;/index&quot;, &quot;/home&quot;).permitAll()
-                // 其他get、post请求都需要认证
-                .antMatchers(HttpMethod.GET).authenticated()
-                .antMatchers(HttpMethod.POST).authenticated()
-                .and()
-            .formLogin()
-                .loginPage(&quot;/login&quot;)
-                .usernameParameter(&quot;username&quot;)
-                .passwordParameter(&quot;password&quot;)
-                .successHandler(new LoginSuccessHandler())
-                .permitAll()
-                .and()
-            .logout()
-                .logoutUrl(&quot;/logout&quot;)
-                .logoutSuccessUrl(&quot;/login&quot;)
-                .permitAll()
-                .and()
+        //...
 
-                /**
-                 * 关闭csrf(跨站请求伪造)保护, Spring Security3默认关闭csrf，SpringSecurity4默认启动了csrf
-                 * 原因是不关闭会进入CsrfFilter进行处理，从而会使用CsrfToken来认证而不是session
-                 * */
-            .csrf()
-                .disable();
+        qqAuthenticationFilter.setFilterProcessesUrl(&quot;/qq/callback&quot;); // 默认拦截的路径
+        qqAuthenticationFilter.setAuthenticationManager(new QQAuthenticationManager());
 
-        http.addFilterBefore(qqAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-    }
-
-    /**
-     * 自定义 QQ登录 过滤器
-     */
-    private QQAuthenticationFilter qqAuthenticationFilter(){
-        QQAuthenticationFilter authenticationFilter = new QQAuthenticationFilter(&quot;/qq/callback&quot;);
-        authenticationFilter.setAuthenticationManager(new QQAuthenticationManager());
-        return authenticationFilter;
+        http.addFilterBefore(qqAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
 }</code></pre>
@@ -1061,28 +407,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     &lt;artifactId&gt;webdemo4&lt;/artifactId&gt;
     &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
     &lt;name&gt;webdemo4&lt;/name&gt;
-    &lt;description&gt;Demo project for Spring Boot&lt;/description&gt;
-
-    &lt;repositories&gt;
-        &lt;repository&gt;
-            &lt;id&gt;alimaven&lt;/id&gt;
-            &lt;name&gt;aliyun maven&lt;/name&gt;
-            &lt;url&gt;http://maven.aliyun.com/nexus/content/groups/public/&lt;/url&gt;
-            &lt;releases&gt;
-                &lt;enabled&gt;true&lt;/enabled&gt;
-            &lt;/releases&gt;
-            &lt;snapshots&gt;
-                &lt;enabled&gt;false&lt;/enabled&gt;
-            &lt;/snapshots&gt;
-        &lt;/repository&gt;
-    &lt;/repositories&gt;
 
     &lt;properties&gt;
         &lt;java.version&gt;1.8&lt;/java.version&gt;
     &lt;/properties&gt;
 
     &lt;dependencies&gt;
-
         &lt;!-- httpclient --&gt;
         &lt;dependency&gt;
             &lt;groupId&gt;org.apache.httpcomponents&lt;/groupId&gt;
@@ -1100,13 +430,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             &lt;groupId&gt;com.google.code.gson&lt;/groupId&gt;
             &lt;artifactId&gt;gson&lt;/artifactId&gt;
             &lt;version&gt;2.8.5&lt;/version&gt;
-        &lt;/dependency&gt;
-
-        &lt;!-- devtools --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-            &lt;artifactId&gt;spring-boot-devtools&lt;/artifactId&gt;
-            &lt;optional&gt;true&lt;/optional&gt;
         &lt;/dependency&gt;
 
         &lt;!-- spring security --&gt;
@@ -1163,18 +486,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     &lt;/build&gt;
 
 &lt;/project&gt;</code></pre>
-<h3 id="功能展示"><a href="#功能展示" class="headerlink" title="功能展示"></a>功能展示</h3><p><img src="/SpringSecurity2/002.png" alt></p>
-<p><img src="/SpringSecurity2/003.png" alt></p>
+<h2 id="案例展示"><a href="#案例展示" class="headerlink" title="案例展示"></a>案例展示</h2><img src="/SpringSecurity2/002.png">
+
+<img src="/SpringSecurity2/003.png">
+
 <p><img src="/SpringSecurity2/004.png" alt></p>
-<h3 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h3><p><a href="https://github.com/tandi960505/webdemo4_qqlogin" target="_blank" rel="noopener">https://github.com/tandi960505/webdemo4_qqlogin</a></p>
-<h1 id="end"><a href="#end" class="headerlink" title="end"></a>end</h1>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
     文章作者: TanDi <br/>
     文章链接: 
     <a href="/SpringSecurity2/">
-      SpringSecurity-Oauth2实现QQ登录
+      使用SpringSecurity-Oauth2实现QQ登录
     </a> <br/>
     版权声明: 转载请注明来自 
     <a href="https://tandi.pub">
@@ -1195,7 +519,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
           admin: ['oomgomgxx'],
-          id: md5('SpringSecurity-Oauth2实现QQ登录'),
+          id: md5('使用SpringSecurity-Oauth2实现QQ登录'),
           distractionFreeMode: false
         })
         gitalk.render('gitalk-container')           
@@ -1209,7 +533,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#servlet3转springboot"><span class="toc-text">servlet3转springboot</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#目录"><span class="toc-text">目录</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代码"><span class="toc-text">代码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#SecurityConfig"><span class="toc-text">SecurityConfig</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#HelloController"><span class="toc-text">HelloController</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#entity"><span class="toc-text">entity</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自定义UserDetails"><span class="toc-text">自定义UserDetails</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自定义登录成功处理器"><span class="toc-text">自定义登录成功处理器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#jpa-repository"><span class="toc-text">jpa repository</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#application-yml"><span class="toc-text">application.yml</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#pom"><span class="toc-text">pom</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用注解配置权限控制"><span class="toc-text">使用注解配置权限控制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#手动实现第三方登录功能-QQ"><span class="toc-text">手动实现第三方登录功能-QQ</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#准备工作"><span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#模拟场景"><span class="toc-text">模拟场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代码-1"><span class="toc-text">代码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤1：在登录页面添加qq登录按钮"><span class="toc-text">步骤1：在登录页面添加qq登录按钮</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤2：创建用来存储信息的实体"><span class="toc-text">步骤2：创建用来存储信息的实体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤3：创建qq登录认证过滤器"><span class="toc-text">步骤3：创建qq登录认证过滤器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤4：创建qq登录认证过滤器管理"><span class="toc-text">步骤4：创建qq登录认证过滤器管理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤5：将qq登录认证过滤器添加到过滤器链"><span class="toc-text">步骤5：将qq登录认证过滤器添加到过滤器链</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#pom-xml"><span class="toc-text">pom.xml</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#功能展示"><span class="toc-text">功能展示</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码"><span class="toc-text">源码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#end"><span class="toc-text">end</span></a>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用注解控制权限"><span class="toc-text">使用注解控制权限</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#功能实现"><span class="toc-text">功能实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#准备工作"><span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#案例场景"><span class="toc-text">案例场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#案例代码"><span class="toc-text">案例代码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤1：在登录页面中添加qq登录按钮"><span class="toc-text">步骤1：在登录页面中添加qq登录按钮</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤2：创建用来存储用户相关信息的实体"><span class="toc-text">步骤2：创建用来存储用户相关信息的实体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤3：创建qq登录认证过滤器"><span class="toc-text">步骤3：创建qq登录认证过滤器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤4：创建qq登录认证过滤器管理"><span class="toc-text">步骤4：创建qq登录认证过滤器管理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#步骤5：将qq登录认证过滤器添加到过滤器链"><span class="toc-text">步骤5：将qq登录认证过滤器添加到过滤器链</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#pom-xml"><span class="toc-text">pom.xml</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#案例展示"><span class="toc-text">案例展示</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>

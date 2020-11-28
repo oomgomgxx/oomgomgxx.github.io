@@ -137,34 +137,33 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><h2 id="为什么需要服务注册中心"><a href="#为什么需要服务注册中心" class="headerlink" title="为什么需要服务注册中心"></a>为什么需要服务注册中心</h2><blockquote>
-<p>没有服务注册中心时，服务调用是这样子的</p>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="为什么需要服务注册中心"><a href="#为什么需要服务注册中心" class="headerlink" title="为什么需要服务注册中心"></a>为什么需要服务注册中心</h2><blockquote>
+<p>点对点消费</p>
 </blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/001.png" alt></p>
-<p>以上这种模式存在以下问题：</p>
+<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/001.png" style="zoom: 50%;">
+
+<p>上面这种通信方式的缺点是，当服务提节点数量或状态发生变化时，服务消费者无法感知，并且需要手动修改配置，不利于维护</p>
+<blockquote>
+<p>使用反向代理改良</p>
+</blockquote>
+<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/002.png" style="zoom: 50%;">
+
+<p>引入反向代理服务来代理上游服务器集群。这时服务消费者只需和反向代理服务打交道即可，大大降低了服务地址的维护成本。</p>
+<p>但这种方法依然存在一定的问题：</p>
 <ul>
-<li>服务提供者扩展节点时，服务消费者需要修改配置</li>
-<li>当服务提供者出现故障导致不可用时，服务消费者无法感知</li>
+<li>反向代理服务存在单点问题，需要往外引入注入Keepalived这样的服务提高其可用性，增加了架构的复杂度</li>
+<li>反向代理服务依然无法感知上游服务提供者节点状态的变化，开发者仍然需要手动维护服务提供者配置</li>
 </ul>
 <blockquote>
-<p>使用反向代理改良以后是这个样子的</p>
+<p>使用服务注册/发现中心</p>
 </blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/002.png" alt></p>
-<p>基于上面的问题，我们可以引入反向代理服务器来代理某个服务提供者集群。这时服务消费者只需要调用反向代理服务器就可访问到服务。但这种方法依然存在问题：</p>
-<ul>
-<li>存在单点问题，要求反向代理服务器支持集群功能</li>
-<li>反向代理服务器能够解决服务提供者宕机转发功能，但服务提供者节点扩容和缩容时，反向代理服务器依然无法感知，即扩容和缩容后需要手动修改反向代理服务器的配置</li>
-</ul>
-<blockquote>
-<p>引入支持 服务注册 和 发现 的 服务注册中心 后是这个样子的</p>
-</blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/003.png" alt></p>
+<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/003.png" style="zoom: 50%;">
+
 <ol>
-<li>服务提供者启动时将自己暴露的服务列表注册到服务注册中心</li>
-<li>服务消费者拿着自己需要的服务名单到服务注册中心查找，然后服务注册中心将对应的服务提供者列表响应给服务消费者</li>
-<li>服务消费者接收到服务注册中心响应的服务列表后就会按照相应的选择策略来从中选择一个服务提供者进行点对点调用</li>
+<li><strong>服务提供者</strong>启动时将自己暴露的服务列表注册到服务注册中心</li>
+<li><strong>服务消费者</strong>启动时到服务注册中心拉取自己所关注的服务提供者列表</li>
 </ol>
-<p>不难看出服务注册和发现这两个动作解决了服务节点变动时需要手动修改配置的问题。还有就是注册中心通常使用心跳机制来感知服务提供者是否可用，如果某个服务提供者不可用，服务注册中心就会将该服务提供者从可用服务列表中移除，这么一来也解决了先前故障无法感知的问题了。</p>
+<p>服务注册/发现中心不仅解决了服务提供者节点变动时需要手动修改配置的问题，还能够实现动态服务注册和服务状态感知</p>
 <blockquote>
 <p>目前业界常用的服务注册中心</p>
 </blockquote>
@@ -175,10 +174,9 @@
 <li>Etcd</li>
 </ul>
 <h2 id="Netflix-Eureka"><a href="#Netflix-Eureka" class="headerlink" title="Netflix Eureka"></a>Netflix Eureka</h2><h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><ul>
-<li>Eureka是Netflix旗下开源的服务注册中心，目前版本是 Eureka 1.x </li>
-<li>GitHub首页已明确表明 Eureka 2.x  已经停止开源工作 （Eureka 1.x 依然在维护）</li>
-<li>针对上面所述问题个人觉得并不需要顾虑太多，如果 Eureka 1.x 不足以满足使用需求，完全可以使用 Consul 、ZooKeeper 又或者阿里的 Nacos 来代替</li>
-<li>从CAP定理角度来看，Eureka 是一个 AP 系统（集群节点需要定时获取其他节点的服务列表） </li>
+<li>Eureka是Netflix旗下开源的服务注册/发现中心</li>
+<li>GitHub首页已明确表明Eureka 2.x已经停止开源工作（Eureka 1.x依然在维护，可以提交Issues）</li>
+<li>从CAP定理角度来看，Eureka是一个AP（可用性优先）系统</li>
 </ul>
 <h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="Eureka服务端"><a href="#Eureka服务端" class="headerlink" title="Eureka服务端"></a>Eureka服务端</h4><blockquote>
 <p>添加依赖</p>
@@ -236,16 +234,13 @@ management:
     web:
       exposure:
         include: &#39;*&#39;
-
 # 服务端口
 server:
   port: 8761
-
 # 应用名称
 spring:
   application:
     name: msa-eureka-server
-
 # Eureka Server  
 eureka:
   client:
@@ -329,15 +324,12 @@ public class MsaEurekaApplication {
     web:
       exposure:
         include: &#39;*&#39;
-
 server:
   port: 8080
-
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/ # 默认
-
 spring:
   application:
     name: msa-eureka-provider-user</code></pre>
@@ -497,7 +489,7 @@ public class MsaEurekaComsumer01Application {
         SpringApplication.run(MsaEurekaComsumer01Application.class, args);
     }
 }</code></pre>
-<h3 id="Eureka支持的端点操作"><a href="#Eureka支持的端点操作" class="headerlink" title="Eureka支持的端点操作"></a>Eureka支持的端点操作</h3><table>
+<h3 id="Eureka-Server支持的端点操作"><a href="#Eureka-Server支持的端点操作" class="headerlink" title="Eureka Server支持的端点操作"></a>Eureka Server支持的端点操作</h3><table>
 <thead>
 <tr>
 <th>操作</th>
@@ -557,15 +549,17 @@ public class MsaEurekaComsumer01Application {
 </tr>
 </tbody></table>
 <h3 id="特性和源码浅析"><a href="#特性和源码浅析" class="headerlink" title="特性和源码浅析"></a>特性和源码浅析</h3><h4 id="基础架构"><a href="#基础架构" class="headerlink" title="基础架构"></a>基础架构</h4><blockquote>
-<p>Netflix Eureka 集群图（源自  <a href="https://github.com/Netflix/eureka" target="_blank" rel="noopener">https://github.com/Netflix/eureka</a> ）</p>
+<p>Netflix Eureka集群图（源自<a href="https://github.com/Netflix/eureka）" target="_blank" rel="noopener">https://github.com/Netflix/eureka）</a></p>
 </blockquote>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/006.png" alt></p>
-<p>上图是 Eureka 1.x 在 Netflix 内部中的部署架构。在 Eureka 架构中有两个较为重要的概念，分别是：<code>Region</code>、<code>Zone</code>。Region可以理解为 Eureka 所在的区域，而 Zone 可以理解为 Eureka 所在机房。一个Region 可以包含多个Zone，而且每个 Region 中至少含有一个 Eureka Server 。 Zone与Zone、Region与Region之间形成高可用集群。如下：</p>
+<p>上图是 Eureka 1.x 在 Netflix 内部中的部署架构。在 Eureka 架构中有两个较为重要的概念，分别是：<code>Region</code>、<code>Zone</code>。</p>
+<p>Region 可以理解为 Eureka 所在的区域，而 Zone 可以理解为 Eureka 所在机房。</p>
+<p>一个 Region 可以包含多个Zone，而且每个 Region 中至少含有一个Eureka Server。Zone与Zone、Region与Region之间形成高可用集群。</p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/007.png" alt></p>
-<p>默认情况下 Eureka 使用的 Region 为 <code>us-east-1</code>，而 Zone 为 <code>http://localhost:8761/eureka/</code>，如下：</p>
+<p>默认情况下 Eureka 使用的 Region 名为 <code>us-east-1</code>，而 Zone 为<code>http://localhost:8761/eureka/</code></p>
 <pre><code class="yaml">eureka:
   client:
-  # 以下为默认配置，所以可以省略
+      # 以下为默认配置，所以可以省略
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
     region: us-east-1</code></pre>
@@ -584,18 +578,22 @@ public String[] getAvailabilityZones(String region) {
     }
     return value.split(&quot;,&quot;);
 }</code></pre>
-<h4 id="服务注册和发现时机"><a href="#服务注册和发现时机" class="headerlink" title="服务注册和发现时机"></a>服务注册和发现时机</h4><p>&emsp;&emsp;Eureka Client 将服务注册到 Eureka Server 后会<code>每隔30秒就发送心跳包给Eureka Server以示对服务进行续约</code>。如果 Eureka Server在<code>90s（默认）内</code>没有收到某个服务提供者的续约心跳包，那么就会从可用服务列表中下线该服务（前提是没有出现网络分区，因为一旦出现网络分区Eureka Server就会触发保护机制，例如Eureka Server在短时间内发现丢失了大量客户端连接时）。</p>
-<p>&emsp;&emsp;Eureka Client 从 Eureka Server 中获取到服务列表后会对其进行缓存，然后再<code>每隔30s（默认）重新抓取一次服务列表</code>。这样做的原因主要是防止 Eureka Server 宕机导致 Eureka Client 无法获取到服务列表，所以通过缓存服务列表可以在出现 Eureka Server 宕机后依然能够调用远程服务。</p>
+<h4 id="服务注册和发现时机"><a href="#服务注册和发现时机" class="headerlink" title="服务注册和发现时机"></a>服务注册和发现时机</h4><ul>
+<li><p>Eureka Client将服务注册到 Eureka Server 后会<code>每隔30秒就发送心跳包给Eureka Server以示对当前服务进行续约</code>。而如果Eureka Server在<code>90s（默认）</code>内都没有收到某个服务提供者的续约心跳包的话，就会从可用服务列表中下线该服务。但前提是没有出现网络分区（譬如短时间内丢失大量客户端连接），因为一旦出现网络分区Eureka Server就会开启保护机制，保护机制一旦开启 Eureka Server 就会暂缓下线服务直到大部分服务可用后恢复</p>
+</li>
+<li><p>Eureka Client 从 Eureka Server 中获取到服务列表后会对其进行缓存，然后再<code>每隔30s（默认）重新抓取一次服务列表</code>。这样做的原因主要是防止 Eureka Server 宕机导致 Eureka Client 无法获取到服务列表，所以通过缓存服务列表来以防 Eureka Server 宕机后无法发现服务的情况发生。</p>
+</li>
+</ul>
 <blockquote>
 <p>EurekaClientConfigBean 源码</p>
 </blockquote>
 <p>Eureka Client 会使用 Ribbon 对抓取到的服务列表进行负载均衡调用，而在这之前 Eureka Client 需要先确立自己应该从哪个 Eureka Server 中抓取服务列表。</p>
 <pre><code class="java">@Override
 public List&lt;String&gt; getEurekaServerServiceUrls(String myZone) {
-    // 先从自己所在的 Zone 中获取 Eureka Server 服务
+    // 先从自己所在的 Zone 中获取 Eureka Server
     String serviceUrls = this.serviceUrl.get(myZone);
 
-    // 如果自己的所在 Zone 中没有，则到默认的 Zone 中查找
+    // 如果自己的所在 Zone 中没有 Eureka Server ，则到默认的 Zone 中查找
     if (serviceUrls == null || serviceUrls.isEmpty()) {
         serviceUrls = this.serviceUrl.get(DEFAULT_ZONE);
     }
@@ -614,7 +612,7 @@ public List&lt;String&gt; getEurekaServerServiceUrls(String myZone) {
 
     return new ArrayList&lt;&gt;();
 }</code></pre>
-<h4 id="Server自我保护机制"><a href="#Server自我保护机制" class="headerlink" title="Server自我保护机制"></a>Server自我保护机制</h4><p>上面已经提到过 Eureka Server  实现了一种自我保护机制，该机制是专门用来应对网络分区的。如下图：</p>
+<h4 id="自我保护机制"><a href="#自我保护机制" class="headerlink" title="自我保护机制"></a>自我保护机制</h4><p>上面已经提到 Eureka Server 实现了一种自我保护机制，该机制是专门用来应对网络分区的</p>
 <p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/009.png" alt></p>
 <blockquote>
 <p>Eureka中服务状态有以下几种</p>
@@ -629,10 +627,7 @@ public List&lt;String&gt; getEurekaServerServiceUrls(String myZone) {
 </li>
 </ul>
 </blockquote>
-<p>当 Eureka Server 短时间内发现大量客户端连接丢失就会进入自我保护模式。在自我保护模式下 Eureka Server 不会下线服务列表中的服务，这种状态会维持到网络分区恢复为止</p>
-<h4 id="服务注册过程"><a href="#服务注册过程" class="headerlink" title="服务注册过程"></a>服务注册过程</h4><blockquote>
-<p>com.netflix.discovery.DiscoveryClient 源码</p>
-</blockquote>
+<h4 id="服务注册过程"><a href="#服务注册过程" class="headerlink" title="服务注册过程"></a>服务注册过程</h4><p>DiscoveryClient 源码</p>
 <pre><code class="java">boolean register() throws Throwable {
     EurekaHttpResponse&lt;Void&gt; httpResponse;
     try {
@@ -641,16 +636,14 @@ public List&lt;String&gt; getEurekaServerServiceUrls(String myZone) {
     } catch (Exception e) {}
     return httpResponse.getStatusCode() == Status.NO_CONTENT.getStatusCode();
 }</code></pre>
-<blockquote>
 <p>进入 eurekaTransport.registrationClient.register(instanceInfo);</p>
-</blockquote>
 <pre><code class="java">@Override
 public EurekaHttpResponse&lt;Void&gt; register(final InstanceInfo info) {
     return execute(new RequestExecutor&lt;Void&gt;() {
         @Override
         public EurekaHttpResponse&lt;Void&gt; execute(EurekaHttpClient delegate) {
-             // 这里注意，默认情况下Eureka Client会使用Jersey来和Eureka Server通信。
-            // 当然也可以将其依赖排除，排除后就会使用RestTemplate做为代替
+             // 注意，默认情况下Eureka Client会使用Jersey来和Eureka Server通信
+            // 可以将其依赖排除，改用RestTemplate
             return delegate.register(info);
         }
 
@@ -660,11 +653,10 @@ public EurekaHttpResponse&lt;Void&gt; register(final InstanceInfo info) {
         }
     });
 }</code></pre>
-<blockquote>
-<p>点进 delegate.register(info);  这里选择 RestTemplate 和 Eureka Server 通信</p>
-</blockquote>
-<p>以下操作是拼接注册服务的请求（主要依赖Eureka支持的端点操作）</p>
-<pre><code class="java">@Override
+<p>点进 delegate.register(info)</p>
+<pre><code class="java">// 拼接想服务注册中心注册服务的请求
+// 通过Eureka Server提供的Restful端点实现
+@Override
 public EurekaHttpResponse&lt;Void&gt; register(InstanceInfo info) {
     // 请求URL
     String urlPath = serviceUrl + &quot;apps/&quot; + info.getAppName();
@@ -681,9 +673,7 @@ public EurekaHttpResponse&lt;Void&gt; register(InstanceInfo info) {
     return anEurekaHttpResponse(response.getStatusCodeValue())
         .headers(headersOf(response)).build();
 }</code></pre>
-<h4 id="获取服务列表和续约服务的定时任务"><a href="#获取服务列表和续约服务的定时任务" class="headerlink" title="获取服务列表和续约服务的定时任务"></a>获取服务列表和续约服务的定时任务</h4><blockquote>
-<p>com.netflix.discovery.DiscoveryClient 源码</p>
-</blockquote>
+<h4 id="获取服务列表和续约服务的定时任务"><a href="#获取服务列表和续约服务的定时任务" class="headerlink" title="获取服务列表和续约服务的定时任务"></a>获取服务列表和续约服务的定时任务</h4><p>DiscoveryClient</p>
 <pre><code class="java">private void initScheduledTasks() {
 
     // 获取服务列表的定时任务
@@ -781,9 +771,9 @@ public class UserController {
 <img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/010.png" style="zoom: 67%;">
 
 <ul>
-<li>定义服务注册到注册中心后的存活时间</li>
+<li>服务在注册中心存活的时间</li>
 </ul>
-<p>默认90s，当Server在90s内没有收到续约心跳包就会下线服务）</p>
+<p>默认90s，当Server在90s内没有收到续约心跳包就会下线服务</p>
 <pre><code class="yaml">eureka:
   instance:
     lease-expiration-duration-in-seconds: 90</code></pre>
@@ -805,9 +795,7 @@ public class UserController {
 <pre><code class="yaml">eureka:
   client:    
     eureka-server-connect-timeout-seconds: 5</code></pre>
-<h2 id="Consul案例"><a href="#Consul案例" class="headerlink" title="Consul案例"></a>Consul案例</h2><h3 id="服务提供者-1"><a href="#服务提供者-1" class="headerlink" title="服务提供者"></a>服务提供者</h3><blockquote>
-<p>依赖</p>
-</blockquote>
+<h2 id="Consul案例"><a href="#Consul案例" class="headerlink" title="Consul案例"></a>Consul案例</h2><h3 id="服务提供者-1"><a href="#服务提供者-1" class="headerlink" title="服务提供者"></a>服务提供者</h3><p>依赖</p>
 <pre><code class="xml">&lt;parent&gt;
     &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
     &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
@@ -851,9 +839,7 @@ public class UserController {
     &lt;/dependency&gt;
 
 &lt;/dependencies&gt;</code></pre>
-<blockquote>
 <p>配置</p>
-</blockquote>
 <pre><code class="yaml">management:
   endpoints:
     web:
@@ -877,9 +863,7 @@ spring:
           - tag2
         # service-name会覆盖 application name
         # service-name: service-name-01</code></pre>
-<blockquote>
 <p>启用 SpringCloud Consul Discovery</p>
-</blockquote>
 <pre><code class="java">@EnableDiscoveryClient
 @SpringBootApplication
 public class MsaConsulProviderUserApplication {
@@ -887,9 +871,7 @@ public class MsaConsulProviderUserApplication {
         SpringApplication.run(MsaConsulProviderUserApplication.class, args);
     }
 }</code></pre>
-<h3 id="服务消费者-1"><a href="#服务消费者-1" class="headerlink" title="服务消费者"></a>服务消费者</h3><blockquote>
-<p>依赖</p>
-</blockquote>
+<h3 id="服务消费者-1"><a href="#服务消费者-1" class="headerlink" title="服务消费者"></a>服务消费者</h3><p>依赖</p>
 <pre><code class="xml">&lt;parent&gt;
     &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
     &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
@@ -933,9 +915,7 @@ public class MsaConsulProviderUserApplication {
     &lt;/dependency&gt;
 
 &lt;/dependencies&gt;</code></pre>
-<blockquote>
 <p>消费服务</p>
-</blockquote>
 <pre><code class="java">@Slf4j
 @Repository
 public class MessageRepositor {
@@ -998,9 +978,7 @@ public class MessageRepositor {
     }
 
 }</code></pre>
-<blockquote>
 <p>启用 SpringCloud Consul Discovery</p>
-</blockquote>
 <pre><code class="java">@EnableDiscoveryClient
 @SpringBootApplication
 public class MsaConsulComsumer01Application {
@@ -1008,16 +986,12 @@ public class MsaConsulComsumer01Application {
         SpringApplication.run(MsaConsulComsumer01Application.class, args);
     }
 }</code></pre>
-<h3 id="客户端服务注册发现源码浅析"><a href="#客户端服务注册发现源码浅析" class="headerlink" title="客户端服务注册发现源码浅析"></a>客户端服务注册发现源码浅析</h3><blockquote>
-<p>依赖</p>
-</blockquote>
+<h3 id="客户端服务注册发现源码浅析"><a href="#客户端服务注册发现源码浅析" class="headerlink" title="客户端服务注册发现源码浅析"></a>客户端服务注册发现源码浅析</h3><p>依赖</p>
 <pre><code class="xml">&lt;dependency&gt;
     &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
     &lt;artifactId&gt;spring-cloud-starter-consul-discovery&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
-<blockquote>
-<p>ConsulDiscoveryClientConfiguration 源码</p>
-</blockquote>
+<p>ConsulDiscoveryClientConfiguration</p>
 <pre><code class="java">// 加载配置文件中的服务信息
 @Bean
 @ConditionalOnMissingBean
@@ -1032,15 +1006,13 @@ public ConsulDiscoveryClient consulDiscoveryClient(
     ConsulDiscoveryProperties discoveryProperties) {
     return new ConsulDiscoveryClient(this.consulClient, discoveryProperties);
 }</code></pre>
-<blockquote>
-<p>ConsulDiscoveryClient 源码</p>
-</blockquote>
+<p>ConsulDiscoveryClient</p>
 <pre><code class="java">public class ConsulDiscoveryClient implements DiscoveryClient {
 
     private static final Log log = LogFactory.getLog(ConsulDiscoveryClient.class);
 
-    // 可以看到其实实际操作的类是ConsulClient
-    // 而 ConsulClient是一个接口，实现在位于AgentConsulClient
+    // 用于和Consul通信的Client
+    // ConsulClient是一个接口，实现位于AgentConsulClient
     private final ConsulClient client;
 
     private final ConsulDiscoveryProperties properties;
@@ -1051,20 +1023,16 @@ public ConsulDiscoveryClient consulDiscoveryClient(
         this.properties = properties;
     }
 }</code></pre>
-<blockquote>
-<p>AgentConsulClient 源码</p>
-</blockquote>
+<p>AgentConsulClient</p>
 <pre><code class="java">// 服务注册
 @Override
 public Response&lt;Void&gt; agentServiceRegister(NewService newService, String token) {
     UrlParameters tokenParam = token != null ? new SingleUrlParameters(&quot;token&quot;, token) : null;
-
     // 使用Goolgl Gson序列化服务注册信息
     String json = GsonFactory.getGson().toJson(newService);
-
     // 服务注册（默认使用HttpClient进行HTTP通信）
+    // 可以看到这里和Eureka Server类似，是通过Consul提供的Restful接口注册服务
     RawResponse rawResponse = rawClient.makePutRequest(&quot;/v1/agent/service/register&quot;, json, tokenParam);
-
     // 返回注册结果
     return new Response&lt;Void&gt;(null, rawResponse);
 }
@@ -1072,10 +1040,8 @@ public Response&lt;Void&gt; agentServiceRegister(NewService newService, String t
 // 获取服务列表
 @Override
 public Response&lt;Map&lt;String, Service&gt;&gt; getAgentServices() {
-
     // 获取注册在Consul上的所有服务
     RawResponse rawResponse = rawClient.makeGetRequest(&quot;/v1/agent/services&quot;);
-
     // 封装到Map中
     Map&lt;String, Service&gt; agentServices = GsonFactory.getGson()
         .fromJson(rawResponse.getContent(),
@@ -1090,7 +1056,7 @@ public Response&lt;Map&lt;String, Service&gt;&gt; getAgentServices() {
 <li><a href="https://www.infoq.cn/article/y_1BCrbLONU61s1gbGsU" target="_blank" rel="noopener">详解 Eureka 缓存机制</a></li>
 <li><a href="https://cloud.spring.io/spring-cloud-static/spring-cloud-consul/2.2.0.RC2/reference/html/" target="_blank" rel="noopener">Spring Cloud Consul</a></li>
 </ul>
-<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -1132,7 +1098,7 @@ public Response&lt;Map&lt;String, Service&gt;&gt; getAgentServices() {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么需要服务注册中心"><span class="toc-text">为什么需要服务注册中心</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Eureka"><span class="toc-text">Netflix Eureka</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#介绍"><span class="toc-text">介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Eureka服务端"><span class="toc-text">Eureka服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Eureka客户端"><span class="toc-text">Eureka客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Eureka支持的端点操作"><span class="toc-text">Eureka支持的端点操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#特性和源码浅析"><span class="toc-text">特性和源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基础架构"><span class="toc-text">基础架构</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务注册和发现时机"><span class="toc-text">服务注册和发现时机</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Server自我保护机制"><span class="toc-text">Server自我保护机制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务注册过程"><span class="toc-text">服务注册过程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#获取服务列表和续约服务的定时任务"><span class="toc-text">获取服务列表和续约服务的定时任务</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置"><span class="toc-text">常用配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Consul案例"><span class="toc-text">Consul案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#服务提供者-1"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服务消费者-1"><span class="toc-text">服务消费者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#客户端服务注册发现源码浅析"><span class="toc-text">客户端服务注册发现源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么需要服务注册中心"><span class="toc-text">为什么需要服务注册中心</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netflix-Eureka"><span class="toc-text">Netflix Eureka</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#介绍"><span class="toc-text">介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Eureka服务端"><span class="toc-text">Eureka服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Eureka客户端"><span class="toc-text">Eureka客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Eureka-Server支持的端点操作"><span class="toc-text">Eureka Server支持的端点操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#特性和源码浅析"><span class="toc-text">特性和源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基础架构"><span class="toc-text">基础架构</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务注册和发现时机"><span class="toc-text">服务注册和发现时机</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自我保护机制"><span class="toc-text">自我保护机制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务注册过程"><span class="toc-text">服务注册过程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#获取服务列表和续约服务的定时任务"><span class="toc-text">获取服务列表和续约服务的定时任务</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置"><span class="toc-text">常用配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Consul案例"><span class="toc-text">Consul案例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#服务提供者-1"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#服务消费者-1"><span class="toc-text">服务消费者</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#客户端服务注册发现源码浅析"><span class="toc-text">客户端服务注册发现源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>

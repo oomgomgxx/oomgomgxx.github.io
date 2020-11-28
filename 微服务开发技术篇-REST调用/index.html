@@ -137,7 +137,7 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <h2 id="常见HTTP请求工具基本使用"><a href="#常见HTTP请求工具基本使用" class="headerlink" title="常见HTTP请求工具基本使用"></a>常见HTTP请求工具基本使用</h2><h3 id="HttpURLConnection"><a href="#HttpURLConnection" class="headerlink" title="HttpURLConnection"></a>HttpURLConnection</h3><blockquote>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="常见HTTP客户端工具"><a href="#常见HTTP客户端工具" class="headerlink" title="常见HTTP客户端工具"></a>常见HTTP客户端工具</h2><h3 id="HttpURLConnection"><a href="#HttpURLConnection" class="headerlink" title="HttpURLConnection"></a>HttpURLConnection</h3><blockquote>
 <p>HttpURLConnection是JDK内置的HTTP请求工具</p>
 </blockquote>
 <pre><code class="java">private String inputContent(HttpURLConnection connection) throws IOException {
@@ -240,10 +240,12 @@ public String testPost(User user) throws Exception {
     // 拼装请求
     String url = &quot;http://localhost:8080/user/add&quot;;
     HttpClient httpClient = HttpClientBuilder.create().build();
-    HttpPost post = new HttpPost(url);
+
     StringEntity entity = new StringEntity(u);
     entity.setContentEncoding(&quot;UTF-8&quot;);
     entity.setContentType(&quot;application/x-www-form-urlencoded&quot;);
+
+    HttpPost post = new HttpPost(url);
     post.setEntity(entity);
 
     // 执行请求
@@ -501,10 +503,12 @@ public RestTemplate restTemplate() {
 public RestTemplate build() {
     return build(RestTemplate.class);
 }
+
 public &lt;T extends RestTemplate&gt; T build(Class&lt;T&gt; restTemplateClass) {
     // 反射创建RestTemplate实例
     return configure(BeanUtils.instantiateClass(restTemplateClass));
 }
+
 public &lt;T extends RestTemplate&gt; T configure(T restTemplate) {
     // 设置RestTemplate的请求工厂
     configureRequestFactory(restTemplate);
@@ -528,6 +532,7 @@ private void configureRequestFactory(RestTemplate restTemplate) {
 <p>点进 ClientHttpRequestFactorySupplier</p>
 </blockquote>
 <pre><code class="java">private static final Map&lt;String, String&gt; REQUEST_FACTORY_CANDIDATES;
+
 static {
     // 使用LinkedHashMap设置加载优先级别
     Map&lt;String, String&gt; candidates = new LinkedHashMap&lt;&gt;();
@@ -553,12 +558,15 @@ public ClientHttpRequestFactory get() {
     // 如果类路径中没有HttpClient和OkHttp则使用URLConnection
     return new SimpleClientHttpRequestFactory();
 }</code></pre>
-<h2 id="OpenFeign"><a href="#OpenFeign" class="headerlink" title="OpenFeign"></a>OpenFeign</h2><h3 id="基本介绍-1"><a href="#基本介绍-1" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>Feign本来是Spring Cloud Netflix开源项目的一部分，后来从项目中独立了出来成为一个通用的Java类库并改名为OpenFeign。OpenFeign是一个<code>声明式</code>、<code>模板化</code>的HTTP客户端抽象，支持Feign、JAX-RS、SpringMVC 等风格注解，而且内置 Ribbon 和 Hystrix 功能。OpenFeign 和 RestTemplate 一样，默认采用 URLConnection 进行HTTP通信，同时也支持 Apache HttpClient 和 OkHttp。</p>
+<h2 id="OpenFeign"><a href="#OpenFeign" class="headerlink" title="OpenFeign"></a>OpenFeign</h2><h3 id="基本介绍-1"><a href="#基本介绍-1" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>Feign本来是Spring Cloud Netflix开源项目的一部分，后来从项目中独立了出来成为一个通用的Java类库并改名为OpenFeign。</p>
+<p>OpenFeign是一个<code>声明式</code>、<code>模板化</code>的HTTP客户端抽象，支持Feign、JAX-RS、SpringMVC 等风格注解，而且内部集成 Ribbon 和 Hystrix。</p>
+<p>OpenFeign 和 RestTemplate 一样，默认采用 URLConnection 进行HTTP通信，同时也支持 Apache HttpClient 和 OkHttp。</p>
 <blockquote>
 <p>OpenFeign 架构图</p>
 </blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-REST%E8%B0%83%E7%94%A8/005.png" alt></p>
-<p>注：使用 OpenFeign 时可以通过实现 Interceptor 接口来自定义拦截器，例如可以对在拦截器中同意设置 HTTP 请求头。</p>
+<img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-REST%E8%B0%83%E7%94%A8/005.png" style="zoom: 33%;">
+
+<p>注：使用 OpenFeign 时可以通过实现 RequestInterceptor 接口来自定义拦截器。譬如可用于实现统一请求头设置。</p>
 <h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h4><pre><code class="xml">&lt;parent&gt;
     &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
     &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
@@ -584,7 +592,6 @@ public ClientHttpRequestFactory get() {
 &lt;/dependencyManagement&gt;
 
 &lt;dependencies&gt;
-    &lt;!-- SpringClout OpenFeign --&gt;
     &lt;dependency&gt;
         &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
         &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;
@@ -632,7 +639,7 @@ public interface UserFeignClient {
     //User addUser(@RequestParam Map&lt;String, Object&gt; user);
 }</code></pre>
 <p>启用Feign</p>
-<pre><code class="java">@EnableFeignClients
+<pre><code class="java">@EnableFeignClients // 开启OpenFeign
 @EnableEurekaClient
 @SpringBootApplication
 public class MsaEurekaComsumerApplication {
@@ -676,28 +683,20 @@ public class MessageController {
 //        return ResponseEntity.ok(userFeignClient.addUser3(map));
     }
 }</code></pre>
-<h3 id="源码浅析-1"><a href="#源码浅析-1" class="headerlink" title="源码浅析"></a>源码浅析</h3><h4 id="请求是如何被封装的？"><a href="#请求是如何被封装的？" class="headerlink" title="请求是如何被封装的？"></a>请求是如何被封装的？</h4><blockquote>
-<p>FeignClient 样例方法</p>
-</blockquote>
+<h3 id="源码浅析-1"><a href="#源码浅析-1" class="headerlink" title="源码浅析"></a>源码浅析</h3><h4 id="请求是如何被封装的？"><a href="#请求是如何被封装的？" class="headerlink" title="请求是如何被封装的？"></a>请求是如何被封装的？</h4><p>案例代码</p>
 <pre><code class="java">@FeignClient(&quot;MSA-EUREKA-PROVIDER-USER&quot;)
 public interface UserFeignClient {
     @DeleteMapping(&quot;/user/delete/{id}&quot;)
     User deleteUserById(@PathVariable Long id);
 }</code></pre>
-<blockquote>
-<p>请求到来进入 ReflectiveFeign 的 invoke 方法</p>
-</blockquote>
+<p>触发请求，执行代理 ReflectiveFeign#invoke</p>
 <pre><code class="java">public class ReflectisveFeign extends Feign {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        // 触发 MethodHandler
-        // 默认 SynchronousMethodHandler 来处理
         return dispatch.get(method).invoke(args);
     }
 }</code></pre>
-<blockquote>
-<p>SynchronousMethodHandler 的 invoke 方法</p>
-</blockquote>
+<p>SynchronousMethodHandler#invoke(argv)</p>
 <pre><code class="java">private final RequestTemplate.Factory buildTemplateFromArgs;
 
 @Override
@@ -714,96 +713,46 @@ public Object invoke(Object[] argv) throws Throwable {
         }
     }
 }</code></pre>
-<p>进入 buildTemplateFromArgs.create(argv)，即ReflectiveFeign的create(argv)</p>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-REST%E8%B0%83%E7%94%A8/002.png" alt></p>
-<pre><code class="java">@Override
-public RequestTemplate create(Object[] argv) {
-    // 根据FeignClient方法元数据初始化请求模板
-    RequestTemplate mutable = RequestTemplate.from(metadata.template());
-    // 获取请求参数
-    Map&lt;String, Object&gt; varBuilder = new LinkedHashMap&lt;String, Object&gt;();
-    // ...
-    // 设置RequestTemplate，主要是添加请求参数
-    RequestTemplate template = resolve(argv, mutable, varBuilder);
-    return template;
-}</code></pre>
-<p>进入 resolve()</p>
-<pre><code class="java">public RequestTemplate resolve(Map&lt;String, ?&gt; variables) {
-    RequestTemplate resolved = RequestTemplate.from(this);
-
-    // 设置URI
-    StringBuilder uri = new StringBuilder();
-    uri.append(this.uriTemplate.expand(variables));
-
-    // 设置请求参数
-    if (!this.queries.isEmpty()) {
-      resolved.queries(Collections.emptyMap());
-      StringBuilder query = new StringBuilder();
-      Iterator&lt;QueryTemplate&gt; queryTemplates = this.queries.values().iterator();
-      while (queryTemplates.hasNext()) {
-        QueryTemplate queryTemplate = queryTemplates.next();
-        String queryExpanded = queryTemplate.expand(variables);
-        if (Util.isNotBlank(queryExpanded)) {
-          query.append(queryExpanded);
-          if (queryTemplates.hasNext()) {
-            query.append(&quot;&amp;&quot;);
-          }
-        }
-      }
-      String queryString = query.toString();
-      if (!queryString.isEmpty()) {
-        Matcher queryMatcher = QUERY_STRING_PATTERN.matcher(uri);
-        if (queryMatcher.find()) {
-          uri.append(&quot;&amp;&quot;);
-        } else {
-          uri.append(&quot;?&quot;);
-        }
-        uri.append(queryString);
-      }
-    }
-    // 将值设置到URI
-    resolved.uri(uri.toString());
-
-    // 设置请求头
-    if (!this.headers.isEmpty()) {
-      resolved.headers(Collections.emptyMap());
-      for (HeaderTemplate headerTemplate : this.headers.values()) {
-        String header = headerTemplate.expand(variables);
-        if (!header.isEmpty()) {
-          String headerValues = header.substring(header.indexOf(&quot; &quot;) + 1);
-          if (!headerValues.isEmpty()) {
-            resolved.header(headerTemplate.getName(), headerValues);
-          }
-        }
-      }
-    }
-
-    resolved.body(this.body.expand(variables));
-    resolved.resolved = true;
-    return resolved;
-}</code></pre>
-<blockquote>
-<p>返回 SynchronousMethodHandler 的 invoke 方法</p>
-</blockquote>
-<pre><code class="java">@Override
-public Object invoke(Object[] argv) throws Throwable {
-    RequestTemplate template = buildTemplateFromArgs.create(argv);
-    // ...
-    while (true) {
-        return executeAndDecode(template);
-    }
-}</code></pre>
-<p>进入 executeAndDecode 方法</p>
+<p>SynchronousMethodHandler#executeAndDecode(template)</p>
 <pre><code class="java">Object executeAndDecode(RequestTemplate template) throws Throwable {
+    // 1. 执行拦截器
     Request request = targetRequest(template);
-    // FeignClient的execute
+    // 2. 发出请求
     Response response = client.execute(request, options);
-    // ...
+    //...
     return response;
 }</code></pre>
-<h4 id="如何进行负载均衡请求？"><a href="#如何进行负载均衡请求？" class="headerlink" title="如何进行负载均衡请求？"></a>如何进行负载均衡请求？</h4><blockquote>
-<p>进入 FeignRibbonClientAutoConfiguration</p>
-</blockquote>
+<p>SynchronousMethodHandler#targetRequest(template)</p>
+<pre><code class="java">Request targetRequest(RequestTemplate template) {
+    for (RequestInterceptor interceptor : requestInterceptors) {
+        interceptor.apply(template);
+    }
+    return target.apply(template);
+}</code></pre>
+<p>默认请求Client：Default#execute</p>
+<pre><code class="java">@Override
+public Response execute(Request request, Options options) throws IOException {
+    HttpURLConnection connection = convertAndSend(request, options);
+    return convertResponse(connection, request);
+}</code></pre>
+<p>Ribbon请求Client：LoadBalancerFeignClient#execute</p>
+<pre><code class="java">@Override
+public Response execute(Request request, Request.Options options) throws IOException {
+    try {
+        URI asUri = URI.create(request.url());
+        String clientName = asUri.getHost();
+        URI uriWithoutHost = cleanUrl(request.url(), clientName);
+        // 包装成负载均衡格式的请求
+        FeignLoadBalancer.RibbonRequest ribbonRequest = new FeignLoadBalancer.RibbonRequest(this.delegate, request, uriWithoutHost);
+        IClientConfig requestConfig = getClientConfig(options, clientName);
+        // 通过负载均衡方式执行请求
+        return lbClient(clientName).executeWithLoadBalancer(ribbonRequest, requestConfig).toResponse();
+    }
+    catch (ClientException e) {
+        //...
+    }
+}</code></pre>
+<h4 id="如何进行负载均衡请求？"><a href="#如何进行负载均衡请求？" class="headerlink" title="如何进行负载均衡请求？"></a>如何进行负载均衡请求？</h4><p>进入FeignRibbonClientAutoConfiguration</p>
 <pre><code class="java">// ...
 @Import({ HttpClientFeignLoadBalancedConfiguration.class,
         OkHttpFeignLoadBalancedConfiguration.class,
@@ -812,170 +761,169 @@ public class FeignRibbonClientAutoConfiguration {</code></pre>
 <ul>
 <li>默认情况下只有 DefaultFeignLoadBalancedConfiguration 满足自动配置的条件</li>
 </ul>
-<blockquote>
-<p>进入 DefaultFeignLoadBalancedConfiguration</p>
-</blockquote>
+<p>进入DefaultFeignLoadBalancedConfiguration</p>
 <pre><code class="java">@Configuration
 class DefaultFeignLoadBalancedConfiguration {
-    // 配置默认FeignClient：LoadBalancerFeignClient
+    // 将一个负载均衡Client添加到容器
     @Bean
     @ConditionalOnMissingBean
     public Client feignClient(CachingSpringLoadBalancerFactory cachingFactory,
             SpringClientFactory clientFactory) {
-        // 这里传入了一个默认的FeignClient：Client.Default
+        // Client.Default底层用的是HTTPURLConnection
+        // 可以看出这里其实用的是策略模式，即为Client添加负载均衡能力
         return new LoadBalancerFeignClient(new Client.Default(null, null), cachingFactory,
                 clientFactory);
     }
 }</code></pre>
-<blockquote>
-<p>进入 Client.Default</p>
-</blockquote>
-<pre><code class="java">public interface Client {
-    // 抽象方法 execute
-    Response execute(Request request, Options options) throws IOException;
-
-    // FeignClient默认实现
-    class Default implements Client { 
-
-        @Override
-        public Response execute(Request request, Options options) throws IOException {
-            HttpURLConnection connection = convertAndSend(request, options);
-            return convertResponse(connection, request);
-        }
-
-        HttpURLConnection convertAndSend(Request request, Options options) throws IOException {
-
-            // 创建HttpURLConnection实例
-            final HttpURLConnection connection = (HttpURLConnection) new URL(request.url()).openConnection();
-
-            // 设置请求头
-            // ...
-
-            // 发送请求
-            if (request.requestBody().asBytes() != null) {
-                connection.setDoOutput(true);
-                OutputStream out = connection.getOutputStream();
-                out.write(request.requestBody().asBytes());
-                out.close();
-            }
-            return connection;
-        }
-    }
-}</code></pre>
-<ul>
-<li>可以看到默认FeignClient使用的默认HTTP客户端是HttpURLConnection</li>
-</ul>
-<blockquote>
-<p>然后进入 LoadBalancerFeignClient</p>
-</blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-REST%E8%B0%83%E7%94%A8/003.png" alt></p>
-<pre><code class="java">public class LoadBalancerFeignClient implements Client {
-    private final Client delegate;
-    public LoadBalancerFeignClient(Client delegate,/**/) {
-        this.delegate = delegate;
-    }
-    public Client getDelegate() {
-        return this.delegate;
-    }
-    // 获取负载均衡器，FeignLoadBalancer并不是直接实现ILoadBalancer，而是通过继承LoadBalancerContext来实现
-    // LoadBalancerContext集成了ILoadBalancer
-    private FeignLoadBalancer lbClient(String clientName) {
-        return this.lbClientFactory.create(clientName);
-    }
-
-    @Override
-    public Response execute(Request request, Request.Options options) throws IOException {
-        // 获取URL内容
+<p>LoadBalancerFeignClient#execute</p>
+<pre><code class="java">@Override
+public Response execute(Request request, Request.Options options) throws IOException {
+    try {
         URI asUri = URI.create(request.url());
         String clientName = asUri.getHost();
         URI uriWithoutHost = cleanUrl(request.url(), clientName);
-
-        // 构造一个RibbonRequest，其中Request包含了FeignClient
+        // 包装成负载均衡格式的请求
         FeignLoadBalancer.RibbonRequest ribbonRequest = new FeignLoadBalancer.RibbonRequest(this.delegate, request, uriWithoutHost);
         IClientConfig requestConfig = getClientConfig(options, clientName);
-
-        // 【重点】
-        // 1. FeignClient会使用Ribon默认的负载均衡器ZoneAwareLoadBalancer，即采用最优zone加RoundRibbonRule进行负载均衡
-        // 2. 得到负载均衡后的Server使用HTTP客户端发送请求并返回结果
+        // 通过负载均衡方式执行请求
         return lbClient(clientName).executeWithLoadBalancer(ribbonRequest, requestConfig).toResponse();
     }
+    catch (ClientException e) {
+        //...
+    }
 }</code></pre>
-<blockquote>
-<p>基于上面代码，先察一下 FeignLoadBalancer</p>
-</blockquote>
-<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-REST%E8%B0%83%E7%94%A8/004.png" alt></p>
-<ul>
-<li>可以看到 executeWithLoadBalancer 方法是 FeignLoadBalancer 继承 AbstractLoadBalancerAwareClient 得到的</li>
-</ul>
-<p>所以，FeignLoadBalancer 的 AbstractLoadBalancerAwareClient 如下：</p>
-<pre><code class="java">public T executeWithLoadBalancer(final S request, final IClientConfig requestConfig) throws ClientException {
-    LoadBalancerCommand&lt;T&gt; command = buildLoadBalancerCommand(request, requestConfig);
-    // 【重点】负载均衡在LoadBalancerCommand的submit方法中完成。这里是lambda表达式，实际还需要进入submit查看
-    return command.submit(
-        new ServerOperation&lt;T&gt;() {
+<p>AbstractLoadBalancerAwareClient#executeWithLoadBalancer(request, requestConfig)</p>
+<pre><code class="java">public T executeWithLoadBalancer(final S request, final IClientConfig requestConfig) 
+    throws ClientException {
+    // 构建命令（命令模式，将请求封装为命令让其做到可传递和修改）
+    LoadBalancerCommand&lt;T&gt; command 
+        = buildLoadBalancerCommand(request, requestConfig);
+
+    try {
+        // 提交请求命令
+        // 内部会通过RxJava反应式编程发送和响应请求
+        return command.submit(
+            new ServerOperation&lt;T&gt;() {
+                @Override
+                public Observable&lt;T&gt; call(Server server) {
+                    URI finalUri = reconstructURIWithServer(server, request.getUri());
+                    S requestForServer = (S) request.replaceUri(finalUri);
+                    try {
+                        // RxJava反应式编程API
+                        // 执行请求并返回一个可观察的Observable对象实例
+                        return Observable.just(AbstractLoadBalancerAwareClient.this.execute(requestForServer, requestConfig));
+                    } 
+                    catch (Exception e) {
+                        return Observable.error(e);
+                    }
+                }
+            })
+            .toBlocking()
+            .single();
+    } catch (Exception e) {
+        //...
+    }
+}</code></pre>
+<pre><code class="java">public Observable&lt;T&gt; submit(final ServerOperation&lt;T&gt; operation) {
+    final ExecutionInfoContext context = new ExecutionInfoContext();
+
+    if (listenerInvoker != null) {
+        listenerInvoker.onExecutionStart();
+    //...
+
+    // 返回一个包含（已经经过负载均衡）Server的可观察对象Observable
+    Observable&lt;T&gt; o = (server == null ? selectServer() : Observable.just(server))
+        .concatMap(new Func1&lt;Server, Observable&lt;T&gt;&gt;() { // 1. 根据Server返回一个Observable
             @Override
             public Observable&lt;T&gt; call(Server server) {
-                URI finalUri = reconstructURIWithServer(server, request.getUri());
-                S requestForServer = (S) request.replaceUri(finalUri);
-                // 调用FeignLoadBalancer的execute()方法
-                return Observable.just(AbstractLoadBalancerAwareClient.this.execute(requestForServer, requestConfig));
-            }
-        })
-        .toBlocking()
-        .single();
-}</code></pre>
-<blockquote>
-<p>进入负责均衡操作的 LoadBalancerCommand 类</p>
-</blockquote>
-<pre><code class="java">public Observable&lt;T&gt; submit(final ServerOperation&lt;T&gt; operation) {
-    // 如果没有指定Server的话就使用selectServer()进行负载均衡操作
-    Observable&lt;T&gt; o = (server == null ? selectServer() : Observable.just(server)).concatMap(/**/);
-    //...
-    return o;
-}
+                context.setServer(server);
+                // 返回当前Server的状态
+                final ServerStats stats = loadBalancerContext.getServerStats(server);
 
-private Observable&lt;Server&gt; selectServer() {
+                Observable&lt;T&gt; o = Observable
+                    .just(server)
+                    .concatMap(new Func1&lt;Server, Observable&lt;T&gt;&gt;() { // 2. 根据Server返回一个Observable
+                        @Override
+                        public Observable&lt;T&gt; call(final Server server) {
+                            context.incAttemptCount();
+                            loadBalancerContext.noteOpenConnection(stats);
+
+                            if (listenerInvoker != null) {
+                                listenerInvoker.onStartWithServer(context.toExecutionInfo());
+
+                            final Stopwatch tracer = loadBalancerContext.getExecuteTracer().start();
+                            // 执行请求
+                            return operation.call(server).doOnEach(new Observer&lt;T&gt;() {
+                                private T entity;
+                                @Override
+                                public void onCompleted() { // 数据传输完后回调
+                                    //...
+                                }
+
+                                @Override
+                                public void onError(Throwable e) { // 发生错误时回调
+                                    //...
+                                }
+
+                                @Override
+                                public void onNext(T entity) { // 每次有数据来都会回调
+                                    this.entity = entity;
+                                    if (listenerInvoker != null) {
+                                        listenerInvoker.onExecutionSuccess(entity, context.toExecutionInfo());
+                                    }
+                                }                            
+                            });
+                        }
+                    });
+                //...
+                return o;
+            }
+        });
+    //...
+    return // o.onErrorResumeNext...
+}</code></pre>
+<p>LoadBalancerCommand#selectServer</p>
+<pre><code class="java">private Observable&lt;Server&gt; selectServer() {
     return Observable.create(new OnSubscribe&lt;Server&gt;() {
         @Override
         public void call(Subscriber&lt;? super Server&gt; next) {
-            // 先前提到FeignLoadBalancer并没有实现ILoadBalancer接口
-            // 而是通过LoadBalancerContext继承ILoadBalancer实现负载均衡操作
-            Server server = loadBalancerContext.getServerFromLoadBalancer(loadBalancerURI, loadBalancerKey);   
-            next.onNext(server);
-            next.onCompleted();
+            try {
+                // 返回经过负载均衡后的Server实例
+                Server server = loadBalancerContext.getServerFromLoadBalancer(loadBalancerURI, loadBalancerKey);  
+                // 回调订阅者
+                next.onNext(server);
+                // 完成操作
+                next.onCompleted();
+            } catch (Exception e) {
+                next.onError(e);
+            }
         }
     });
 }</code></pre>
-<p>LoadBalancerContext 的  getServerFromLoadBalancer方法</p>
-<pre><code class="java">public Server getServerFromLoadBalancer(@Nullable URI original, @Nullable Object loadBalancerKey) throws ClientException {
-    String host = null;
-    int port = -1;
-    if (original != null) host = original.getHost();
-    if (original != null) {
-        Pair&lt;String, Integer&gt; schemeAndPort = deriveSchemeAndPortFromPartialUri(original);        
-        port = schemeAndPort.second();
+<p>AbstractLoadBalancerAwareClient.this.execute相当于FeignLoadBalancer#execute</p>
+<pre><code class="java">@Override
+public RibbonResponse execute(RibbonRequest request, IClientConfig configOverride)
+    throws IOException {
+    Request.Options options;
+    if (configOverride != null) {
+        RibbonProperties override = RibbonProperties.from(configOverride);
+        options = new Request.Options(override.connectTimeout(this.connectTimeout),
+                                      override.readTimeout(this.readTimeout));
     }
-
-    // 获取负载均衡器
-    ILoadBalancer lb = getLoadBalancer();
-
-    if (host == null) {
-        if (lb != null){
-            // 获取负载均衡后的Server
-            Server svc = lb.chooseServer(loadBalancerKey);
-            host = svc.getHost();
-            return svc;
-        } 
+    else {
+        options = new Request.Options(this.connectTimeout, this.readTimeout);
     }
-    return new Server(host, port);
+    // 发出请求
+    Response response = request.client().execute(request.toRequest(), options);
+    return new RibbonResponse(request.getUri(), response);
 }</code></pre>
 <h3 id="其他配置"><a href="#其他配置" class="headerlink" title="其他配置"></a>其他配置</h3><h4 id="全局配置和局部配置"><a href="#全局配置和局部配置" class="headerlink" title="全局配置和局部配置"></a>全局配置和局部配置</h4><p>全局和局部配置是父子配置关系，优先局部配置</p>
 <blockquote>
 <p>全局配置</p>
 </blockquote>
-<p>注解</p>
+<p>注解方式</p>
 <pre><code class="java">@EnableFeignClients(defaultConfiguration = xxx.class)</code></pre>
-<p>配置文件</p>
+<p>配置文件方式</p>
 <pre><code class="yaml">feign:
   client:
     default-config: # 默认配置
@@ -985,12 +933,13 @@ private Observable&lt;Server&gt; selectServer() {
 <blockquote>
 <p>局部配置</p>
 </blockquote>
-<pre><code class="java">@FeignClient(value = &quot;服务的名字&quot;, configuration = xxx.class)</code></pre>
-<p>配置文件</p>
+<p>注解方式</p>
+<pre><code class="java">
+@FeignClient(value = &quot;服务的名字&quot;, configuration = xxx.class)</code></pre>
+<p>配置文件方式</p>
 <pre><code class="yaml">feign:
   client:
     服务的名字: 
-
       connectionTimeout: 5000
       readTimeout: 5000
       loggerLevel: FULL
@@ -1000,12 +949,11 @@ private Observable&lt;Server&gt; selectServer() {
           - xxx.xxx.Xxx2</code></pre>
 <h4 id="开启请求解压缩"><a href="#开启请求解压缩" class="headerlink" title="开启请求解压缩"></a>开启请求解压缩</h4><pre><code class="yaml">feign:
   compression:
-    # 开启解压缩
     response:
       enabled: true
     request:
       enabled: true
-      # 默认 &quot;text/xml&quot;, &quot;application/xml&quot;, &quot;application/json&quot;
+      # 针对以下媒体类型
       mime-types:
         - text/html
         - application/json
@@ -1041,37 +989,39 @@ private Observable&lt;Server&gt; selectServer() {
     }
 }</code></pre>
 <ul>
-<li>以上是 SynchronousMethodHandler 的一段代码，可以看到在 Feign 中采用<code>功能开关/模式开关</code>的操作来控制日志的数据</li>
-<li>Feign只输出 DEBUG 级别的日志，Feign Logger中的 模式Level 有以下几种：<ul>
-<li>NONE：不记录任何日志（默认级别）</li>
-<li>BASIC：记录请求方法、URL、响应状态码以及执行的时间</li>
+<li>以上是 SynchronousMethodHandler 的一段代码，可以看到在 Feign 中采用了<code>功能开关</code>方式来控制日志的输出</li>
+<li>虽然Feign只输出DEBUG级别的日志，但也可通过调节日志模式（Level）来获取特定格式日志内容：<ul>
+<li>NONE：<strong>不记录</strong>任何日志（默认级别）</li>
+<li>BASIC：记录<strong>请求方法</strong>、<strong>URL</strong>、<strong>响应状态码</strong>以及<strong>执行的时间</strong></li>
 <li>HEADERS：BASIC + header 信息</li>
-<li>FULL：记录请求和响应的 header、body、metadata等信息</li>
+<li>FULL：记录<strong>请求</strong>和<strong>响应</strong>的所有信息</li>
 </ul>
 </li>
 </ul>
-<blockquote>
-<p>使用例子</p>
-</blockquote>
-<p><strong>步骤1：</strong>添加 日志Level bean</p>
-<pre><code class="java">@Configuration
-public class FeignLogConfig {
+<p>配置案例如下：</p>
+<ol>
+<li>替换默认的Level实例</li>
+</ol>
+<pre><code class="java">public class FeignLogConfig {
     @Bean
     public Logger.Level loggerLevel() {
         return Logger.Level.HEADERS;
     }
 }</code></pre>
-<p><strong>步骤2：</strong>将添加到全局配置或局部配置中</p>
+<ol start="2">
+<li>将配置应用到全局或局部</li>
+</ol>
 <pre><code class="java">@FeignClient(value = &quot;MSA-EUREKA-PROVIDER-USER&quot;, configuration = RestConfig.class)
 public interface UserFeignClient {
     //...
 }</code></pre>
-<p><strong>步骤3：</strong>将环境中的FeignClient接口的日志基本设置为DEBUG级别</p>
+<ol start="3">
+<li>将FeignClient接口的日志级别设置为DEBUG</li>
+</ol>
 <pre><code class="yaml">logging:
   level:
     root: info
     wiki.td.msaeurekacomsumer01.feign.UserFeignClient: debug</code></pre>
-<p>当然，除了这种配置方法之外还可以参考前面<code>局部配置</code>中的日志配置方法</p>
 <h4 id="文件上传"><a href="#文件上传" class="headerlink" title="文件上传"></a>文件上传</h4><pre><code class="java">@FeignClient(value = &quot;MSA-EUREKA-PROVIDER-USER&quot;, 
         configuration =UserFeignClient.MultipartSupportConfig.class)
 public interface UserFeignClient {
@@ -1086,7 +1036,8 @@ public interface UserFeignClient {
         }
     }
 }</code></pre>
-<h4 id="Ribbon配置"><a href="#Ribbon配置" class="headerlink" title="Ribbon配置"></a>Ribbon配置</h4><p>因为Feign是基于Ribbon的，所以默认使用Ribbon的配置。但Feign也提供局部配置Ribbon的方法，如下</p>
+<h4 id="Ribbon配置"><a href="#Ribbon配置" class="headerlink" title="Ribbon配置"></a>Ribbon配置</h4><p>因为Feign默认集成了Ribbon，所以可以直接使用Ribbon的相关属性配置。</p>
+<p>但Feign也提供了局部配置Ribbon的方法，如下：</p>
 <pre><code class="yaml">feign:
   client:
     服务的名字:
@@ -1109,7 +1060,7 @@ public interface UserFeignClient {
 <li><a href="https://stackoverflow.com/questions/49823158/differences-between-netflix-feign-openfeign" target="_blank" rel="noopener">Differences between netflix.feign &amp; openfeign</a></li>
 <li>《SpringCloud与Docker 微服务架构实战》</li>
 </ul>
-<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -1151,7 +1102,7 @@ public interface UserFeignClient {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#常见HTTP请求工具基本使用"><span class="toc-text">常见HTTP请求工具基本使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#HttpURLConnection"><span class="toc-text">HttpURLConnection</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Apache-HttpClient"><span class="toc-text">Apache HttpClient</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#OkHttp"><span class="toc-text">OkHttp</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-RestTemplate"><span class="toc-text">Spring RestTemplate</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OpenFeign"><span class="toc-text">OpenFeign</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍-1"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#依赖"><span class="toc-text">依赖</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析-1"><span class="toc-text">源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#请求是如何被封装的？"><span class="toc-text">请求是如何被封装的？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#如何进行负载均衡请求？"><span class="toc-text">如何进行负载均衡请求？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他配置"><span class="toc-text">其他配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#全局配置和局部配置"><span class="toc-text">全局配置和局部配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#开启请求解压缩"><span class="toc-text">开启请求解压缩</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#设置日志等级"><span class="toc-text">设置日志等级</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#文件上传"><span class="toc-text">文件上传</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Ribbon配置"><span class="toc-text">Ribbon配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#启用Apache-HttpClient或OkHttp"><span class="toc-text">启用Apache HttpClient或OkHttp</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见HTTP客户端工具"><span class="toc-text">常见HTTP客户端工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#HttpURLConnection"><span class="toc-text">HttpURLConnection</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Apache-HttpClient"><span class="toc-text">Apache HttpClient</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#OkHttp"><span class="toc-text">OkHttp</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-RestTemplate"><span class="toc-text">Spring RestTemplate</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析"><span class="toc-text">源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#OpenFeign"><span class="toc-text">OpenFeign</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍-1"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#快速入门"><span class="toc-text">快速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#依赖"><span class="toc-text">依赖</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务提供者"><span class="toc-text">服务提供者</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#服务消费者"><span class="toc-text">服务消费者</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析-1"><span class="toc-text">源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#请求是如何被封装的？"><span class="toc-text">请求是如何被封装的？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#如何进行负载均衡请求？"><span class="toc-text">如何进行负载均衡请求？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他配置"><span class="toc-text">其他配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#全局配置和局部配置"><span class="toc-text">全局配置和局部配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#开启请求解压缩"><span class="toc-text">开启请求解压缩</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#设置日志等级"><span class="toc-text">设置日志等级</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#文件上传"><span class="toc-text">文件上传</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Ribbon配置"><span class="toc-text">Ribbon配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#启用Apache-HttpClient或OkHttp"><span class="toc-text">启用Apache HttpClient或OkHttp</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>

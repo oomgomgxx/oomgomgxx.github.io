@@ -139,53 +139,46 @@
   <!-- 文章内容 -->
   <p>前段时间在Q群里看见有人问子线程如何继承父线程的ThreadLocal值，所以故作此记。</p>
 <h2 id="ThreadLocal小回顾"><a href="#ThreadLocal小回顾" class="headerlink" title="ThreadLocal小回顾"></a>ThreadLocal小回顾</h2><ul>
-<li>ThreadLocal 中有个内部类叫ThreadLocalMap，存储格式是键值对存储，ThreadLocal上的操作实质就是对ThreadLocalMap 操作。</li>
-<li>每个 Thread 对象中都持有一个与当前线程绑定的 ThreadLocalMap 引用，所以 ThreadLocal 也被叫做线程变量，是线程安全的，因为每个Thread都有独自的 ThreadLocalMap 引用。</li>
-<li>但需要注意的是如何正确使用ThreadLocal？<a id="more"></a>
-<pre><code class="java">// 设置默认值
-ThreadLocal&lt;HashMap&lt;String, Integer&gt;&gt; t 
-  = ThreadLocal.withInitial(() -&gt; new HashMap&lt;String, Integer&gt;());
-// 或者
-//t.set(new HashMap&lt;String, Integer&gt;());
-</code></pre>
+<li><p>在ThreadLocal 中有个内部类叫 ThreadLocalMap，其存储格式为键值对存储</p>
+</li>
+<li><p>操作 ThreadLocal 实质就是对 ThreadLocalMap 操作</p>
+</li>
+<li><p>每个 Thread 对象中都有一个与当前线程所管理的 ThreadLocalMap，所以 ThreadLocal 之所以被叫做线程变量，其实就是这个原因，因为 ThreadLocalMap 是线程独占的并不存在并发问题</p>
+</li>
+<li><p>一个 Thread（ThreadLocalMap）中可以存储多个 ThreadLocal</p>
+<ul>
+<li>添加线程变量：<code>ThreadLocalMap#set(ThreadLocal, Object)</code></li>
+<li>获取线程变量：<code>ThreadLocalMap#getEntity(ThreadLocal)</code></li>
+</ul>
+</li>
+<li><p>如果要在线程池中使用 ThreadLocal，则应该在任务结束时主动调用 <code>ThreadLocal#remove()</code> 将当前 ThreadLocal 在 Thread（ThreadLocalMap）中删除，否则可能会因为线程重用的缘故而导致 Value 值无法被及时回收从而导致内存泄露。</p>
 </li>
 </ul>
-<p>// 而不是以下操作（会导致同步问题）<br>HashMap&lt;String, Integer&gt; map =  new HashMap&lt;String, Integer&gt;();<br>t.set(map);<br>// 因为map引用暴露所以如果有其他线程并发操作就会存在同步问题<br>map.put(“xxx”, 1);</p>
-<pre><code>
-* 如果在线程池中使用 ThreadLocal 应该任务结束就主动调用 clear 方法清理 ThreadLocalMap，否则可能会因为线程重用的缘故而导致 Value 值无法被及时回收而导致内存泄露。
-
-
-
-## 案例驱动源码浅析InheritableThreadLocal
-
-&gt; 案例代码
-
-``` java
-public class MyTest {
+<h2 id="案例驱动源码浅析"><a href="#案例驱动源码浅析" class="headerlink" title="案例驱动源码浅析"></a>案例驱动源码浅析</h2><blockquote>
+<p>案例代码</p>
+</blockquote>
+<pre><code class="java">public class MainTest {
 
     public static void main(String[] args) throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-
+        // ThreadLocal&lt;String&gt; threadLocal = new ThreadLocal&lt;&gt;();
         InheritableThreadLocal&lt;String&gt; threadLocal = new InheritableThreadLocal&lt;&gt;();
-//        ThreadLocal&lt;String&gt; threadLocal = new ThreadLocal&lt;&gt;();
-        threadLocal.set(&quot;hello&quot;); // debug点
+        threadLocal.set(&quot;hello&quot;); // Debug
 
         new Thread(() -&gt; {
             String str = threadLocal.get();
-            // ThreadLocal=null, InheritableThreadLocal=hello
-            System.out.println(&quot;子线程：&quot; + str); 
-            countDownLatch.countDown();
+            System.out.println(&quot;子线程：&quot; + str);
+            // ThreadLocal=null、InheritableThreadLocal=hello
         }).start();
 
-        // ThreadLocal=hello, InheritableThreadLocal=hello
-        System.out.println(&quot;父线程：&quot; + threadLocal.get()); 
-        countDownLatch.await();
+        System.out.println(&quot;父线程：&quot; + threadLocal.get());
+        // ThreadLocal=hello、InheritableThreadLocal=hello
     }
-}</code></pre><ul>
-<li>当使用 InheritableThreadLocal 时子线程是可以获取到在上级线程（父线程）中设入的值的。</li>
+}</code></pre>
+<ul>
+<li>当使用 InheritableThreadLocal 时，子线程是可以获取到在父线程中所摄入的值的</li>
 </ul>
 <blockquote>
-<p>观察一下 InheritableThreadLocal 的源码，其实很简单</p>
+<p>InheritableThreadLocal源码</p>
 </blockquote>
 <pre><code class="java">public class InheritableThreadLocal&lt;T&gt; extends ThreadLocal&lt;T&gt; {
 
@@ -202,68 +195,59 @@ public class MyTest {
     }
 }</code></pre>
 <ul>
-<li>可以看到 InheritableThreadLocal 只是重写了三个方法：childValue、getMap、createMap。其中只需要关注 getMap、createMap 即可。</li>
-<li>getMap 用于获取当前线程的 ThreadLocalMap，而 createMap 则是创建 ThreadLocalMap。</li>
+<li>可以看到 InheritableThreadLocal 只是重写了 ThreadLocal 的三个方法：childValue、getMap、createMap</li>
+<li>其中 getMap 用于获取当前线程的 ThreadLocalMap，而 createMap 则是创建 ThreadLocalMap</li>
 </ul>
 <blockquote>
-<p>接下来从 threadLocal.set(“hello”)；这句代码中进入代码观察一下</p>
+<p>接下来我们从 threadLocal.set(“hello”) 这句代码中进入观察</p>
 </blockquote>
 <pre><code class="java">public void set(T value) {
     Thread t = Thread.currentThread();
-    // 先尝试获取当前线程的ThreadLocalMap
+    // 尝试在当前线程中获取ThreadLocalMap
     ThreadLocalMap map = getMap(t); 
     if (map != null)
         map.set(this, value);
     else
-        // 如果没有获取到则直接创建一个并绑定到当前线程上
+        // 如果没有获取到，则创建一个并绑定到当前线程上
         createMap(t, value); 
 }</code></pre>
 <ul>
-<li>注意，以上有注释标注的两个方法否是被 InheritableThreadLocal 重写了的，因此 getMap(t) 实质获取的引用是 t.inheritableThreadLocals，而 createMap(t, value) 则是 t.inheritableThreadLocals = new ThreadLocalMap(this, firstValue); </li>
-<li>到这里可以得出这样的结论，就是如果使用的是 InheritableThreadLocal 而不是 ThreadLocal 的话，ThreadLocalMap是保存在 t.inheritableThreadLocals 上的。</li>
+<li>上面已经提到过，InheritableThreadLocal 重写了 getMap 和 createMap 方法，也就是说这是 getMap/createMap 所操作的具体类型是 InheritableThreadLocal 而不是 ThreadLocal</li>
 </ul>
 <blockquote>
-<p>ThreadLocal 源码</p>
+<p>Thread源码</p>
 </blockquote>
 <pre><code class="java">public class Thread implements Runnable {
 
-    /* ThreadLocal values pertaining to this thread. This map is maintained
-     * by the ThreadLocal class. */
     ThreadLocal.ThreadLocalMap threadLocals = null;
-
-    /*
-     * InheritableThreadLocal values pertaining to this thread. This map is
-     * maintained by the InheritableThreadLocal class.
-     */
     ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
 
-    // 省略
+    //...
 }</code></pre>
 <ul>
-<li>这段源码印证了上面的结论</li>
+<li>可以看到在 Thread 中其实不仅有 threadLocals 成员，还有一个 inheritableThreadLocals</li>
+<li>即如果使用的是 ThreadLocal 则绑定到 Thread.threadLocals 中，而如果使用的是 InheritableThreadLocal 则绑定到 Thread.inheritableThreadLocals</li>
 </ul>
 <blockquote>
-<p>重点注意，接下来看看实例化 Thread 时都做了些什么初始化动作，以下为Thread的初始化方法。</p>
+<p>接下来看看实例化 Thread 时都做了些什么初始化操作</p>
 </blockquote>
 <pre><code class="java">private void init(ThreadGroup g, Runnable target, String name,
                   long stackSize, AccessControlContext acc,
                   boolean inheritThreadLocals) {
-    // 省略...
+    //...
+    // 获取创建当前线程的线程
     Thread parent = currentThread();
-    // 当父线程使用的是InheritableThreadLocals且不为null时
-    // 就会继承父线程的ThreadLocalMap内容
+
+    // 如果当父线程使用的是InheritableThreadLocals且不为null时，则将父线程中的变量设置到前线程上
+    // 特别注意，如果ThreadLocal中保存有&quot;引用类型&quot;，则要是父子线程在执行任务时出现了并发操作该引用的情况，则就会导致同步安全问题
     if (inheritThreadLocals &amp;&amp; parent.inheritableThreadLocals != null)
         this.inheritableThreadLocals =
         ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
 
-    // 省略...
+    //...
 }
 
-static ThreadLocalMap createInheritedMap(ThreadLocalMap parentMap) {
-    return new ThreadLocalMap(parentMap);
-}
-
-private ThreadLocalMap(ThreadLocalMap parentMap) { // 拷贝父线程的ThreadLocalMap
+private ThreadLocalMap(ThreadLocalMap parentMap) { 
     Entry[] parentTable = parentMap.table;
     int len = parentTable.length;
     setThreshold(len);
@@ -286,31 +270,10 @@ private ThreadLocalMap(ThreadLocalMap parentMap) { // 拷贝父线程的ThreadLo
         }
     }
 }</code></pre>
-<blockquote>
-<p>最后看看案例代码中子线程的 String str = threadLocal.get(); </p>
-</blockquote>
-<pre><code class="java">public T get() {
-    Thread t = Thread.currentThread();
-    // getMap(t)被重写，所以getMap(t)实质获取的是t.inheritableThreadLocals
-    ThreadLocalMap map = getMap(t);
-    if (map != null) {
-        ThreadLocalMap.Entry e = map.getEntry(this);
-        if (e != null) {
-            @SuppressWarnings(&quot;unchecked&quot;)
-            T result = (T)e.value;
-            return result;
-        }
-    }
-    return setInitialValue();
-}</code></pre>
-<blockquote>
-<p>小结</p>
-</blockquote>
 <ul>
 <li>InheritableThreadLocal 之所以能够获取父线程的 ThreadLocalMap 内容是因为 Thread 在初始化实例时继承了父线程的 ThreadLocalMap 内容</li>
+<li>最后要说的是，其实我们之所以使用 ThreadLocal 本质是因为不想将变量共享，所以如果如改用 InheritableThreadLocal 后就打破了一开始的出发点，而且还存在一定的同步安全隐患，因此如果不是有特别的需求个人而言其实并不建议使用 InheritableThreadLocal</li>
 </ul>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><h3 id="共享了父线程资源后是否带来安全隐患？"><a href="#共享了父线程资源后是否带来安全隐患？" class="headerlink" title="共享了父线程资源后是否带来安全隐患？"></a>共享了父线程资源后是否带来安全隐患？</h3><p>&emsp;&emsp;从上面的分析我们可以得知，子线程在实例化 Thread 时会 <code>copy</code> 父线程的 ThreadLocalMap 内容，但此时我们需要警惕，如果保存在父线程的值是一个引用类型的话，那么 copy 时传递的就是一个引用地址，因此如果存在并发操作的话<code>InheritableThreadLocal 会存在同步问题的隐患</code>，所以建议在使用时加以注意，当然如果引用类型是JUC包下的原子类的话，因为原子类使用的是CAS所以能够保证线程并发安全。</p>
-<p>&emsp;&emsp;最后要说的是，其实我们使用 ThreadLocal 的初衷就是不想将变量共享，所以如果不是有特别的需求的话个人不太建议使用 InheritableThreadLocal 。</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
   <!-- 文章原地址信息 -->
@@ -353,7 +316,7 @@ private ThreadLocalMap(ThreadLocalMap parentMap) { // 拷贝父线程的ThreadLo
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocal小回顾"><span class="toc-text">ThreadLocal小回顾</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#问题"><span class="toc-text">问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#共享了父线程资源后是否带来安全隐患？"><span class="toc-text">共享了父线程资源后是否带来安全隐患？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocal小回顾"><span class="toc-text">ThreadLocal小回顾</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#案例驱动源码浅析"><span class="toc-text">案例驱动源码浅析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
