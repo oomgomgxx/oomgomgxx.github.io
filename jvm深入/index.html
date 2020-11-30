@@ -582,7 +582,7 @@ Constant pool:
 <li>当这类实例丢失强引用后，会被 GC 回收</li>
 <li>作用：临时实例</li>
 </ul>
-<p><strong>虚引用</strong></p>
+<p>虚引用</p>
 <ol>
 <li>需要继承了 PhantomReference 抽象类</li>
 <li>虚引用不对实例产生任何副作用，即如果丢失强引用则随时被回收</li>
@@ -591,7 +591,7 @@ Constant pool:
 <h3 id="对象的自我拯救"><a href="#对象的自我拯救" class="headerlink" title="对象的自我拯救"></a>对象的自我拯救</h3><p>当一个象被 GC 认为不可达过时 GC 会对其进行第 1 次标记，然后会根据这个对象<strong>是否有实现 finalize 方法</strong>或 <strong>是否已经调用过 finalize 方法</strong>作为条件判断。</p>
 <ul>
 <li>情况1：没有实现 finalize，等待回收</li>
-<li>情况2：有实现 finalize 但已经调用且没有”自救（从finalize中重新复制给外面的变量）“，等待回收</li>
+<li>情况2：有实现 finalize 但已经调用且没有”自救（从finalize中重新复制给外面的变量）”，等待回收</li>
 <li>情况3：有实现 finalize 且没有被调用过，则将其包装为 FinalReference 实例并添加到 F-Queue 队列中，然后让一条名为 Finalizer 的线程回调其 finalize，等待下一次标记</li>
 </ul>
 <p>注意：由于 Finalizer 是一条单一的线程，而虚拟机为了避免其阻塞，所以一旦遇到一个执行时间较长的 finalize 就可能会被丢弃。因此不建议将 finalize 视为析构函数来对待。</p>
