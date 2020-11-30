@@ -143,11 +143,14 @@
 <h2 id="JDK都包含些什么"><a href="#JDK都包含些什么" class="headerlink" title="JDK都包含些什么"></a>JDK都包含些什么</h2><blockquote>
 <p>图片源自网络</p>
 </blockquote>
-<p><img src="/jvm%E6%B7%B1%E5%85%A5/1.png" alt></p>
+<img src="/jvm%E6%B7%B1%E5%85%A5/1.png" style="zoom:67%;">
+
+
+
 <h2 id="类的基本结构"><a href="#类的基本结构" class="headerlink" title="类的基本结构"></a>类的基本结构</h2><blockquote>
 <p>类结构本身比较复杂，需要单开一篇文章，但如果只是为了更好地了解类加载过程，那么简单了解一下就可以了。</p>
 </blockquote>
-<p><strong>例子1：以下为一个简单的Java类</strong></p>
+<p>例子1：以下为一个简单的Java类</p>
 <pre><code class="java">public class HiJvm {
     private int num1 = 1;
     public static int num2 = 2;
@@ -515,7 +518,7 @@ Constant pool:
 <blockquote>
 <p>图片原子网络</p>
 </blockquote>
-<img src="/jvm%E6%B7%B1%E5%85%A5/5.png" style="zoom:67%;">
+<img src="/jvm%E6%B7%B1%E5%85%A5/5.png" style="zoom: 50%;">
 
 <p>可以看出，在JVM内存模型规范中，可以将整个JVM运行时数据库划分为<strong>两种类型</strong>：</p>
 <p><strong>线程共享数据区域：</strong></p>
@@ -562,8 +565,19 @@ Constant pool:
 <li><p>虚拟机栈</p>
 <ul>
 <li>每个方法执行时都会在虚拟机栈中生成一个“栈帧”</li>
-<li>栈帧中包含：局部变量表、操作数栈、动态连接、方法出口等信息</li>
-<li>其中局部变量表存储了编译期间得知的各种基本数据类型、对象引用等内存</li>
+<li>栈帧中包含：<ul>
+<li>局部变量表</li>
+<li>动态连接</li>
+<li>常量池指针</li>
+<li>方法出口</li>
+<li>操作数栈（因为Java没有寄存器，所以参数传递使用操作数栈来完成）</li>
+<li><img src="/jvm%E6%B7%B1%E5%85%A5/012.png" style="zoom: 33%;">
+
+
+
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ol>
@@ -703,7 +717,7 @@ Constant pool:
 <ul>
 <li>在jvm中每个对象都是有年龄限制的，每当经过一次gc岁数就增加1，直到到达年龄界限都还没被gc回收的话，它就会被转移到老年代</li>
 <li>在jvm有个专门用来设置所谓“够岁”的参数，<code>+XX:MaxTenuringThreshold</code>，该参数默认为15</li>
-<li>还有一种情况新生代中的对象会进入老年代，就是当s1（to）没有足够空间容纳复制过来的对象时且对象的使用率高于<code>-XX:TargetSurvivorRatio</code>值，这时并不会理会<code>+XX:MaxTenuringThreshold</code></li>
+<li>还有一种情况新生代中的对象会进入老年代，<strong>就是当幸存者区没有足够空间容纳复制过来的对象时且对象的使用率高于<code>-XX:TargetSurvivorRatio</code>值，这时并不会理会<code>+XX:MaxTenuringThreshold</code>而是直接晋升到老年代</strong></li>
 </ul>
 <p><strong>为什么需要2块survivor内存？</strong></p>
 <p>&emsp; &emsp;这个问题我自己的理解是为了<strong>提高内存的使用效率</strong>（原为复制算法是1:1的现在是8:1:1）和<strong>减少Full GC（会造成stop the world现象，对新生代，老年代，方法区（方法区满发起的FullGC）一起回收）的发生频率</strong>，为什么呢？如上面提到的老年代中存放的都是长寿的对象，现在假设有这么一种情况，老年代就快要满了但还没到达Full GC的条件，这时新生代有些顽强对象经过15次GC都杀不死，就要转移到老年代了，这个时候，JVM是需要进行<strong>空间分配担保</strong>操作，通俗点说就是通过分析查看老年代所剩下的空间来判断是否能够容纳即将到来的对象，如果不能容纳，即担保失败，就会发生Full GC来腾出空间；那么通过2块survivor内存的来回复制，可以让Eden区腾出更大的空间，因为如果只有Eden和1块survivor的话，survivor经过Minor GC后但又没够转移到老年代的条件，那么就会将存活的对象重新复制到Eden，这样Eden的空间就变少了，就降低了Eden内存的使用使用效率; 那么当Eden内存效率提高了survivor区就不会那么快满，从而减少了对象进入老年代的几率再从而减少Full GC的发生</p>

@@ -1473,9 +1473,11 @@ io-threads 3</code></pre>
 </ul>
 </li>
 <li><strong>使用布隆过滤器进行缓存预判</strong><pre><code>- 原理是在缓存数据时，将缓存对应的 key 值通过哈希函数将其映射到布隆过滤器上，以示存在该缓存。然后在查询时，使用同样的哈希函数对 key 进行映射判断，如果已存在则访问缓存或数据库，如果不存在则直接返回请求而不访问缓存和数据库
-    - 注意，布隆过滤器通常采用一个或多个哈希函数对 key 值进行映射。而因为存在哈希冲突的情况，因此存在一定的误判性，即可能出现不存在 key 的缓存，也能访问缓存层和数据的情况。而且这种误判可能性会随着数据库增大而增大
+    - 注意，布隆过滤器通常采用一个或多个哈希函数对 key 值进行映射。而因为存在哈希冲突的情况，因此存在一定的误判性，即可能出现不存在 key 的缓存，也能访问缓存层和数据的情况。而且这种误判可能性会随着数据库增大而增大（[BloomFilter 原理展示](https://llimllib.github.io/bloomfilter-tutorial/)）
     - 在 Google Guava 工具库中提供了对 BloomFilter 的相关实现
-    - [BloomFilter 原理展示](https://llimllib.github.io/bloomfilter-tutorial/)</code></pre><ul>
+    - 除此之外，Redis 4.x 提供了插件功能，官方亦提供了布隆过滤器插件实现，需要时安装插件即可
+      - https://redislabs.com/modules/redis-bloom/
+      - https://docs.redislabs.com/latest/modules/redisbloom/redisbloom-quickstart/</code></pre><ul>
 <li><strong>对请求进行合法性检测，排除恶意请求</strong></li>
 </ul>
 </li>
@@ -1690,19 +1692,16 @@ io-threads 3</code></pre>
 <pre><code class="shell">127.0.0.1:6379&gt; pubsub numsub channel:test
 1) &quot;channel:test&quot;
 2) (integer) 2 # 有两个订阅者</code></pre>
-<h3 id="GEO"><a href="#GEO" class="headerlink" title="GEO"></a>GEO</h3><blockquote>
-<p>GEO，地理信息定位。使用zset存储</p>
-</blockquote>
-<p>redis 3.2 开始提供了个有趣的功能，就是GEO。GEO可以实现诸如<code>附近的人</code>、<code>地点距离</code>、<code>摇一摇</code>这样的功能，有趣吧？</p>
-<p><strong>[添加地理位置信息]</strong></p>
-<blockquote>
-<p>获取地址的经纬度信息：<a href="http://api.map.baidu.com/lbsapi/getpoint/index.html" target="_blank" rel="noopener">http://api.map.baidu.com/lbsapi/getpoint/index.html</a></p>
-</blockquote>
-<p>格式：geoadd key longitude latitude member</p>
+<h3 id="GEO"><a href="#GEO" class="headerlink" title="GEO"></a>GEO</h3><p>redis 3.2 开始提供了个有趣的功能，就是GEO。GEO可以实现诸如<code>附近的人</code>、<code>地点距离</code>、<code>摇一摇</code>这样的功能</p>
+<p>1）录入成员位置</p>
 <ul>
+<li>获取地址的经纬度信息：<a href="http://api.map.baidu.com/lbsapi/getpoint/index.html" target="_blank" rel="noopener">http://api.map.baidu.com/lbsapi/getpoint/index.html</a><ul>
+<li>格式：geoadd key longitude latitude member</li>
 <li>longitude：经度</li>
 <li>latitude：纬度</li>
 <li>member：成员/地点</li>
+</ul>
+</li>
 </ul>
 <pre><code class="shell">127.0.0.1:6379&gt; geoadd guangzhou 113.327679 23.125237 zjxc # 珠江新城
 (integer) 1
@@ -1710,18 +1709,22 @@ io-threads 3</code></pre>
 (integer) 1
 127.0.0.1:6379&gt; geoadd guangzhou 113.27604 22.995208 gznz # 广州南站
 (integer) 1</code></pre>
-<p><strong>[获取地理位置信息]</strong></p>
-<p>格式：geopos key member，例子如下：</p>
+<p>2）获取指定成员坐标</p>
+<ul>
+<li>格式：geopos key member，例子如下：</li>
+</ul>
 <pre><code class="shell">127.0.0.1:6379&gt; geopos guangzhou zjxc
 1) 1) &quot;113.32767874002456665&quot;
    2) &quot;23.12523573693501788&quot;</code></pre>
-<p><strong>[获取两地理位置之间的距离]</strong></p>
-<p>格式：geodist key member1 member2 [单位]</p>
+<p>3）计算两地点距离</p>
 <ul>
+<li>格式：geodist key member1 member2 [单位]<ul>
 <li>m：米</li>
 <li>km：公里</li>
 <li>mi：英里</li>
 <li>ft：尺</li>
+</ul>
+</li>
 </ul>
 <pre><code class="shell"># 大石到南站
 127.0.0.1:6379&gt; geodist guangzhou ds gznz km
@@ -1729,12 +1732,15 @@ io-threads 3</code></pre>
 # 大石到珠江新城
 127.0.0.1:6379&gt; geodist guangzhou ds zjxc km
 &quot;11.2881&quot;</code></pre>
-<p><strong>[获取指定距离范围的地里信息]</strong></p>
-<p>格式1：georadiusbymember key member 单位</p>
-<p>格式2：georadius key longitude latitude 单位</p>
-<blockquote>
-<p>其中member或longitude latitude为中心节点的位置，查询指定半径范围的位置（包含返回中心节点）</p>
-</blockquote>
+<p>4）返回附近成员/地点</p>
+<ul>
+<li><p>格式1：georadiusbymember key member 单位</p>
+</li>
+<li><p>格式2：georadius key longitude latitude 单位</p>
+</li>
+<li><p>其中member或longitude latitude为中心成员/地点</p>
+</li>
+</ul>
 <pre><code class="shell">127.0.0.1:6379&gt; georadiusbymember guangzhou ds 10 km
 1) &quot;gznz&quot; # 广州南站
 2) &quot;ds&quot;
@@ -1751,11 +1757,15 @@ io-threads 3</code></pre>
 <li>store key：将返回结果的地理位置保存到指定key种</li>
 <li>storedist key：将返回结果的经纬度保存到指定key种</li>
 </ul>
-<p><strong>[删除指定的地里位置信息]</strong></p>
-<p>格式：zrem key member</p>
+<p>5）删除指定的成员/地点</p>
+<ul>
+<li>格式：zrem key member</li>
+</ul>
 <pre><code class="shell">zrem guangzhou zjxc</code></pre>
-<p><strong>[返回geo的hash值（经纬度）]</strong></p>
-<p>格式：geohash key member</p>
+<p>6）返回geo的hash值（经纬度）</p>
+<ul>
+<li>格式：geohash key member</li>
+</ul>
 <pre><code class="shell">127.0.0.1:6379&gt; geohash guangzhou ds
 1) &quot;ws0dfz6gjc0&quot;</code></pre>
 <h2 id="常用配置"><a href="#常用配置" class="headerlink" title="常用配置"></a>常用配置</h2><blockquote>
