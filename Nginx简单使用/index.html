@@ -455,7 +455,8 @@ configure arguments: --prefix=/opt/nginx --add-module=/root/ngx_http_consistent_
 <p><strong>复用IO请求处理理解：</strong></p>
 <img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/005.png" style="zoom: 80%;">
 
-<p><strong>指令处理顺序：</strong></p>
+<p>注：可从 <a href="https://nginx.org/en/docs/stream/stream_processing.html" target="_blank" rel="noopener">https://nginx.org/en/docs/stream/stream_processing.html</a> 了解目前 Nginx 所支持对 TCP/UDP 管理的模块</p>
+<p>指令处理顺序：**</p>
 <img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/006.png" style="zoom: 80%;">
 
 
@@ -593,8 +594,87 @@ track_script {
 
 
 
+<h2 id="Nginx简单优化"><a href="#Nginx简单优化" class="headerlink" title="Nginx简单优化"></a>Nginx简单优化</h2><blockquote>
+<p>基础模块</p>
+</blockquote>
+<pre><code class="config">worker_process 3; # 工作进程数量，建议核心线程数-1（留一个位置个Master）
+events {
+    # Nginx最大连接数（包含客户端、upstream的连接）
+    # 该值受限于操作系统，可用ulimit -n查看，以及修改/etc/security/limits.conf和/etc/pam.d/login实现增大数值
+    # 可参考：https://www.linuxidc.com/Linux/2018-08/153369.htm
+    worker_connections 10240;
+    multi_accept on; # 表示Worker进程可以一次接收多条连接
+    use epoll; # 启用epoll实现多路复用（Linux 2.6+）
+    # 指定工作线程数量和任务队列长度（Nginx 1.7.11）
+    # 用于非阻塞地读取和发送文件
+    thread_pool defaultName threads=32 max_queue=65536; 
 
+    http {
+        keepalive_timeout 60s; # 全局连接保活时间
 
+        # 按需要添加内容压缩
+        gzip on;
+        gzip_http_version 1.1; # 最低版本为1.1
+        gzip_proxied any;
+        gzip_comp_level 2; # 压缩等级（1-9）,越低越小越耗时 
+        gzip_types text/plain text/css application/json application/javascirpt image/jpeg image/gif image/png; # 需要压缩的媒体类型
+        gzip_static on; # 如果有压缩好的直接使用
+
+        upstream backend {
+            server 192.168.0.1;
+            keepalive 300; # 保活300个与上游服务器通新的连接
+        }
+
+        # 缓存空间
+        proxy_cache_path /tmp/cache level=1:2 keys_zone=cache_one:10m;
+
+        location ~ .*\.(html|gif|jpg|png|svg|css|js)$ {
+            proxy_pass http://backend;
+            # proxy_redirect该配置可以修改响应头的location响应头
+            # Location指定的是需要将页面重新定向至的地址。一般在响应码为3xx的响应中才会有意义。
+            proxy_redirect off;
+            proxy_cache cache_one; # 缓存内存块
+            # 上游服务器不同响应状态资源的缓存时间
+            proxy_cache_valid 200 302 301 1d;
+            proxy_cache_valid 404 10m;
+               proxy_cache_valid any 1h;
+        }
+
+    }
+}</code></pre>
+<ul>
+<li>Nginx 核心功能配置文档：<a href="https://nginx.org/en/docs/ngx_core_module.html" target="_blank" rel="noopener">https://nginx.org/en/docs/ngx_core_module.html</a></li>
+<li>Nginx ngx_http_core_module 核心模块配置文档：<a href="https://nginx.org/en/docs/http/ngx_http_core_module.html" target="_blank" rel="noopener">https://nginx.org/en/docs/http/ngx_http_core_module.html</a></li>
+<li>Nginx ngx_http_gzip_module 模块配置文档：<a href="https://nginx.org/en/docs/http/ngx_http_gzip_module.html" target="_blank" rel="noopener">https://nginx.org/en/docs/http/ngx_http_gzip_module.html</a></li>
+</ul>
+<blockquote>
+<p>反向代理 - 动静分离</p>
+</blockquote>
+<pre><code>upstream static {
+    server 192.168.0.1;
+}
+
+upstream dynamic {
+    server 192.168.0.2;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    location ~ \.(php|jsp)$ {
+        proxy_pass http://dynamic;
+    }
+
+    location ~ .*\.(html|gif|jpg|png|svg|css|js)$ {
+        proxy_pass http://static;
+        proxy_set_header Host $host:$server_port;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}</code></pre><ul>
+<li>Nginx ngx_http_proxy_module 模块配置文档：<a href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html" target="_blank" rel="noopener">https://nginx.org/en/docs/http/ngx_http_proxy_module.html</a></li>
+</ul>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://programming.vip/docs/details-of-event-driven-process-of-nginx-based-on-epoll-model.html" target="_blank" rel="noopener">Details of event driven process of nginx based on epoll model</a></li>
 <li><a href="https://www.nginx.com/blog/inside-nginx-how-we-designed-for-performance-scale/" target="_blank" rel="noopener">Inside NGINX: How We Designed for Performance &amp; Scale</a></li>
@@ -643,7 +723,7 @@ track_script {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编译安装"><span class="toc-text">编译安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令使用"><span class="toc-text">命令使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置了解"><span class="toc-text">配置了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#日志了解"><span class="toc-text">日志了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用负载均衡策略"><span class="toc-text">常用负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#架构及请求处理流程"><span class="toc-text">架构及请求处理流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控Nginx"><span class="toc-text">监控Nginx</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用keepalived提供高可用解决方案"><span class="toc-text">使用keepalived提供高可用解决方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编译安装"><span class="toc-text">编译安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令使用"><span class="toc-text">命令使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置了解"><span class="toc-text">配置了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#日志了解"><span class="toc-text">日志了解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用负载均衡策略"><span class="toc-text">常用负载均衡策略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#架构及请求处理流程"><span class="toc-text">架构及请求处理流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#监控Nginx"><span class="toc-text">监控Nginx</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用keepalived提供高可用解决方案"><span class="toc-text">使用keepalived提供高可用解决方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Nginx简单优化"><span class="toc-text">Nginx简单优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
