@@ -1340,7 +1340,7 @@ public void addCorsMappings(CorsRegistry registry) {
 <p>在 Java 中 AOP 织入时机可以分为以下这几种，及其代表技术：</p>
 <ul>
 <li>编译时织入：AspectJ</li>
-<li>类加载时织入： AspectJ 5</li>
+<li>类加载时织入：AspectJ 5</li>
 <li>运行时织入：Spring AOP、Java Agent</li>
 </ul>
 <p>AOP 在 Spring 的常见应用案例：</p>
@@ -1445,7 +1445,7 @@ HandlerInterceptor#afterCompletion</code></pre><img src="/SpringMVC%E5%86%8D%E5%
 <pre><code class="java">@Pointcut(&quot;execution(* com.td.controller.TestController.*(..))&quot;)
 public void pointcut() {}</code></pre>
 <p>因此，在 AbstractAdvisorAutoProxyCreator#getAdvicesAndAdvisorsForBean 时就会通过切入点表达式返回匹配的通知。</p>
-<p>但现在的问题是，<strong>Spring 是如何知道有哪些通知的？</strong>其过程大致如下：</p>
+<p>但现在的问题是，Spring 是如何知道有哪些通知的？其过程大致如下：</p>
 <ol>
 <li>在 Spring 容器启动时，检测到配置类上有 @EnableAspectJAutoProxy 注解，因此就会在上下文中注册一个 AnnotationAwareAspectJAutoProxyCreator 的 BeanPostProcessor 用于判断每一个 Bean 是否有必要生成切面代理实例</li>
 <li>经过步骤 1 之后，当有 Bean 触发 AnnotationAwareAspectJAutoProxyCreator 的后处理方法 postProcessBeforeInstantiation 回调时，就会判断哪些是切面类。具体逻辑位于 BeanFactoryAspectJAdvisorsBuilder#buildAspectJAdvisors 方法中</li>
@@ -1455,9 +1455,10 @@ public void pointcut() {}</code></pre>
 <li>最后通过 AspectJAdvisorFactory#isAspect 方法判断其类是否被 @Aspect 注解</li>
 </ol>
 </li>
-<li>判断出切面类之后，会通过 AspectJAdvisorFactory#getAdvisors 返回内中的所有通知方法的定义</li>
+<li>判断出切面类之后，会通过 AspectJAdvisorFactory#getAdvisors 返回类中的所有通知方法定义</li>
 </ol>
-<p>至此，所有的通知都被找了出来，它们会在<strong>判断是否需要为 Bean 生成切面代理实例</strong>或<strong>代理目标方法被执行</strong>时被应用。当代理实例生成后，它会像其他 Bean 一样被添加到容器中以提供给使用者使用。</p>
+<p>至此，所有的通知都被找了出来，它们会在<strong>判断是否需要为 Bean 生成切面代理实例</strong>或<strong>代理目标方法被执行</strong>时被应用。</p>
+<p>当代理实例生成后，它会像其他 Bean 一样被添加到容器中以提供给使用者使用。</p>
 <p>最后，我们可以在目标方法中打个断点观察其代理是如何执行方法的</p>
 <img src="/SpringMVC%E5%86%8D%E5%85%A5%E9%97%A8/018.png" style="zoom:67%;">
 
