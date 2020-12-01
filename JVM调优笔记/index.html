@@ -368,7 +368,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 </tbody></table>
 <h2 id="垃圾收集器相关"><a href="#垃圾收集器相关" class="headerlink" title="垃圾收集器相关"></a>垃圾收集器相关</h2><h3 id="垃圾回收前置知识"><a href="#垃圾回收前置知识" class="headerlink" title="垃圾回收前置知识"></a>垃圾回收前置知识</h3><h4 id="根节点枚举"><a href="#根节点枚举" class="headerlink" title="根节点枚举"></a>根节点枚举</h4><ul>
 <li>查找出用于可达性分析的 GC Root 集合</li>
-<li>哪些引用能够做 GC Root<ul>
+<li>哪些引用能够做 GC Root (可通过MAT工具查看)<ul>
 <li>全局实例<ul>
 <li>常量实例</li>
 <li>类静态成员实例</li>
@@ -410,7 +410,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)</code></pre>
 <li>灰色：表示当前对象已经被GC访问过，但其引用还没被GC扫描</li>
 </ul>
 </li>
-<li><code>三色标记会存在漏标的问题</code>，漏标发生后会导致对象<code>被消失</code>。会出现漏标的情况有以下2种：<ul>
+<li>三色标记会存在漏标的问题，漏标发生后会导致对象<code>被消失</code>。会出现漏标的情况有以下2种：<ul>
 <li>受到用户线程<code>并发插入引用</code></li>
 <li>受到用户线程<code>并发删除引用</code></li>
 </ul>
@@ -679,9 +679,9 @@ PS Old Generation
 
 <h4 id="MAT"><a href="#MAT" class="headerlink" title="MAT"></a>MAT</h4><p>下载地址：<a href="http://www.eclipse.org/mat/" target="_blank" rel="noopener">http://www.eclipse.org/mat/</a></p>
 <p>可用于观察内存占用，以及引用情况（提供内存泄露分析报告信息）</p>
-<img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/013.png" style="zoom:50%;">
+<img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/013.png" style="zoom: 67%;">
 
-
+<img src="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/014.png" style="zoom: 80%;">
 
 <h3 id="拓展：查看当前版本的JVM所支持的配置"><a href="#拓展：查看当前版本的JVM所支持的配置" class="headerlink" title="拓展：查看当前版本的JVM所支持的配置"></a>拓展：查看当前版本的JVM所支持的配置</h3><pre><code class="properties">$ ./java -XX:+PrintFlagsFinal -version
 [Global flags]
