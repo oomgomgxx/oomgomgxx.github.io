@@ -138,9 +138,9 @@
 
   <!-- 文章内容 -->
   <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ul>
-<li><p>关于优化方面个人认为是一个比较复杂的环节，而且并不能一概而论；</p>
+<li><p>关于优化个人认为是一个比较复杂的环节，不能一概而论</p>
 </li>
-<li><p>数据库优化需要结合实际的使用场景，一步一个脚印地针对出现的问题来进行解决，这就是数据库的优化；</p>
+<li><p>数据库优化需要结合实际的使用场景，一步一个脚印地针对出现的问题来进行解决，这就是数据库的优化</p>
 </li>
 <li><p>因为优化的手段也有很多，如最基本的<code>SQL优化</code>、<code>表优化</code>、<code>数据库本身的优化</code>、<code>数据库所在机器的优化</code>  等等，如果是应用层面还可以通过 <code>缓存</code> 、<code>流量削峰</code> 、 <code>请求限流</code> 等等手段减轻数据库压力</p>
 </li>
@@ -197,12 +197,10 @@ rows         : 251513
 filtered     : 100.00
 Extra        : Using index
 1 行于数据集 (0.02 秒)</code></pre>
-<blockquote>
 <p>explain适用于那些语句，以下为官方文档的说明：</p>
 <ul>
-<li><a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html" target="_blank" rel="noopener"><code>EXPLAIN</code></a> works with <a href="https://dev.mysql.com/doc/refman/8.0/en/select.html" target="_blank" rel="noopener"><code>SELECT</code></a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/delete.html" target="_blank" rel="noopener"><code>DELETE</code></a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/insert.html" target="_blank" rel="noopener"><code>INSERT</code></a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/replace.html" target="_blank" rel="noopener"><code>REPLACE</code></a>, and <a href="https://dev.mysql.com/doc/refman/8.0/en/update.html" target="_blank" rel="noopener"><code>UPDATE</code></a> statements.</li>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html" target="_blank" rel="noopener">EXPLAIN</a> works with <a href="https://dev.mysql.com/doc/refman/8.0/en/select.html" target="_blank" rel="noopener">SELECT</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/delete.html" target="_blank" rel="noopener">DELETE</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/insert.html" target="_blank" rel="noopener">INSERT</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/replace.html" target="_blank" rel="noopener">REPLACE</a>, and <a href="https://dev.mysql.com/doc/refman/8.0/en/update.html" target="_blank" rel="noopener">UPDATE</a> statements.</li>
 </ul>
-</blockquote>
 <h3 id="了解执行计划"><a href="#了解执行计划" class="headerlink" title="了解执行计划"></a>了解执行计划</h3><blockquote>
 <p>参考文档/文章：</p>
 <ul>
@@ -217,7 +215,7 @@ select dinstinct  ..from  ..join ..on ..where ..group by ...having ..order by ..
 
 解析过程：            
 from .. on.. join ..where ..group by ....having ...select dinstinct ..order by ...limit ...</code></pre><ul>
-<li><p><strong>id：SQL查询id；特点是id相同，由上而下执行；id不同，大的先执行</strong></p>
+<li><p><strong>id：查询id。id相同时，由上而下执行。id不同时，大的先执行</strong></p>
 </li>
 <li><p><strong>select_type：SQL查询类型，常见有以下类型：</strong></p>
 <ul>
@@ -362,42 +360,13 @@ BEGIN
 END</code></pre>
 <p><strong>数据拆分</strong></p>
 <pre><code>call pro_separate_data(80);</code></pre><h4 id="SpringBoot程序"><a href="#SpringBoot程序" class="headerlink" title="SpringBoot程序"></a>SpringBoot程序</h4><p><strong>目录</strong></p>
-<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/2.png" alt></p>
-<p><strong>pom</strong></p>
-<pre><code class="xml">&lt;dependency&gt;
-  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-  &lt;artifactId&gt;spring-boot-starter&lt;/artifactId&gt;
-&lt;/dependency&gt;
+<img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/2.png" style="zoom: 67%;">
 
-&lt;dependency&gt;
-  &lt;groupId&gt;org.projectlombok&lt;/groupId&gt;
-  &lt;artifactId&gt;lombok&lt;/artifactId&gt;
-  &lt;version&gt;1.18.6&lt;/version&gt;
-&lt;/dependency&gt;
-
-&lt;dependency&gt;
-  &lt;groupId&gt;mysql&lt;/groupId&gt;
-  &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
-  &lt;version&gt;5.1.46&lt;/version&gt;
-&lt;/dependency&gt;
-
-&lt;dependency&gt;
-  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-  &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
-  &lt;version&gt;2.1.4.RELEASE&lt;/version&gt;
-&lt;/dependency&gt;
-
-&lt;dependency&gt;
-  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-  &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
-  &lt;scope&gt;test&lt;/scope&gt;
-&lt;/dependency&gt;</code></pre>
 <p><strong>实体</strong></p>
 <pre><code class="java">@Data
 @Entity
 @Table(name = &quot;uorder0&quot;)
 public class Order0 {
-
     @Id
     private Integer oId;
     @Column(name=&quot;u_id&quot;)
@@ -409,7 +378,6 @@ public class Order0 {
 @Entity
 @Table(name = &quot;uorder1&quot;)
 public class Order1 {
-
     @Id
     private Integer oId;
     @Column(name=&quot;u_id&quot;)
