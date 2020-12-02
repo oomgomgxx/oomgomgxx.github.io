@@ -140,12 +140,15 @@
   <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ul>
 <li><p>关于优化个人认为是一个比较复杂的环节，不能一概而论</p>
 </li>
-<li><p>数据库优化需要结合实际的使用场景，一步一个脚印地针对出现的问题来进行解决，这就是数据库的优化</p>
+<li><p>数据库优化需要结合实际的使用场景，一步一个脚印地针对出现的问题来解决</p>
 </li>
-<li><p>因为优化的手段也有很多，如最基本的<code>SQL优化</code>、<code>表优化</code>、<code>数据库本身的优化</code>、<code>数据库所在机器的优化</code>  等等，如果是应用层面还可以通过 <code>缓存</code> 、<code>流量削峰</code> 、 <code>请求限流</code> 等等手段减轻数据库压力</p>
+<li><p>优化手段有很多，如最基本的<code>SQL优化</code>、<code>表结构优化</code>、<code>数据库服务器软硬件优化</code>等等，如果站在应用层面还可以通过 <code>缓存</code> 、<code>流量削峰</code> 、 <code>请求限流</code> 、<code>资源限流</code>等方案减轻其数据库的访问压力</p>
 </li>
 </ul>
-<h2 id="常用数据库优化手段"><a href="#常用数据库优化手段" class="headerlink" title="常用数据库优化手段"></a>常用数据库优化手段</h2><ul>
+<h2 id="常用数据库优化手段"><a href="#常用数据库优化手段" class="headerlink" title="常用数据库优化手段"></a>常用数据库优化手段</h2><blockquote>
+<p>简介</p>
+</blockquote>
+<ul>
 <li><p>SQL优化</p>
 <ul>
 <li>添加索引</li>
@@ -153,7 +156,7 @@
 <li>必要时使用存储过程</li>
 </ul>
 </li>
-<li><p>加入缓存层以降低数据库压力</p>
+<li><p>加入缓存层降低数据库访问压力</p>
 </li>
 <li><p>表优化</p>
 <ul>
@@ -167,21 +170,18 @@
 <li>水平拆分</li>
 <li>垂直（纵向）拆分</li>
 <li>主从复制</li>
-<li>数据库集群（用的比较少）</li>
+<li>数据库集群</li>
 </ul>
 </li>
 </ul>
 <blockquote>
 <p>那么什么情况下分表，什么情况下分库呢？</p>
-<p>个人理解一般是数据量大考虑分表，并发高就考虑分库。</p>
-<p>但要注意的是，能不拆就不拆，能少拆就少拆，因为拆得越多越细会大大提高后期维护成本。因此分库分表其实是没有办法中的办法。</p>
 </blockquote>
-<h2 id="执行计划"><a href="#执行计划" class="headerlink" title="执行计划"></a>执行计划</h2><h3 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h3><p>&emsp;&emsp;举个简单的例子：<code>select * form t1 join t2 on t1.id = t2.t1_id</code>在这个连接查询中，到底是先访问t1表呢？还是先访问t2表？而先访问t1表和先访问t2表这两个选择就代表了两个不同的执行计划；</p>
-<p>&emsp;&emsp;再通俗点说，就是 <strong>执行计划 = 执行引擎的处理方法</strong> ，通常我们会说查看或分析一下某SQL语句的执行计划，其实就是查看和分析一下数据库对这条SQL语句的处理方法，然后再通过数据库的特性来去对其进行调整优化；</p>
-<p>&emsp;&emsp;<strong>但需要明确的是，SQL优化，其实是围绕的如何更高效地使用索引为进行的，所以如果没有索引，就没法谈优化</strong></p>
-<h3 id="如何看执行计划"><a href="#如何看执行计划" class="headerlink" title="如何看执行计划"></a>如何看执行计划</h3><p>使用 desc 或者 explain ，如下</p>
+<p>个人理解一般是数据量大考虑分表，负载高就考虑分库。但能不拆就不拆，且能少拆就少拆，因为拆得越多越细会大大提高后期维护成本，所以分库分表其实是没有办法中的办法。</p>
+<h2 id="执行计划"><a href="#执行计划" class="headerlink" title="执行计划"></a>执行计划</h2><h3 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h3><p>&emsp;&emsp;执行计划指的是数据层对 SQL 语句的执行方案。例如在连接查询中到底是先执行左表还是先执行右表呢？这都是执行计划的一部分即<strong>执行计划 = 执行引擎的处理方法</strong> </p>
+<h3 id="如何看执行计划"><a href="#如何看执行计划" class="headerlink" title="如何看执行计划"></a>如何看执行计划</h3><p>使用 desc 或者 explain 关键字</p>
 <p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/1.png" alt></p>
-<p>或添加 \G</p>
+<p>或添加 \G 以列键值对展示方式</p>
 <pre><code class="sql">mysql&gt; desc select count(*) from book \G
 *************************** 1. 行 ***************************
 id           : 1
@@ -197,94 +197,109 @@ rows         : 251513
 filtered     : 100.00
 Extra        : Using index
 1 行于数据集 (0.02 秒)</code></pre>
-<p>explain适用于那些语句，以下为官方文档的说明：</p>
+<p>explain适用于以下语句：</p>
 <ul>
 <li><a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html" target="_blank" rel="noopener">EXPLAIN</a> works with <a href="https://dev.mysql.com/doc/refman/8.0/en/select.html" target="_blank" rel="noopener">SELECT</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/delete.html" target="_blank" rel="noopener">DELETE</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/insert.html" target="_blank" rel="noopener">INSERT</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/replace.html" target="_blank" rel="noopener">REPLACE</a>, and <a href="https://dev.mysql.com/doc/refman/8.0/en/update.html" target="_blank" rel="noopener">UPDATE</a> statements.</li>
 </ul>
 <h3 id="了解执行计划"><a href="#了解执行计划" class="headerlink" title="了解执行计划"></a>了解执行计划</h3><blockquote>
-<p>参考文档/文章：</p>
+<p>参考</p>
+</blockquote>
 <ul>
 <li><p><a href="https://dev.mysql.com/doc/refman/8.0/en/optimization.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/optimization.html</a></p>
 </li>
 <li><p><a href="https://yq.aliyun.com/articles/688754" target="_blank" rel="noopener">https://yq.aliyun.com/articles/688754</a></p>
 </li>
+<li><p><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/explain-output.html</a></p>
+</li>
 </ul>
+<blockquote>
+<p>字段意思</p>
 </blockquote>
-<pre><code>编写过程：
-select dinstinct  ..from  ..join ..on ..where ..group by ...having ..order by ..limit ..
-
-解析过程：            
-from .. on.. join ..where ..group by ....having ...select dinstinct ..order by ...limit ...</code></pre><ul>
-<li><p><strong>id：查询id。id相同时，由上而下执行。id不同时，大的先执行</strong></p>
-</li>
-<li><p><strong>select_type：SQL查询类型，常见有以下类型：</strong></p>
 <ul>
-<li><p>simple：简单查询，不包含如 子查询、union 等复杂查询的查询</p>
+<li><p>id：查询id</p>
+<ul>
+<li>id相同时，由上而下执行</li>
+<li>id不同时，大的先执行</li>
+</ul>
 </li>
-<li><p>primary：包含子查询的sql语句的<code>外层查询</code></p>
+<li><p>select_type：SQL 的查询类型</p>
 </li>
-<li><p>subquery：包含子查询的sql语句的<code>内层查询</code></p>
+<li><p>simple：简单查询。不包含如子查询、union等操作</p>
 </li>
-<li><p>union：属于当前分析的sql语句的 union/union all 部分查询</p>
+<li><p>primary：子查询的外层查询</p>
+<ul>
+<li>subquery：子查询的内层查询</li>
+<li>union：并集查询</li>
+</ul>
 </li>
-<li><p>derived：衍生查询（表示使用了临时表），如子查询中使用了 in 或 union/union all</p>
+<li><p>derived：子查询中的衍生查询（表示使用了临时表）。例如使用了 in 或 union/union all</p>
+</li>
+<li><p>partitions：所匹配到的分区，如果为null表示当前查询为非分区查询</p>
+</li>
+<li><p>table：表名</p>
+</li>
+<li><p>type：常见<strong>索引操作</strong>类型</p>
+<ul>
+<li>system：系统表主查询</li>
+<li>const：使用了 unique 或 primary key 作为查询条件，且只返回了一个结果</li>
+<li>eq_ref：查询的内容是唯一的</li>
+<li><strong>ref：</strong>通过索引查询后没有进行额外的筛选操作</li>
+<li><strong>range：</strong>进行了区间查找</li>
+<li>index：扫描了所有索引</li>
+<li>all：进行了全表扫描</li>
+<li>效率：system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; all。一般优化到 ref、range 就不错了</li>
+</ul>
+</li>
+<li><p>possible_keys：当前查询中可能使用到的索引（预测值，不准确）</p>
+</li>
+<li><p>key：实际使用的索引</p>
+</li>
+<li><p>key_len：索引长度</p>
+<ul>
+<li>可用该值来判断组合索引是否全用上</li>
+<li>计算方式：<ul>
+<li>在 MySQL 中，5.X 开始 varchar 中的值表示字符而不是字节</li>
+<li>例如假设一张 utf8 （一个字符3个字节）的表中 msg char（20）是索引，那么 key_len 就为 3x20=60，又因为 msg 可以为 null（规定用1个字节表示），所以从长度为 60+1=61</li>
+</ul>
 </li>
 </ul>
 </li>
-<li><p><strong>partitions：所匹配到的分区，如果为null表示当前查询为非分区查询</strong></p>
+<li><p>rows：查询所扫描的记录数。该值越少越好</p>
 </li>
-<li><p><strong>table：表名</strong></p>
+<li><p>filtered：在 rows 中被过略掉的数据的百分比值。该值越大越好</p>
 </li>
-<li><p><strong>type：索引操作的类型，常见有以下类型：</strong></p>
+<li><p>extra：查询的额外信息</p>
 <ul>
-<li>system：只有一条数据的系统表 或 衍生表只有一条数据的主查询</li>
-<li>const：使用了unique或primary key作为查询条件，且只返回了一个结果</li>
-<li>eq_ref：对于每个索引键的查询，返回匹配<code>唯一行</code>数据，即查询的内容数据是唯一的，如unique；一般为关联查询</li>
-<li><strong>ref：</strong>对于每个索引键的查询，返回匹配的所有行（0，多）；即通过索引查询后没有进行额外的筛选操作；一般为关联查询</li>
-<li><strong>range：</strong>进行了区间查询</li>
-<li>index：进行了索引全扫描，扫描了所有索引</li>
-<li>all：当前语句进行了全表扫描</li>
-<li>其他：<a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/explain-output.html</a></li>
-<li><strong>效率：system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; all</strong></li>
-</ul>
-</li>
-<li><p><strong>possible_keys：表示当前查询中可能使用到的索引，是一种预测，不一定准确</strong></p>
-</li>
-<li><p><strong>key：实际使用到的索引</strong></p>
-</li>
-<li><p><strong>key_len：索引的字节长度，可以用该值来判断组合索引是否全用上了；</strong></p>
-<p>计算：如一张utf8(一个字符3个字节)表中name char（20）是索引，那么key_len为3x20=60，又因为name可以为null（规定用1个字节表示），所以为60+1=61（如果是varchar的话，因为不是定长，系统中非定长用2个字节表示）</p>
-</li>
-<li><p><strong>rows：这次查询所扫描的记录数，该值越少越好</strong></p>
-</li>
-<li><p><strong>filtered：在rows中过略掉的百分比值，即当前结果筛掉了多少rows才得到，该值越大越好</strong></p>
-</li>
-<li><p><strong>extra：额外信息，常见有以下类型(如果同时出现，则表示部分使用了不同的类型)</strong></p>
-<ul>
-<li>use index：进行了覆盖索引查询，即查询了索引就直接找到了结果，没有进行回表操作，性能最好</li>
-<li>use index dondition：表示存储引擎对查询的数据进行的优化</li>
-<li>using where：使用了索引，但进行了回表操作</li>
-<li>using temporary：使用了临时表，原因是根据索引进行条件查询，但又没有使用查询条件中的索引进行分组所导致的，以下操作会可能使用临时表，尽量用索引做为条件来避免临时表<ul>
-<li>group by（如果与order by一起使用，则尽量保证列相同，且关联查询最好是左表驱动）</li>
+<li>use index：进行了覆盖索引查询。没有进行回表操作，性能最好</li>
+<li>use index dondition：存储引擎对查询的数据进行了优化</li>
+<li>using where：使用了索引，但存在回表操作</li>
+<li>using temporary：使用了临时表<ul>
+<li>通常是因为使用了索引作为条件进行查询，但没有使用相同索引条件作为分组查询条件所导致的</li>
+<li>以下常见操作默认会使用临时表<ul>
+<li>group by（如果与 order by 一起使用，则尽量保证用相同的列作为条件）</li>
 <li>distinct</li>
 <li>union</li>
 </ul>
 </li>
-<li>using join buffer：表示引擎使用了连接缓存</li>
-<li>using filesort：进行了文件排序(额外排序)，通常伴随order by出现，原因是根据索引进行条件查询，但又没有使用查询条件中的索引进行排序所导致的；还有一种情况就是跨列使用组合索引导致的，如 组合索引(a1,a2,a3,a4)，那么where a1.. and a2 .. and a4 order by a3 不属于跨列，按照最左前缀原则虽然a2到a4跨列导致a4索引实现会进行using where回表之外，a1.. a2 … order by a3 是符合组合索引使用顺序的，但如果where a1.. and a2 order by a4，因为a2到a4跨列，索引失效，而a4又作为排序条件，所以因为没有使用到where中的索引排序而需要额外的using filesort</li>
 </ul>
 </li>
-<li><p><strong>ref：指明当前表所参照的字段；如在关联查询中为null，则<code>可能没有使用到索引</code></strong></p>
+<li>using join buffer：引擎使用了连接缓存</li>
+<li>using filesort：进行了文件排序（额外排序）<ul>
+<li>通常伴随 order by 出现。原因是使用了索引进行条件查询，但没有使用相同索引条件作为排序条件所导致的</li>
+<li>还有一种特殊情况就是跨列使用组合索引导致的。譬如 where a1.. and a2 order by a4 操作，其中组合索引 （a1,a2,a3,ab），而在这次查询中因为 a2 到 a4 跨了列而导致 a4 失效，但 a4 又了作为了排序条件，所以 a4 相当于不属于当前使用到的组合索引，因为就需要额外的 using filesort 操作（因为索引本身有序，但搜索引擎觉得 a4 是无序的）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>ref：当前表所参照的字段。例如在关联查询中该值为 null，则可能没有使用到索引</p>
 <ul>
-<li>const：表示key依赖的是一个常量</li>
-<li>fucn：表示key依赖的是一个函数返回的值</li>
+<li>const：表示索引（key）依赖的是一个常量</li>
+<li>fucn：表索引（key）依赖的是一个函数返回的值</li>
 </ul>
 </li>
 </ul>
 <h2 id="水平拆分和垂直拆分"><a href="#水平拆分和垂直拆分" class="headerlink" title="水平拆分和垂直拆分"></a>水平拆分和垂直拆分</h2><h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/7.png" alt></p>
-<ul>
-<li>多说一句，有些数据库是支持表分区的（如MySQL），即通过物理拆分将数据存储到不同的物理分区。例如将一个表的数据保存到不同的硬盘上。</li>
-</ul>
+<p>有些数据库是支持表分区的（如MySQL），即通过物理拆分将数据存储到不同的物理分区。例如可以利用分区功能将一个表的数据保存到不同的硬盘上就可以利用其分区策略快速等位到数据以提高查询效率</p>
 <h3 id="例子-表的水平拆分"><a href="#例子-表的水平拆分" class="headerlink" title="例子 - 表的水平拆分"></a>例子 - 表的水平拆分</h3><h4 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h4><pre><code class="sql">-- 用户表
 create table user(
     u_id int primary key auto_increment,
@@ -318,14 +333,13 @@ END
 call pro_insert_data(1, &#39;manhua&#39;, 20);
 call pro_insert_data(2, &#39;wanju&#39;, 30);
 call pro_insert_data(3, &#39;fushi&#39;, 30);</code></pre>
-<h4 id="拆分工作"><a href="#拆分工作" class="headerlink" title="拆分工作"></a>拆分工作</h4><p><strong>现在打算将uorder进行拆分，需要明确一下内容：</strong></p>
+<h4 id="拆分工作"><a href="#拆分工作" class="headerlink" title="拆分工作"></a>拆分工作</h4><p>1）现在打算对 uorder 进行拆分</p>
 <ul>
-<li>这张表关联自user表的u_id，所以拆分和访问必须按照u_id来做分拆策略的关键元素</li>
-<li>那现在因为uorder表中共有80条数据，那我打算将order拆分成两个表uorder0、uorder1，即每张表各存40条</li>
-<li>策略定位 <code>u_id%2</code>，即 u_id%2=1则存存到 uorder1，u_id%2=0则存存到 uorder0</li>
+<li>因为这张表的关联字段是 u_id，所以需要使用 u_id 作为分拆策略字段</li>
+<li>因为 uorder 表中共有80条记录，所以现在打算将 uorder 拆分成 2 个，即 uorder0、uorder1，其中每张表各存 40 条记录</li>
+<li>分区定位策略为 <strong>hash（u_id）%2</strong> 或 <strong>hash（u_id）&amp;2-1</strong> </li>
 </ul>
-<p><strong>按照策略将数据转移到分拆表中</strong></p>
-<p><strong>拆分表</strong></p>
+<p>2）按照策略将数据转移（可使用程序操作）到分拆表中</p>
 <pre><code class="sql">-- 拆分0表
 create table uorder0(
     o_id int primary key auto_increment,
@@ -339,30 +353,7 @@ create table uorder1(
     u_id int,
     o_desc varchar(100)
 ) DEFAULT charset = utf8 ; </code></pre>
-<p><strong>提取拆分数据的存储过程</strong></p>
-<pre><code class="sql">CREATE PROCEDURE pro_separate_data(IN num INT)
-BEGIN
-    DECLARE temp INT;
-    DECLARE temp_uid INT;
-    DECLARE temp_odesc VARCHAR(100);
-    DECLARE uid_mod INT;
-
-    SET temp = 1;
-
-    REPEAT
-        select u_id,o_desc into temp_uid, temp_odesc from uorder where o_id = temp;
-        set uid_mod = temp_uid%2;
-            IF uid_mod=0 THEN insert into uorder0(u_id, o_desc) values(temp_uid, temp_odesc);
-            ELSEIF uid_mod=1 THEN  insert into uorder1(u_id, o_desc) values(temp_uid, temp_odesc);
-            END IF;
-        set temp = temp + 1;
-    UNTIL temp&gt;num END REPEAT;
-END</code></pre>
-<p><strong>数据拆分</strong></p>
-<pre><code>call pro_separate_data(80);</code></pre><h4 id="SpringBoot程序"><a href="#SpringBoot程序" class="headerlink" title="SpringBoot程序"></a>SpringBoot程序</h4><p><strong>目录</strong></p>
-<img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/2.png" style="zoom: 67%;">
-
-<p><strong>实体</strong></p>
+<h4 id="使用程序测试查询"><a href="#使用程序测试查询" class="headerlink" title="使用程序测试查询"></a>使用程序测试查询</h4><p>实体</p>
 <pre><code class="java">@Data
 @Entity
 @Table(name = &quot;uorder0&quot;)
@@ -385,14 +376,14 @@ public class Order1 {
     @Column(name=&quot;o_desc&quot;)
     private String oDesc;
 }</code></pre>
-<p><strong>jpa</strong></p>
+<p>dao层</p>
 <pre><code class="java">public interface OrderRepository0 extends JpaRepository&lt;Order0, Integer&gt; {
     List&lt;Order0&gt; findByUId(int userId);
 }</code></pre>
 <pre><code class="java">public interface OrderRepository1 extends JpaRepository&lt;Order1, Integer&gt; {
     List&lt;Order1&gt; findByUId(int userId);
 }</code></pre>
-<p><strong>service</strong></p>
+<p>service层</p>
 <pre><code class="java">@Service
 public class OrderService {
 
@@ -410,7 +401,7 @@ public class OrderService {
         return repository1.findByUId(userId);
     }
 }</code></pre>
-<p><strong>单元测试</strong></p>
+<p>单元测试</p>
 <pre><code class="java">@RunWith(SpringRunner.class)
 @SpringBootTest
 public class DbtestApplicationTests {
@@ -420,14 +411,10 @@ public class DbtestApplicationTests {
 
     @Test
     public void test() {
-
           // 模拟查找出user的id
         int userId = 2;
-
           // 进行取模策略计算
-          // int userIdMod = userId.hashCode() % 2;
-          int userIdMod = userId % 2;
-
+          int userIdMod = userId.hashCode() % 2;
 
         if (userIdMod == 0) {
             service.findByUId0(userId).forEach( item -&gt; System.out.println(item));
@@ -552,96 +539,89 @@ insert into person(p_id, p_name, store_id) values(4, &#39;test&#39;, 5);</code><
 <pre><code class="sql">SELECT PARTITION_NAME,TABLE_ROWS FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME = &#39;person&#39;;</code></pre>
 <pre><code>p0    2
 p1    2</code></pre><h2 id="MySQL复制"><a href="#MySQL复制" class="headerlink" title="MySQL复制"></a>MySQL复制</h2><h3 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h3><ul>
-<li><p>指的是将一个数据库（主库）上的数据复制到另一个数据库（从库）中</p>
+<li><p>指将一个数据库（主库）上的数据冗余到到另一个数据库（从库）中</p>
 </li>
-<li><p>默认情况下复制是异步的</p>
+<li><p>在 MySQL 中默认情况下复制是异步的</p>
 </li>
-<li><p>根据配置可以选择性复制某个数据库或者表</p>
+<li><p>根据配置可以有选择性地指定需要复制的库或表</p>
 </li>
 </ul>
 <p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/6.png" alt></p>
-<h3 id="复制基本原理"><a href="#复制基本原理" class="headerlink" title="复制基本原理"></a>复制基本原理</h3><p>以一主一从为例子，如下图：</p>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>以一主一从为例</p>
 <p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/3.png" alt></p>
 <ol>
-<li>首先从库会创建一条IO线程去读取主库的二进制日志binlog</li>
-<li>主库发现从库的连接后会创建一条新的线程来处理从库的复制请求<ul>
-<li>首先会向本地的binlog事件提供从库的信息</li>
+<li>首先从库会创建一条<strong>IO线程</strong>去读取主库的 binlog</li>
+<li>主库在发现从库连接后，会创建一条<strong>复制处理线程</strong>来处理从库的复制请求<ul>
+<li>首先会向本地 binlog 提交从库的信息</li>
 <li>告知从库已经准备好复制工作</li>
 </ul>
 </li>
-<li>从库读取binlog并将内容写入中继日志中（复制延迟主要在这里，例如网络慢）</li>
-<li>从库启动SQL线程将中继日志的内容入读库中</li>
+<li>从库读取 binlog 并将内容写入中继日志中（复制延迟主要在这里）</li>
+<li>从库启动<strong>SQL线程</strong>将中继日志的内容入读库中</li>
 </ol>
-<p>可以看出MySQL的复制并非直接传输数据而是复制binlog，这是因为binlog中记录了所有修改数据库的SQL操作</p>
 <h3 id="主从复制配置"><a href="#主从复制配置" class="headerlink" title="主从复制配置"></a>主从复制配置</h3><h4 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h4><ol>
-<li>在主库中开启二进制日志（这是复制的大前提）</li>
-<li>在主库中创建一个专门用来做复制操作的用户账号</li>
+<li>在主库中开启 binlog</li>
+<li>在主库中创建一个专门用来做复制的用户账号</li>
 <li>设置从库的唯一id（server_id）</li>
-<li>在slave中远程备份master</li>
-<li>在slave中恢复从master备份的数据</li>
+<li>在 slave 中远程备份 master</li>
+<li>在 slave 中恢复 master 备份的数据</li>
 <li>使用<code>show master status</code>查看主库状态</li>
-<li>在slave中执行 <code>change master to</code> 命令指向主库（根据第4的信息配置）</li>
+<li>在 slave 中执行 <code>change master to</code> 命令指向主库</li>
 </ol>
-<h4 id="配置案例"><a href="#配置案例" class="headerlink" title="配置案例"></a>配置案例</h4><blockquote>
-<p>为了方便模拟，当前例子会在docker容器中进行，使用的是 mysql5.7 镜像</p>
-</blockquote>
-<p><strong>1. 启动MySQL容器</strong></p>
-<pre><code class="bash">主库
+<h4 id="配置案例"><a href="#配置案例" class="headerlink" title="配置案例"></a>配置案例</h4><p>为了方便，当前例子会在 Docker 容器中进行，使用的是 mysql5.7 镜像</p>
+<p>1）启动 MySQL 容器</p>
+<pre><code class="bash"># 主库
 docker run --name mysql57-master --expose 3306 -p 3307:3306 --privileged=true -v /Users/tandi/DockerMount/mysql57-master/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-master/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9
 
-从库
+# 从库
 docker run --name mysql57-slave --expose 3306 -p 3308:3306 --privileged=true -v /Users/tandi/DockerMount/mysql57-slave/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-slave/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9</code></pre>
 <p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/4.png" alt></p>
 <p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/5.png" alt></p>
-<p><strong>2. 开启master的二进制日志记录</strong></p>
+<p>2）开启 master 的二进制日志记录</p>
 <pre><code class="properties">[mysqld]
 server-id = 1
 log-bin = mysql-bin-log</code></pre>
-<p><strong>3. 在master库中创建复制用户</strong></p>
-<blockquote>
+<p>3）在 master 库中创建复制用户</p>
 <p>进入容器：docker exec -it mysql57-master /bin/bash</p>
-</blockquote>
 <pre><code class="bash">mysql&gt; grant replication slave on *.* to &#39;binlog_user&#39;@&#39;%&#39; identified by &#39;123456&#39;;</code></pre>
-<p><strong>4. 在master创建测试用数据</strong></p>
+<p>4）在master创建测试用数据</p>
 <pre><code class="sql">create database masterdb;
 use masterdb;
 create table person(pid int, pname varchar(10)) default charset=utf8;
 insert into person(pid,pname) values(1,&#39;张三&#39;),(2,&#39;李四&#39;);</code></pre>
-<p><strong>5. 设置slave的server_id</strong></p>
+<p>5）设置 slave 的 server_id</p>
 <p>不能与主库相同</p>
 <pre><code class="properties">[mysqld]
 server-id = 2
 log-bin = mysql-bin-log</code></pre>
-<p><strong>6. 在slave中远程备份master并恢复到本地</strong></p>
-<blockquote>
-<p>查看master容器ip：docker inspect mysql57-master | grep IPAddress</p>
-<p>进入salve容器：docker exec -it mysql57-slave /bin/bash</p>
-</blockquote>
-<pre><code class="sql">-- 备份master的数据到本地
+<p>6）在slave中远程备份master并恢复到本地</p>
+<p>查看 master 容器ip：docker inspect mysql57-master | grep IPAddress</p>
+<p>进入 salve 容器：docker exec -it mysql57-slave /bin/bash</p>
+<pre><code class="bash"># 备份master的数据到本地
 mysqldump -h 172.17.0.2 -u root -p123456 --default-character-set=utf8 masterdb &gt; dump.sql
 
--- 创建对应的数据库schema
+# 创建对应的数据库schema
 mysql -uroot -p123456
 mysql&gt; create database masterdb;
 mysql&gt; exit
 
--- 根据备份文件将数据还原到数据库（从）
+# 根据备份文件将数据还原到数据库（从）
 mysql -u root -p123456 masterdb &lt; dump.sql</code></pre>
-<p><strong>7. 查看master的状态</strong></p>
-<pre><code class="sql">mysql&gt; show master status;
+<p>7）查看master的状态</p>
+<pre><code class="bash">mysql&gt; show master status;
 +----------------------+----------+--------------+------------------+-------------------+
 | File                 | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
 +----------------------+----------+--------------+------------------+-------------------+
 | mysql-bin-log.000003 | 2664     |              |                  |                   |
 +----------------------+----------+--------------+------------------+-------------------+</code></pre>
-<p><strong>8. 配置slave</strong></p>
-<pre><code class="sql">-- 配置从属关系
+<p>8）配置slave</p>
+<pre><code class="bash"># 配置从属关系
 mysql&gt; change master to master_host=&#39;172.17.0.2&#39;, master_user=&#39;binlog_user&#39;, master_password=&#39;123456&#39;, master_log_file=&#39;mysql-bin-log.000003&#39;, master_log_pos=2664;
--- 意思是复制mysql-bin-log.000003，从2664开始复制
+# 意思是复制mysql-bin-log.000003，从2664开始复制
 
--- 启动从属关系
+# 启动从属关系
 mysql&gt; start slave;</code></pre>
-<p><strong>9. 查看slave的状态看是否配置成功</strong></p>
+<p>9）查看slave的状态看是否配置成功</p>
 <pre><code class="mysql">mysql&gt; show slave status\G
 *************************** 1. 行 ***************************
 Slave_IO_State               : Waiting for master to send event
@@ -656,10 +636,10 @@ Relay_Log_Pos                : 606
 Relay_Master_Log_File        : mysql-bin-log.000003
 Slave_IO_Running             : Yes
 Slave_SQL_Running            : Yes</code></pre>
-<h4 id="测试主从关系"><a href="#测试主从关系" class="headerlink" title="测试主从关系"></a>测试主从关系</h4><p>在master中创建一个数据</p>
+<h4 id="测试主从复制"><a href="#测试主从复制" class="headerlink" title="测试主从复制"></a>测试主从复制</h4><p>1）在 master 中创建一个数据</p>
 <pre><code class="sql">mysql&gt; use masterdb;
 mysql&gt; insert into person(pid, pname) values(100, &#39;测试用户&#39;);</code></pre>
-<p>到slave中查看</p>
+<p>2）到 slave 中查看是否有复制到数据</p>
 <pre><code class="sql">mysql&gt; use masterdb;
 mysql&gt; select * from person where pid = 100;
 +------+--------------+
@@ -668,14 +648,12 @@ mysql&gt; select * from person where pid = 100;
 | 100  | 测试用户             |
 +------+--------------+</code></pre>
 <h4 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h4><ul>
-<li>应该先备份master数据，如果不进行备份的话就只能同步到在<code>start slave</code>开始在master上参数的修改操作，而不能同步到之前的操作</li>
-<li>从节点在恢复master数据之前创建的数据库和表的schema必须与master上的一致，否则可能会导致同步失败</li>
+<li>应该先备份 master 数据，如果不进行备份就只能同步到在<code>start slave</code>开始的数据，而不能同步到之前的操作</li>
+<li>从节点在恢复 master 数据之前，应该使用相同的 schema 来创建库和表结构，否则可能会导致同步失败</li>
 <li>同步失败解决参考：<a href="https://blog.csdn.net/xiaoxinla/article/details/7679578" target="_blank" rel="noopener">https://blog.csdn.net/xiaoxinla/article/details/7679578</a></li>
 </ul>
-<h3 id="使用MyCat实现读写分离"><a href="#使用MyCat实现读写分离" class="headerlink" title="使用MyCat实现读写分离"></a>使用MyCat实现读写分离</h3><h4 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h4><p>&emsp;&emsp;通过 MyCat 来代理 master 和 slave 两个数据节点，对于程序而言是无感知的，而程序只需要正常执行sql操作即可。因为数据库中间件可以屏蔽底层数据库架构的复杂性</p>
-<h4 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h4><blockquote>
-<p>MyCat官网：<a href="http://www.mycat.io/" target="_blank" rel="noopener">http://www.mycat.io/</a></p>
-</blockquote>
+<h3 id="使用MyCat实现读写分离"><a href="#使用MyCat实现读写分离" class="headerlink" title="使用MyCat实现读写分离"></a>使用MyCat实现读写分离</h3><h4 id="基本概念-1"><a href="#基本概念-1" class="headerlink" title="基本概念"></a>基本概念</h4><p>通过 MyCat 来代理 master 和 slave 两个数据节点。这对于程序而言是无感知的，程序只需要正常执行 sql 操作即可，因为数据库中间件可以屏蔽数据库层的复杂性。</p>
+<h4 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h4><p>官网：<a href="http://www.mycat.io/" target="_blank" rel="noopener">http://www.mycat.io/</a></p>
 <pre><code class="bash">wget http://dl.mycat.io/1.6.7.1/Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz
 tar -zxvf Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz</code></pre>
 <h4 id="模拟环境说明"><a href="#模拟环境说明" class="headerlink" title="模拟环境说明"></a>模拟环境说明</h4><table>
@@ -706,7 +684,6 @@ tar -zxvf Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz</code></pre>
 <pre><code class="xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
 &lt;!DOCTYPE mycat:server SYSTEM &quot;server.dtd&quot;&gt;
 &lt;mycat:server xmlns:mycat=&quot;http://io.mycat/&quot;&gt;
-
     &lt;!-- mycat配置 --&gt;
     &lt;system&gt;
         &lt;property name=&quot;nonePasswordLogin&quot;&gt;0&lt;/property&gt;
@@ -779,11 +756,10 @@ tar -zxvf Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz</code></pre>
 <p>./bin/mycat console 打印日志</p>
 </blockquote>
 <pre><code class="bash">./bin/mycat start</code></pre>
-<h4 id="SpringBoot主要代码"><a href="#SpringBoot主要代码" class="headerlink" title="SpringBoot主要代码"></a>SpringBoot主要代码</h4><p><strong>JpaTrasactionConfig</strong></p>
+<h4 id="代码测试"><a href="#代码测试" class="headerlink" title="代码测试"></a>代码测试</h4><p><strong>JpaTrasactionConfig</strong></p>
 <pre><code class="java">@Configuration
 @EnableJpaRepositories(basePackages = &quot;com.td.dbtest.jpa&quot;, enableDefaultTransactions = false)
 public class JpaTransactionConfig {
-
     /**
      * Jpa默认的事务管理对读操作添加了readOnly=true事务
      * 而MyCat只要是处于事务的sql都会走write库，所以需要修改参数 enableDefaultTransactions = false
@@ -793,7 +769,6 @@ public class JpaTransactionConfig {
 <p><strong>service</strong></p>
 <pre><code class="java">@Service
 public class PersonService {
-
     @Autowired
     private PersonRepository repository;
 
@@ -836,7 +811,7 @@ public class DbtestApplicationTests {
     }
 }</code></pre>
 <h2 id="拓展"><a href="#拓展" class="headerlink" title="拓展"></a>拓展</h2><ul>
-<li>默认情况下 MySQL 的最大 max_connections 为 100，所以可以在配置文件中添加 max_connections=600 配置来提高其并发性能</li>
+<li>默认情况下 MySQL 的最大 max_connections 为 100，所以可以在配置文件中添加 max_connections=600 来提高其并发连接数</li>
 </ul>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
 
@@ -880,7 +855,7 @@ public class DbtestApplicationTests {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用数据库优化手段"><span class="toc-text">常用数据库优化手段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#执行计划"><span class="toc-text">执行计划</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么？"><span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何看执行计划"><span class="toc-text">如何看执行计划</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#了解执行计划"><span class="toc-text">了解执行计划</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#水平拆分和垂直拆分"><span class="toc-text">水平拆分和垂直拆分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本概念"><span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例子-表的水平拆分"><span class="toc-text">例子 - 表的水平拆分</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#准备工作"><span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#拆分工作"><span class="toc-text">拆分工作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot程序"><span class="toc-text">SpringBoot程序</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例子-表分区"><span class="toc-text">例子 - 表分区</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#range分区（常用）"><span class="toc-text">range分区（常用）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#list分区"><span class="toc-text">list分区</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#hash分区"><span class="toc-text">hash分区</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ksy分区"><span class="toc-text">ksy分区</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MySQL复制"><span class="toc-text">MySQL复制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么"><span class="toc-text">是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复制基本原理"><span class="toc-text">复制基本原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主从复制配置"><span class="toc-text">主从复制配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本步骤"><span class="toc-text">基本步骤</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置案例"><span class="toc-text">配置案例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#测试主从关系"><span class="toc-text">测试主从关系</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#注意事项"><span class="toc-text">注意事项</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用MyCat实现读写分离"><span class="toc-text">使用MyCat实现读写分离</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#下载安装"><span class="toc-text">下载安装</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#模拟环境说明"><span class="toc-text">模拟环境说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置MyCat的读写分离策略"><span class="toc-text">配置MyCat的读写分离策略</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#启动MyCat"><span class="toc-text">启动MyCat</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot主要代码"><span class="toc-text">SpringBoot主要代码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展"><span class="toc-text">拓展</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常用数据库优化手段"><span class="toc-text">常用数据库优化手段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#执行计划"><span class="toc-text">执行计划</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么？"><span class="toc-text">是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何看执行计划"><span class="toc-text">如何看执行计划</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#了解执行计划"><span class="toc-text">了解执行计划</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#水平拆分和垂直拆分"><span class="toc-text">水平拆分和垂直拆分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本概念"><span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例子-表的水平拆分"><span class="toc-text">例子 - 表的水平拆分</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#准备工作"><span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#拆分工作"><span class="toc-text">拆分工作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#使用程序测试查询"><span class="toc-text">使用程序测试查询</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例子-表分区"><span class="toc-text">例子 - 表分区</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#range分区（常用）"><span class="toc-text">range分区（常用）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#list分区"><span class="toc-text">list分区</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#hash分区"><span class="toc-text">hash分区</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ksy分区"><span class="toc-text">ksy分区</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MySQL复制"><span class="toc-text">MySQL复制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#是什么"><span class="toc-text">是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基本原理"><span class="toc-text">基本原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主从复制配置"><span class="toc-text">主从复制配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本步骤"><span class="toc-text">基本步骤</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置案例"><span class="toc-text">配置案例</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#测试主从复制"><span class="toc-text">测试主从复制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#注意事项"><span class="toc-text">注意事项</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用MyCat实现读写分离"><span class="toc-text">使用MyCat实现读写分离</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#基本概念-1"><span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#下载安装"><span class="toc-text">下载安装</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#模拟环境说明"><span class="toc-text">模拟环境说明</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#配置MyCat的读写分离策略"><span class="toc-text">配置MyCat的读写分离策略</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#启动MyCat"><span class="toc-text">启动MyCat</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#代码测试"><span class="toc-text">代码测试</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展"><span class="toc-text">拓展</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
