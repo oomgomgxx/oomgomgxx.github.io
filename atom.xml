@@ -336,20 +336,23 @@
     <title>一篇文章解决Kafka的基本使用</title>
     <link href="https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/"/>
     <id>https://tandi.pub/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</id>
-    <published>2019-09-07T18:31:39.000Z</published>
-    <updated>2020-11-30T05:16:49.309Z</updated>
+    <published>2019-09-07T18:31:31.000Z</published>
+    <updated>2020-12-02T15:01:26.940Z</updated>
     
     <summary type="html">
     
-      &lt;h2 id=&quot;拓展知识点&quot;&gt;&lt;a href=&quot;#拓展知识点&quot; class=&quot;headerlink&quot; title=&quot;拓展知识点&quot;&gt;&lt;/a&gt;拓展知识点&lt;/h2&gt;&lt;p&gt;为了更好地学习和理解kafka，个人觉得有必要搞清楚一些概念&lt;/p&gt;
+      &lt;h2 id=&quot;内容修订&quot;&gt;&lt;a href=&quot;#内容修订&quot; class=&quot;headerlink&quot; title=&quot;内容修订&quot;&gt;&lt;/a&gt;内容修订&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;2020年5月9日 20:24:41 — 修改关于上下文切换、用户态内核态、内存映射文件相关内容&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;拓展知识点&quot;&gt;&lt;a href=&quot;#拓展知识点&quot; class=&quot;headerlink&quot; title=&quot;拓展知识点&quot;&gt;&lt;/a&gt;拓展知识点&lt;/h2&gt;&lt;p&gt;为了更好地学习和理解kafka，个人觉得有必要搞清楚一些概念&lt;/p&gt;
 &lt;p&gt;在开始之前，推荐书籍《Apache Kafka实战》和《Kafka权威指南》来作为 kafka 的入门书籍&lt;/p&gt;
-&lt;h3 id=&quot;什么是磁盘的顺序写入？&quot;&gt;&lt;a href=&quot;#什么是磁盘的顺序写入？&quot; class=&quot;headerlink&quot; title=&quot;什么是磁盘的顺序写入？&quot;&gt;&lt;/a&gt;什么是磁盘的顺序写入？&lt;/h3&gt;&lt;p&gt;&amp;emsp;&amp;emsp;所谓的磁盘顺序写入其实是相对与随机写入而言的，指的是在写入数据时磁盘的磁头不用寻道而可以一次将数据写完，因为省略了磁头寻道的时间，所以在速度来说是非常快的，甚至可以媲美内存的随机写入; 那什么情况下会出现顺序写入呢？如文件追加内容时（kafka就采用这种方式进行顺序写入，因为kafka存放数据的日志文件不能修改只能追加）&lt;/p&gt;
-&lt;p&gt;以下为&lt;strong&gt;磁盘&lt;/strong&gt;、&lt;strong&gt;SSD&lt;/strong&gt;、&lt;strong&gt;内存&lt;/strong&gt;之间的访问速度对比图&lt;/p&gt;
+&lt;h3 id=&quot;什么是磁盘的顺序写入？&quot;&gt;&lt;a href=&quot;#什么是磁盘的顺序写入？&quot; class=&quot;headerlink&quot; title=&quot;什么是磁盘的顺序写入？&quot;&gt;&lt;/a&gt;什么是磁盘的顺序写入？&lt;/h3&gt;&lt;p&gt;&amp;emsp;&amp;emsp;磁盘顺序写入是相对与随机写入而言的，指在写入数据时磁盘的磁头不用寻道而可以一次将数据写完。因为节省了磁头寻道的时间，所以在速度方面是非常快的，甚至可以媲美内存的随机写入。那什么情况下会出现顺序写入呢？如文件追加内容时（Kafka就采用这种方式来对日志文件进行顺序写入的，因为Kafka的日志文件不能修改只能追加）&lt;/p&gt;
 &lt;blockquote&gt;
+&lt;p&gt;以下为 磁盘、SSD、内存 之间的访问速度对比图&lt;/p&gt;
 &lt;p&gt;图片源自：queue.acm.org&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;&lt;img src=&quot;/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/002.png&quot; alt&gt;&lt;/p&gt;
-&lt;p&gt;可以看出，磁盘的顺序访问是相当快的，所以&lt;strong&gt;kafka选择将内容写入磁盘&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;可以看到磁盘的顺序访问是相当快的，所以为 Kafka 选择磁盘时并无需刻意地选择 SSD。&lt;/p&gt;
     
     </summary>
     
