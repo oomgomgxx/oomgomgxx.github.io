@@ -138,7 +138,8 @@
 
   <!-- 文章内容 -->
   <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
-<li>2020年5月9日 20:24:41 — 修改关于上下文切换、用户态内核态、内存映射文件相关内容</li>
+<li>2019年10月9日 20:24:41 — 修改关于上下文切换、用户态内核态、内存映射文件相关内容</li>
+<li>2020年3月21日 15:31:22 — 增加 HW、LEO、Leader Epoch 相关内容</li>
 </ul>
 <h2 id="拓展知识点"><a href="#拓展知识点" class="headerlink" title="拓展知识点"></a>拓展知识点</h2><p>为了更好地学习和理解kafka，个人觉得有必要搞清楚一些概念</p>
 <p>在开始之前，推荐书籍《Apache Kafka实战》和《Kafka权威指南》来作为 kafka 的入门书籍</p>
@@ -181,14 +182,14 @@
 <h2 id="Kafka是什么？"><a href="#Kafka是什么？" class="headerlink" title="Kafka是什么？"></a>Kafka是什么？</h2><blockquote>
 <p>官方介绍</p>
 </blockquote>
-<p>Apache Kafka是一个开放源代码的<code>分布式事件流平台</code>，成千上万的公司使用它来实现<code>高性能数据管道</code>，<code>流分析</code>，<code>数据集成</code>和关键任务应用程序。 </p>
+<p>Apache Kafka是一个开放源的<code>分布式事件流平台</code>，成千上万的公司使用它来实现<code>高性能数据管道</code>，<code>流分析</code>，<code>数据集成</code>和关键任务应用程序。 </p>
 <blockquote>
 <p>什么是事件流，个人理解如下：</p>
 </blockquote>
 <p><strong>事件</strong>：特指某个上下文中被关注且已发生的事情</p>
 <p><strong>事件流</strong>：事件流向过程（从一端转移到另一端的）。譬如说数据库记录被更新，因此而产生了对应的更新事件，该事件通过 Kafka 事件流平台（作为介质）转移到了其他服务节点上的过程，就是一个CDC（capture data change）事件流</p>
 <p><strong>流处理</strong>：提供一系列操作手段（修改、持久化、特殊处理等），让数据在流动的过程中产生所需的变化</p>
-<h2 id="Kafka常见使用场景"><a href="#Kafka常见使用场景" class="headerlink" title="Kafka常见使用场景"></a>Kafka常见使用场景</h2><ul>
+<h2 id="常见使用场景"><a href="#常见使用场景" class="headerlink" title="常见使用场景"></a>常见使用场景</h2><ul>
 <li>功能异步解耦</li>
 <li>消息订阅/发布</li>
 <li>日志收集</li>
@@ -211,30 +212,28 @@
 </ul>
 </li>
 </ul>
-<h2 id="Topic、Partition、Replica-之间的关系"><a href="#Topic、Partition、Replica-之间的关系" class="headerlink" title="Topic、Partition、Replica 之间的关系"></a>Topic、Partition、Replica 之间的关系</h2><p>&emsp;&emsp;在 Kafka 中 Topic 只是逻辑概念，而物理层面实质是以 Partition 来进行日志存放的。Partition 是一个有序的序列，在物理磁盘上对应着一个文件夹，其中包含了一个或多个日志段。一个 Topic 可以有一个或多个 Partition，也就是说 Topic 的数据在多个 Partition 的情况下是分拆存放的，这是一种去中心化容灾的实现方案。 需要注意的是 Kafka 只能保证单个 Partition 内的消息是有序的，而不能保证全局有序（多个Partition）。</p>
-<p>&emsp;&emsp;Replica 是 Partition 在副本层面上的概念，一个 Partition 可以有多个 Replica。在 Kafka 中 Replica 有两种，分别是<code>Leader Replica</code>和<code>Follower Replica</code>。Leader Replica 对客户端的提供读写服务。而 Follower Replica 正常情况下是不对外提供服务的（但 2.4 版本（KIP-392）后，追随者副本也允许提供读服务了），它的职责是拉取 Leader Replica 中的消息日志进行冗余备份，以及在 Leader Replica 发生故障后接替其职责。</p>
-<p>&emsp;&emsp;其中 Follower Replica 又分为 ISR（in-sync replica，实时同步 Leader Replica 的副本集）和 非ISR 两种类型。其区别在于默认情况下只有 ISR 集合成员能够参与 Leader 竞选，还有就是在 Borker 接收到客户端的写请求后，只有 Leader Replica 以及其他 ISR 集合成员都接收到后这个消息日志才会成功被提交，而在成功提交之前，该写请求的消息日志是对消费者不可见的。而实质上一开始所有的 Replica 都属于 ISR 集合成员，但随着运行时间拉长，Broker 节点之间出现同步效率上的差异，导致某些 Broker 上的 Replica 无法跟上复制进度从而被踢出 ISR 集合（参考配置replica.lag.time.max.ms），而被踢出 ISR 集合的 Replica 只有追上复制进度后才能被重新纳入到 ISR 集合中。</p>
+<h2 id="Topic、Partition、Replica"><a href="#Topic、Partition、Replica" class="headerlink" title="Topic、Partition、Replica"></a>Topic、Partition、Replica</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>&emsp;&emsp;<strong>在Kafka中Topic只是逻辑概念，而物理层面实质是以 Partition 来进行日志存放的。Partition是一个序列，在物理磁盘上对应着一个文件夹，其中包含了一个或多个日志段</strong>。一个 Topic 可以有一个或多个 Partition，也就是说 Topic 的数据在多个 Partition 的情况下是分拆存放的，这是一种去中心化容灾的实现方案。 需要注意的是 Kafka 只能保证单个 Partition 内的消息是有序的，而不能保证全局有序（多个Partition）。</p>
+<p>&emsp;&emsp;<strong>Replica是Partition在副本层面上的概念，一个 Partition 可以有多个 Replica，但至少要有一个作为 Leader Replica 对外提供服务</strong>。在 Kafka 中 Replica 有两种，分别是Leader Replica和Follower Replica。Leader Replica 对客户端的提供<strong>读写服务</strong>。而 Follower Replica 正常情况下是不对外提供服务的（<strong>但 2.4 版本（KIP-392）后，追随者副本也允许提供读服务了</strong>），它的主要职责是<strong>拉取</strong> Leader Replica 中的消息日志进行冗余备份，以及在 Leader Replica 发生故障后接替其职责。</p>
+<p>&emsp;&emsp;其中Follower Replica又分为 ISR（in-sync replica，<strong>实时同步Leader Replica的副本集</strong>）和 非ISR 两种类型。其区别在于默认情况下<strong>只有ISR集合成员能够参与Leader竞选</strong>，还有就是在 Borker 接收到客户端的写请求后，只有Leader Replica以及其他 ISR 集合成员都接收到后这个消息日志才会成功被提交，<strong>消息成功提交之前该写请求的消息日志是对消费者不可见的</strong>。而实质上一开始所有的 Replica 都属于 ISR 集合成员，但随着运行时间拉长，Broker 节点之间出现同步效率上的差异，导致某些 Broker 上的 Replica 无法跟上复制进度而被踢出 ISR（参考配置replica.lag.time.max.ms），而被踢出 ISR 的 Replica 只有追上复制进度后才会被重新纳入到 ISR 集合中。</p>
 <blockquote>
-<p>参考图：图片源自网络</p>
+<p>图片源自网络</p>
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/006.png" alt></p>
-<p><strong>为什么需要 Partition？</strong></p>
-<p>&emsp;&emsp;有人可能会有这样的疑问，既然有了 Topic 为什么还要有 Partition 这个概念呢？譬如 ActiveMQ 就没有Partition。这点需要从 Kafka 的主要使用场景角度来说，Kafka 通常被用作实时处理场景，为其提供 <code>高吞吐</code>、<code>低延迟</code> 的解决方案，而 Partition 就是用来提 Topic 的并发量的，同时有着<code>去中心化容灾</code>和<code>负载均衡</code>的效果</p>
+<h3 id="为什么需要Partition？"><a href="#为什么需要Partition？" class="headerlink" title="为什么需要Partition？"></a>为什么需要Partition？</h3><p>&emsp;&emsp;有人可能会有这样的疑问，既然有了 Topic 为什么还要有 Partition 这个概念呢？譬如 ActiveMQ 就没有Partition。这点需要从 Kafka 的主要使用场景角度来说，Kafka 通常被用作实时处理场景，为其提供 <code>高吞吐</code>、<code>低延迟</code> 的解决方案，而 Partition 就是用来提 Topic 的并发量的，同时有着<code>去中心化容灾</code>和<code>负载均衡</code>的效果</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/004.png" alt></p>
-<h2 id="Kafka是如何存储Topic数据的"><a href="#Kafka是如何存储Topic数据的" class="headerlink" title="Kafka是如何存储Topic数据的"></a>Kafka是如何存储Topic数据的</h2><blockquote>
+<h2 id="日志存储"><a href="#日志存储" class="headerlink" title="日志存储"></a>日志存储</h2><blockquote>
 <p>图片源自网络</p>
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/021.png" alt></p>
-<p>上面已经提到过 Topic 只是逻辑上的概念，而真正用户规划消息日志存储的是 Partition。</p>
-<p>为了观察需要先执行命令创建一个名称为 test 的 Topic，再为其分配 2 个 Partition 分区 和每个分区对应 1 个 Replica，既这时只有 Leader Replica</p>
-<pre><code class="shell">./kafka-topics.sh --create --zookeeper 192.168.4.157:2181 --partitions 2 --rerelication-factor 1 --topic test</code></pre>
-<p>再观察配置文件中使用 logDir 指定的目录情况，如下：</p>
+<p>为了观察方便先执行命令创建一个名称为 test 的 Topic，再为其分配 2 个 Partition 分区 和每个分区对应 1 个 Replica，即只有 Leader Replica。</p>
+<pre><code class="shell">➜ ./kafka-topics.sh --create --zookeeper 192.168.4.157:2181 --partitions 2 --rerelication-factor 1 --topic test</code></pre>
+<p>观察配置 logDir 指定的目录情况</p>
 <pre><code class="shell">➜  data ls -al
-... 省略
+...
 drwxr-xr-x 2 tandi tandi 4096  9月  8 06:30 test-0
 drwxr-xr-x 2 tandi tandi 4096  9月  8 06:30 test-1</code></pre>
-<p>可以看到生成了<code>test-0</code>、<code>test-1</code>两个文件夹，而这两个文件夹就对应 test 这个 Topic 的两个 Partition 分区，也就是说一个 Partition 分区其实是对应着一个物理文件夹，且分区序号从 0 开始。</p>
-<p>接着，进入其中一个文件夹 test-1 再观察一下，如下：</p>
+<p>可以看到生成了<code>test-0</code>、<code>test-1</code>两个文件夹，而这两个文件夹就这个 Topic 的两个 Partition 分区，也就是说一个 Partition 其实是对应着一个物理文件夹，且分区序号从 0 开始。</p>
+<p>接着进入其中一个文件夹 test-1 再观察一下</p>
 <pre><code class="shell">➜  test-1 ll
 00000000000000000000.index
 00000000000000000000.log
@@ -279,14 +278,11 @@ leader-epoch-checkpoint</code></pre>
 <blockquote>
 <p>为什么有 segment 日志段？</p>
 </blockquote>
-<p>一个 Partition 多个 segment 日志段，主要目的是为了优化数据的检索效率。因为 segment 日志段文件名称是以某个范围内的起始消息日志对应的 offset 来命名的，所以 Kafka 就可以利用<code>二分查找</code>来快速定位数据，而不需要扫描所有的消息数据。</p>
+<p>一个 Partition 可以有多个 segment 日志段。目的是优化数据的检索效率，因为 segment 日志段文件名称是<strong>以某个范围内起始消息日志对应的offset来命名的</strong>，所以就可以利用<strong>二分查找</strong>来快速定位到需要的数据了，而不需要扫描所有的消息数据。</p>
 <h2 id="集群控制器"><a href="#集群控制器" class="headerlink" title="集群控制器"></a>集群控制器</h2><blockquote>
-<p>基本介绍</p>
+<p>介绍</p>
 </blockquote>
-<p>Kafka Controller 的作用是协调 Broker 集群，而一个集群当中只有一个 Broker 会成为 Controller （通过 Zookeeper 竞选）。</p>
-<blockquote>
-<p>Controller 的作用</p>
-</blockquote>
+<p>Kafka Controller的作用是协调 Broker 集群，<strong>一个集群当中只有一个 Broker Controller</strong>（通过Zookeeper竞选），它的职责如下：</p>
 <ul>
 <li>Topic 管理<ul>
 <li>创建、删除、分区（Leader选举）</li>
@@ -297,12 +293,11 @@ leader-epoch-checkpoint</code></pre>
 </ul>
 </li>
 <li>Preferred 选举<ul>
-<li>这是一种处理 Broker 负载不均的解决方案</li>
-<li>譬如因为原 Leader Replica 宕机从而导致 ISR 中的某个 Follower Replica 晋升为 Leader，而这个 Replica 所处的 Broker 原来已经有了其它 Topic 的 Leader Replica 了，也就是说现在单个 Broker 上有多个 Leader Replica，这样的话该 Broker 就的负载压力就会增大，而 Preferred 选举就是解决以上问题的，既重新选择一个合理的 Replica 来做 Leader。该操作可以通过<code>kafka-preferred-replica-election</code>脚本完成</li>
+<li>解决集群负载不均的问题</li>
 </ul>
 </li>
-<li>重新分配分区<ul>
-<li>指的是扩容或缩容集群节点后重新对Partition进行分配</li>
+<li>重新分区<ul>
+<li>指的是扩容或缩容集群节点后重新对 Partition 进行分配</li>
 <li>该操作可以通过<code>kafka-reassign-partitions</code>脚本完成</li>
 </ul>
 </li>
@@ -313,69 +308,210 @@ leader-epoch-checkpoint</code></pre>
 </li>
 </ul>
 <blockquote>
-<p>Controller 管理的集群元数据</p>
+<p>元数据服务</p>
 </blockquote>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/025.png" style="zoom: 67%;">
 
-<blockquote>
-<p>Controller 选举</p>
-</blockquote>
-<p>Controller 在整个集群中只有一个，它是通过 Zookeeper 提高的选举服务产生的。简单地说就是那个 Broker 先在 Zookeeper 中插入 znode 成功就成为 Broker Controller，在 Broker Controller 宕机后重新选举亦如是。</p>
-<h2 id="消息相关"><a href="#消息相关" class="headerlink" title="消息相关"></a>消息相关</h2><h3 id="消息的格式"><a href="#消息的格式" class="headerlink" title="消息的格式"></a>消息的格式</h3><p>了解下就好了：<a href="https://blog.csdn.net/u013256816/article/details/80300225" target="_blank" rel="noopener">https://blog.csdn.net/u013256816/article/details/80300225</a></p>
-<h3 id="topic-offset-和-consumer-offset"><a href="#topic-offset-和-consumer-offset" class="headerlink" title="topic offset 和 consumer offset"></a>topic offset 和 consumer offset</h3><h4 id="topic-offset"><a href="#topic-offset" class="headerlink" title="topic offset"></a>topic offset</h4><p>&emsp;&emsp;当消息被写到 partition 时，kafka 会为其分配一个顺序的 offset ，这个 offset 就是消息在当前 partigion 中的偏移量。其中 offset 从 0 开始递增，在不同的 partition 中 offset 是互不干扰的。 </p>
-<h4 id="consumer-offset"><a href="#consumer-offset" class="headerlink" title="consumer offset"></a>consumer offset</h4><p>&emsp;&emsp;consumer offset 和 topic offset 是不同的概念，这个千万不要混淆。consumer offset 是用于记录 partition 消息被消费到那个位置的一个标记。conusmer 会在消费消息后向 borker 提交自己当前的 consumer osffset ，那么下次再消费时就可以从 broker 中知道上一次消费到什么位置了</p>
-<p><strong>关于consumer offset的提交</strong></p>
-<p>&emsp;&emsp;上面已经提到，消费者是需要定期向 Broker 提交 Consumer offset 以汇报自己的消费进度的，这个动作称为<code>位移提交</code>。针对位移提交操作在<code>较新版本的Kafka Consumer</code> 中有1个专门的 Topic (__consumer__offsets)与之对应，也就是说提交消费者偏移量实质就是发送一条消息到这个 Topic 中。而这个 Topic 我们可以在 Kafka 的日志文件夹下观察到，它一共有50个文件夹，也就是说它有 50 个 Partition。</p>
+
+
+<h2 id="领导者选举"><a href="#领导者选举" class="headerlink" title="领导者选举"></a>领导者选举</h2><h3 id="优先副本选举（Preferred选举）"><a href="#优先副本选举（Preferred选举）" class="headerlink" title="优先副本选举（Preferred选举）"></a>优先副本选举（Preferred选举）</h3><p>1）基本介绍</p>
+<pre><code class="shell">&gt; ./bin/kafka-topics.sh --zookeeper 192.168.0.201:2181 --describe --topic test2
+Topic: test2    PartitionCount: 2    ReplicationFactor: 2    Configs: 
+    Topic: test2    Partition: 0    Leader: 0    Replicas: 0,5    Isr: 0,5
+    Topic: test2    Partition: 1    Leader: 5    Replicas: 5,0    Isr: 5,0</code></pre>
+<p>在上面输出中，表明 Partition 0 的<strong>AR（所有 Replica 副本）</strong>为 [0,5]，而其中的<strong>优先副本为是 0</strong> 。</p>
+<p>优先副本和 Leader Replica 选举息息相关，即一般都会选用优先副本来做 Leader Replica 。</p>
+<p>2）如果没有优先副本会出现什么问题？</p>
+<ul>
+<li>譬如原 Leader Replica 宕机而导致 ISR 中的某个 Follower Replica 晋升为 Leader，但这个 Replica 所处的 Broker 已经有其它 Topic 的 Leader Replica 了。也就是说现在这个 Broker 上有多个 Leader Replica，这样的话该 Broker 的负载压力就会增大</li>
+<li>如何使用优先副本解决以上问题？<ul>
+<li>可以手动可以通过 <strong>kafka-preferred-replica-election</strong> 脚本完成优先副本选举</li>
+</ul>
+</li>
+</ul>
+<p>3）优先副本选举策略</p>
+<ul>
+<li>选举策略  PreferredReplicaPartitionLeaderElectionStrateg</li>
+<li>选择 AR 集合中第一个存活的副本作为优先副本</li>
+</ul>
+<h3 id="Leader-Replica选举"><a href="#Leader-Replica选举" class="headerlink" title="Leader Replica选举"></a>Leader Replica选举</h3><p>1）什么时候会发起 Replica 选举？</p>
+<ul>
+<li>创建新分区</li>
+<li>原 Leader Replica 下线</li>
+<li>Broker 被优雅关闭（kafka-server-stop.sh）</li>
+</ul>
+<p>2）选举过程</p>
+<ul>
+<li>选举策略  OftlinePartitionLeaderElectionStrategy </li>
+<li>按照 AR 集合的顺序查找，选择第一个 Replica 作为 Leader。前提条件是这个 Leader 必须在 ISR 集合中<ul>
+<li>如果设置了 unclean.leader.election.enable=ture，则非 ISR 成员也包含在内</li>
+</ul>
+</li>
+<li>注意，如果是 Broker 优雅关闭发起的选举，则 选举策略为  ControlledShutdownPartitionLeaderElectionStrategy <ul>
+<li>选择 AR 集合中第一个存活的副本</li>
+</ul>
+</li>
+</ul>
+<h3 id="集群控制器选举"><a href="#集群控制器选举" class="headerlink" title="集群控制器选举"></a>集群控制器选举</h3><h2 id="消息日志"><a href="#消息日志" class="headerlink" title="消息日志"></a>消息日志</h2><h3 id="消息格式"><a href="#消息格式" class="headerlink" title="消息格式"></a>消息格式</h3><p>了解下就好了：<a href="https://blog.csdn.net/u013256816/article/details/80300225" target="_blank" rel="noopener">https://blog.csdn.net/u013256816/article/details/80300225</a></p>
+<h3 id="topic-offset-和-consumer-offset"><a href="#topic-offset-和-consumer-offset" class="headerlink" title="topic offset 和 consumer offset"></a>topic offset 和 consumer offset</h3><h4 id="topic-offset"><a href="#topic-offset" class="headerlink" title="topic offset"></a>topic offset</h4><p>&emsp;&emsp;当消息被写到 partition 时，kafka 会为其分配一个顺序的 offset。这个 offset 是当前消息在 partigion 中的偏移量。offset 从 0 开始递增，在不同的 partition 中 offset 是互不干扰的。 </p>
+<h4 id="consumer-offset"><a href="#consumer-offset" class="headerlink" title="consumer offset"></a>consumer offset</h4><p>&emsp;&emsp;consumer offset 记录的是 partition 的消费偏移量（即消费到那个位置）。conusmer 会在消费消息时（实际由consuemr自定义）向 Borker 提交自己当前的 consumer osffset，那么下次再消费同一个 partition 时就可以知道从哪里开始消费了。</p>
+<p>消费者提交注意：</p>
+<p>&emsp;&emsp;上面提到消费者是需要定期向 Broker 提交 consumer offset 以确认 partition 被消费的进度的。在较新版本的Kafka Consumer中会对应一个专门的内部 Topic (__consumer__offsets，即提交消费者偏移量实质就是发送一条消息到这个 Topic 中。该 Topic 可以在日志文件夹下观察到，它一共有50个文件夹，即 50 个 Partition。</p>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/012.png" style="zoom:50%;">
 
-<p>那为什么需要这么多 Partition 呢？这是因为位移提交是一个非常频繁的操作，利用 Partition 的负载均衡特性可以减轻并发操作同一个 Topic 时所带来的压力。</p>
-<p>注意事项：</p>
+<p>那为什么需要这么多 Partition 呢？因为位移提交是一个非常频繁的操作，这样可以减轻并发带来的压力。</p>
+<p>拓展：</p>
 <ul>
-<li>__consumer__offsets 这个内部主题不仅维护了消费者偏移量，还维护了消费者的元数据。而 Group Coordinator （消费者组协调者）提供了对该主题的完整管理功能</li>
-<li>在早期的 Kafka Consumer 中消费者偏移量是保存在 Zookeeper 中的，这样做的愿意是为了降低 Broker 的管理成本从而提高 Boker 集群的伸缩性。但后来因为位移提交是一个频繁操作，而 Zookeeper 并不合适保存大数据量以及作频繁的数据修改，因此在后期的新版本 Kafka Consumer 中消费者偏移量从 Zookeeper 迁移会了 Broker 管理。</li>
+<li>__consumer__offsets 这个内部主题<strong>不仅维护了消费者偏移量，还维护了消费者的元数据</strong>，由 Group Coordinator（消费者组协调者）管理</li>
+<li>早期 Kafka Consumer 中消费者偏移量是保存在 Zookeeper 中的，这样是为了降低 Broker 的管理成本从而提高集群的扩展性。但后来发现因为偏移量提交是一个频繁操作，而 Zookeeper 并不合适保存大数据量以及作频繁的数据修改，所以在后期新版本 Kafka Consumer 中消费者偏移量从 Zookeeper 迁移回了 Broker 管理。</li>
 </ul>
-<h2 id="Java-kafka-Producer"><a href="#Java-kafka-Producer" class="headerlink" title="Java kafka Producer"></a>Java kafka Producer</h2><h3 id="生产者模型"><a href="#生产者模型" class="headerlink" title="生产者模型"></a>生产者模型</h3><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png" style="zoom:67%;">
+<h2 id="可靠的日志复制"><a href="#可靠的日志复制" class="headerlink" title="可靠的日志复制"></a>可靠的日志复制</h2><h3 id="HW和LEO"><a href="#HW和LEO" class="headerlink" title="HW和LEO"></a>HW和LEO</h3><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/026.png" style="zoom: 80%;">
+
+<p>HW</p>
+<ul>
+<li>全称叫 Hight Watermark，一般称为高水位</li>
+<li>HW 本质是一个偏移量，用于定义消息日志对 Consumer 的可见性</li>
+<li>在 Kafka 中一条消息如果对 Consumer 是可见的，则表示这条日志已经成功复制到所有的 Replica 上</li>
+<li>Consumer 只能获取到 HW 前面的消息日志，即 HW 位置开始的日志（如果有）对于 Consumer 而言是不可见的，因为还没有同步完成</li>
+<li>即 Kafka 通过 HW 机制实现了对于 Consumer 而言的状态一致性（CAP 中的 C）</li>
+<li>可以简单理解 Partition 中的 HW 其实就是 Leader Replica 中的 HW，即以 Leader Replica 为准</li>
+</ul>
+<p>LEO</p>
+<ul>
+<li>全称 LogEndOffset，记录了下一条 Producer 生成的日志的 offset</li>
+<li>LEO 相当于是当前 Replica 最后一条日志的 offset + 1</li>
+<li>当 Leader Replica 中的 HW = LEO 时，表示所有的 Replica 已经同步完成 </li>
+<li>重点注意<ul>
+<li>Leader Replica 在 Follower Replica 拉取数据时会顺带记录其 LEO 值。即 Leader 会保存所有远程副本的 LEO 值，这样做是因为 Leader 同收集回来的 LEO 值来定位 Partition 的 HW 值</li>
+<li>远程副本（Follower Replica）的 LEO 值是有 Leader Replica 来维护的</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>HW 和 LEO 的更新时机</p>
+</blockquote>
+<p>假设副本在不同的 Broker 上</p>
+<table>
+<thead>
+<tr>
+<th align="left">对象</th>
+<th>时机</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Follower Replica 中的 LEO 值</td>
+<td>从 Leader Replica 中拉取日志消息，写入磁盘后更新 LEO 值</td>
+</tr>
+<tr>
+<td align="left">Leader Replica 中的 LEO 值</td>
+<td>从 Producer 中接收到消息，写入磁盘后更新 LEO 值</td>
+</tr>
+<tr>
+<td align="left">Leader Replica 上远程副本的 LEO 值</td>
+<td>Follower Replica 在拉取消息时，会提告诉 Leader Replica 要在哪个 offset 开始拉取，而这个 offset 值就用于更新 Leader Replica 上对应的远程副本上的 LEO 值</td>
+</tr>
+<tr>
+<td align="left">Follower Replica 中的 HW 值</td>
+<td>将拉取的日志消息写入磁盘并更新 LEO 值后，就会将当前 LEO 值和从 Leader Replica 获取到 HW（Leader） 值进行对比，然后取小的作为当前副本的 HW 值</td>
+</tr>
+<tr>
+<td align="left">Leader Replica 中的 HW 值</td>
+<td>有两个时机：1）更新完 Leader Replica 自己的 LEO 值之后。2）更新完位于 Leader Replica 上的远程副本的 LEO 值之后。更新策略：取包含自己在内的所有副本的 LEO 值的最小值作为新的 HW</td>
+</tr>
+</tbody></table>
+<p>日志同步例子（假设只有两个 Broker）</p>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/027.png" style="zoom: 80%;">
+
+<p>注：Leader Replica 会取所有副本中 LEO 值最少的那个作为 HW </p>
+<h3 id="Leader-Epoch"><a href="#Leader-Epoch" class="headerlink" title="Leader Epoch"></a>Leader Epoch</h3><blockquote>
+<p>HW 和 LEO 同步机制存在的问题</p>
+</blockquote>
+<p>1）数据丢失问题</p>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/028.png" style="zoom: 80%;">
+
+<p>2）数据不一致</p>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/029.png">
+
+<blockquote>
+<p>Leader Epoch 解决数据丢失和不一致问题</p>
+</blockquote>
+<p>1）是什么？</p>
+<p> Leader Epoch 它是 Leader 的任界值，它由两部分组成：</p>
+<ul>
+<li>Epoch： 一个单调增加的版本号，每当 Leader 发生变更都会递增1，所以版本号较小的 Leader 会被认为是过期的 Leader，不会在行使 Leader 权力 </li>
+<li>Start Offset（起始位移）： 记录的第一条消息日志的偏移量</li>
+</ul>
+<p>例如现在有两个 Leader Epoch，分别是 &lt;0，0&gt; 和 &lt;1，20&gt;。相当于说 &lt;0，0&gt; 这个 Leader 它是第一个 Leader，且记录了 20 条消息日志（因为偏移量是从0开始的）。</p>
+<p>Leader Epoch 的主要作用是防止新 Leader 单纯根据 HW 来截断日志，从而造成数据丢失。</p>
+<p>2）更新时机</p>
+<ul>
+<li><p>Kafka Broker 会在内存中为每个分区都缓存一份 Leader Epoch 数据，同时还会定期地将这些信息持久化到一个 checkpoint 文件中</p>
+</li>
+<li><p>当 Leader Replica 写入消息到磁盘时，Broker 会尝试更新这部分缓存。即如果是首次写入就向缓存中增加一个 Leader Epoch 条目，否则就不做更新</p>
+</li>
+<li><p>一旦发生 Leader 变更，新的 Leader Replica 就会查询这部分缓存，取出对应的 Leader Epoch 的起始位移，以避免数据丢失和不一致的情况</p>
+</li>
+</ul>
+<p>3）是如何解决问题的？</p>
+<img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/030.png" style="zoom:;">
+
+<h2 id="Java-kafka-Producer"><a href="#Java-kafka-Producer" class="headerlink" title="Java kafka Producer"></a>Java kafka Producer</h2><h3 id="生产者模型"><a href="#生产者模型" class="headerlink" title="生产者模型"></a>生产者模型</h3><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png" style="zoom: 50%;">
 
 <blockquote>
 <p>注意：</p>
 <ol>
-<li><p>Producer 的 send 方法是异步的，所以返回不代表发送成功，而消息的发送会有一条专门负责冲刷消息缓冲池的线程来完成</p>
+<li><p>Producer 的 send 方法是异步的，所以返回不代表发送成功。消息的发送会有一条专门负责冲刷缓冲区的线程来完成</p>
 </li>
-<li><p>Producer 而只是原子性操作，既缓冲区的这批消息要么全部写入成功，要么全部失败，这就是 Producer 保证的事务一致性。但该功能需要通过配置开启，并配合 Producer 的 beginTransaction、commitTransaction、 abortTransaction 等方法配合使用：</p>
+<li><p>Producer#send 操作是原子性的，即当前批次（batch）要么全部写入缓冲区，要么全部失败。</p>
 <ol>
-<li>enable.idempotence = true</li>
+<li>但该功能默认是关闭的，只有在事务操作期间才会开启，即 beginTransaction、commitTransaction、 abortTransaction 等操作</li>
+<li>开始事务还需要如下配置：<ol>
+<li>enable.idempotence = true。该配置能够让消息幂等，且会隐式开启如下配置<ol>
+<li>acks = all</li>
+<li>retries = Integer.MAX_VALUE</li>
+<li>max.inflight.requests.per.connection = 1 </li>
+</ol>
+</li>
 <li>transctional.id = 自定义名字</li>
 </ol>
 </li>
-<li><p>在消息系统中，Producer 交付消息的成功级别一般有以下 3 中：</p>
+</ol>
+</li>
+<li><p>在消息系统中一般交付消息的成功级别会有下三种：</p>
 <ol>
 <li>至少交付一次</li>
 <li>至多交付一次</li>
 <li>精确交付一次</li>
 </ol>
-<p>而在 Kafka 中 Producer 默认采用<code>最少交付一次</code>的交付策略。当然 Kafka 也支持 <code>至少交付一次</code>的策略，譬如关闭 Producer 的重试机制即可，但这样做会导致消息容易发送失败从而丢失消息</p>
+<ul>
+<li>Kafka Producer 默认采用<strong>最少交付一次</strong>的策略</li>
+<li>Kafka 也支持 <strong>至多交付一次</strong>策略，譬如关闭 Producer 重试机制，但这样做可能会导致消息丢失</li>
+</ul>
 </li>
 </ol>
 </blockquote>
 <ul>
-<li><p><strong>ProducerRecord：</strong>消息数据对象</p>
+<li><p><strong>ProducerRecord：</strong>消息对象</p>
 </li>
-<li><p><strong>Serializer：</strong>用于序列化 ProducerRecord 以便进行网络传输</p>
+<li><p><strong>Serializer：</strong>消息对象序列化器（因为要网络传输）</p>
 </li>
-<li><p><strong>Partitioner：</strong>分区器</p>
+<li><p><strong>Partitioner：</strong>分区器。将已经序列化的消息进行分区</p>
 <ul>
-<li><p>可以自定义分区器来完成将 key 相同的消息数据保存在同一个 Partition 中的需求。实现代码参考如下：</p>
+<li><p>可以自定义分区器将 key 相同的消息发送到同一个 Partition 中。参考如下：</p>
 <pre><code class="java">List&lt;PartitionInfo&gt; partitions = cluster.partitionsForTopic(topic);
 return Math.abs(key.hashCode()) % partitions.size(); // 取模操作
-// 注意，以上取模方式不例如 Partition 数量的扩容缩容，如果考虑后期的扩展建议使用一致性Hash来完成</code></pre>
+// 注意，以上取模方式不利于 Partition 数量的扩容缩容，如果考虑后期的扩展建议使用一致性Hash来完成</code></pre>
 </li>
-<li><p>若果 ProducerRecord 没有指定 key 的话<code>默认</code>将会采用<code>轮询分区</code>的方式来保存消息。轮询效果如下：</p>
+<li><p>若果 ProducerRecord 没有指定 key 则会用默认策略来选择分区。在 Producer 2.4 版本前会采用<strong>轮询</strong>策略来选择发送分区，如下：</p>
 </li>
 </ul>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/020.png" style="zoom:50%;">
 
 <ul>
-<li><p>除了轮询策略之外还有诸如<code>随机策略</code>。但其实轮序策略才是最为均衡的策略。实现代码参考如下：</p>
+<li><p>除了轮询策略外还可以用<strong>随机</strong>策略。参考如下：</p>
 <pre><code class="java">List&lt;PartitionInfo&gt; partitions = cluster.partitionsForTopic(topic);
 return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 </li>
@@ -383,47 +519,47 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 </li>
 </ul>
 <ul>
-<li><strong>消息缓冲池：</strong>用于减少上下文切换次数，可以提高消息发送操作的吞吐量</li>
+<li><p><strong>消息缓冲区：</strong></p>
+<ul>
+<li>用于积攒要发送的消息，减少用户态和内核态切换次数</li>
+<li>提高消息发送操作的吞吐量</li>
 </ul>
-<h3 id="producer-interceptor"><a href="#producer-interceptor" class="headerlink" title="producer interceptor"></a>producer interceptor</h3><p>生产者拦截器，可以在<code>消息序列化之前</code>将其拦截来做一些消息定制化修改。</p>
-<p>实现方式是实现 ProducerInterceptor 接口，并将其实现添加进生产者配置中即可（ProducerConfig.INTERCEPTOR_CLASSES_CONFIG）。</p>
+</li>
+</ul>
+<h3 id="producer-interceptor"><a href="#producer-interceptor" class="headerlink" title="producer interceptor"></a>producer interceptor</h3><p>生产者拦截器，可以在<strong>消息序列化前</strong>将其拦截，做一些消息统一定制修改或记录日志等操作。</p>
+<p>自定义拦截器可通过 ProducerInterceptor 接口实现，然后将其添加进生产者配置中即可（ProducerConfig.INTERCEPTOR_CLASSES_CONFIG）。</p>
 <pre><code class="java">public interface ProducerInterceptor&lt;K, V&gt; extends Configurable {
-
     // 拦截消息
     public ProducerRecord&lt;K, V&gt; onSend(ProducerRecord&lt;K, V&gt; record);
-    // 接收到broker ack应答调用
+    // 接收到Broker ACK应答后回调
     // 当Exception为null时消息生产成功
     public void onAcknowledgement(RecordMetadata metadata, Exception exception);
-    // 拦截器关闭时调用，发送完消息后关闭
+    // 拦截器关闭时调用
     public void close();
 }</code></pre>
-<h3 id="自定义分区策略"><a href="#自定义分区策略" class="headerlink" title="自定义分区策略"></a>自定义分区策略</h3><p>上面已经提到过，Partitioner 会根据 ProducerRecord 中的 key 来决定将消息数据发送到哪一个 Partition 上。但如果没有指定 key，则会按照默认策略进行发送。在 KafkaProducer 2.4 版本之前，默认策略为轮询，而 2.4 版本开始则改成了黏性分区策略（没有指定 key 或 Partition 的情况下）。当然，如果默认的分区策略无法满足你的业务需求，则可以尝试自己动手实现分区策略，其分区器接口如下：</p>
+<h3 id="自定义分区策略"><a href="#自定义分区策略" class="headerlink" title="自定义分区策略"></a>自定义分区策略</h3><p>上面已经提到过，Partitioner 会根据 ProducerRecord 中的 key 来决定将消息数据发送到哪个 Partition 上。但如果没有指定 key，则会按照默认策略来选择发送分区。</p>
+<p>默认策略在 KafkaProducer 2.4 版本之前是轮询，而 2.4 版本开始改成了<strong>黏性分区策略</strong>。如果默认的分区策略无法满足你的业务需求，可以尝试手动现分区策略。如下：</p>
 <pre><code class="java">public interface Partitioner extends Configurable, Closeable {
-
     // 分区逻辑实现
     public int partition(String topic, Object key, byte[] keyBytes, Object value, byte[] valueBytes, Cluster cluster);
-
     // Partitioner关闭，用于回收资源操作
     public void close();
-
 }</code></pre>
 <p>拓展：</p>
 <ul>
-<li>2.4版本的默认分区策略为 DefaultPartitioner，逻辑如下：<ul>
-<li>如果指定了分区，则发送到指定的分区中</li>
-<li>如果没有指定分区，但指定了key，则基于key的hash值来选择分区</li>
-<li>如果没有指定分区和key，则使用黏性分区策略</li>
+<li>2.4 版本开始默认分区策略为 DefaultPartitioner，逻辑如下：<ul>
+<li>指定了分区，则发送到指定分区</li>
+<li>没有指定分区，但指定了key，则基于key的hash值来选择分区</li>
+<li>没有指定分区和key，则使用黏性分区策略</li>
 </ul>
 </li>
 <li>黏性分区策略<ul>
-<li>随机选择一个分区，并将没有指定分区和key的消息发送到该分区上，直到填满一个 batch 或该 batch 处于已完成状态时，则再随机选择另外一个分区进行相同的操作</li>
-<li>通过黏性分区策略，可以增大 Producer 的吞吐量，因为它可能让 batch 更加丰满</li>
+<li>随机选择一个分区，将没有指定分区和key的消息发送到该分区上，直到填满一个 batch 或该 batch 处于已完成状态时，就再随机选择另外一个分区进行相同的操作</li>
+<li>通过黏性分区策略可以增大 Producer 的吞吐量，因为它可能让 batch 更加丰满</li>
 </ul>
 </li>
 </ul>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/023.png" style="zoom:50%;">
-
-
 
 
 
@@ -439,18 +575,16 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 <ul>
 <li>指定 value 使用那种序列化器(必须使用全类名)</li>
 </ul>
-<p>acks</p>
+<p>acks（重要）</p>
 <ul>
 <li>用于判断消息是否发送成功的依据</li>
 </ul>
 <ul>
-<li><p>0：Producer 完全不理会 Replica 的是否已经日志落盘（返回 ack响应），发送完一批消息后会马上发下一批消息，这时 Producer 的吞吐量最高，但因为完全不理会日志是否落盘，所以就算出现发送失败也不会进行重试操作，也就是说存在丢失日志的风险</p>
+<li><p>0：Producer 完全不理会 Replica 是否已经日志落盘成功，发送完一个批消息后会马上发下一个。这时 Producer 吞吐量最高，但因为能确认日志是否落盘成功，所以存在丢失日志的风险</p>
 </li>
-<li><p>1（默认）：Producer 只等待 Leader Replica 所在的 Broker 将数据落盘成功（返回 ack响应）。换句话就是只要 Leader Replica 持久化日志成功，Producer 就会视消息数据发送成功</p>
+<li><p>1（默认）：Producer 只关注 Leader Replica 是否已经日志落盘成功。该配置级别是吞吐量和安全性的折中点</p>
 </li>
-<li><p>-1或all：Producer 会等待集群中所有 Replica 的日志落盘成功（返回 ack响应）才会发送下一批消息。当前配置模式能够百分百成功持久化日志，但吞吐量是3种配置中最低的</p>
-</li>
-<li><p>注意这里提到的<code>发送</code>并不是指调用send方法，而是消息缓冲池满了后发送消息给 Brokder 的操作</p>
+<li><p>-1或all：Producer 会等待集群中所有 Replica 的日志落盘成功才会发送下一个批次的消息。消息能够确保落盘成功，但吞吐量最低</p>
 </li>
 </ul>
 <p>compression.type</p>
@@ -460,53 +594,48 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 <ul>
 <li>目前 kafka 支持的压缩格式有 gzip、snappy、lz4、zstd（Kafka 2.1 开始支持，建议以官方文档为准）</li>
 </ul>
-<p>retries</p>
+<p>retries（重要）</p>
 <ul>
-<li><p>消息重发机制</p>
+<li>消息重发机制</li>
+<li>消息发送失败的原因可能是<strong>网络问题</strong>或<strong>正处于Leader选举</strong>导致</li>
+<li>值 0 时（默认），表示<strong>默认不进行重试</strong>。值为 n 时，表示可以重试 n 次</li>
+<li>要十分注意<ul>
+<li>重试操作<strong>可能会导致消息重复发送</strong>。例如因为网络原因Brokder保存消息成功但没有成功响应，而Producer进行了消息重发</li>
+<li>开启重试操作<strong>还可能会出现消息乱序问题</strong>。例如a、b、c三条消息，a和c发送成功但b失败了，b重新发送。</li>
+</ul>
 </li>
-<li><p>消息发送失败的原因可能是 Broker 出现网络问题又或者时正处于 Leader 选举而导致的</p>
-</li>
-<li><p><code>值0时（默认）</code>，表示不进行重试</p>
-</li>
-<li><p><code>值为n时</code>，表示可以重试n次</p>
-</li>
-<li><p>要十分注意，<code>重试操作可能会导致消息重复发送</code>。例如因为网络原因 Brokder 保存消息成功但没有成功响应 Producer，而 Producer 因为没有收到 Broker 的 ack 从而进行了消息重发</p>
-</li>
-<li><p>除此之外，开启重试操作还会出现<code>消息乱序问题</code>。例如a、b、c三条数据，a和c发送成功但b失败了，b重新发送，就导致原本的abc编程了acb</p>
-</li>
+</ul>
+<p>retry.backoff.ms（重要）</p>
+<ul>
+<li>重试的时间间隔（默认为100毫秒）</li>
 </ul>
 <p>max.in.flight.requests.per.connection</p>
 <ul>
-<li><p>用于设置 producer 连接上允许发送的未应答请求数（默认为5）</p>
+<li><p>在 Broker 未响应之前 producer 可以 send 多少条数据（默认为5）</p>
 </li>
-<li><p>通俗点说就是在 Broker 未响应之前 producer 可以 send 多少条数据</p>
-</li>
-<li><p>注意，如果开启了 retries 但又想保持重试消息要优先于之后的消息，那么可以将该值设置为1。</p>
+<li><p>注意，如果开启了 retries 但又想<strong>重试消息要优先于之后的消息</strong>，就可以将该值设置为1。</p>
 <ul>
-<li>举个栗子：当前有两条数据 xxx 和 ccc 要发送给 Broker ，但因为某些原因ccc成功发送而xxx失败进入了重试操作，而在 xxx 重试期间 producer 又给Broker发送了消息 nnn 且发送成功了，这时就算 xxx 重试成功，但显然已经乱需了，因为 nnn 应该在 xxx 后面。而将max.in.flight.requests.per.connection 设置为1，那么在重试发送 xxx期间只要broker没有应答，producer就不会发送nnn</li>
+<li>举个栗子：当前有两条数据 xxx 和 ccc 要发送，但因为某些原因 xxx 发送失败进入了重试操作，然而在重试期间 producer 又给发送了消息 nnn 且发送成功了，这时就算 xxx 重试成功，但显然已经乱需了。而将max.in.flight.requests.per.connection 设置为1，那么重试发送 xxx 期间因为 broker 还没应答，所以 send 就不会将 nnn 发送</li>
 </ul>
 </li>
-</ul>
-<p>retry.backoff.ms</p>
-<ul>
-<li>用于设置重试时间间隔（默认为100毫秒）</li>
 </ul>
 <p>batch.size（重要）</p>
 <ul>
-<li>用于设置 Producer.send 批量发送的数量。既多少条 Record 作为一个批次。该值增大可以提高 Producer 发送数据的吞吐量</li>
-<li>该值默认为 16 k，<code>强烈建议生产环境适当地调大一些增加 Producer.send 操作的吞吐量</code>，但要注意，与此同时会加大内存的压力</li>
+<li>发送消息的批次大小（默认16 k）</li>
+<li>适当地增加该值可以提高 Producer 的吞吐量，但会降低消息发送的实时性和加大内存消耗</li>
 </ul>
 <p>linger.ms（重要）</p>
 <ul>
-<li>基于时间的 batch 打包策略，可配合 batch.size 使用，相当于满足该值后就作为一个 batch，适当地提高该配置值可以让 batch 被填充得更加丰满，因为正常情况下（linger.ms为0时）batch 可能没满就被 Sender 线程发送出去了（例如当队列中有多个batch时，Sender 线程是不会管batch是否装满的）</li>
+<li>基于时间的 batch 打包策略，可配合 batch.size 使用</li>
+<li>相当于满足该值后就会作为一个 batch。适当地提高该配置值可以让 batch 填充得更满，因为正常情况下（linger.ms为0时）batch 可能没满就被 Sender 线程发送出去了（例如当队列中有多个batch时，Sender 线程是不会管batch是否装满的）</li>
 <li>该值默认为 0 秒，既不开启该功能</li>
 </ul>
 <p>buffer.memory（重要）</p>
 <ul>
-<li>指定消息发送缓冲池的大小，默认为 32 M</li>
+<li>消息发送<strong>缓冲区（池）</strong>的大小（默认为 32 M）</li>
 </ul>
 <ul>
-<li><p><code>注意该值不宜设置得太小，特别是多线程共同操作同一个Producer时</code>，如果设置太小而 Producer send 的频率又特别高的话就会导致缓冲池很容易被撑爆，一旦被撑满之 Producer send 就会被阻塞，直到 Broker 线程将缓冲池中的数据发送给 Broker 后腾出空间为止</p>
+<li><p>该值不宜设置得太小，特别是多线程共同操作同一个Producer时。设置太小而 send 频率又特别高的话就会导致缓冲池很容易被撑爆，一旦被撑满 send 就会被阻塞，直到腾出空间为止</p>
 </li>
 <li><p>相关异常：TimeoutException：Failed to allocate memory within the configured max blocking time </p>
 </li>
@@ -516,45 +645,45 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 </ul>
 <p>block.on.buffer.full</p>
 <ul>
-<li>缓冲池用尽后停止接受新的消息且不抛出异常</li>
+<li>缓冲区用尽后停止接受新的消息，且不抛出异常</li>
 </ul>
 <p>max.request.size（重要）</p>
 <ul>
-<li><p>用于设置发送消息数据的最大大小（默认1M），超出该值后会抛出 RecordTooLargeException 异常</p>
-</li>
-<li><p>如果需要发送的消息很大，就可以适当低调到该值，但建议对应着 Brokder 中的配置message.max.bytes（Brokder 能够接收消息的最大值）来设置</p>
-</li>
+<li>设置发送消息的最大值</li>
+<li>默认1M，超出该值后会抛出 RecordTooLargeException 异常</li>
+<li>如果消息很大，就可以适当地调大该值，但建议对应着 Brokder 的message.max.bytes（Brokder 能够接收消息的最大值）来设置</li>
 </ul>
 <p>request.timeout.ms</p>
 <ul>
-<li>用于设置 Brokder 响应超时时间（默认为30s）</li>
-<li>既 producer 发送请求，broker要在30s内响应producer，否则会抛出 TimeoutException </li>
+<li>设置 Brokder 响应超时的时间（默认为30s）</li>
+<li>即 producer 发送请求，broker要在 30s 内响应，否则会抛出 TimeoutException </li>
 </ul>
 <p>partitioner.class</p>
 <ul>
-<li>用于指定自定义分区策略实现</li>
+<li>指定自定义分区策略实现</li>
 </ul>
 <p>interceptor.classes</p>
 <ul>
-<li>用于指定自定义消息拦截器实现</li>
+<li>指定自定义消息拦截器实现</li>
 </ul>
 <p>connections.max.idle.ms（重要）</p>
 <ul>
-<li>TCP连接的空闲时间，默认为 9 分钟</li>
-<li>若果 TCP 连接在 9 分钟内没有任何字节”流过”那么将会自动关闭 TCP 连接（该操作由 Producer 发起连接，由 Broker 关闭）</li>
-<li>建议：如果是频繁创建连接且连接很快用完的客户端，则可以调低该值，否则如果满了则会导致连接被拒绝（Connection reset）</li>
+<li>TCP 连接的空闲时间，默认为 9 分钟</li>
+<li>若果 TCP 连接在 9 分钟内没有任何字节流过，就将该 TCP 连接关闭</li>
+<li>如果是频繁创建连接且很快用完的客户端，建议将该值调低，否则如果连接到达了最大值就会导致连接被拒绝（Connection reset）</li>
 </ul>
-<h2 id="Broker常用配置参数"><a href="#Broker常用配置参数" class="headerlink" title="Broker常用配置参数"></a>Broker常用配置参数</h2><p>broker.id</p>
+<h2 id="Broker常用配置"><a href="#Broker常用配置" class="headerlink" title="Broker常用配置"></a>Broker常用配置</h2><p>broker.id</p>
 <ul>
-<li>指定当前 Broker 的集群ID值（必须唯一）</li>
+<li>在集群中的唯一ID</li>
 </ul>
 <p>zookeeper.connect</p>
 <ul>
-<li>zookeeper的地址，格式：ip:port</li>
+<li>zookeeper的地址</li>
+<li>格式：ip:port</li>
 </ul>
 <p>listeners</p>
 <ul>
-<li><p>kafka broker监听（bind）的地址</p>
+<li><p>Broker 的监听（bind）的地址</p>
 </li>
 <li><p>格式：listeners = listener_name://host_name:port</p>
 </li>
@@ -563,10 +692,7 @@ return ThreadLocalRandom.current().nextInt(partitions.size());</code></pre>
 </ul>
 <p>advertised.listeners</p>
 <ul>
-<li><p>和 listeners 配置类似，一般用于 IaaS 环境，既服务器有内网ip和外网ip（例如阿里云）时</p>
-</li>
-<li><p>例如 kafka 处于阿里云服务器，默认情况下是无法通过外网访问到kafka的，解决方法是修改如下配置</p>
-</li>
+<li>和 listeners 配置类似，一般用在有内网ip和外网ip的服务器上时（例如云服务器）</li>
 </ul>
 <ul>
 <li><pre><code>listeners=PLAINTEXT://内网ip:9092
@@ -574,158 +700,171 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 </ul>
 <p>num.network.threads</p>
 <ul>
-<li>指定用于接收网络 IO 请求的线程数（默认为3）</li>
+<li>用于接收网络IO（accept）请求的线程数（默认为3）</li>
 </ul>
 <p>num.io.threads</p>
 <ul>
-<li>指定用于处理网络 IO 任务的线程数（默认为8）</li>
-<li>注意，Kafka 是使用 Reactor 模式处理客户端请求的，因此从 num.network.threads 和 num.io.threads 不难看出它采用的是<code>多Reactor多线程模式</code></li>
+<li>用于处理网络IO任务的线程数（默认为8）</li>
+<li>注意 Kafka Broker使用 Reactor 模式处理客户端请求。所以从 num.network.threads 和 num.io.threads 两个设置不难看出它默认采用的是<strong>多Reactor多线程模式</strong></li>
 </ul>
 <p>log.dirs</p>
 <ul>
-<li><p>指定消息数据的持久化目录 </p>
-</li>
-<li><p>例子：log.dirs=/tmp/data 或者 log.dirs=/tmp/data,/tmp/data2</p>
-</li>
-<li><p>建议：如果 kafka 服务器有多块磁盘，则推荐指定多个日志文件，因为这样可以用负载均衡的方法存储日志数据，可以大大提高写入操作的吞吐量</p>
-<p>auto.create.topics.enable</p>
-</li>
+<li>指定消息数据的持久化目录 </li>
+<li>例子：log.dirs=/tmp/data 或者 log.dirs=/tmp/data,/tmp/data2</li>
+<li>如果服务器有多块磁盘，则推荐指定多个日志文件</li>
 </ul>
+<p>auto.create.topics.enable</p>
 <ul>
-<li>是否允许自动创建 topic</li>
-<li>建议设置为 false ，以提高 topic 的创建成本从而领到 topic 名称更加规范而不会出现乱七八糟的名字</li>
+<li>是否允许自动创建 Topic</li>
+<li>建议设置为 false 提高创建成本让命名更加规范</li>
 </ul>
 <p>auto.leader.rebalance.enable </p>
 <ul>
-<li>是否开启定期选举</li>
+<li>是否开启 Leader 平衡策略，用于检查是否有必要重新选举</li>
+<li>开启该功能后默认 300s 扫描一次 Broker，如果 Leader 的比例（即 Broker 上有较多的 Leader）则会发起重新选举</li>
+<li>开启该配置能够更合理地利用集群服务器资源，但 Leader 选举会导致服务短暂不可用</li>
 </ul>
-<p>num.replica.fetchers</p>
+<p>num.replica.fetchers（重要）</p>
 <ul>
 <li>指定 Follower Replica 用多少条线程拉取 Leader Replica 的数据（默认为 1 条线程）</li>
 <li>如果 CPU 充裕可以适当地增加线程以加速拉取数据</li>
 </ul>
-<p>unclean.leader.election.enable</p>
+<p>unclean.leader.election.enable （重要）</p>
 <ul>
-<li>是否允许<code>非ISR集合成员</code>参与 Partition  Leader 选举（默认值为false） </li>
-<li>如果设置为 true，那么在较为极端的情况下，如 ISR 全部宕机而非 ISR 竞选成为 Leader 就会造成数据丢失。而如果设置 false ，则当所有 ISR 宕机后就以为着 Kafka 集群不可用的，因此这是一种降低可用性来提高一致性的策略</li>
-<li>那何为 unclean 呢？每个分区都有多个副本来提供高可用。在这些副本中只能有一个副本能够对外提供服务，即所谓的 Leader 副本。 那么其余的都是 clean 节点吗？并不，所谓的 ISR 集合（即 clean 节点集合）指的是那些保存数据比较多的副本。而其余的就是 unclean 节点了</li>
+<li>是否允许非 ISR 成员参与 Leader 选举（默认值为false） </li>
+<li>如果设置为 true，在较为极端的情况下，如 ISR 全部宕机而非 ISR 竞选成为 Leader 就会造成数据丢失</li>
+<li>那何为 unclean 呢？指非 ISR 成员节点</li>
 </ul>
 <p>replica.lag.time.max.ms</p>
 <ul>
-<li>用于控制 Replica 复制滞后的最大容忍时间，默认为 10 秒</li>
-<li>表示当 Follower Replica 数据落后超过 Leader Replica 10 秒的话就会被踢出 ISR 集合（追上来后会被从新纳入到 ISR）</li>
-<li><strong>读到这里可能你会有这样的问题，就是 Follower Replica 复制滞后但还没超出 replica.lag.time.max.ms 时 Leader 宕机了，而这种情况是否会丢失同步滞后的这部分数据？默认情况下个人理解是会的，但可以通过 Producer 的 acks 以及 Broker 的 min.insync.replicas 来解决</strong></li>
+<li>控制 Replica 复制滞后的最大容忍时间（默认为 10 秒）</li>
+<li>表示当 Follower Replica 数据落后超过 10 秒就会被踢出 ISR 集合</li>
 </ul>
 <p>delete.topic.enable</p>
 <ul>
-<li>是否允许删除topic（默认为true）</li>
+<li>是否允许删除 topic（默认为true）</li>
 </ul>
 <p>log.retention.{hours|minutes|ms}</p>
 <ul>
-<li>用于设置日志文件的保存时间（默认保存7天）</li>
+<li>设置日志文件保存时间（默认保存7天）</li>
 </ul>
 <p>log.retention.bytes</p>
 <ul>
-<li>用于设置日志文件的最大值</li>
-<li>该参数和 log.retention 类似，当保存的日志超过该值时就会执行清理清除（默认为-1 表示不启用该功能）</li>
+<li>设置日志文件的最大保留容量值</li>
+<li>该参数和 log.retention 类似，当日志超过该值就会执行清理（默认为-1，不启用该功能）</li>
 </ul>
-<p>min.insync.replicas</p>
+<p>min.insync.replicas（重要）</p>
 <ul>
-<li>用于设置必须应答成功的 Replica 数。该配置只在 Producer 中 acks 值为 -1/all 时才生效</li>
-<li>譬如某个 Topic 的 Partition 数为 3，而现在将 min.insync.replicas 设置为 2，则表示 Kafka 集群只允许1台 Broker 响应不成功，否者 Producer 就需要进入重试操作</li>
-<li>还需要注意的是，Producer 一次写入操作成功与否是取决于 ISR 集合的 ack 响应个数的。譬如  Partition=3、min.insync.replicas=2、但当前 ISR 集合中只有 1 台，因此并不能满足 min.insync.replicas 要求</li>
+<li>设置必须应答成功的 ISR Replica 数</li>
+<li>该配置只在 Producer 中 acks 值为 -1/all 时才生效</li>
+<li>一次消息写入操作成功与否是取决于 ISR 成员的 ack 响应数量。譬如  Partition=3、min.insync.replicas=2、但当前 ISR 集合中只有 1 台，因此不能满足 min.insync.replicas 要求</li>
 </ul>
-<p>message.max.bytes</p>
+<p>message.max.bytes（重要）</p>
 <ul>
-<li>指定 Broker 能够接收的消息的最大值（默认为1M）</li>
+<li>指定 Broker 能够接收的每条消息的最大容量值（默认为1M）</li>
 <li>建议重新设置该值，因为 Kafka Producer 往往会批量发送消息，所以超过 1 M 的情况也很常见</li>
 </ul>
 <h2 id="Java-kafka-Consumer"><a href="#Java-kafka-Consumer" class="headerlink" title="Java kafka Consumer"></a>Java kafka Consumer</h2><blockquote>
-<p>注意：</p>
+<p>注：</p>
 <ul>
-<li>新版（Java编写）的 KafkaConsumer 是单线程架构，且不是线程安全的</li>
-<li>从 Kafka 0.10.1 版本后发送心跳包操作由专门的心跳线程处理，而且该线程还能通过心跳包感知分区再均衡的发生</li>
+<li>新版（Java编写） KafkaConsumer 是单线程架构的，且不是线程安全的</li>
+<li>从 Kafka 0.10.1 版本后发送消费者心跳包操作会由专门的心跳线程处理，而且该线程还能通过心跳包感知分区再均衡的发生</li>
 </ul>
 </blockquote>
 <h3 id="Consumer-Group概念"><a href="#Consumer-Group概念" class="headerlink" title="Consumer Group概念"></a>Consumer Group概念</h3><p><strong>为什么需要消费者组？</strong></p>
-<p>当 producer 生产消息的速度比 consumer 的消费速度快时，consumer 的消费能力就显得低下了。因此无法满足一些对实时性要求较高的业务。那么消费者组就是用来提高 consumer 的消费能力的</p>
+<p>当 producer 生产消息的速度比 consumer 的消费速度快时，consumer 的消费能力就显得低下了，所以因此而无法满足时性实时消费性较高的业务场景（还与发送缓冲区有关）。而消费者组其实就是用来提高 consumer 消费能力而设计的，可以将消费者组视为一个多线程的 consumer 。</p>
 <blockquote>
-<p>消费者组说明</p>
+<p>介绍</p>
 </blockquote>
-<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为4。当消费者组中仅有1个消费者时</p>
+<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为4。</p>
+<p>1）费者组中仅有1个消费者时</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/007.png" alt></p>
-<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为4。当消费者组中有2个消费者时</p>
+<p>2）消费者组有2个消费者时</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/008.png" alt></p>
-<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为4。当消费者组中有4个消费者时</p>
+<p>3）当消费者组有4个消费者时</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/009.png" alt></p>
-<p>消费者组订阅 Topic T1，其中 T1 的 Partition 数量为 4。当消费者组中有5个消费者时</p>
+<p>4）当消费者组中的消费者数量超过了Partition数量时（不会提高消费能力）</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/010.png" alt></p>
-<p>2个消费者组同时订阅 Topic T1，其中 T1 的 Partition 数量为4。</p>
-<p>消费者组1，有4个消费者。消费者组2，有2个消费者。</p>
+<p>5）当有 2 个消费者组同时订阅 Topic T1 时（消费者组之间互不影响）</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/011.png" alt></p>
-<blockquote>
 <p>小结</p>
-</blockquote>
 <ol>
-<li>同 Consumer Group 中的不同 Consumer，在同一时刻无法消费同一个 Partition</li>
-<li>Consumer Group 中的 Consumer 可以同时消费多个 Partition，但不能消费不属自己负责的 Partition</li>
-<li>即使 Consumer Group 中的 Consumer 数量多于 Partition 数量，也不会提高 Consumer Group 的消费能力</li>
+<li>同 Consumer Group 中不同的 Consumer 在同一时刻无法消费同一个 Partition</li>
+<li>Consumer Group 中的 Consumer 可以同时消费多个 Partition<ul>
+<li>不能消费不属自己负责的 Partition，由分区再均衡确定消费关系</li>
+</ul>
+</li>
+<li>即使 Consumer Group 的 Consumer 数量多于 Partition 数量，也不会提高消费能力</li>
 <li>多个 Consumer Group 同时订阅同一个 Topic 时，互不干扰</li>
 </ol>
 <h3 id="分区再均衡"><a href="#分区再均衡" class="headerlink" title="分区再均衡"></a>分区再均衡</h3><blockquote>
 <p>是什么？</p>
 </blockquote>
-<p>&emsp;&emsp;在 Consumer Group 中的 Consumer 没超过 Partition 数的情况下，每一个 Consumer 都能分配到一个独自负责消费的 Partition 。但因为某些原因，譬如有新的 Consumer 加入到当前 Group 中，那么 Consumer Group 就会<code>根据分配策略</code>来重新设置 Connsuemr 和 Partition 的消费关系，而这个过程就叫做分区再均衡。</p>
-<p>&emsp;&emsp;注意，再均衡和 JVM 的 STW 类似，在<code>再均衡期间 Consumer 是不能消费消息的</code>，而且<code>再均衡所需消耗的时间会随着 Consumer 的增多而增加</code>。</p>
+<p>&emsp;&emsp;在消费者组的 Consumer 数量没超过 Partition 数量的情况下，每一个 Consumer 都能分配到一个或多个独自负责的 Partition 。但现在因为某些原因某个 Consumer 宕机了，这时消费者组就会根据<strong>分配策略</strong>来重新设置 Connsuemr 和 Partition 的消费关系。而这个过程就叫做分区再均衡。</p>
+<p>注：分区再均衡和 JVM 的 STW 类似，在期间正常的 Consumer 是不能继续消费的，而需要等待分区再均衡结束。</p>
 <blockquote>
-<p>什么情况会发生分区再均衡？</p>
+<p>什么情况下会发生分区再均衡？</p>
 </blockquote>
 <ol>
-<li><p><strong>Consumer Group 成员数量发生变化</strong></p>
+<li><p>消费者组成员数量发生变化</p>
 <ul>
 <li>譬如有新 Consumer 加入到 Group 中，又或是有 Consumer 宕机导致从 Group 中脱离时</li>
 <li>Broker 会作为 Consumer Group 的<code>协调器</code>，Consumer 则需要定时地主动向协调者发送心跳包（在Kafka-0.10.1版本之后有专门的线程来发送心跳包），而如果 Consumer 长时间（session.timeout.ms指定，默认10秒）没有向协调者发送心跳包的话就会被协调者视为死亡从而导致被踢出Group 而导致分区再均衡</li>
 </ul>
 </li>
-<li><p><strong>Topic 的 Partition 数量被修改</strong></p>
+<li><p>Topic 的 Partition 数量发生变化</p>
 </li>
-<li><p><strong>Consumer Group 所订阅的 Topic 数量发生变化</strong></p>
+<li><p>订阅的 Topic 数量发生变化</p>
 <ul>
-<li>譬如 Kafka 支持使用正则表达式匹配订阅主题，这样就比较容易发生再均衡了</li>
+<li>譬如 Kafka 是支持使用正则表达式匹配订阅 Topic 然后消费的</li>
 </ul>
 </li>
 </ol>
 <blockquote>
 <p>如何尽量避免再均衡？</p>
 </blockquote>
-<p>首先上面提到的<code>订阅Topic数量发生变化</code>以及<code>订阅Topic的Partition数量发生变化</code>这种两种情况是不能避免的，因此我们应该尽量关注<code>Consuemr Group成员数量发生变化</code>这种情况。譬如除了维护人员主动增加 Consumer 外，上面提到的因为协调器在特定时间内没有收到 Consumer 的心跳包也会导致分区再均衡的发生，而避免这种情况发生可以通过调节一下3个参数来达到：</p>
+<p><strong>订阅的 Topic 数量发生变化</strong>、<strong>Topic 的 Partition 数量发生变化</strong>这两种情况是不能避免的，因为这时业务上的需要，所以我们应该关注的是<strong>消费者组成员数量发生变化</strong>这种情况。</p>
+<p>譬如除了维护人员主动增加 Consumer 外，协调器在特定时间内如果没有收到 Consumer 的心跳包也会导致分区再均衡的发生。</p>
+<p>为了降低这种情况的发生率，我们可以通过调节以下参数来做到：</p>
 <ul>
-<li><strong>session.timeout.ms</strong>：该值默认为 10 秒，表示协调器必须在这段时间收到 Consuemr 的心跳包否者就会将其踢除出Group进而导致分区再均衡的发生</li>
-<li><strong>heartbeat.interval.ms</strong>：该配置用于限制 Consumer 发送心跳包给协调器的时间间隔。该值必须小于 session.timeout.ms 这样才能让协调器更高地感知 Consumer 是否存活</li>
-<li><strong>max.poll.interval.ms</strong>：该配置用于限制 Consuemr 消费消息的最长时间（默认为 5 分钟）。<ul>
-<li>如果 Consumer 处理消息的时长超过了该配置那么协调器就会认为该 Consumer 消费能力低下从而将其踢出 Group 进而触发分区再均衡</li>
-<li>在<code>Kafka-0.10.1版本</code>之前 Consumer 是没有独立的线程来发送心跳包的，也就是说 Consumer 只有在 conmit 或 poll 时才会发送心跳包，所以如果使用的是 0.10.1 之前版本的 Kafka 的话 max.poll.interval.ms 就不能超过 session.timeout.ms 了，否者如果处理时间过长的话会被协调器认为已经挂掉了，会被踢出Group从而导致分区再均衡</li>
-<li>如果因为 Consumer 消费能力低下而导致分区在混合，那么 Consumer 在处理完消息 commit 时将会发生<code>CommitFailedException</code> 异常，该异常是不可恢复的，它要表达的是分区再均衡导致 Parition 分配给了其它 Consumer，因此当前这个 Conusmer 并不能提交到到当前 Partition 的 offset。避免以上情况的解决方案就是及时消费消息，例如增大 max.poll.interval.ms 值，又或者降低  max.poll.records 值（控制一次poll所获取到的消息数量），再者就是使用多线程增加 Consumer 的消费能力</li>
+<li>session.timeout.ms<ul>
+<li>该值默认为 10 秒，表示协调器必须在这段时间内收到心跳包，否者就将其踢除出消费者组（导致分区再均衡）</li>
+</ul>
+</li>
+<li>heartbeat.interval.ms<ul>
+<li>用于限制 Consumer 发送心跳包的时间间隔</li>
+<li>注意该值必须小于 session.timeout.ms 才有意义</li>
+</ul>
+</li>
+<li>max.poll.interval.ms<ul>
+<li>用于限制 Consuemr 消费消息的最长时间，该值默认为 5 分钟</li>
+<li>如果超过了该配置的时间，协调器就会认为该 Consumer 消费能力低下（通过 Lag 值判断），从而将其踢除出消费者组（导致分区再均衡）</li>
+<li>在 0.10.1 版本前 Consumer 是没有独立的心跳线程的，也就是说 Consumer 只有在 conmit/poll 操作时才会发送心跳包，所以如果这时 max.poll.interval.ms 就不能超过 session.timeout.ms，因为如果心跳包一旦迟了发送就会被被踢出费者组（导致分区再均衡）</li>
+<li>如果在消费消息期间发生了分区再均衡，那么 Consumer 在 commit 时将会发生CommitFailedException 异常，该异常是不可恢复的，它要表达的是分区再均衡导致 Parition 分配给了其它 Consumer，因此当前 Conusmer 并不能将偏移量再提交到当前 Partition。所以为了避免以上情况 Conusmer 就应该及时消费消息，例如<strong>增大max.poll.interval.ms</strong>或<strong>降低max.poll.records</strong>（一次poll所获取到的消息数量），再者就是<strong>使用多线程</strong>增加 Consumer 的消费能力</li>
 </ul>
 </li>
 </ul>
 <blockquote>
-<p>Broker 中的协调者指的是什么？</p>
+<p>协调者指的是什么？</p>
 </blockquote>
-<p>在上文中提到<code>协调者</code>会负责管理 Consumer Group ，而这个“协调者”实质是指 Coordinator 。Coordinator 是一个专门为 Consumer Group 服务的角色（如果 Consumer 没有 Group ID 就没有对应的 Coordinator ）。</p>
-<p>其中 Coordinator 它有以下特点：</p>
+<p>协调者（Coordinator）主要负责管理消费者组。</p>
+<p>Coordinator 是一个专门为 Consumer Group 服务的角色（与 Group ID 对应）。</p>
+<p>它有以下特点：</p>
 <ul>
 <li>每一个 Broker 都有自己的 Coordinator </li>
-<li>负责 Consumer Group 的再均衡操作</li>
-<li>负责消费者偏移量的管理</li>
-<li>负责 Consumer Group 成员的管理</li>
+<li>负责管理如下内容<ul>
+<li>分区再均衡</li>
+<li>消费者偏移量</li>
+<li>消费者组成员</li>
 </ul>
-<p>那么 Consumer Group 是如何确立与自己对应的 Coordinator 的呢？有以下2部：</p>
+</li>
+</ul>
+<p>那么消费者是如何确立与自己对应的 Coordinator 的呢？有以下 2 个步骤：</p>
 <ol>
-<li><p>确定由 __consumer__offsets 这个 Topic 的哪一个分区来保存当前 Consumer Group 的数据</p>
+<li><p>确定当前消费者组所消费的 Topic 偏移量由哪一个 __consumer__offsets 的 Partition 来保存</p>
 <pre><code class="java">partitionId=Math.abs(groupId.hashCode() % offsetsTopicPartitionCount)</code></pre>
 </li>
-<li><p>找出该分区的 Leader 副本所在的 Broker，而该 Broker 就是当前 Conusmer Group 所对应的 Coordinator 了 </p>
+<li><p>找出该 Partition 的 Replica Leader 所在的 Broker，而该 Broker 就是会成为当前这个消费者组的 Coordinator 了</p>
 </li>
 </ol>
 <h3 id="常用参数"><a href="#常用参数" class="headerlink" title="常用参数"></a>常用参数</h3><p>bootstrap.servers</p>
@@ -742,40 +881,40 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 </ul>
 <p>group.id</p>
 <ul>
-<li><p>指定 Consumer group 的名字，该名字必须在 Broker 中是唯一的</p>
+<li><p>指定集群唯一消费者组的ID</p>
 </li>
-<li><p>默认值为空字符串，建议尽量取一个与业务有关或者有意义的名字，这样可以提高辨析度</p>
+<li><p>建议尽量取一个与业务有关或者有意义的名字，可以提高辨析度</p>
 </li>
 </ul>
-<p>session.timeout.ms（kafka-0.10.1.0 版本之前，非常重要）</p>
+<p>session.timeout.ms（重要）</p>
 <ul>
-<li><code>第1个含义</code>：用于指定 Broker 协调器对 Consumer 停止发送心跳包这种行为的最大容忍限度（默认为10秒），一旦超过该配置指定的事件，Consumer 就会被视为死亡，因此会进行分区再均衡操作</li>
-<li><code>第2个含义</code>：Consumer 处理消息的最大时间限制（既两次poll之间的时间，默认为 5 分钟）。例如 session.timeout.ms = 60000 那么消费者处理消息必须在60s内完成，否则 Broker 协调器会将该 Consumer 视为跟不上消费进度并将其踢出消费者组，因此也会进行分区再均衡操作</li>
+<li>指定协调器对 Consumer 停止发送心跳包这种行为的最大容忍限度（默认为10秒）</li>
+<li>一旦超时 Consumer 就会被协调器踢出消费者组（导致分区再均衡）</li>
 </ul>
-<p>max.poll.interval.ms</p>
+<p>max.poll.interval.ms（重要）</p>
 <ul>
-<li><p>kafka 0.10.1.0 版本之后 session.timeout.ms 进行了拆分，拆分之后 session.timeout.ms 只包含第1个含义，且默认值为10s</p>
+<li><p>Consumer 处理消息的最大时间限制（两次 poll 之间的时间，默认为 5 分钟）</p>
 </li>
-<li><p>而 max.poll.interval.ms 则是第2个含义（建议根据实际处理消息所需要的时间来设置，最好比实际所需的时间大一些）</p>
+<li><p>建议根据实际消息的大小来设置该值</p>
 </li>
 </ul>
 <p>auto.offset.reset（重要）</p>
 <ul>
-<li>该配置用于指定消费者读取一个<code>没有偏移量(还没有消费提交offset)</code>或<code>偏移量无效（因消费者长时间失效，包含偏移量的记录已经过时并被删除）</code>的分区时的应对手段。</li>
-<li>Kafka提供以下 3 种消费模式：<ul>
+<li>指定消费者的消费模式</li>
+<li>提供了三种消费模式：<ul>
 <li>latest（默认）：<ul>
-<li>在偏移量<code>无效</code>的情况下（例如最开始没有offset），Consumer 会<code>从最新插入的那条记录开始消费</code>（在消费者启动之后插入的记录）</li>
-<li>偏移量<code>有效</code>的情况下，Consumer 会在<code>最新的偏移量位置开始消费</code>（既上一次提交的offset位置）</li>
+<li>在偏移量<strong>无效时</strong>（没有提交过偏移量），会从最新插入的那条记录开始消费（即在消费者启动后插入的记录）</li>
+<li>在偏移量<strong>有效时</strong>（已经提交过偏移量），会从最新偏移量位置开始消费（即上一次提交的 offset 位置）</li>
 </ul>
 </li>
 <li>earliest：<ul>
-<li>在偏移量<code>无效</code>的情况下，Consumer 会从 Partition 的<code>起始位置开始消费</code></li>
-<li>偏移量<code>有效</code>的情况下，Consumer 会在<code>最新的偏移量位置开始消费</code>（既上一次提交的offset位置）</li>
+<li>在偏移量<strong>无效时</strong>，会从起始位置开始消费</li>
+<li>在偏移量<strong>有效时</strong>，会从最新偏移量位置开始消费（即上一次提交的 offset 位置）</li>
 </ul>
 </li>
 <li>none：<ul>
-<li>各个 Partition 都<code>存在有效的 offset</code>时，会从<code>有效的 offest 位置开始消费</code></li>
-<li>只要有一个分区<code>不存</code>在有效的 offset，则<code>抛出异常</code></li>
+<li>各个 Replica 都存在有效的 offset 时，从有效offest位置开始消费</li>
+<li>只要有一个 Replica 不存在有效的 offset（没有提交过、已过时或已被删除），则抛出异常</li>
 </ul>
 </li>
 </ul>
@@ -783,106 +922,82 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 </ul>
 <p>enable.auto.commit（重要）</p>
 <ul>
-<li><p>是否自动提交 Consumer offset（默认为true）</p>
-</li>
-<li><p>为了尽量避免<code>重复消费</code>的情况出现，建议把它设为false，然后由程序来控制提交时机</p>
-</li>
-<li><p>如果设为true，则可以通过配置 auto.commit.interval.ms 来控制提交offset的时间间隔</p>
-</li>
+<li>是否开启自动提交 offset 功能（默认为true，默认为 5000 ms）</li>
+<li>为了尽量避免重复消费建议设为 false，然后改由程序来控制提</li>
 </ul>
 <p>auto.commit.interval.ms</p>
 <ul>
-<li><p>该参数必须在 enable.auto.commit = true 时才生效;</p>
-</li>
-<li><p>作用是控制自动提交 offset 的时间间隔（默认为 5000）</p>
-</li>
+<li>控制自动提交消费者偏移量的时间间隔</li>
+<li>该配置只在 enable.auto.commit = true 时才生效</li>
 </ul>
 <p>partition.assignment.strategy</p>
 <ul>
-<li><p>用于指定分区分配策略，通俗点来说就是如何将分区分配给消费者</p>
+<li><p>指定分区分配策略，即如何将分区分配给消费者</p>
 </li>
-<li><p>默认为range，既随机分配，还可以设置成 roundrobin 轮询分配</p>
+<li><p>默认为 RangeAssignor，除此之外还有 RoundRobinAssignor、StickAssignor</p>
 </li>
 </ul>
 <p>client.id</p>
 <ul>
-<li>用于给 Broker 设置客户端标识</li>
+<li>设置客户端ID</li>
 </ul>
 <p>fetch.max.bytes（重要）</p>
 <ul>
-<li><p>用于指定 Consumer 单次获取消息数据的最大字节</p>
-</li>
-<li><p>注意，如果实际业务中消息都很大的，那么就需要设置一个较大的值，否则无法获取数据。除此之外提高该值还可以增加 Consumer 的吞吐量（增大吞吐量还可以使用多线程方式解决）</p>
-</li>
+<li>指定单次获取消息数据的最大字节数</li>
+<li>如果实际业务中消息比较大，则应该将该值适当地调高，否则无法获取数据来消费</li>
+<li>调高该值有利于增加 Consumer 的吞吐量</li>
 </ul>
 <p>max.poll.records（重要）</p>
 <ul>
 <li>用于指定单次 poll 能够获取到的最大 record 数量（默认为500）</li>
-<li>建议：<ul>
-<li>如果用户程序处理消息所需的时间较长，那么应该将该值设置得小一些，例如1，否则很容易被 Borker协调器认为消费能力过低从而被提出消费者组</li>
-<li>如果用户程序的处理能力较强，则可以设置大一些，这样有利于提高Consumer的消费能力</li>
-</ul>
-</li>
+<li>建议如果程序处理消息所需的时间较长（即Consumer消费能力不高的情况下），则该值应该设置得小一些（例如1），否则很容易被协调器提出消费者组导致从而导致分区再均衡</li>
 </ul>
 <p>heartbeat.interval.ms（重要）</p>
 <ul>
-<li><p>用于指定消费者发送心跳包的时间间隔（默认为3000ms）</p>
-</li>
-<li><p>该值必须必比 Broker 的 session.timeout.ms 配置得小，通常不高于1/3，甚至可以更低</p>
-</li>
-<li><p>可以简单理解 heartbeat.interval.ms 可以让 Broker 协调器更快检测到当前消费者是否出现故障</p>
-</li>
+<li>指定消费者发送心跳包的时间间隔（默认为 3000 ms）</li>
+<li>该值必须必比 Broker 的 session.timeout.ms 配置小，否则没有意义。该值通常不高其于1/3，甚至可以更低</li>
+<li>heartbeat.interval.ms 值越低，则可以让协调器更快地检测到当前消费者是否出现故障</li>
 </ul>
 <h3 id="手动提交offset"><a href="#手动提交offset" class="headerlink" title="手动提交offset"></a>手动提交offset</h3><h4 id="自动提交存在的问题"><a href="#自动提交存在的问题" class="headerlink" title="自动提交存在的问题"></a>自动提交存在的问题</h4><blockquote>
-<p>问题1：Consumer 不能及时消费导致数据丢失</p>
+<p>问题1：不能及时消费导致数据丢失</p>
 </blockquote>
-<p>譬如程序处理消息较慢（既Consumer消费能力较弱），导致 offset 在未消费完消息就自动提交了，而这时刚好遇上 Consumer 宕机就会导致数据丢失。因为 offset 已经提交，所以分区再均衡后就会根据该 offset 后的消息开始消费，而其实这个 offset 根本就没有消费成功</p>
+<p>譬 Consumer 消费能力较弱，导致 offset 在未完成消费前被自动提交，而这时又刚好遇上Consumer 宕机就会导致数据丢失。因为这时 offset 已经提交，所以即使发生分区再均衡，其它 Consumer 也只会根据这个 offset 继续消费。</p>
 <blockquote>
-<p>问题2：Consumer 不能及时提交 offset 导致重复消费</p>
+<p>问题2：不能及时提交 offset 导致重复消费</p>
 </blockquote>
-<p>譬如 Consumer offset 自动提交的频率为 5 秒。现在假设 Conusmer 在前 3 秒已经消费了不少消息，但又因为未到 5 秒而无法自动提交 offset，而这时正好遇上宕机或者分区再均衡的话就会导致先前 Consumer 3 秒内所消费的消息再次被消费，因为 offset 根本没有提交，所以就相当于没有消费这些消息</p>
+<p>譬如 Consumer offset 自动提交的频率为 5 秒。假设在前 3 秒已经消费了不少消息，但又因为未到 5 秒，所以暂时还无法提交 offset，而这时正好遇上宕机或者分区再均衡就会导致先前 3 秒内所消费的消息会被再次被消费。</p>
 <blockquote>
 <p>如何解决以上两个问题呢？</p>
 </blockquote>
-<p>&emsp;&emsp;可以通过手动提交 Consumer offset 来解决。例如我们可以在处理完数据之后手动交 offset ，而不是在此之前或较久的之后提交。</p>
-<p>&emsp;&emsp;出现<strong>问题1</strong>是因为 Consumer 消费消息的能力较低而导致 offset 提前提交了而后来又没有处理消息成功而导致的，那么我们只需要做到只有处理消息成功后才提交 offset 这个点问题就可以解决了。</p>
-<p>&emsp;&emsp;而<strong>问题2</strong>中未能及时提交 offset 的情况从另一个角度来说是无法根治的，因此极端情况下即使我们做到<code>处理完消息后马上手动提交offset</code>也不能保证在这个极为短暂的时间间隙里 Consuemr 不会宕机，所以处理完消息后及时提高 offset 只是一种较好的习惯而并不是解决重复消费的方案。因此我们可以得出这么一个结论就是<code>从消息系统层面是无法保证不会重复消费的</code>，解决这个问题只能是在 Consumer 端的业务代码层面解决。</p>
+<p>&emsp;&emsp;改为手动提交 offset 来解决。例如可以在真正处理完消息后才手动交 offset ，而不是在此之前或较久的之后提交。</p>
 <h4 id="同步提交"><a href="#同步提交" class="headerlink" title="同步提交"></a>同步提交</h4><pre><code class="java">while (true) {
-
     ConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
-
-    // 处理消息
-
     try {
-        consumer.commitSync();
+        //...
+        consumer.commitSync(); // 同步提交
     } catch (CommitFailedException e) {
         log.error(&quot;commit failed&quot;, e)
     }
 }</code></pre>
-<p>同步提交是一个阻塞操作，既需要等待 Broker 应答后才能继续工作，换句话来说只要不是发生无法恢复的异常commitSync() 都能提交成功，但这样虽然能够保证 offset 的安全提交到Broker，但无疑会降低消费者的吞吐量</p>
+<p>同步提交是一个阻塞操作，需要等待 Broker 应答后才能继续后续的操作。因此只要不是发生无法恢复的异常 commitSync() 都能提交成功，但这样无疑会降低消费者的消费吞吐量。</p>
 <h4 id="异步提交"><a href="#异步提交" class="headerlink" title="异步提交"></a>异步提交</h4><p>用于解决同步提交导致吞吐量下降的问题</p>
 <pre><code class="java">while (true) {
-
     ConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
-
-    // 处理消息
-
-    consumer.commitAsync();
+    //...
+    consumer.commitAsync(); // 异步提交
 }</code></pre>
-<p>需要注意的是 commitAsync() 不像 commitSync() 那样保证能够成功将 offset 提交到 Broker，换言之就是可能会出现提交失败的情况，这时可以给 commitSync() 设置回调方法进行重试解决</p>
+<p>注意，因为 commitAsync() 是异步的，所以并不能保证成功地将 offset 提交到 Broker。所以这时我们可以给 commitSync() 设置一个回调方法，当提交失败时让其可以进行重试操作。</p>
 <pre><code class="java">while (true) {
     ConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
-
-    // 处理消息
-
+    //...
     consumer.commitAsync(new OffsetCommitCallback() {
         public void onComplete(
             Map&lt;TopicPartition,
             OffsetAndMetadata&gt; offsets, 
             Exception exception) {
-
             if (e != null){
                 // 异常处理
+                // 重试
             }
         }
     });
@@ -890,11 +1005,8 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
 <h4 id="混合提交"><a href="#混合提交" class="headerlink" title="混合提交"></a>混合提交</h4><pre><code class="java">try {
     while (true) {
         ConsumerRecords&lt;String, String&gt; records = consumer.poll(100);
-
-        // 处理消息
-
-           // 异步提交
-        consumer.commitAsync();
+        //...
+        consumer.commitAsync(); // 异步提交
     }
 } catch (Exception e) {
     log.error(&quot;Unexpected error&quot;, e);
@@ -906,8 +1018,7 @@ advertised.listeners=PLAINTEXT://外网ip:9092</code></pre></li>
         consumer.close();
     }
 }</code></pre>
-<p>混合提交可以进一步保证 offset 能够成功提交到 Broker 也兼顾了吞吐量。</p>
-<h4 id="SpringBoot-Kafka手动提交案例"><a href="#SpringBoot-Kafka手动提交案例" class="headerlink" title="SpringBoot Kafka手动提交案例"></a>SpringBoot Kafka手动提交案例</h4><p>配置</p>
+<h4 id="Spring-Kafka手动提交案例"><a href="#Spring-Kafka手动提交案例" class="headerlink" title="Spring Kafka手动提交案例"></a>Spring Kafka手动提交案例</h4><p>配置</p>
 <pre><code class="yaml">spring:
   kafka:
     bootstrap-servers: 127.0.0.1:9092
@@ -960,30 +1071,23 @@ public void listener(List&lt;String&gt; recordes, Acknowledgment ack){
     ack.acknowledge();
 }</code></pre>
 <h2 id="命令行工具"><a href="#命令行工具" class="headerlink" title="命令行工具"></a>命令行工具</h2><h3 id="Zookeeper-相关"><a href="#Zookeeper-相关" class="headerlink" title="Zookeeper 相关"></a>Zookeeper 相关</h3><blockquote>
-<p>关系图</p>
-<p>注意：</p>
+<p>注意</p>
 <ul>
-<li>下图并不适合目前较新版本的Kafka集群，因为在较新版本的Kafka中元数据推送是由 Kafka Controller 来维护的，既其它 Broker 只需要从 Controller 中获取集群元数据即可而不用从 Zookeeper 中拉取。</li>
-<li>除此之外，Kafka 在 KIP-500 Z 中正考虑使用 Raft 算法来代替 Zookeeper 选举，所以在日后的版本更新中 Zookeeper 的职责可能会越来越薄弱</li>
+<li>下图并不适合目前较新版本的 Kafka 集群，因为在较新版本的 Kafka 中元数据是由 Broker Controller 来维护的，既其它 Broker 只需要从 Broker Controller 中获取即可而不用从 Zookeeper 中拉取。</li>
+<li>除此之外，在 KIP-500Z 中正在考虑使用 Raft 算法来代替 Zookeeper 选举，因此在日后的版本更新中 Zookeeper 的职责可能会越来越薄弱，到最后完全移除 Zookeeper</li>
 </ul>
 </blockquote>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/013.png" style="zoom: 25%;">
 
-
-
 <blockquote>
-<p>Zookeeper中保存的 Broker 集群信息 </p>
-<p>其中图中 “直角方块” 代表持久性节点 而 “圆角方块” 代表临时节点</p>
+<p>保存的 Broker 集群信息 </p>
+<p>图中<strong>直角方块</strong>代表持久性节点，而<strong>圆角方块</strong>则代表临时节点</p>
 </blockquote>
 <img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/019.png" style="zoom:67%;">
 
 <ul>
-<li>ids 节点维护的是集群中 Broker 的唯一标识，节点内容为 Broker 的元信息</li>
-<li>topics 节点维护的是 Topic 的 Partitions 信息，其中数字为 Partition 的编号，而 state 节点由 Replica Leader 维护，保存的是当前分区的 Replica Leader 以及其它 ISR 成员的信息。一旦 Replica Leader 不可用，该节点会被新 Replica Leader 重新创建和维护</li>
-</ul>
-<p>注：</p>
-<ul>
-<li>个人建议另外下载一个新版的 Zookeeper 来管理 Kafka 集群而不是使用自带的，因为如果 Zookeeper 需要配置集群或日后考虑升级，自带的 Zookeeper 就显然不是很方便了</li>
+<li>ids 节点维护的是 Broker 的唯一标识，节点内容为 Broker 的元信息</li>
+<li>topics 节点维护的是每个 Topic 对应的 Partitions 信息，而数字节点表示 Partition 的编号。其中 state 节点由 Replica Leader 来维护，保存的是当前 Replica Leader 以及其它 ISR 成员的信息。但当 Replica Leader 不可用时，该节点就会被新 Replica Leader 重新创建和维护</li>
 </ul>
 <p>前台启动</p>
 <pre><code class="shell">bin/zookeeper-server-start.sh config/zookeeper.properties</code></pre>
@@ -991,7 +1095,9 @@ public void listener(List&lt;String&gt; recordes, Acknowledgment ack){
 <pre><code class="shell">bin/zookeeper-server-start.sh -daemon config/zookeeper.properties</code></pre>
 <p>停止</p>
 <pre><code class="shell">bin/zookeeper-server-stop.sh</code></pre>
-<p>这里多说一句，不要动不动就 <code>kill -9</code> 强制杀死 Zookeeper 进程，因为这样可能会导致 Zookeeper 无法及时处理资源而导致下次无法正常启动。如果发生这种情况，可以尝试将 Zookeeper 保存数据文件夹清空后再尝试启动。</p>
+<ul>
+<li>这里多说一句，不要动不动就 <code>kill -9</code> 强制杀死 Zookeeper 进程，因为这样可能会导致 Zookeeper 无法及时处理资源，以至于下次无法正常启动。而如果发生这种情况，可以尝试将 Zookeeper 的数据删除后再重启。</li>
+</ul>
 <p>zkClient连接zookeeper</p>
 <pre><code class="shell">bin/zookeeper-shell.sh localhost:2181</code></pre>
 <h3 id="Broker-相关"><a href="#Broker-相关" class="headerlink" title="Broker 相关"></a>Broker 相关</h3><p>前台启动</p>
@@ -1016,8 +1122,7 @@ Created topic test2.
 
 Topic: test2    PartitionCount: 2    ReplicationFactor: 2    Configs: 
     Topic: test2    Partition: 0    Leader: 0    Replicas: 0,5    Isr: 0,5
-    Topic: test2    Partition: 1    Leader: 5    Replicas: 5,0    Isr: 5,0
-</code></pre>
+    Topic: test2    Partition: 1    Leader: 5    Replicas: 5,0    Isr: 5,0</code></pre>
 <ul>
 <li>注意：其中 0 和 5 分别代表集群中 Broker 的 ID 值。该值可以通过配置文件配置</li>
 <li>输出第一行的意思是：分区0的 Replica Leader 位于 Borker-0 上，其中该分区有2个副本，分别位于 Broker-0和Broker-5上（位于Broker-0上的副本其实就是Replica Leader），而该分区的同步副本集成员分别有 Broker-0 和 Broker-5 （Isr集合是包含 Replica Leader 的）</li>
@@ -1155,62 +1260,86 @@ timestamp: 1568921728321 offset: 3139</code></pre><ul>
 <p>输出如下</p>
 <pre><code>testx:0:468335
 testx:1:468334
-testx:2:468332</code></pre><h2 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h2><h3 id="如何保证消息不丢失"><a href="#如何保证消息不丢失" class="headerlink" title="如何保证消息不丢失"></a>如何保证消息不丢失</h3><p>数据丢失的核心原因是 Broker 没有保存成功，当然换个角度是 Producer 没有发送成功。而还需要特别注意的是 Producer中的 send 方法是异步的，既即使 send 返回后也不能保证消息发出去了，而只是发送到了缓冲中</p>
+testx:2:468332</code></pre><h2 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h2><h3 id="如何保证消息不丢失"><a href="#如何保证消息不丢失" class="headerlink" title="如何保证消息不丢失"></a>如何保证消息不丢失</h3><p>数据丢失的核心原因 Producer 没有确保 Broker 持久化日志成功。</p>
 <p><strong>Producer配置</strong></p>
 <ul>
 <li><p>block.on.buffer.full = true</p>
-<p>消息缓冲池满后停止接收新的消息而不抛出异常，避免因为异常丢失数据</p>
+<p>消息缓冲区满后，停止接收新的消息而不抛出异常（避免异常丢失数据）</p>
 </li>
 <li><p>acks = all</p>
-<p>生产者生成消息后需要得到所有的 Broker 的应答，否则认为发送不成功，因此进行重试发送</p>
+<p>Producer 需要确认所有 Broker 成功应答，否则认为发送不成功，进行重试发送</p>
 </li>
 <li><p>retries = Integer.MAX_VALUE</p>
-<p>将重试次数设置到最大值，表示尽量重试</p>
+<p>将重试次数设置到最大值</p>
 </li>
 <li><p>max.in.flight.requests.per.connection = 1</p>
-<p>因为开启了重试，所以将其设置为1来保证消息的顺序</p>
+<p>因为开启了重试，所以将其设置为 1，在 Broker 没应答前不发送数据</p>
 </li>
-<li><p>发送消失时，预防发送失败，使用回调函数来补救。即不使用 producer.send(msg)，而是使用 producer.send(msg, callback)</p>
+<li><p>不使用 producer.send(msg)，而是使用 producer.send(msg, callback) 手动预防失败</p>
 </li>
 </ul>
 <p><strong>Broker配置</strong></p>
 <ul>
 <li><p>unclean.leader.election.enable = false</p>
-<p>避免<code>非ISR</code>成员竞选为 Leader 从而导致数据丢失</p>
+<p>避免非 ISR 成员成为为 Leader 而导致数据丢失</p>
 </li>
 <li><p>replication.factor 设置大于等于 3</p>
-<p>尽量使用备份来避免分区单点故障</p>
+<p>尽量使用备份来避免 Partition/Replica 单点故障</p>
 </li>
-<li><p>min.insync.replicas =  1</p>
-<p>表示至少有1个 Replica 成功写入数据并响应 Leader 才算写入成功，否则视为持久化不成功（producer抛出异常）。该配置只有在 Producer 设置了acks=all 才有效，建议设置过半节点数</p>
+<li><p>min.insync.replicas =  过半节点数</p>
+<p>表示至少有过半节点数的 Replica 写入成功才让 Leader 响应客户端</p>
+<p>该配置只有在 acks=all 才有效，建议设置过半节点数</p>
 </li>
 </ul>
 <p><strong>Consumer配置</strong></p>
 <ul>
-<li>采用手动提交 offset 而不是自动提交</li>
-<li>消费（处理）完后才提交 offset ，而不是拿到消息还没处理就提交 offset</li>
-<li>Consumer 应该及时消费消息</li>
+<li>采用手动提交偏移量，避免还没消费就提交了 offset</li>
+<li>消费者应该及时消费消息，尽量使用消费者组来提供消费能力</li>
 </ul>
-<h3 id="如何保证只消费1次"><a href="#如何保证只消费1次" class="headerlink" title="如何保证只消费1次"></a>如何保证只消费1次</h3><p>一条消息多次消费的原因：</p>
-<ul>
-<li>offset 没能及时提交。譬如处理完消息后没有提交offset就宕机了</li>
-<li>生产者开启了重试功能，导致消息重复生产</li>
-</ul>
-<p>其实在上面已经提高过，对于消息被重复消费这个问题目前而言在消息系统层面是无法解决的，而唯一解决的办法就是从 Consumer 端的业务代码层面解决</p>
-<h3 id="如何解决消息乱需问题"><a href="#如何解决消息乱需问题" class="headerlink" title="如何解决消息乱需问题"></a>如何解决消息乱需问题</h3><p>首先需要知道的是目前的 Kafka 并不支持全局（多个Partition之间）消息有序，只能保证单个 Partition 内是有序的。且当生产者开启重试功能后，Partition 内部也是可能发生乱序情况的。这时就需要将max.in.flight.requests.per.connection 设置为1来尽量降低乱序情况</p>
-<h3 id="关于-Kafka-Producer-的幂等性"><a href="#关于-Kafka-Producer-的幂等性" class="headerlink" title="关于 Kafka Producer 的幂等性"></a>关于 Kafka Producer 的幂等性</h3><p>在 Producer 方可以通过添加 enable.idempotence = true 配置参数来实现 Producer 发送消息的幂等性。但它有以下局限：</p>
+<h3 id="如何保证只消费1次"><a href="#如何保证只消费1次" class="headerlink" title="如何保证只消费1次"></a>如何保证只消费1次</h3><p>一条消息被多次消费有以下原因</p>
 <ol>
-<li>只能保证单个 Partition 消息的幂等，既如果 Topic 有多个会话就不好使了</li>
-<li>只能保证当前会话发送的消息的幂等，既如果 Producer 重新创建新的会话就不好使了，譬如重启Producer</li>
+<li>offset 没能及时提交，导致重复消费<ul>
+<li>解决方法是手动提交偏移量，且尽量做到消费完就马上提交</li>
+</ul>
+</li>
+<li>生产者重试发送，导致相同的消息发送了多条<ul>
+<li>可以直接关闭重试发送功能，或开启 Producer 消息幂等功能</li>
+<li>也可以代码层面解决</li>
+</ul>
+</li>
 </ol>
-<h3 id="对实时性要求较高，建议使用-RoketMQ"><a href="#对实时性要求较高，建议使用-RoketMQ" class="headerlink" title="对实时性要求较高，建议使用 RoketMQ"></a>对实时性要求较高，建议使用 RoketMQ</h3><p>因为 Kafka 采用了异步 Producer.send 以及 发送缓冲来提高消息发送的吞吐量，因此在实时性访问并没有 RocketMQ 那么好。如果系统业务对消息实时性要求较高，那么个人建议这时应该使用 RocketMQ 而不是 Kafka。换句话说你可以简单理解如果需要高吞吐量就选择 Kafka ，而需要实时性高就选择 RocketMQ。</p>
+<h3 id="如何解决消息乱需问题"><a href="#如何解决消息乱需问题" class="headerlink" title="如何解决消息乱需问题"></a>如何解决消息乱需问题</h3><ul>
+<li>目前而言 Kafka 是不不支持全局（多个Partition之间）有序的，而只能保证单个 Partition 内是有序的</li>
+<li>而且当 Producer 开启重试功能后，单个Partition 内部也是可能会乱序。这时可以将 max.in.flight.requests.per.connection 设置为 1 解决</li>
+</ul>
+<h3 id="关于-Producer-消息幂等性"><a href="#关于-Producer-消息幂等性" class="headerlink" title="关于 Producer 消息幂等性"></a>关于 Producer 消息幂等性</h3><p>在 Producer 方可以通过添加 enable.idempotence = true 配置参数来实现 Producer 发送消息的幂等性。但它有以下局限：</p>
+<ol>
+<li>只能保证单个 Partition 消息的幂等</li>
+<li>只能保证当前会话发送的消息的幂等</li>
+</ol>
+<p>注意，当开启 enable.idempotence = true 时，它默认会设置如下配置</p>
+<ol>
+<li>acks = all</li>
+<li>retries = Integer.MAX_VALUE</li>
+<li>max.inflight.requests.per.connection = 1 </li>
+</ol>
+<h3 id="关于-Kafka-的实时性"><a href="#关于-Kafka-的实时性" class="headerlink" title="关于 Kafka 的实时性"></a>关于 Kafka 的实时性</h3><p>导致 Kafka 实时性不足的原因：</p>
+<ul>
+<li>生产者采用了异步 send 实现消息发送</li>
+<li>生产者采用了 batch、buffer 相关的机制提高生了发送吞吐量</li>
+</ul>
+<p>如果要想提高实时性，则可以通过条件以上相关的参数来解决。又或者直接选用实时性较好的 RocketMQ 来解决。</p>
 <h3 id="监控-Kafka-Consumer-的消费进度"><a href="#监控-Kafka-Consumer-的消费进度" class="headerlink" title="监控 Kafka Consumer 的消费进度"></a>监控 Kafka Consumer 的消费进度</h3><blockquote>
-<p>注意：监控消费进度实质就是观察消费者组的 Lag 值。Lag 指的是 Consumer 落后的进度。譬如 Producer 生成1000 条消息，而 Consumer 值消费了 600 条，那么当前 Consumer 的 Lag 值就是 400，表示 Conusmer 已经滞后了 400 条消息。因此 Lag 值越大就表示 Consumer 的处理能力越低</p>
+<p>注意：</p>
+<ul>
+<li>监控消费进度实质就是观察消费者组的 Lag 值。</li>
+<li>Lag 指的是 Consumer 落后的进度。譬如生成了 1000 条消息，而 Consumer 只消费了 600 条，那么当前 Consumer 的 Lag 值就是 400，表示已经滞后了 400 条消息。所以 Lag 值越大就表示 Consumer 的处理能力越低</li>
+</ul>
 </blockquote>
-<p>监控方式有以下 3 种：</p>
+<p>通常监控 Kafka 的手段有如下这些：</p>
 <ul>
 <li><p>kafka-consumer-groups 脚本 (推荐)</p>
-<pre><code class="shell">kafka-consumer-groups.sh --bootstrap-server &lt;Kafka broker 连接信息 &gt; --describe --group &lt;group 名称 &gt;</code></pre>
+<pre><code class="shell">kafka-consumer-groups.sh --bootstrap-server &lt;Kafka broker 连接信息 &gt; --describe --group &lt;group 名称&gt;</code></pre>
 </li>
 <li><p>Kafka Consumer API</p>
 </li>
@@ -1219,15 +1348,17 @@ testx:2:468332</code></pre><h2 id="常见问题"><a href="#常见问题" class="
 </ul>
 <h3 id="Kafka-的-Heap-Size-应该如何设置"><a href="#Kafka-的-Heap-Size-应该如何设置" class="headerlink" title="Kafka 的 Heap Size 应该如何设置"></a>Kafka 的 Heap Size 应该如何设置</h3><ol>
 <li>业界经验值 6G</li>
-<li>系统正常情况下，通过手动触发 Full GC 并观察其存货对象的总大小，再将该值乘上1.5或2被大小，再将这个大小设置为 Heap Size 即可</li>
+<li>系统正常情况下，通过手动触发 Full GC 并观察其存活的对象的总大小，再将该基础上添加 30~40% 倍来设置</li>
 </ol>
-<h3 id="Leader-副本状态总是为-1-如何解决"><a href="#Leader-副本状态总是为-1-如何解决" class="headerlink" title="Leader 副本状态总是为 -1 如何解决"></a>Leader 副本状态总是为 -1 如何解决</h3><p>删除 Zookeeper 中的<code>/Controller</code>节点，重新选举 Controller 。因为重新选举 Controller 后，Controller 会为所有 Topic 的分区重新刷新状态。</p>
+<h3 id="Leader-副本状态总是为-1-如何解决"><a href="#Leader-副本状态总是为-1-如何解决" class="headerlink" title="Leader 副本状态总是为 -1 如何解决"></a>Leader 副本状态总是为 -1 如何解决</h3><p>手动删除 Zookeeper 中的<strong>/Controller</strong>节点，重新选举 Controller 。</p>
+<p>因为重新选举 Controller 后，Controller 会为所有 Topic 的分区重新刷新状态。</p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li><a href="https://stackoverflow.com/questions/48665257/why-kafka-index-files-use-memory-mapped-files-but-log-files-dont" target="_blank" rel="noopener">why kafka index files use memory mapped files ,but log files don’t?</a></li>
 <li><a href="https://www.cnblogs.com/huxiao-tee/p/4660352.html" target="_blank" rel="noopener">认真分析mmap：是什么 为什么 怎么用</a></li>
 <li><a href="https://blog.csdn.net/future_fighter/article/details/2477434" target="_blank" rel="noopener">内存映射文件</a></li>
 <li><a href="https://www.confluent.io/blog/apache-kafka-producer-improvements-sticky-partitioner/" target="_blank" rel="noopener">Apache Kafka Producer Improvements with the Sticky Partitioner</a></li>
 <li>《Kafka核心源码解读》</li>
+<li>《深入理解 Kafka》</li>
 </ul>
 
 
@@ -1271,7 +1402,7 @@ testx:2:468332</code></pre><h2 id="常见问题"><a href="#常见问题" class="
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展知识点"><span class="toc-text">拓展知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是磁盘的顺序写入？"><span class="toc-text">什么是磁盘的顺序写入？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存映射文件"><span class="toc-text">内存映射文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#上下文切换和用户态内核态切换"><span class="toc-text">上下文切换和用户态内核态切换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#线程上下文切换"><span class="toc-text">线程上下文切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户态和内核态切换"><span class="toc-text">用户态和内核态切换</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#零拷贝（Zero-copy）"><span class="toc-text">零拷贝（Zero-copy）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是什么？"><span class="toc-text">Kafka是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka常见使用场景"><span class="toc-text">Kafka常见使用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么kafka性能高？"><span class="toc-text">为什么kafka性能高？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Topic、Partition、Replica-之间的关系"><span class="toc-text">Topic、Partition、Replica 之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是如何存储Topic数据的"><span class="toc-text">Kafka是如何存储Topic数据的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#集群控制器"><span class="toc-text">集群控制器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#消息相关"><span class="toc-text">消息相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息的格式"><span class="toc-text">消息的格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic-offset-和-consumer-offset"><span class="toc-text">topic offset 和 consumer offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#topic-offset"><span class="toc-text">topic offset</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#consumer-offset"><span class="toc-text">consumer offset</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Producer"><span class="toc-text">Java kafka Producer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者模型"><span class="toc-text">生产者模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer-interceptor"><span class="toc-text">producer interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义分区策略"><span class="toc-text">自定义分区策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置参数"><span class="toc-text">常用配置参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Broker常用配置参数"><span class="toc-text">Broker常用配置参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Consumer"><span class="toc-text">Java kafka Consumer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group概念"><span class="toc-text">Consumer Group概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分区再均衡"><span class="toc-text">分区再均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用参数"><span class="toc-text">常用参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动提交offset"><span class="toc-text">手动提交offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动提交存在的问题"><span class="toc-text">自动提交存在的问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#同步提交"><span class="toc-text">同步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#异步提交"><span class="toc-text">异步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合提交"><span class="toc-text">混合提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SpringBoot-Kafka手动提交案例"><span class="toc-text">SpringBoot Kafka手动提交案例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Zookeeper-相关"><span class="toc-text">Zookeeper 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker-相关"><span class="toc-text">Broker 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topic-相关"><span class="toc-text">Topic 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者相关"><span class="toc-text">生产者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#消费者相关"><span class="toc-text">消费者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他维护命令工具"><span class="toc-text">其他维护命令工具</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见问题"><span class="toc-text">常见问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证消息不丢失"><span class="toc-text">如何保证消息不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证只消费1次"><span class="toc-text">如何保证只消费1次</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解决消息乱需问题"><span class="toc-text">如何解决消息乱需问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Kafka-Producer-的幂等性"><span class="toc-text">关于 Kafka Producer 的幂等性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#对实时性要求较高，建议使用-RoketMQ"><span class="toc-text">对实时性要求较高，建议使用 RoketMQ</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#监控-Kafka-Consumer-的消费进度"><span class="toc-text">监控 Kafka Consumer 的消费进度</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Kafka-的-Heap-Size-应该如何设置"><span class="toc-text">Kafka 的 Heap Size 应该如何设置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Leader-副本状态总是为-1-如何解决"><span class="toc-text">Leader 副本状态总是为 -1 如何解决</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展知识点"><span class="toc-text">拓展知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是磁盘的顺序写入？"><span class="toc-text">什么是磁盘的顺序写入？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#内存映射文件"><span class="toc-text">内存映射文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#上下文切换和用户态内核态切换"><span class="toc-text">上下文切换和用户态内核态切换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#线程上下文切换"><span class="toc-text">线程上下文切换</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#用户态和内核态切换"><span class="toc-text">用户态和内核态切换</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#零拷贝（Zero-copy）"><span class="toc-text">零拷贝（Zero-copy）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kafka是什么？"><span class="toc-text">Kafka是什么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见使用场景"><span class="toc-text">常见使用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么kafka性能高？"><span class="toc-text">为什么kafka性能高？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Topic、Partition、Replica"><span class="toc-text">Topic、Partition、Replica</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#基本介绍"><span class="toc-text">基本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#为什么需要Partition？"><span class="toc-text">为什么需要Partition？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#日志存储"><span class="toc-text">日志存储</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#集群控制器"><span class="toc-text">集群控制器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#领导者选举"><span class="toc-text">领导者选举</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#优先副本选举（Preferred选举）"><span class="toc-text">优先副本选举（Preferred选举）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Leader-Replica选举"><span class="toc-text">Leader Replica选举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#集群控制器选举"><span class="toc-text">集群控制器选举</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#消息日志"><span class="toc-text">消息日志</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#消息格式"><span class="toc-text">消息格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#topic-offset-和-consumer-offset"><span class="toc-text">topic offset 和 consumer offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#topic-offset"><span class="toc-text">topic offset</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#consumer-offset"><span class="toc-text">consumer offset</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#可靠的日志复制"><span class="toc-text">可靠的日志复制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#HW和LEO"><span class="toc-text">HW和LEO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Leader-Epoch"><span class="toc-text">Leader Epoch</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Producer"><span class="toc-text">Java kafka Producer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者模型"><span class="toc-text">生产者模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#producer-interceptor"><span class="toc-text">producer interceptor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#自定义分区策略"><span class="toc-text">自定义分区策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用配置参数"><span class="toc-text">常用配置参数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Broker常用配置"><span class="toc-text">Broker常用配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-kafka-Consumer"><span class="toc-text">Java kafka Consumer</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Consumer-Group概念"><span class="toc-text">Consumer Group概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#分区再均衡"><span class="toc-text">分区再均衡</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常用参数"><span class="toc-text">常用参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动提交offset"><span class="toc-text">手动提交offset</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#自动提交存在的问题"><span class="toc-text">自动提交存在的问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#同步提交"><span class="toc-text">同步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#异步提交"><span class="toc-text">异步提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#混合提交"><span class="toc-text">混合提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Spring-Kafka手动提交案例"><span class="toc-text">Spring Kafka手动提交案例</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#命令行工具"><span class="toc-text">命令行工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Zookeeper-相关"><span class="toc-text">Zookeeper 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Broker-相关"><span class="toc-text">Broker 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Topic-相关"><span class="toc-text">Topic 相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#生产者相关"><span class="toc-text">生产者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#消费者相关"><span class="toc-text">消费者相关</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他维护命令工具"><span class="toc-text">其他维护命令工具</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#常见问题"><span class="toc-text">常见问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证消息不丢失"><span class="toc-text">如何保证消息不丢失</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何保证只消费1次"><span class="toc-text">如何保证只消费1次</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何解决消息乱需问题"><span class="toc-text">如何解决消息乱需问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Producer-消息幂等性"><span class="toc-text">关于 Producer 消息幂等性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关于-Kafka-的实时性"><span class="toc-text">关于 Kafka 的实时性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#监控-Kafka-Consumer-的消费进度"><span class="toc-text">监控 Kafka Consumer 的消费进度</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Kafka-的-Heap-Size-应该如何设置"><span class="toc-text">Kafka 的 Heap Size 应该如何设置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Leader-副本状态总是为-1-如何解决"><span class="toc-text">Leader 副本状态总是为 -1 如何解决</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>

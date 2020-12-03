@@ -931,9 +931,12 @@ public void cancelPay(){
 <p>例如可以在 Producer 中调节 acks 参数级别，以及在 Broker 中设置 min.insync.replicas 数量来保证消息日志落盘成功</p>
 <p>1）Producer 中 acks 的级别：</p>
 <ul>
-<li>0：Producer 完全不理会 Broker 是否已经将日志落盘（返回ack响应），发送完一批消息后会马上发下一批消息。这时 Producer 的吞吐量最高，但因为不能确保日志落盘成功，所以存在日志丢失的风险</li>
-<li>1（默认）：Producer 会等待 Leader Broker 中的日志落盘成功（返回ack响应）。即只要 Leader Broker 持久化成功，Producer 就会视消息数据发送成功</li>
-<li>-1或all：Producer 会等待集群中所有 Broker 的日志落盘成功（返回ack响应）才会发送下一批消息。该模式下 Producer 的吞吐量最低的，但能够有效确保日志不丢失</li>
+<li><p>0：Producer 完全不理会 Replica 是否已经日志落盘成功，发送完一个批消息后会马上发下一个。这时 Producer 吞吐量最高，但因为能确认日志是否落盘成功，所以存在丢失日志的风险</p>
+</li>
+<li><p>1（默认）：Producer 只关注 Leader Replica 是否已经日志落盘成功。该配置级别是吞吐量和安全性的折中点</p>
+</li>
+<li><p>-1或all：Producer 会等待集群中所有 Replica 的日志落盘成功才会发送下一个批次的消息。消息能够确保落盘成功，但吞吐量最低</p>
+</li>
 </ul>
 <p>2）Broker 中的 min.insync.replicas 配置：</p>
 <ul>
