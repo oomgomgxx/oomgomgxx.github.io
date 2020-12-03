@@ -213,12 +213,13 @@
 </li>
 </ul>
 <h2 id="Topic、Partition、Replica"><a href="#Topic、Partition、Replica" class="headerlink" title="Topic、Partition、Replica"></a>Topic、Partition、Replica</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>&emsp;&emsp;<strong>在Kafka中Topic只是逻辑概念，而物理层面实质是以 Partition 来进行日志存放的。Partition是一个序列，在物理磁盘上对应着一个文件夹，其中包含了一个或多个日志段</strong>。一个 Topic 可以有一个或多个 Partition，也就是说 Topic 的数据在多个 Partition 的情况下是分拆存放的，这是一种去中心化容灾的实现方案。 需要注意的是 Kafka 只能保证单个 Partition 内的消息是有序的，而不能保证全局有序（多个Partition）。</p>
-<p>&emsp;&emsp;<strong>Replica是Partition在副本层面上的概念，一个 Partition 可以有多个 Replica，但至少要有一个作为 Leader Replica 对外提供服务</strong>。在 Kafka 中 Replica 有两种，分别是Leader Replica和Follower Replica。Leader Replica 对客户端的提供<strong>读写服务</strong>。而 Follower Replica 正常情况下是不对外提供服务的（<strong>但 2.4 版本（KIP-392）后，追随者副本也允许提供读服务了</strong>），它的主要职责是<strong>拉取</strong> Leader Replica 中的消息日志进行冗余备份，以及在 Leader Replica 发生故障后接替其职责。</p>
+<p>&emsp;&emsp;<strong>Replica是Partition在副本层面上的概念，一个 Partition 可以有多个 Replica，但至少要有一个作为 Leader Replica 对外提供服务</strong>。在 Kafka 中 Replica 有两种，分别是Leader Replica和Follower Replica。Leader Replica 对客户端的提供<strong>读写服务</strong>。而 Follower Replica 正常情况下是不对外提供服务的（<strong>但 2.4 版本（<a href="https://cwiki.apache.org/confluence/display/KAFKA/KIP-392%3A+Allow+consumers+to+fetch+from+closest+replica" target="_blank" rel="noopener">KIP-392</a>）后，追随者副本也允许提供读服务了</strong>），它的主要职责是<strong>拉取</strong> Leader Replica 中的消息日志进行冗余备份，以及在 Leader Replica 发生故障后接替其职责。</p>
 <p>&emsp;&emsp;其中Follower Replica又分为 ISR（in-sync replica，<strong>实时同步Leader Replica的副本集</strong>）和 非ISR 两种类型。其区别在于默认情况下<strong>只有ISR集合成员能够参与Leader竞选</strong>，还有就是在 Borker 接收到客户端的写请求后，只有Leader Replica以及其他 ISR 集合成员都接收到后这个消息日志才会成功被提交，<strong>消息成功提交之前该写请求的消息日志是对消费者不可见的</strong>。而实质上一开始所有的 Replica 都属于 ISR 集合成员，但随着运行时间拉长，Broker 节点之间出现同步效率上的差异，导致某些 Broker 上的 Replica 无法跟上复制进度而被踢出 ISR（参考配置replica.lag.time.max.ms），而被踢出 ISR 的 Replica 只有追上复制进度后才会被重新纳入到 ISR 集合中。</p>
 <blockquote>
 <p>图片源自网络</p>
 </blockquote>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/006.png" alt></p>
+<p>注：<a href="https://www.confluent.io/blog/multi-region-data-replication/" target="_blank" rel="noopener">Kafka跨数据中心部署-Consumer消费Follower-Replica上的消息日志</a></p>
 <h3 id="为什么需要Partition？"><a href="#为什么需要Partition？" class="headerlink" title="为什么需要Partition？"></a>为什么需要Partition？</h3><p>&emsp;&emsp;有人可能会有这样的疑问，既然有了 Topic 为什么还要有 Partition 这个概念呢？譬如 ActiveMQ 就没有Partition。这点需要从 Kafka 的主要使用场景角度来说，Kafka 通常被用作实时处理场景，为其提供 <code>高吞吐</code>、<code>低延迟</code> 的解决方案，而 Partition 就是用来提 Topic 的并发量的，同时有着<code>去中心化容灾</code>和<code>负载均衡</code>的效果</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/004.png" alt></p>
 <h2 id="日志存储"><a href="#日志存储" class="headerlink" title="日志存储"></a>日志存储</h2><blockquote>
