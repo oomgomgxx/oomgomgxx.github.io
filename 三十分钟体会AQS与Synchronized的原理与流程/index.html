@@ -140,7 +140,7 @@
   <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2020年9月30日21:55:01 — 内容修辑</li>
 </ul>
-<h2 id="Synchronized原理"><a href="#Synchronized原理" class="headerlink" title="Synchronized原理"></a>Synchronized原理</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>&emsp;&emsp;synchronized 是 Java 较早的同步机制，原理是通过<code>系统调用互斥量</code>来实现同步操作的。synchronized 应着两个互斥指令，分别是代表加锁操作的<code>lock</code>指令以及代表解锁操作的<code>unlock</code>指令。但需要注意的是这两个指令在 JVM 字节码中有另一种表示形式，譬如用 <code>monitorenter</code> 代表 lock，用 <code>monitorexit</code> 代表 unlock 。</p>
+<h2 id="Synchronized原理"><a href="#Synchronized原理" class="headerlink" title="Synchronized原理"></a>Synchronized原理</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>&emsp;&emsp;synchronized 是 Java 较早的同步机制，它是通过<code>互斥量</code>来实现同步操作的，分别是代表加锁操作的<code>lock</code>指令以及代表解锁操作的<code>unlock</code>指令。但要注意的是这两个指令在 JVM 字节码中有另一种表示形式，譬如用 <code>monitorenter</code> 代表 lock，用 <code>monitorexit</code> 代表 unlock 。</p>
 <p>&emsp;&emsp;在 JDK 1.6 之前 synchronized 被称为重量级锁，这样称呼它的原因是因为线程在竞争锁时需要从用户态切换到内核态，而且在竞争锁期间需要由内核来维护线程状态的切换操作。因此，如果在多线程高并发场景就会出现大量的系统调用（用户态和内核态切换）造成性能损耗。</p>
 <a id="more"></a>
 
@@ -170,7 +170,7 @@ synchronized (sf) {
     sf.append(s2);
     sf.append(s3);
 }</code></pre>
-<h4 id="自旋锁"><a href="#自旋锁" class="headerlink" title="自旋锁"></a>自旋锁</h4><p>&emsp;&emsp;自旋通俗点说其实就是循环地等待某个条件满足为止的意思。而自旋锁这个功能其实在 JDK 1.4 就已经引入了，主要是为了尽量避免因为线程竞争所失败而被内核挂起。但自旋本身是一种较为消耗 CPU 资源的操作，所以如果线程执行任务所需的时间较长的话，就可能会出现 CPU 使用率急速上升的情况，且严重的话甚至会引起卡顿感。因此在这种场景下自旋反而没有直接阻塞来得高效，所以 JVM 提供了两个配置项用来控制自旋操作，分别是自旋开关<code>-XX:+UseSpinning</code> （默认开启）和阈值设置 <code>-XX:PreBlockSpin</code> （默认10次）。</p>
+<h4 id="自旋锁"><a href="#自旋锁" class="headerlink" title="自旋锁"></a>自旋锁</h4><p>&emsp;&emsp;自旋通俗点说其实就是循环地等待某个条件满足为止的意思。而自旋锁这个功能其实在 JDK 1.4 就已经引入了，主要是为了尽量避免因为线程竞争所失败而被内核挂起。但自旋本身是一种较为消耗 CPU 资源的操作，所以如果线程执行任务所需的时间较长的话，就可能会出现 CPU 使用率急速上升的情况，且严重的话甚至会引起卡顿感。因此在这种场景下自旋反而没有直接阻塞来得高效，所以 JVM 提供了两个配置项用来控制自旋操作，分别是自旋开关<code>-XX:+UseSpinning</code> （默认开启）和阈值设置 <code>-XX:PreBlockSpin</code> （<strong>默认10次</strong>）。</p>
 <p>&emsp;&emsp;而自旋锁在 JDK 1.6 之后得到了改进，其优化操作主要针对自旋阈值，即引入了<code>自适应自旋</code>功能。该功能可以动态调节自旋阈值。例如它会根据上一次自旋获取锁成功的案例所使用的自旋次数来调节下一次的自旋的阈值以提高成功率；又或者经过分析后得出自旋获取锁的成功几率非常低，因此 JVM 有可能会直接关闭自旋操而直接进入阻塞线程。</p>
 <h4 id="锁升级"><a href="#锁升级" class="headerlink" title="锁升级"></a>锁升级</h4><p>&emsp;&emsp;个人认为锁升级是 JDK 1.6 对 synchronized 监控锁最大的优化项。默认情况下，锁升级分为4个阶段：<code>无锁</code> -&gt; <code>偏向锁</code> -&gt; <code>轻量级锁</code> -&gt; <code>重量级锁(膨胀锁)</code>。其中偏向锁是可以通过 JVM 配置项关闭的（-XX:-UseBiasedLocking）</p>
 <blockquote>
@@ -811,14 +811,8 @@ void ObjectMonitor::ExitEpilog (Thread * Self, ObjectWaiter * Wakee) {
 </blockquote>
 <img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/009.png" style="zoom: 50%;">
 
-<h3 id="独占锁源码浅析"><a href="#独占锁源码浅析" class="headerlink" title="独占锁源码浅析"></a>独占锁源码浅析</h3><blockquote>
-<p>加锁 和 解锁</p>
-</blockquote>
-<p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/006.png" alt></p>
-<blockquote>
-<p>条件等待</p>
-</blockquote>
-<p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/007.png" alt></p>
+<h3 id="独占锁源码浅析"><a href="#独占锁源码浅析" class="headerlink" title="独占锁源码浅析"></a>独占锁源码浅析</h3><h4 id="加锁和解锁过程"><a href="#加锁和解锁过程" class="headerlink" title="加锁和解锁过程"></a>加锁和解锁过程</h4><p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/006.png" alt></p>
+<h4 id="条件等待过程"><a href="#条件等待过程" class="headerlink" title="条件等待过程"></a>条件等待过程</h4><p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/007.png" alt></p>
 <h3 id="拓展1：CountDownLatch"><a href="#拓展1：CountDownLatch" class="headerlink" title="拓展1：CountDownLatch"></a>拓展1：CountDownLatch</h3><p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/011.png" alt></p>
 <h3 id="拓展2：CyclicBarrier"><a href="#拓展2：CyclicBarrier" class="headerlink" title="拓展2：CyclicBarrier"></a>拓展2：CyclicBarrier</h3><p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/012.png" alt></p>
 <h3 id="拓展3：Semaphore"><a href="#拓展3：Semaphore" class="headerlink" title="拓展3：Semaphore"></a>拓展3：Semaphore</h3><p><img src="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/013.png" alt></p>
@@ -840,8 +834,8 @@ void ObjectMonitor::ExitEpilog (Thread * Self, ObjectWaiter * Wakee) {
 </blockquote>
 <ul>
 <li>Lock 是纯粹的自旋锁，通过自旋操作避免了不必要的用户态和内核态的切换开销。但自旋本身对 CPU 消耗较大，所以在多线程高并发场景如果存在大量自旋操作的话，很容引发 CPU 使用率急速上升，甚至可能引起卡顿现象</li>
-<li>虽然 synchronized 也存在自旋操作，但自旋次数一般很少，且受自适应机制影响，因此 CPU 消耗并没有 Lock 高。所以，如果是多线程高并发场景下且线程执行任务所需的时间较长，则建议使用 synchronized 而不是 Lock</li>
-<li>Lock 灵活性较高且粒度也细，所以如果有特别需要，譬如读多写少的场景则建议选择 Lock 的读写锁来实现同步，因为这样可以获得更高的并发性能</li>
+<li>虽然 synchronized 也存在自旋操作，但自旋次数一般很少，因为受到自适应机制影响，因此 CPU 消耗并没有 Lock 高，所以<strong>如果是多线程高并发场景下且线程执行任务所需的时间较长时，则建议使用 synchronized 而不是 Lock</strong></li>
+<li>Lock 灵活性较高且粒度相对较细，所以如果有特别需要，譬如<strong>读多写少的场景</strong>，则建议选择 Lock 的读写锁来实现同步操作，因为这样可以获得更高的并发性能</li>
 </ul>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
 <li>《深入理解Java虚拟机》</li>
@@ -890,7 +884,7 @@ void ObjectMonitor::ExitEpilog (Thread * Self, ObjectWaiter * Wakee) {
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Synchronized原理"><span class="toc-text">Synchronized原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁优化"><span class="toc-text">锁优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#锁消除"><span class="toc-text">锁消除</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁粗化"><span class="toc-text">锁粗化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自旋锁"><span class="toc-text">自旋锁</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁升级"><span class="toc-text">锁升级</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#指令源码"><span class="toc-text">指令源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析（Open-JDK1-8）"><span class="toc-text">源码浅析（Open JDK1.8）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#抽象队列同步器（AQS）"><span class="toc-text">抽象队列同步器（AQS）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介-1"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FIFO队列"><span class="toc-text">FIFO队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#独占锁源码浅析"><span class="toc-text">独占锁源码浅析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展1：CountDownLatch"><span class="toc-text">拓展1：CountDownLatch</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展2：CyclicBarrier"><span class="toc-text">拓展2：CyclicBarrier</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展3：Semaphore"><span class="toc-text">拓展3：Semaphore</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展4：Exchanger（AQS无关）"><span class="toc-text">拓展4：Exchanger（AQS无关）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Lock和Synchronized对比"><span class="toc-text">Lock和Synchronized对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Synchronized原理"><span class="toc-text">Synchronized原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#锁优化"><span class="toc-text">锁优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#锁消除"><span class="toc-text">锁消除</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁粗化"><span class="toc-text">锁粗化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#自旋锁"><span class="toc-text">自旋锁</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#锁升级"><span class="toc-text">锁升级</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#指令源码"><span class="toc-text">指令源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#源码浅析（Open-JDK1-8）"><span class="toc-text">源码浅析（Open JDK1.8）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#抽象队列同步器（AQS）"><span class="toc-text">抽象队列同步器（AQS）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介-1"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FIFO队列"><span class="toc-text">FIFO队列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#独占锁源码浅析"><span class="toc-text">独占锁源码浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#加锁和解锁过程"><span class="toc-text">加锁和解锁过程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#条件等待过程"><span class="toc-text">条件等待过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展1：CountDownLatch"><span class="toc-text">拓展1：CountDownLatch</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展2：CyclicBarrier"><span class="toc-text">拓展2：CyclicBarrier</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展3：Semaphore"><span class="toc-text">拓展3：Semaphore</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拓展4：Exchanger（AQS无关）"><span class="toc-text">拓展4：Exchanger（AQS无关）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Lock和Synchronized对比"><span class="toc-text">Lock和Synchronized对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
