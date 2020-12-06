@@ -137,13 +137,15 @@
   <hr/>
 
   <!-- 文章内容 -->
-  <p>&emsp;&emsp;前段时间阅读了部分 Netty 4 的源码，但当时并没有趁热打铁地将理解过程记录下来，以至于现在忘得七七八八。起初阅读 Netty 源码的原因是想知道它为什么高效，因为在 <code>Spring Web Flux</code> 和 <code>Spring Cloud Gateway</code> 中都看到了它的身影。虽然自己以前在公司项目中使用过 Netty 来实现功能，但是我很清楚知道会用和懂是两种不同的境界，同常会用技术的人很多但真懂的人却是少数，所以学习技术我们应该尽量做到知其然而知其所以然，亦只有这样才能在众多同行中增大自己的核心竞争力。</p>
+  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>&emsp;&emsp;前段时间阅读了部分 Netty 4 的源码，但当时并没有趁热打铁地将理解过程记录下来，以至于现在忘得七七八八。起初阅读 Netty 源码的原因是想知道它为什么高效，因为在 <code>Spring Web Flux</code> 和 <code>Spring Cloud Gateway</code> 中都看到了它的身影。虽然自己以前在公司项目中使用过 Netty 来实现功能，但是我很清楚知道会用和懂是两种不同的境界，同常会用技术的人很多但真懂的人却是少数，所以学习技术我们应该尽量做到知其然而知其所以然，亦只有这样才能在众多同行中增大自己的核心竞争力。</p>
 <p>&emsp;&emsp;除此之外我自己本身对学习技术也有一定的看法，譬如我认为技术都是万变不离其宗的，所以学习技术应该<code>抓住技术的根本</code>。例如在 Java 生态中开源技术繁多，而它们的根本都是就是 <code>JavaSE</code>、<code>设计模式</code>、<code>数据结构</code>，所以不管一个框架多么高级或是多么抽象都只不过是JavaSE和设计模式还有数据结构的堆砌罢了。所以接下来要聊了的也不是 Netty，而是 Netty 的根本，<code>IO模型</code>和<code>事件驱动(事件轮询)</code>。</p>
 <p>&emsp;&emsp;在类 Unix 系统中 IO 模型一共有 5 种，分别是<code>阻塞IO</code>、<code>非阻塞IO</code>、<code>复用IO</code>、<code>信号驱动IO</code>、<code>异步IO</code>，它们各自都有着自己的特点，所以没有最好最坏之分。而谈到事件驱动，如果没有记错第一次接触这个词是很久以前我学习 Node.js 时看到的，因为 Node.js 的三大特性之一就是事件驱动。当时就很好奇，主要是想知道事件是如何产生以及是何时被回调函数处理的，而这个问题却一直等到看了 Netty 源码后才更加明朗。例如在 Netty 中采用的是 Reactor 模式实现的事件驱动（Node.js、Readis、Nginx、Memcache 等也是）。除了 Reactor 之外还可以用 Proactor 实现，两者的区别在于前者是 <code>复用IO</code> 后者是 <code>异步IO</code>。</p>
 <a id="more"></a>
 
-
-<h2 id="IO的5种模型"><a href="#IO的5种模型" class="headerlink" title="IO的5种模型"></a>IO的5种模型</h2><h3 id="同步阻塞IO"><a href="#同步阻塞IO" class="headerlink" title="同步阻塞IO"></a>同步阻塞IO</h3><blockquote>
+<h2 id="IO的5种模型"><a href="#IO的5种模型" class="headerlink" title="IO的5种模型"></a>IO的5种模型</h2><blockquote>
+<p>有关Linux的系统调用，可参考 syscalls.h</p>
+</blockquote>
+<h3 id="同步阻塞IO"><a href="#同步阻塞IO" class="headerlink" title="同步阻塞IO"></a>同步阻塞IO</h3><blockquote>
 <p>图解</p>
 </blockquote>
 <img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/001.png" style="zoom:80%;">
@@ -153,8 +155,8 @@
 </blockquote>
 <ul>
 <li>IO 操作全程阻塞</li>
-<li>在低并发场景，阻塞可减少 CPU 资源竞争，这样能够有效地提高线程的处理能力</li>
-<li>过程中用户程序只需要 1 次系统调用</li>
+<li>在低并发 IO 密集型场景，阻塞可有效减少不必要的用户态内核态切换，所以能够一定程度地提高人物线程的处理效率</li>
+<li>过程中用户程序只需进行一次系统调用</li>
 <li>为了解决用户程序处理阻塞问题，需要为每个套接字分配独立的一条处理线程</li>
 <li>不适合高并发场景，例如如下：<ul>
 <li>阻塞会导致吞吐量下降</li>
@@ -290,39 +292,269 @@
     }
 }</code></pre>
 <blockquote>
-<p>Selector 多路复用器实现方式</p>
+<p>Selector 多路复用器实现</p>
+<p>内核版本：linux-5.4.81</p>
 </blockquote>
-<p>select 流程以及特点：</p>
-<img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/004.png" style="zoom:80%;">
+<p><strong>1）select 函数</strong></p>
+<pre><code class="c">// 文件位置：/usr/include/bits/typesizes.h
+// 之所以默认为1024（以进程为单位）是因为内核开发者认为已经足够了，虽然你可以增大该值，但增大该值也不会提高处理性能，因为select会随着文件描述符数增多则性能下降，其时间复杂度为O(n)
+#define __FD_SETSIZE            1024
 
+// 文件位置：/usr/include/sys/select.h
+typedef long int __fd_mask; // 
+typedef struct {
+    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];
+    __fd_mask __fds_bits[__FD_SETSIZE / __NFDBITS];
+} fd_set;
+
+// 文件位置：fs/select.c
+// 过程：由内核先轮询感兴趣的事件集，有就绪文件描述符、超时、收到信号就返回
+// 参数1：当前监听的最大文件描述符
+// 参数2：感兴趣的可读文件描述符集合（数组）
+// 参数3：感兴趣的可写文件描述符集合（数组）
+// 参数4：感兴趣的异常文件描述符集合（数组）
+// 参数5：等待超时时间
+static int kern_select(int n, fd_set __user *inp, fd_set __user *outp,
+               fd_set __user *exp, struct timeval __user *tvp) {
+    //...
+    int ret;
+    // 返回就绪文件描述符数量
+    // core_sys_select -&gt; do_select
+    ret = core_sys_select(n, inp, outp, exp, to);
+    // 存在就绪文件描述符时返回大于0的值，超时返回0，异常返回-1
+    return poll_select_finish(&amp;end_time, tvp, PT_TIMEVAL, ret);
+}</code></pre>
 <ul>
-<li>无状态，每次调用都会重新将感兴趣的文件描述符内容复制给内核处理</li>
-<li>调用时内核都需要逐一遍历事件集，导致并发越高性能越低。且 select 需要在返回的集合中轮询出就绪的文件描述符</li>
-<li>存在文件描述数量符限制（既并发能力存在局限）。可以执行 <code>ulimit -n</code> 查看</li>
-<li>可移性植高，基本上类 Unix 系统都支持</li>
+<li>无状态，因为 fd_set 只有一个字段用来记录关注和就绪的事件，所以每次调用都会导致 fd_set 初始化，即相当于每次调用 select 都需要将感兴趣的文件描述符内容重新拷贝到内核</li>
+<li>正常情况下，只要<strong>有就绪的文件描述</strong>符或 <strong>select 超时</strong>就会<strong>返回就绪文件描述符数量</strong>，但返回后需要再轮询集合找出具体的文件描述符，所以随着文件描述符（连接数）增多而效率会降低</li>
+<li>因为随着文件描述符（连接数）增多而会导致效率下降，所以通常单条进程 select 时的最大感兴趣文件描述符数量会受到限制，一般为 2014（FD_SETSIZE），可以执行 <code>ulimit -n</code> 查看。所以 select 在并发能力上是存在局限性的</li>
 </ul>
-<p>poll 特点：</p>
+<p><strong>2）poll 函数</strong></p>
+<pre><code class="c">// 位置：poll.h
+// 特别注意，poll其实和select差不多，但它用单向链表解决了文件描述符数量上的限制
+// 且感兴趣文件描述符集合和就绪描述符集合由两个不同的变量存储，而select只用一个fd_set（long数组）
+struct pollfd {
+    int fd; // 文件描述符
+    short events; // 感兴趣文件描述符集合
+    short revents; // 就绪描述符集合
+};
+
+// 单向链表
+struct poll_list {
+    struct poll_list *next;
+    int len;
+    struct pollfd entries[0];
+};
+
+// 文件位置：fs/select.c
+static int do_poll(struct poll_list *list, struct poll_wqueues *wait,
+           struct timespec64 *end_time) {
+    //...
+    for (;;) {
+        //...
+        for (walk = list; walk != NULL; walk = walk-&gt;next) {
+            //...
+            for (; pfd != pfd_end; pfd++) {
+                if (do_pollfd(pfd, pt, &amp;can_busy_loop,busy_flag)) {
+                    count++;
+                    //...
+                }
+            }
+        }
+        //...
+        if (count || timed_out)
+            break;
+        //...
+    }
+    // 存在就绪文件描述符时返回大于0的值，超时返回0，异常返回-1
+    return count;
+}</code></pre>
 <ul>
-<li>无状态，每次调用都会重新将感兴趣的文件描述符内容复制给内核处理</li>
-<li>poll 是增强版的 select，区别在于定义的不一样，poll 采用链式结构解决了文件描述符数量限制问题</li>
-<li>和 select 一样每次调用都需要轮询集合来得到就绪文件描述符，同样会出现并发越高性能越低的状况</li>
-<li>可移植性比 select 低</li>
+<li>和 select 相比，仍然是无状态，因为在每次系统调用时还是需要将所有感兴趣的文件描述符重新拷贝到内核，但 poll 还是相对于 select 有所优化的， 譬如使用链表代替了数组来解决单进程文件描述符数量限制问题，以及将感兴趣和就绪集合分开从而避免了不必要的初始化操作</li>
+<li>返回的依然是就绪文件描述符的数量，所以还是需要重新轮询集合得到具体的文件描述符，即时间复杂度和 select 一样是 O(n)</li>
 </ul>
-<p>epoll 流程以及特点：</p>
+<p><strong>3）epoll 函数</strong></p>
+<p>epoll 和 select、poll 不一样，它其实有三个函数：epoll_create、epoll_ctl、epoll_wait，而且 epoll 内部是基于事件驱动的。</p>
 <img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/006.png" style="zoom:80%;">
 
+<pre><code class="c">// 文件位置: fs/eventpoll.c
+// 文件描述符结构
+struct eventpoll {
+
+    // epoll操作的等待队列
+    wait_queue_head_t wq;
+    wait_queue_head_t poll_wait;
+
+    // 就绪的文件描述符
+    struct list_head rdllist;
+
+    // 红黑树（根节点）数据结构
+    // 用于有状态的缓存感兴趣的文件描述符
+    struct rb_root_cached rbr;
+
+    struct mutex mtx;
+    rwlock_t lock;
+    struct epitem *ovflist;
+    struct wakeup_source *ws;
+    struct user_struct *user;
+    struct file *file;
+    u64 gen;
+
+#ifdef CONFIG_NET_RX_BUSY_POLL
+    unsigned int napi_id;
+#endif
+};
+
+// epoll_create操作
+// 初始化内存数据结构
+static int do_epoll_create(int flags)
+{
+    int error, fd;
+    struct eventpoll *ep = NULL;
+    struct file *file;
+    //...
+
+    // 在内存中创建eventpoll数据结构
+    error = ep_alloc(&amp;ep);
+    if (error &lt; 0)
+        return error;
+    //...
+    return error;
+}
+
+// epoll_ctl操作
+// 用于对epoll内存数据结构进行，新增节点、修改节点、更新节点
+SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+        struct epoll_event __user *, event) {
+    int error;
+    int full_check = 0;
+    struct fd f, tf;
+    struct eventpoll *ep;
+    struct epitem *epi;
+    struct epoll_event epds;
+    struct eventpoll *tep = NULL;
+
+    error = -EFAULT;
+    // 将用户空间感兴趣的epoll时间拷贝到内核态中
+    if (ep_op_has_event(op) &amp;&amp;
+        copy_from_user(&amp;epds, event, sizeof(struct epoll_event)))
+        goto error_return;
+    //...
+
+    // 增、删、改
+    error = -EINVAL;
+    switch (op) {
+    case EPOLL_CTL_ADD:
+        if (!epi) {
+            epds.events |= EPOLLERR | EPOLLHUP;
+            error = ep_insert(ep, &amp;epds, tf.file, fd, full_check);
+        } else
+            error = -EEXIST;
+        break;
+    case EPOLL_CTL_DEL:
+        if (epi)
+            error = ep_remove(ep, epi);
+        else
+            error = -ENOENT;
+        break;
+    case EPOLL_CTL_MOD:
+        if (epi) {
+            if (!(epi-&gt;event.events &amp; EPOLLEXCLUSIVE)) {
+                epds.events |= EPOLLERR | EPOLLHUP;
+                error = ep_modify(ep, epi, &amp;epds);
+            }
+        } else
+            error = -ENOENT;
+        break;
+    }
+
+    //...
+    return error;
+}
+
+// epoll_wait操作
+static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
+           int maxevents, long timeout) {
+    int res = 0, eavail, timed_out = 0;
+    u64 slack = 0;
+    wait_queue_entry_t wait;
+    ktime_t expires, *to = NULL;
+    //...
+
+    if (timeout &gt; 0) {
+        struct timespec64 end_time = ep_set_mstimeout(timeout);
+        slack = select_estimate_accuracy(&amp;end_time);
+        to = &amp;expires;
+        *to = timespec64_to_ktime(end_time);
+
+    // 已经超时，直接返回
+    } else if (timeout == 0) {
+        timed_out = 1;
+        write_lock_irq(&amp;ep-&gt;lock);
+        eavail = ep_events_available(ep);
+        write_unlock_irq(&amp;ep-&gt;lock);
+        // 发布事件
+        goto send_events;
+    }
+
+fetch_events:
+
+    // 判断是否有就绪的事件
+    // 注意，这里并不需要真正去轮询双向链表（rdllist），而只需要判断链头标记即可
+    if (!ep_events_available(ep))
+        ep_busy_loop(ep, timed_out); 
+
+    // 如果存在可用的就绪事件，则发布事件
+    eavail = ep_events_available(ep);
+    if (eavail)
+        goto send_events;
+
+    // 进入队列等待直至超时
+    do {
+        // 进入等待队列
+        init_wait(&amp;wait);
+        write_lock_irq(&amp;ep-&gt;lock);
+        __add_wait_queue_exclusive(&amp;ep-&gt;wq, &amp;wait);
+        write_unlock_irq(&amp;ep-&gt;lock);
+        //...
+        // 等待出来再查看一下有没有就绪事件
+        eavail = ep_events_available(ep);
+        if (eavail)
+            break;
+        //...
+    } while (0);
+
+    //...
+    return res;
+}
+
+// 判断就绪双向链表是否为空
+static inline int ep_events_available(struct eventpoll *ep){
+    return !list_empty_careful(&amp;ep-&gt;rdllist) ||
+        READ_ONCE(ep-&gt;ovflist) != EP_UNACTIVE_PTR;
+}
+
+// 发布epoll事件
+static void send_events(struct ldc_channel *lp, unsigned int event_mask){
+    if (event_mask &amp; LDC_EVENT_RESET)
+        lp-&gt;cfg.event(lp-&gt;event_arg, LDC_EVENT_RESET);
+    if (event_mask &amp; LDC_EVENT_UP)
+        lp-&gt;cfg.event(lp-&gt;event_arg, LDC_EVENT_UP);
+    if (event_mask &amp; LDC_EVENT_DATA_READY) // 存在就绪数据
+        lp-&gt;cfg.event(lp-&gt;event_arg, LDC_EVENT_DATA_READY);
+}</code></pre>
 <ul>
-<li>无文件描述符数量限制</li>
-<li>有状态。多次调用 epoll 无需重复拷贝感兴趣的文件描述符信息，因为 epoll 会在内核中生成红黑树来动态维护</li>
-<li>epoll 将用户程序感兴趣的事件注册在红黑树上，当有就绪的文件描述符时会通过事件回调机制将其就绪事件添加到就绪链表中。那么进行 epoll_wait 时就只需要轮询链表即可</li>
-<li>epoll 通过动态维护集合以及事件驱动机制大大降低了系统的性能开销</li>
+<li>无最大文件描述符数量限制</li>
+<li>存在状态，内部维护着<strong>一颗红黑树</strong>和<strong>双向链表</strong>，所以用户线程无需多次拷贝感兴趣的文件描述符</li>
+<li>epoll 将用户程序感兴趣的文件描述符注册在红黑树上，当有就绪的文件描述符时内核会将其添加到 epoll 的双向链表（rdllist）中，而当执行 epoll_wait 时就只需要遍历 rdllist 即可而无需遍历整个红黑树</li>
+<li>epoll 整个过程是通过事件驱动的方式来完成的，即当有就绪的文件描述符时内核会自动回调 ep_poll_callback 方法将就绪的文件描述符添加到双向链表（rdllist）中并唤醒等待的内核线程，所以避免了繁重的轮询操作，大大降低了系统的开销</li>
+<li>epoll 的时间复杂度为 O(1)，从上面的源码可以得出结论就是 epoll 不会随着并发连接数的增多而降低效率，因为它是基事件驱动的，而且没有轮询操作</li>
 </ul>
 <blockquote>
 <p>select、poll、epoll、kqueue 性能对比</p>
 </blockquote>
 <img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/009.png" style="zoom:67%;">
 
-<p>从上图不难看出，随着文件描述符数递增，kqueue 的性能最佳，其次是 epoll 。而 select 和 poll 如出一辙，并发越高性能越差。</p>
 <h3 id="信号驱动IO"><a href="#信号驱动IO" class="headerlink" title="信号驱动IO"></a>信号驱动IO</h3><blockquote>
 <p>图解</p>
 </blockquote>
@@ -349,11 +581,11 @@
 </blockquote>
 <ul>
 <li>IO 操作无需阻塞，亦无需主动轮询</li>
-<li>过程中用户程序需要 1 次系统调用</li>
+<li>过程中用户程序只需发起一次系统调用</li>
 <li>适合高并发高吞吐量场景</li>
 <li>注意：<ul>
-<li>异步 IO 是需要系统内核支持的。例如 Windows 上的 IOCP(Input/Output Completion Port) ，而目前 Linux 上暂时还不能实现真正的异步 IO。从这点我们就可以知道为什么很多开源技术都采用 NIO 而不是 AIO 。</li>
-<li>与此同时我们也不能忽视 Linux 在 AIO 方面作出的努力。例如在 Linux 5.1 这个内核版本中就发布了一套全新的异步操作API <code>io_uring</code>，所以 Linux 完善异步 IO 我们就拭目而待吧</li>
+<li>异步 IO 是需要系统内核支持的。例如 Windows 上的 IOCP（Input/Output Completion Port）才是真正的异步 IO，而目前 Linux 上暂时还不能真正实现的异步 IO，所以在 Java 的 AIO 中实质用的是 epoll （可参考 LinuxAsynchronousChannelProvider 类）</li>
+<li>与此同时我们也不能忽视 Linux 在 AIO 方面作出的努力。譬如在 Linux 5.1 这个内核版本中就发布了一套全新的异步操作API <code>io_uring</code>，所以 Linux 完善异步 IO 我们就拭目而待吧</li>
 </ul>
 </li>
 </ul>
@@ -637,7 +869,7 @@
 <li><a href="http://gee.cs.oswego.edu/dl/cpjslides/nio.pdf" target="_blank" rel="noopener">Scalable IO in Java - Doug Lea</a></li>
 <li><a href="http://www.laputan.org/pub/sag/proactor.pdf" target="_blank" rel="noopener">Proactor</a></li>
 </ul>
-<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+
 
   <!-- 文章原地址信息 -->
   <div id="article-origin">
@@ -679,7 +911,7 @@
 </div>
 <!-- 文章目录 -->
 <div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#IO的5种模型"><span class="toc-text">IO的5种模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#同步阻塞IO"><span class="toc-text">同步阻塞IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#同步非阻塞IO"><span class="toc-text">同步非阻塞IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复用IO"><span class="toc-text">复用IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#信号驱动IO"><span class="toc-text">信号驱动IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#异步IO"><span class="toc-text">异步IO</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事件驱动"><span class="toc-text">事件驱动</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Reactor"><span class="toc-text">Reactor</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#单Reactor单线程模式"><span class="toc-text">单Reactor单线程模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#单Reactor多线程模式"><span class="toc-text">单Reactor多线程模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#多Reactor多线程（主从Reactor）"><span class="toc-text">多Reactor多线程（主从Reactor）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Proactor"><span class="toc-text">Proactor</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netty事件驱动浅析"><span class="toc-text">Netty事件驱动浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#请求处理流程"><span class="toc-text">请求处理流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主从Reactor源码浅析"><span class="toc-text">主从Reactor源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#IO的5种模型"><span class="toc-text">IO的5种模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#同步阻塞IO"><span class="toc-text">同步阻塞IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#同步非阻塞IO"><span class="toc-text">同步非阻塞IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#复用IO"><span class="toc-text">复用IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#信号驱动IO"><span class="toc-text">信号驱动IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#异步IO"><span class="toc-text">异步IO</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事件驱动"><span class="toc-text">事件驱动</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Reactor"><span class="toc-text">Reactor</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#单Reactor单线程模式"><span class="toc-text">单Reactor单线程模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#单Reactor多线程模式"><span class="toc-text">单Reactor多线程模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#多Reactor多线程（主从Reactor）"><span class="toc-text">多Reactor多线程（主从Reactor）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Proactor"><span class="toc-text">Proactor</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Netty事件驱动浅析"><span class="toc-text">Netty事件驱动浅析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#请求处理流程"><span class="toc-text">请求处理流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#主从Reactor源码浅析"><span class="toc-text">主从Reactor源码浅析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
 </div>
 
       </div>
