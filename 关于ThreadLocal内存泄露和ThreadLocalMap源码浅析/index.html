@@ -1,206 +1,231 @@
-<!-- 主题布局 -->
 
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
 <head>
-  <!-- 编码方式 -->
   <meta charset="UTF-8">
-  <!-- 浏览器页签图标 -->
-  <link rel="icon" href="/img/favicon.svg">
-  <!-- 标题 -->
-  <title> 关于ThreadLocal内存泄露和ThreadLocalMap源码浅析-学然后知不足 </title>
-
-  <!-- 自适应 -->
-  
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    
-
-  <!-- 网站 seo 相关 -->
-  
-    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
-  
-  
-    <meta name="description" content="学然后知不足" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
   
 
   <!-- google seo -->
   <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
-  <!-- baidu seo -->
-  <!-- 暂不支持 -->
-  <meta name="baidu-site-verification" content="Kfp083TiDg" />
-    
-  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
-  <!-- 内部脚本 -->
-  
-    
-      <script src="/js/jquery.min.js"></script>
-    
-      <script src="/js/main.js"></script>
-    
-      <script src="/js/md5.min.js"></script>
-    
-      <script src="/js/highlight.min.js"></script>
-    
-  
-
-  <!-- 内部样式文件 -->
-  
-    
-      <link rel="stylesheet" href="/css/main.css">
-    
-      <link rel="stylesheet" href="/css/github.min.css">
-    
-      <link rel="stylesheet" href="/css/csshake.min.css">
-    
-  
-
   <!-- 小图标 -->
   <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <!-- gitalk -->
-  <link rel="stylesheet" href="/gitalk/gitalk.css" />
-  <script src="/gitalk/gitalk.min.js"></script>
-  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
 
-  <!-- fancybox support -->
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="学然后知不足">
+  <meta name="author" content="TanDi">
+  <meta name="keywords" content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux">
+  <title>关于ThreadLocal内存泄露和ThreadLocalMap源码浅析 - 学然后知不足</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
   
-    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
-    <script type="text/javascript" src="/js/wrapImage.js"></script>
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
   
 
-<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"tandi.pub","root":"/","version":"1.8.6","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":"#"},"copy_btn":true,"image_zoom":{"enable":true},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":"https://www.google-analytics.com/analytics.js","gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
 </head>
 
+
 <body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>学然后知不足</strong>&nbsp;</a>
 
-  <div id="container">
-    <!-- container start -->
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
 
-    <!-- 小屏导航栏 -->
-    <nav id="min-menu-outer">
-      <h3>
-        <a href="/">学然后知不足</a>
-      </h3>
-      <span id="min-menu-inner">
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
         
-          <!-- 导航栏目录 -->
-          <a href="/">最新文章</a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
         
-          <!-- 导航栏目录 -->
-          <a href="/about">关于博客</a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
         
-      </span>
-    </nav>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
 
-    <!-- 大屏导航栏 -->
-    <nav id="menu-outer">
-      <div id="menu-title" style="text-align: right; padding-right: 18px" class="shake-trigger" >
-        <h3>
-          <a href="/" title="主页">学然后知不足</a>
-        </h3>
-      </div>
-      <div id="menu-inner">
-        
-          <!-- 导航栏目录 -->
-          <a id="menu-a" href="/">最新文章</a>
-        
-          <!-- 导航栏目录 -->
-          <a id="menu-a" href="/about">关于博客</a>
-        
-      </div>
-      <!-- 导航栏页脚 -->
-      <div id="menu-footer" class="shake-rotate" title="开发者" >魔鬼藏在细节中</div>
-    </nav>
+    <div class="banner intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="关于ThreadLocal内存泄露和ThreadLocalMap源码浅析">
+              
+            </span>
 
-    <!-- 文章内容 -->
-    <div id="content-outer">
-      <div id="content-inner">
-        <!-- 文章页面 -->
-<article id="post">
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2018-03-23 12:30" pubdate>
+        2018年3月23日 下午
+      </time>
+    </span>
+  
+</div>
 
-  <!-- 文章标题 -->
-  <h1>关于ThreadLocal内存泄露和ThreadLocalMap源码浅析</h1>
-
-  <!-- 文章元信息 -->
-  <span class="post-metadata">
-    <!-- 文章日期 -->
-    <i class="fa fa-calendar"></i>&thinsp;2018-03-23 &ensp;
-    <!-- 文章作者 -->
-    作者: TanDi &ensp;
-    <!-- 判断文章是都为原创文章 -->
+<div class="mt-1">
+  
     
-      类型：原创
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      3.1k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
       
-  </span>
+      
+      40
+       分钟
+    </span>
+  
 
-  <hr/>
+  
+  
+</div>
 
-  <!-- 文章内容 -->
-  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">关于ThreadLocal内存泄露和ThreadLocalMap源码浅析</h1>
+            
+            <div class="markdown-body">
+              <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2020年3月20日15:22:14 — 修改为更通俗的表述</li>
 </ul>
-<h2 id="关于引用的小知识"><a href="#关于引用的小知识" class="headerlink" title="关于引用的小知识"></a>关于引用的小知识</h2><pre><code class="java">public class Test {
-    public static void main(String[] args) throws InterruptedException {
+<h2 id="关于引用的小知识"><a href="#关于引用的小知识" class="headerlink" title="关于引用的小知识"></a>关于引用的小知识</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Test</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException </span>&#123;<br><br>        <span class="hljs-comment">// 软引用生命周期：内存不足的前提下第二次gc前。即第一次gc回收过后，依然不能满足所需内存才会回收软引用</span><br>        SoftReference&lt;Person&gt; softReference = <span class="hljs-keyword">new</span> SoftReference&lt;&gt;(<span class="hljs-keyword">new</span> Person(<span class="hljs-string">"Sam"</span>));<br>        System.gc();<br>        System.out.println(softReference.get() == <span class="hljs-keyword">null</span> ? <span class="hljs-string">"对象已被回收"</span> : <span class="hljs-string">"对象依然存活"</span>);<br><br>        System.out.println(<span class="hljs-string">"-------------------- 软引用 end -------------------------"</span>);<br><br>        <span class="hljs-comment">// 弱引用生命周期：从对象诞生到下一次GC之前</span><br>        WeakReference&lt;Person&gt; weakReference = <span class="hljs-keyword">new</span> WeakReference&lt;&gt;(<span class="hljs-keyword">new</span> Person(<span class="hljs-string">"Sam"</span>));<br>        System.out.println(weakReference.get() == <span class="hljs-keyword">null</span> ? <span class="hljs-string">"对象已被回收"</span> : <span class="hljs-string">"对象依然存活"</span>);<br>        System.gc();<br>        System.out.println(weakReference.get() == <span class="hljs-keyword">null</span> ? <span class="hljs-string">"对象已被回收"</span> : <span class="hljs-string">"对象依然存活"</span>);<br><br>        System.out.println(<span class="hljs-string">"-------------------- 弱引用 end -------------------------"</span>);<br><br>        <span class="hljs-comment">// 虚引用生命周期：该等级的引用不会对引用本身产生任何副作用，只用于监听引用是否被回收</span><br>        Person sam = <span class="hljs-keyword">new</span> Person(<span class="hljs-string">"Sam"</span>);<br>        ReferenceQueue&lt;Person&gt; queue = <span class="hljs-keyword">new</span> ReferenceQueue&lt;&gt;();<br>        PhantomReference&lt;Person&gt; personPhantomReference = <span class="hljs-keyword">new</span> PhantomReference&lt;&gt;(sam, queue);<br>        <span class="hljs-comment">// 注意：虚引用无法像其他引用一样 get() 获取到关联的引用实例</span><br>        <span class="hljs-comment">// 主动将引用入队</span><br>        <span class="hljs-comment">//personPhantomReference.enqueue();</span><br><br>        <span class="hljs-keyword">new</span> Thread(() -&gt; &#123;<br>            <span class="hljs-keyword">while</span> (queue.poll() == <span class="hljs-keyword">null</span>) &#123; <span class="hljs-comment">// 当引用被回收就会入队</span><br>                <span class="hljs-keyword">try</span> &#123; TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>); &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123; &#125;<br>                System.out.println(<span class="hljs-string">"对象依然存活"</span>);<br>            &#125;<br>            System.out.println(<span class="hljs-string">"对象已被回收"</span>);<br>        &#125;).start();<br><br>        TimeUnit.SECONDS.sleep(<span class="hljs-number">3</span>);<br>        sam = <span class="hljs-keyword">null</span>; <span class="hljs-comment">// 消除强引用让gc回收</span><br>        System.gc();<br><br>        <span class="hljs-comment">// 等待gc</span><br>        TimeUnit.SECONDS.sleep(<span class="hljs-number">3</span>);<br><br>        <span class="hljs-comment">/**</span><br><span class="hljs-comment">         * 输出结果：</span><br><span class="hljs-comment">         * </span><br><span class="hljs-comment">         * 对象依然存活</span><br><span class="hljs-comment">         * -------------------- 软引用 end -------------------------</span><br><span class="hljs-comment">         * 对象依然存活</span><br><span class="hljs-comment">         * 对象已被回收</span><br><span class="hljs-comment">         * -------------------- 弱引用 end -------------------------</span><br><span class="hljs-comment">         * 对象依然存活</span><br><span class="hljs-comment">         * 对象依然存活</span><br><span class="hljs-comment">         * 对象依然存活</span><br><span class="hljs-comment">         * 对象已被回收</span><br><span class="hljs-comment">         */</span><br>    &#125;<br>&#125;<br><br><span class="hljs-meta">@Data</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span> </span>&#123;<br>    <span class="hljs-keyword">private</span> String name;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-        // 软引用生命周期：内存不足的前提下第二次gc前。即第一次gc回收过后，依然不能满足所需内存才会回收软引用
-        SoftReference&lt;Person&gt; softReference = new SoftReference&lt;&gt;(new Person(&quot;Sam&quot;));
-        System.gc();
-        System.out.println(softReference.get() == null ? &quot;对象已被回收&quot; : &quot;对象依然存活&quot;);
-
-        System.out.println(&quot;-------------------- 软引用 end -------------------------&quot;);
-
-        // 弱引用生命周期：从对象诞生到下一次GC之前
-        WeakReference&lt;Person&gt; weakReference = new WeakReference&lt;&gt;(new Person(&quot;Sam&quot;));
-        System.out.println(weakReference.get() == null ? &quot;对象已被回收&quot; : &quot;对象依然存活&quot;);
-        System.gc();
-        System.out.println(weakReference.get() == null ? &quot;对象已被回收&quot; : &quot;对象依然存活&quot;);
-
-        System.out.println(&quot;-------------------- 弱引用 end -------------------------&quot;);
-
-        // 虚引用生命周期：该等级的引用不会对引用本身产生任何副作用，只用于监听引用是否被回收
-        Person sam = new Person(&quot;Sam&quot;);
-        ReferenceQueue&lt;Person&gt; queue = new ReferenceQueue&lt;&gt;();
-        PhantomReference&lt;Person&gt; personPhantomReference = new PhantomReference&lt;&gt;(sam, queue);
-        // 注意：虚引用无法像其他引用一样 get() 获取到关联的引用实例
-        // 主动将引用入队
-        //personPhantomReference.enqueue();
-
-        new Thread(() -&gt; {
-            while (queue.poll() == null) { // 当引用被回收就会入队
-                try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException e) { }
-                System.out.println(&quot;对象依然存活&quot;);
-            }
-            System.out.println(&quot;对象已被回收&quot;);
-        }).start();
-
-        TimeUnit.SECONDS.sleep(3);
-        sam = null; // 消除强引用让gc回收
-        System.gc();
-
-        // 等待gc
-        TimeUnit.SECONDS.sleep(3);
-
-        /**
-         * 输出结果：
-         * 
-         * 对象依然存活
-         * -------------------- 软引用 end -------------------------
-         * 对象依然存活
-         * 对象已被回收
-         * -------------------- 弱引用 end -------------------------
-         * 对象依然存活
-         * 对象依然存活
-         * 对象依然存活
-         * 对象已被回收
-         */
-    }
-}
-
-@Data
-class Person {
-    private String name;
-}</code></pre>
 <blockquote>
 <p>拓展内容1：三种引用的使用场景</p>
 </blockquote>
@@ -228,24 +253,10 @@ class Person {
 <li><p>如果要在线程池中使用 ThreadLocal，则应该在任务结束时主动调用 <code>ThreadLocal#remove()</code> 将当前 ThreadLocal 在 Thread（ThreadLocalMap）中删除，否则可能会因为线程重用的缘故而导致 Value 值无法被及时回收从而导致内存泄露。</p>
 </li>
 </ul>
-<h2 id="ThreadLocalMap源码浅析与内存泄露问题"><a href="#ThreadLocalMap源码浅析与内存泄露问题" class="headerlink" title="ThreadLocalMap源码浅析与内存泄露问题"></a>ThreadLocalMap源码浅析与内存泄露问题</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><pre><code class="java">ThreadLocalMap(ThreadLocal&lt;?&gt; firstKey, Object firstValue) {
-    // 初始化entry数组，大小默认为INITIAL_CAPACITY，即16
-    table = new Entry[INITIAL_CAPACITY];
-    // 计算第一个Entry在数组中的下标值
-    int i = firstKey.threadLocalHashCode &amp; (INITIAL_CAPACITY - 1);
-    table[i] = new Entry(firstKey, firstValue);
-    // 计算Entry个数
-    size = 1;
-    // 计算阈值。公式：len*2 / 3
-    setThreshold(INITIAL_CAPACITY);
-}</code></pre>
-<h3 id="Entry类的内存泄露问题"><a href="#Entry类的内存泄露问题" class="headerlink" title="Entry类的内存泄露问题"></a>Entry类的内存泄露问题</h3><h4 id="Entry类"><a href="#Entry类" class="headerlink" title="Entry类"></a>Entry类</h4><pre><code class="java">static class Entry extends WeakReference&lt;ThreadLocal&lt;?&gt;&gt; {
-    Object value;
-    Entry(ThreadLocal&lt;?&gt; k, Object v) {
-        super(k);
-        value = v;
-    }
-}</code></pre>
+<h2 id="ThreadLocalMap源码浅析与内存泄露问题"><a href="#ThreadLocalMap源码浅析与内存泄露问题" class="headerlink" title="ThreadLocalMap源码浅析与内存泄露问题"></a>ThreadLocalMap源码浅析与内存泄露问题</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java">ThreadLocalMap(ThreadLocal&lt;?&gt; firstKey, Object firstValue) &#123;<br>    <span class="hljs-comment">// 初始化entry数组，大小默认为INITIAL_CAPACITY，即16</span><br>    table = <span class="hljs-keyword">new</span> Entry[INITIAL_CAPACITY];<br>    <span class="hljs-comment">// 计算第一个Entry在数组中的下标值</span><br>    <span class="hljs-keyword">int</span> i = firstKey.threadLocalHashCode &amp; (INITIAL_CAPACITY - <span class="hljs-number">1</span>);<br>    table[i] = <span class="hljs-keyword">new</span> Entry(firstKey, firstValue);<br>    <span class="hljs-comment">// 计算Entry个数</span><br>    size = <span class="hljs-number">1</span>;<br>    <span class="hljs-comment">// 计算阈值。公式：len*2 / 3</span><br>    setThreshold(INITIAL_CAPACITY);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="Entry类的内存泄露问题"><a href="#Entry类的内存泄露问题" class="headerlink" title="Entry类的内存泄露问题"></a>Entry类的内存泄露问题</h3><h4 id="Entry类"><a href="#Entry类" class="headerlink" title="Entry类"></a>Entry类</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Entry</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">WeakReference</span>&lt;<span class="hljs-title">ThreadLocal</span>&lt;?&gt;&gt; </span>&#123;<br>    Object value;<br>    Entry(ThreadLocal&lt;?&gt; k, Object v) &#123;<br>        <span class="hljs-keyword">super</span>(k);<br>        value = v;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
 <h4 id="为什么要将-key-定义为弱引用？"><a href="#为什么要将-key-定义为弱引用？" class="headerlink" title="为什么要将 key 定义为弱引用？"></a>为什么要将 key 定义为弱引用？</h4><p>&emsp;&emsp;个人认为原因是为了更好地回收 ThreadLocal 与之对应的 value 值。因为 ThreadLocalMap 的 set/get 方法是具有一定的清理能力的，而其清理操作主要针对 key 为 null 的 Entry（参考下面的源码分析）。大致步骤是先往数组左边检索，然后再从左往右清理其 key 为 null 的 Entry。</p>
 <p>&emsp;&emsp;在上面我们已经得知了弱引用实例的生命周期范围，所以简单地说就是如果当 ThreadLocal 用完后被手动置空的话（即丢失了强引用），那么这个 ThreadLocal 就只能活到下一次gc，而当 ThreadLocal 被回收掉，那么在下一次再调用 set/get 方法时就会被发现 key 为 null 然后其value就会被清除。</p>
 <p>&emsp;&emsp;现在我们假设如果 key 被定义为强引用看看又会发生什么事情。key如果为强引用，也就是说即使在程序中手动置空 ThreadLocal 引用 gc 也不能将其回收，主要是因为 ThreadLocalMap 中还强引用着这个已经“用完”的 ThreadLocal，因此对于 JVM 而言宁可抛出 OOM 都不会回收强引用的其空间。但我们现在明确知道这个 ThreadLocal（以及其关联的Value）已经“用完”了，但其空间却不能回收，这时如果 Thread 的生命周期非常长的话，就会导致内存泄露问题的发生。所以看到网上有些人说是因为弱引用而导致内存泄露，这显然是不正确的。</p>
@@ -256,292 +267,291 @@ class Person {
 <li>尽量不要在线程池中使用 ThreadLocal </li>
 <li>使用完 ThreadLocal 后要主动调用 ThreadLocal 的 remove 方法，将自己在当前 Thread 的 ThreadLocalMap 中移除来主动释放空间</li>
 </ol>
-<h3 id="set"><a href="#set" class="headerlink" title="set"></a>set</h3><pre><code class="java">private void set(ThreadLocal&lt;?&gt; key, Object value) {
-    Entry[] tab = table;
-    int len = tab.length;
-    int i = key.threadLocalHashCode &amp; (len-1);
+<h3 id="set"><a href="#set" class="headerlink" title="set"></a>set</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">set</span><span class="hljs-params">(ThreadLocal&lt;?&gt; key, Object value)</span> </span>&#123;<br>    Entry[] tab = table;<br>    <span class="hljs-keyword">int</span> len = tab.length;<br>    <span class="hljs-keyword">int</span> i = key.threadLocalHashCode &amp; (len-<span class="hljs-number">1</span>);<br><br>    <span class="hljs-comment">// 出现了Hash冲突</span><br>    <span class="hljs-keyword">for</span> (Entry e = tab[i];<br>         e != <span class="hljs-keyword">null</span>;<br>         e = tab[i = nextIndex(i, len)]) &#123; <span class="hljs-comment">// 注意：从当前下标往右遍历</span><br>        <br>        <span class="hljs-comment">// 返回遍历到的ThreadLocal</span><br>        ThreadLocal&lt;?&gt; k = e.get();<br>        <br>        <span class="hljs-comment">// 发现key是同一个ThreadLocal，直接替换即可</span><br>        <span class="hljs-keyword">if</span> (k == key) &#123;<br>            e.value = value;<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <br>        <span class="hljs-comment">// 遍历时发现了key（ThreadLoca）为null，替换并执行清理操作</span><br>        <span class="hljs-keyword">if</span> (k == <span class="hljs-keyword">null</span>) &#123;<br>            <span class="hljs-comment">// 用当前设入的 ThreadLocal 将其替换掉</span><br>            <span class="hljs-comment">// 注意，这时会进行一次全散列表清理（从左往右）</span><br>            replaceStaleEntry(key, value, i);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">// 【没有发生冲突】或【发生了冲突但从i开始散列表右边不存在key为null的Entry】</span><br>    <span class="hljs-comment">// 那么就将当前Entry保存到散列表的最右边</span><br>    tab[i] = <span class="hljs-keyword">new</span> Entry(key, value);<br>    <span class="hljs-keyword">int</span> sz = ++size;<br>    <br>    <span class="hljs-comment">// 判断是否需要rehash</span><br>    <span class="hljs-comment">// cleanSomeSlots：从i开始往右清理哪些key为null的Entry</span><br>    <span class="hljs-comment">// !cleanSomeSlots(i, sz)：为true时表示i开始往右并没有需要清理的Entry，即没法腾出空间</span><br>    <span class="hljs-comment">// sz &gt;= threshold，即表示已经到达容许限制</span><br>    <span class="hljs-keyword">if</span> (!cleanSomeSlots(i, sz) &amp;&amp; sz &gt;= threshold)<br>        rehash(); <span class="hljs-comment">// 扩容</span><br>&#125;<br></code></pre></td></tr></table></figure>
 
-    // 出现了Hash冲突
-    for (Entry e = tab[i];
-         e != null;
-         e = tab[i = nextIndex(i, len)]) { // 注意：从当前下标往右遍历
-
-        // 返回遍历到的ThreadLocal
-        ThreadLocal&lt;?&gt; k = e.get();
-
-        // 发现key是同一个ThreadLocal，直接替换即可
-        if (k == key) {
-            e.value = value;
-            return;
-        }
-
-        // 遍历时发现了key（ThreadLoca）为null，替换并执行清理操作
-        if (k == null) {
-            // 用当前设入的 ThreadLocal 将其替换掉
-            // 注意，这时会进行一次全散列表清理（从左往右）
-            replaceStaleEntry(key, value, i);
-            return;
-        }
-    }
-
-    // 【没有发生冲突】或【发生了冲突但从i开始散列表右边不存在key为null的Entry】
-    // 那么就将当前Entry保存到散列表的最右边
-    tab[i] = new Entry(key, value);
-    int sz = ++size;
-
-    // 判断是否需要rehash
-    // cleanSomeSlots：从i开始往右清理哪些key为null的Entry
-    // !cleanSomeSlots(i, sz)：为true时表示i开始往右并没有需要清理的Entry，即没法腾出空间
-    // sz &gt;= threshold，即表示已经到达容许限制
-    if (!cleanSomeSlots(i, sz) &amp;&amp; sz &gt;= threshold)
-        rehash(); // 扩容
-}</code></pre>
 <ul>
 <li>可以注意到，当【没有发生冲突】或【发生了冲突但从i开始散列表的右边不存在key为null的Entry】时，是不会往左遍历的，所以这时左边即使有 key 为 null 的 Entry 也不会被发现，即存在内存泄露风险</li>
 <li>处于右边且 key 为 null 的 Entry 之所以能够被清理是因为每一次 set 操作都会进行一次 cleanSomeSlots，而 cleanSomeSlots 是往右清理的</li>
 </ul>
-<h3 id="rehash和expungeStaleEntries"><a href="#rehash和expungeStaleEntries" class="headerlink" title="rehash和expungeStaleEntries"></a>rehash和expungeStaleEntries</h3><pre><code class="java">private void rehash() {
-    // 压缩散列表
-    expungeStaleEntries();
-    // 如果这时size已经到达阈值，则扩容为原来的2倍
-    if (size &gt;= threshold - threshold / 4)
-        resize(); 
-}
+<h3 id="rehash和expungeStaleEntries"><a href="#rehash和expungeStaleEntries" class="headerlink" title="rehash和expungeStaleEntries"></a>rehash和expungeStaleEntries</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">rehash</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-comment">// 压缩散列表</span><br>    expungeStaleEntries();<br>    <span class="hljs-comment">// 如果这时size已经到达阈值，则扩容为原来的2倍</span><br>    <span class="hljs-keyword">if</span> (size &gt;= threshold - threshold / <span class="hljs-number">4</span>)<br>        resize(); <br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">expungeStaleEntries</span><span class="hljs-params">()</span> </span>&#123;<br>    Entry[] tab = table;<br>    <span class="hljs-keyword">int</span> len = tab.length;<br>    <span class="hljs-comment">// rehash操作会对散列表进行一次全表清理</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> j = <span class="hljs-number">0</span>; j &lt; len; j++) &#123;<br>        Entry e = tab[j];<br>        <span class="hljs-comment">// 从散列表最左边且key为null的Entry位置开始清理</span><br>        <span class="hljs-keyword">if</span> (e != <span class="hljs-keyword">null</span> &amp;&amp; e.get() == <span class="hljs-keyword">null</span>)<br>            expungeStaleEntry(j);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-private void expungeStaleEntries() {
-    Entry[] tab = table;
-    int len = tab.length;
-    // rehash操作会对散列表进行一次全表清理
-    for (int j = 0; j &lt; len; j++) {
-        Entry e = tab[j];
-        // 从散列表最左边且key为null的Entry位置开始清理
-        if (e != null &amp;&amp; e.get() == null)
-            expungeStaleEntry(j);
-    }
-}</code></pre>
-<h3 id="replaceStaleEntry"><a href="#replaceStaleEntry" class="headerlink" title="replaceStaleEntry"></a>replaceStaleEntry</h3><pre><code class="java">private void replaceStaleEntry(ThreadLocal&lt;?&gt; key, Object value,
-                               int staleSlot) {
-    Entry[] tab = table;
-    int len = tab.length;
-    Entry e;
 
-    // 从当前冲突位置staleSlot（不包含staleSlot）开始往左查找key为null的Entry
-    int slotToExpunge = staleSlot;
-    for (int i = prevIndex(staleSlot, len);
-         (e = tab[i]) != null;
-         i = prevIndex(i, len))
 
-        if (e.get() == null)
-            // slotToExpunge记录了散列表最左边且key为null的Entry下标
-            slotToExpunge = i; 
+<h3 id="replaceStaleEntry"><a href="#replaceStaleEntry" class="headerlink" title="replaceStaleEntry"></a>replaceStaleEntry</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">replaceStaleEntry</span><span class="hljs-params">(ThreadLocal&lt;?&gt; key, Object value,</span></span><br><span class="hljs-function"><span class="hljs-params">                               <span class="hljs-keyword">int</span> staleSlot)</span> </span>&#123;<br>    Entry[] tab = table;<br>    <span class="hljs-keyword">int</span> len = tab.length;<br>    Entry e;<br><br>    <span class="hljs-comment">// 从当前冲突位置staleSlot（不包含staleSlot）开始往左查找key为null的Entry</span><br>    <span class="hljs-keyword">int</span> slotToExpunge = staleSlot;<br>    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = prevIndex(staleSlot, len);<br>         (e = tab[i]) != <span class="hljs-keyword">null</span>;<br>         i = prevIndex(i, len))<br><br>        <span class="hljs-keyword">if</span> (e.get() == <span class="hljs-keyword">null</span>)<br>            <span class="hljs-comment">// slotToExpunge记录了散列表最左边且key为null的Entry下标</span><br>            slotToExpunge = i; <br><br>    <span class="hljs-comment">// 再往右遍历（不包含staleSlot）</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = nextIndex(staleSlot, len);<br>         (e = tab[i]) != <span class="hljs-keyword">null</span>;<br>         i = nextIndex(i, len)) &#123;<br><br>        ThreadLocal&lt;?&gt; k = e.get();<br><br>        <span class="hljs-comment">// 从staleSlot（不包含staleSlot）往右遍历时发现了相同的ThreadLocal</span><br>        <span class="hljs-keyword">if</span> (k == key) &#123;<br>            e.value = value;<br><br>            <span class="hljs-comment">// 将当前key为null的Entry替换到i位置</span><br>            <span class="hljs-comment">// 同时将当前保存的ThreadLocal所在的Entry赋值给staleSlot</span><br>            tab[i] = tab[staleSlot];<br>            tab[staleSlot] = e;<br><br>            <span class="hljs-comment">// 避免先前往右遍历时发现staleSlot真好是要清除的对象</span><br>            <span class="hljs-comment">// 所以将当前往右遍历到的i设置为清除的目标</span><br>            <span class="hljs-keyword">if</span> (slotToExpunge == staleSlot)<br>                slotToExpunge = i;<br><br>            <span class="hljs-comment">// 从slotToExpunge往右清除（slotToExpunge是位于最左边key为null的Entry的下标）</span><br>            <span class="hljs-comment">// 回顾：slotToExpunge为哈希表最左边的且key为null的Entry</span><br>            cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br><br>        <span class="hljs-comment">// If we didn't find stale entry on backward scan, the</span><br>        <span class="hljs-comment">// first stale entry seen while scanning for key is the</span><br>        <span class="hljs-comment">// first still present in the run.</span><br>        <span class="hljs-keyword">if</span> (k == <span class="hljs-keyword">null</span> &amp;&amp; slotToExpunge == staleSlot)<br>            slotToExpunge = i;<br>    &#125;<br><br>    <span class="hljs-comment">// If key not found, put new entry in stale slot</span><br>    tab[staleSlot].value = <span class="hljs-keyword">null</span>;<br>    tab[staleSlot] = <span class="hljs-keyword">new</span> Entry(key, value);<br><br>    <span class="hljs-comment">// If there are any other stale entries in run, expunge them</span><br>    <span class="hljs-keyword">if</span> (slotToExpunge != staleSlot)<br>        cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);<br>&#125;<br></code></pre></td></tr></table></figure>
 
-    // 再往右遍历（不包含staleSlot）
-    for (int i = nextIndex(staleSlot, len);
-         (e = tab[i]) != null;
-         i = nextIndex(i, len)) {
 
-        ThreadLocal&lt;?&gt; k = e.get();
 
-        // 从staleSlot（不包含staleSlot）往右遍历时发现了相同的ThreadLocal
-        if (k == key) {
-            e.value = value;
+<h3 id="expungeStaleEntry"><a href="#expungeStaleEntry" class="headerlink" title="expungeStaleEntry"></a>expungeStaleEntry</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 移除指定下标的entry和该下标后key为null的entry</span><br><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> <span class="hljs-title">expungeStaleEntry</span><span class="hljs-params">(<span class="hljs-keyword">int</span> staleSlot)</span> </span>&#123;<br><br>    <span class="hljs-comment">// 当前entry[]信息</span><br>    Entry[] tab = table;<br>    <span class="hljs-keyword">int</span> len = tab.length;<br><br>    <span class="hljs-comment">// 将其置空后再size减1</span><br>    <span class="hljs-comment">// 置空的目的是解除entry的引用好让gc将其回收</span><br>    tab[staleSlot].value = <span class="hljs-keyword">null</span>;<br>    tab[staleSlot] = <span class="hljs-keyword">null</span>;<br>    size--;<br><br>    Entry e;<br>    <span class="hljs-keyword">int</span> i;<br><br>    <span class="hljs-comment">// 这个置空的entry后面是否还有entry？</span><br>    <span class="hljs-keyword">for</span> (i = nextIndex(staleSlot, len); (e = tab[i]) != <span class="hljs-keyword">null</span>; i = nextIndex(i, len)) &#123;<br>        ThreadLocal&lt;?&gt; k = e.get();<br><br>        <span class="hljs-comment">// 有entry且key为null？</span><br>        <span class="hljs-keyword">if</span> (k == <span class="hljs-keyword">null</span>) &#123;<br>            <span class="hljs-comment">// 将它一同置空</span><br>            e.value = <span class="hljs-keyword">null</span>;<br>            tab[i] = <span class="hljs-keyword">null</span>;<br>            size--;<br><br>            <span class="hljs-comment">// 有entry但key不为null</span><br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            <span class="hljs-comment">// 获取当前ThreadLocal对应Entry的下标</span><br>            <span class="hljs-keyword">int</span> h = k.threadLocalHashCode &amp; (len - <span class="hljs-number">1</span>);<br>            <span class="hljs-comment">// 如果h不等于当前i则表示存在ThreadLocal冲突的情况，即i和h冲突</span><br>            <span class="hljs-keyword">if</span> (h != i) &#123;<br>                <span class="hljs-comment">// 置空当前i下标的Entry（tab[i]的值位于当前局部变量e）</span><br>                tab[i] = <span class="hljs-keyword">null</span>;<br>                <span class="hljs-comment">// 如果当前冲突的Entry（h）不会null则往后找位置来存放原来位于i的Entry</span><br>                <span class="hljs-keyword">while</span> (tab[h] != <span class="hljs-keyword">null</span>) <br>                    h = nextIndex(h, len);<br>                <span class="hljs-comment">// 将当前i的Entry存放到右边，总体来说是将Entry往右移动</span><br>                tab[h] = e<br>            &#125;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">return</span> i;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-            // 将当前key为null的Entry替换到i位置
-            // 同时将当前保存的ThreadLocal所在的Entry赋值给staleSlot
-            tab[i] = tab[staleSlot];
-            tab[staleSlot] = e;
 
-            // 避免先前往右遍历时发现staleSlot真好是要清除的对象
-            // 所以将当前往右遍历到的i设置为清除的目标
-            if (slotToExpunge == staleSlot)
-                slotToExpunge = i;
 
-            // 从slotToExpunge往右清除（slotToExpunge是位于最左边key为null的Entry的下标）
-            // 回顾：slotToExpunge为哈希表最左边的且key为null的Entry
-            cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
-            return;
-        }
+<h3 id="cleanSomeSlots"><a href="#cleanSomeSlots" class="headerlink" title="cleanSomeSlots"></a>cleanSomeSlots</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">cleanSomeSlots</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i, <span class="hljs-keyword">int</span> n)</span> </span>&#123;<br>    <span class="hljs-keyword">boolean</span> removed = <span class="hljs-keyword">false</span>;<br>    Entry[] tab = table;<br>    <span class="hljs-keyword">int</span> len = tab.length;<br><br>    <span class="hljs-comment">// 从i开始往右清理哪些key为null的Entry</span><br>    <span class="hljs-keyword">do</span> &#123;<br>        i = nextIndex(i, len);<br>        Entry e = tab[i];<br>        <span class="hljs-keyword">if</span> (e != <span class="hljs-keyword">null</span> &amp;&amp; e.get() == <span class="hljs-keyword">null</span>) &#123;<br>            n = len;<br>            removed = <span class="hljs-keyword">true</span>;<br>            i = expungeStaleEntry(i);<br>        &#125;<br>    &#125; <span class="hljs-keyword">while</span> ( (n &gt;&gt;&gt;= <span class="hljs-number">1</span>) != <span class="hljs-number">0</span>); <br>    <span class="hljs-keyword">return</span> removed;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-        // If we didn&#39;t find stale entry on backward scan, the
-        // first stale entry seen while scanning for key is the
-        // first still present in the run.
-        if (k == null &amp;&amp; slotToExpunge == staleSlot)
-            slotToExpunge = i;
-    }
 
-    // If key not found, put new entry in stale slot
-    tab[staleSlot].value = null;
-    tab[staleSlot] = new Entry(key, value);
 
-    // If there are any other stale entries in run, expunge them
-    if (slotToExpunge != staleSlot)
-        cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
-}</code></pre>
-<h3 id="expungeStaleEntry"><a href="#expungeStaleEntry" class="headerlink" title="expungeStaleEntry"></a>expungeStaleEntry</h3><pre><code class="java">// 移除指定下标的entry和该下标后key为null的entry
-private int expungeStaleEntry(int staleSlot) {
+<h3 id="getEntry"><a href="#getEntry" class="headerlink" title="getEntry"></a>getEntry</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> Entry <span class="hljs-title">getEntry</span><span class="hljs-params">(ThreadLocal&lt;?&gt; key)</span> </span>&#123;<br>    <span class="hljs-keyword">int</span> i = key.threadLocalHashCode &amp; (table.length - <span class="hljs-number">1</span>);<br>    Entry e = table[i];<br>    <span class="hljs-comment">// entry[]中存在该值，且正好是要查询的key</span><br>    <span class="hljs-keyword">if</span> (e != <span class="hljs-keyword">null</span> &amp;&amp; e.get() == key)<br>        <span class="hljs-keyword">return</span> e;<br>    <span class="hljs-keyword">else</span><br>        <span class="hljs-comment">// 表示存在哈希冲突，当前要找的Entry不在当前位置，则需要往右查找</span><br>        <span class="hljs-keyword">return</span> getEntryAfterMiss(key, i, e);<br>&#125;<br></code></pre></td></tr></table></figure>
 
-    // 当前entry[]信息
-    Entry[] tab = table;
-    int len = tab.length;
 
-    // 将其置空后再size减1
-    // 置空的目的是解除entry的引用好让gc将其回收
-    tab[staleSlot].value = null;
-    tab[staleSlot] = null;
-    size--;
 
-    Entry e;
-    int i;
+<h3 id="getEntryAfterMiss"><a href="#getEntryAfterMiss" class="headerlink" title="getEntryAfterMiss"></a>getEntryAfterMiss</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-function"><span class="hljs-keyword">private</span> Entry <span class="hljs-title">getEntryAfterMiss</span><span class="hljs-params">(ThreadLocal&lt;?&gt; key, <span class="hljs-keyword">int</span> i, Entry e)</span> </span>&#123;<br>    Entry[] tab = table;<br>    <span class="hljs-keyword">int</span> len = tab.length;<br>    <br>    <span class="hljs-keyword">while</span> (e != <span class="hljs-keyword">null</span>) &#123;<br>        ThreadLocal&lt;?&gt; k = e.get();<br>        <span class="hljs-comment">// 找到对应的Entry直接返回</span><br>        <span class="hljs-keyword">if</span> (k == key)<br>            <span class="hljs-keyword">return</span> e;<br>        <span class="hljs-comment">// 在找Entry途中发现到存在key为null的Entry则进行清理</span><br>        <span class="hljs-keyword">if</span> (k == <span class="hljs-keyword">null</span>)<br>            expungeStaleEntry(i);<br>        <span class="hljs-keyword">else</span><br>            <span class="hljs-comment">// 当前下标没有找到想要的结果，接着往右遍历</span><br>            i = nextIndex(i, len);<br>        e = tab[i];<br>    &#125;<br>    <br>    <span class="hljs-comment">// 不存在该key对应的Entry</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-    // 这个置空的entry后面是否还有entry？
-    for (i = nextIndex(staleSlot, len); (e = tab[i]) != null; i = nextIndex(i, len)) {
-        ThreadLocal&lt;?&gt; k = e.get();
 
-        // 有entry且key为null？
-        if (k == null) {
-            // 将它一同置空
-            e.value = null;
-            tab[i] = null;
-            size--;
 
-            // 有entry但key不为null
-        } else {
-            // 获取当前ThreadLocal对应Entry的下标
-            int h = k.threadLocalHashCode &amp; (len - 1);
-            // 如果h不等于当前i则表示存在ThreadLocal冲突的情况，即i和h冲突
-            if (h != i) {
-                // 置空当前i下标的Entry（tab[i]的值位于当前局部变量e）
-                tab[i] = null;
-                // 如果当前冲突的Entry（h）不会null则往后找位置来存放原来位于i的Entry
-                while (tab[h] != null) 
-                    h = nextIndex(h, len);
-                // 将当前i的Entry存放到右边，总体来说是将Entry往右移动
-                tab[h] = e
-            }
-        }
-    }
-
-    return i;
-}</code></pre>
-<h3 id="cleanSomeSlots"><a href="#cleanSomeSlots" class="headerlink" title="cleanSomeSlots"></a>cleanSomeSlots</h3><pre><code class="java">private boolean cleanSomeSlots(int i, int n) {
-    boolean removed = false;
-    Entry[] tab = table;
-    int len = tab.length;
-
-    // 从i开始往右清理哪些key为null的Entry
-    do {
-        i = nextIndex(i, len);
-        Entry e = tab[i];
-        if (e != null &amp;&amp; e.get() == null) {
-            n = len;
-            removed = true;
-            i = expungeStaleEntry(i);
-        }
-    } while ( (n &gt;&gt;&gt;= 1) != 0); 
-    return removed;
-}</code></pre>
-<h3 id="getEntry"><a href="#getEntry" class="headerlink" title="getEntry"></a>getEntry</h3><pre><code class="java">private Entry getEntry(ThreadLocal&lt;?&gt; key) {
-    int i = key.threadLocalHashCode &amp; (table.length - 1);
-    Entry e = table[i];
-    // entry[]中存在该值，且正好是要查询的key
-    if (e != null &amp;&amp; e.get() == key)
-        return e;
-    else
-        // 表示存在哈希冲突，当前要找的Entry不在当前位置，则需要往右查找
-        return getEntryAfterMiss(key, i, e);
-}</code></pre>
-<h3 id="getEntryAfterMiss"><a href="#getEntryAfterMiss" class="headerlink" title="getEntryAfterMiss"></a>getEntryAfterMiss</h3><pre><code class="java">private Entry getEntryAfterMiss(ThreadLocal&lt;?&gt; key, int i, Entry e) {
-    Entry[] tab = table;
-    int len = tab.length;
-
-    while (e != null) {
-        ThreadLocal&lt;?&gt; k = e.get();
-        // 找到对应的Entry直接返回
-        if (k == key)
-            return e;
-        // 在找Entry途中发现到存在key为null的Entry则进行清理
-        if (k == null)
-            expungeStaleEntry(i);
-        else
-            // 当前下标没有找到想要的结果，接着往右遍历
-            i = nextIndex(i, len);
-        e = tab[i];
-    }
-
-    // 不存在该key对应的Entry
-    return null;
-}</code></pre>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/JavaSE/">JavaSE</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/JavaSE/">JavaSE</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/apache-groovy/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">了解Groovy</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">
+                        <span class="hidden-mobile">Python爬虫笔记-入门</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
 
-  <!-- 文章原地址信息 -->
-  <div id="article-origin">
-    文章作者: TanDi <br/>
-    文章链接: 
-    <a href="/%E5%85%B3%E4%BA%8EThreadLocal%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E5%92%8CThreadLocalMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/">
-      关于ThreadLocal内存泄露和ThreadLocalMap源码浅析
-    </a> <br/>
-    版权声明: 转载请注明来自 
-    <a href="https://tandi.pub">
-      https://tandi.pub
-    </a>
-  </div>
-
-  <!-- 其他内容 -->
-
-
-  <!-- Gitalk 评论功能 -->
-  
-    <div id="gitalk-container"></div>
-    <script type="text/javascript">
-      var gitalk = new Gitalk({
+            
+              <!-- Comments -->
+              <article class="comments" id="comments">
+                
+                
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.waitElementVisible('gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', function () {
+        var gitalk = new Gitalk({
           clientID: '38b84fb92012be686d1c',
           clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
-          admin: ['oomgomgxx'],
-          id: md5('关于ThreadLocal内存泄露和ThreadLocalMap源码浅析'),
+          admin: ["oomgomgxx"],
+          id: '524b787cca902b3a4223c9e932d7a3ae',
+          language: 'zh-CN',
+          labels: ["Gitalk"],
+          perPage: 10,
+          pagerDirection: 'last',
+          createIssueManually: true,
           distractionFreeMode: false
-        })
-        gitalk.render('gitalk-container')           
-    </script>
-  
-  
-</article>
-<!-- 分页 -->
-<div id="paginator">
-  
-</div>
-<!-- 文章目录 -->
-<div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于引用的小知识"><span class="toc-text">关于引用的小知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocal-和-Thread-之间的关系"><span class="toc-text">ThreadLocal 和 Thread 之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ThreadLocalMap源码浅析与内存泄露问题"><span class="toc-text">ThreadLocalMap源码浅析与内存泄露问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#构造方法"><span class="toc-text">构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Entry类的内存泄露问题"><span class="toc-text">Entry类的内存泄露问题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Entry类"><span class="toc-text">Entry类</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么要将-key-定义为弱引用？"><span class="toc-text">为什么要将 key 定义为弱引用？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#为什么会出现内存泄露？"><span class="toc-text">为什么会出现内存泄露？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#如何避免内存泄露？"><span class="toc-text">如何避免内存泄露？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#set"><span class="toc-text">set</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#rehash和expungeStaleEntries"><span class="toc-text">rehash和expungeStaleEntries</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#replaceStaleEntry"><span class="toc-text">replaceStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#expungeStaleEntry"><span class="toc-text">expungeStaleEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#cleanSomeSlots"><span class="toc-text">cleanSomeSlots</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntry"><span class="toc-text">getEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#getEntryAfterMiss"><span class="toc-text">getEntryAfterMiss</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
-</div>
+        });
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
 
-      </div>
 
-      <!-- 页脚导航 
-      <div id="bottom-outer">
-        <div id="bottom-inner">
-          <font class="foot_msg">
-            魔鬼藏在细节中
-          </font>
-         
-          <span>
-            <a id="bottom-totop" href="/">网站首页</a>
-            <a id="bottom-totop" href="#">回到顶部</a>
-          </span>
+              </article>
+            
+          </article>
         </div>
       </div>
-      -->
-
     </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
 
-    <!-- container end -->
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
   </div>
 
-<!-- 启动代码块高亮 -->
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+    
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":200})
+    NProgress.start()
+    document.addEventListener('DOMContentLoaded', function() {
+      window.NProgress && window.NProgress.inc();
+    })
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      var inputArea = document.querySelector("#local-search-input");
+      inputArea.onclick = function () {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+        this.onclick = null
+      }
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
 
 </body>
 </html>

@@ -1,143 +1,227 @@
-<!-- 主题布局 -->
 
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
 <head>
-  <!-- 编码方式 -->
   <meta charset="UTF-8">
-  <!-- 浏览器页签图标 -->
-  <link rel="icon" href="/img/favicon.svg">
-  <!-- 标题 -->
-  <title> Spring源码浅析之依赖注入-学然后知不足 </title>
-
-  <!-- 自适应 -->
-  
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    
-
-  <!-- 网站 seo 相关 -->
-  
-    <meta name="keywords"  content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux" />
-  
-  
-    <meta name="description" content="学然后知不足" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
   
 
   <!-- google seo -->
   <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
-  <!-- baidu seo -->
-  <!-- 暂不支持 -->
-  <meta name="baidu-site-verification" content="Kfp083TiDg" />
-    
-  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
-  <!-- 内部脚本 -->
-  
-    
-      <script src="/js/jquery.min.js"></script>
-    
-      <script src="/js/main.js"></script>
-    
-      <script src="/js/md5.min.js"></script>
-    
-      <script src="/js/highlight.min.js"></script>
-    
-  
-
-  <!-- 内部样式文件 -->
-  
-    
-      <link rel="stylesheet" href="/css/main.css">
-    
-      <link rel="stylesheet" href="/css/github.min.css">
-    
-      <link rel="stylesheet" href="/css/csshake.min.css">
-    
-  
-
   <!-- 小图标 -->
   <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <!-- gitalk -->
-  <link rel="stylesheet" href="/gitalk/gitalk.css" />
-  <script src="/gitalk/gitalk.min.js"></script>
-  <!-- ================================== 不要放到下面，否则会闪烁 ====================================== -->
 
-  <!-- fancybox support -->
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="学然后知不足">
+  <meta name="author" content="TanDi">
+  <meta name="keywords" content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux">
+  <title>Spring源码浅析之依赖注入 - 学然后知不足</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
   
-    <link rel="stylesheet" href="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.css" />
-    <script type="text/javascript" src="https://cdn.bootcss.com/fancybox/3.5.7/jquery.fancybox.min.js"></script>
-    <script type="text/javascript" src="/js/wrapImage.js"></script>
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
   
 
-<meta name="generator" content="Hexo 4.2.0"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"tandi.pub","root":"/","version":"1.8.6","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":"#"},"copy_btn":true,"image_zoom":{"enable":true},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":"https://www.google-analytics.com/analytics.js","gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
 </head>
 
+
 <body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>学然后知不足</strong>&nbsp;</a>
 
-  <div id="container">
-    <!-- container start -->
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
 
-    <!-- 小屏导航栏 -->
-    <nav id="min-menu-outer">
-      <h3>
-        <a href="/">学然后知不足</a>
-      </h3>
-      <span id="min-menu-inner">
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
         
-          <!-- 导航栏目录 -->
-          <a href="/">最新文章</a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
         
-          <!-- 导航栏目录 -->
-          <a href="/about">关于博客</a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
         
-      </span>
-    </nav>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
 
-    <!-- 大屏导航栏 -->
-    <nav id="menu-outer">
-      <div id="menu-title" style="text-align: right; padding-right: 18px" class="shake-trigger" >
-        <h3>
-          <a href="/" title="主页">学然后知不足</a>
-        </h3>
-      </div>
-      <div id="menu-inner">
-        
-          <!-- 导航栏目录 -->
-          <a id="menu-a" href="/">最新文章</a>
-        
-          <!-- 导航栏目录 -->
-          <a id="menu-a" href="/about">关于博客</a>
-        
-      </div>
-      <!-- 导航栏页脚 -->
-      <div id="menu-footer" class="shake-rotate" title="开发者" >魔鬼藏在细节中</div>
-    </nav>
+    <div class="banner intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Spring源码浅析之依赖注入">
+              
+            </span>
 
-    <!-- 文章内容 -->
-    <div id="content-outer">
-      <div id="content-inner">
-        <!-- 文章页面 -->
-<article id="post">
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2020-03-24 22:32" pubdate>
+        2020年3月24日 晚上
+      </time>
+    </span>
+  
+</div>
 
-  <!-- 文章标题 -->
-  <h1>Spring源码浅析之依赖注入</h1>
-
-  <!-- 文章元信息 -->
-  <span class="post-metadata">
-    <!-- 文章日期 -->
-    <i class="fa fa-calendar"></i>&thinsp;2020-03-24 &ensp;
-    <!-- 文章作者 -->
-    作者: TanDi &ensp;
-    <!-- 判断文章是都为原创文章 -->
+<div class="mt-1">
+  
     
-      类型：原创
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      3.6k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
       
-  </span>
+      
+      40
+       分钟
+    </span>
+  
 
-  <hr/>
+  
+  
+</div>
 
-  <!-- 文章内容 -->
-  <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Spring源码浅析之依赖注入</h1>
+            
+            <div class="markdown-body">
+              <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
 <li>2020年05月14日02:17:55 — 增加循环依赖源码浅析案例</li>
 </ul>
 <p>文章内容基于 Spring 5 </p>
@@ -151,16 +235,8 @@
 <p>&emsp;&emsp;那先聊聊到底什么是控制反转？很多人聊控制反转都拿 Spring 容器举例，而其实用到控制反转思想的地方不仅仅如此。譬如设计模式中的<code>观察者模式</code>、著名的<code>好莱坞原则</code>都是控制反转的体现。而在 Spring 中，控制反转主要体现在<code>上下文管理</code>上，开发者不仅可以将 Bean 的维护工作交给容器，还能使用容器来进行<code>资源管理</code>、<code>依赖查找</code>、<code>依赖注入</code>、<code>事件传播</code>等操作，所以“依赖注入其实是IOC的另一种说法”这种说法不是错误的，而准确点说应该是“依赖注入是控制反转的一种体现”。</p>
 <p>但口说无凭，事实胜于雄辩。我所理解的 Ioc 其实是一种思想，且并不只是在 Spring 中出现。例如GOF的23种计模式中的<code>观察者模式</code>也运用了控制反转的思想，主要体现在由可观察对象来通知观察者而不是观察者主动轮询可观察对象，既这时后观察者是从主动变为被动。除了编程之外其实生活中也有 IoC 思想的场景，例如著名的 <a href="https://baike.baidu.com/item/%E5%A5%BD%E8%8E%B1%E5%9D%9E%E5%8E%9F%E5%88%99/16019700" target="_blank" rel="noopener">好莱坞原则</a> 就是 IoC 的体现。在 Spring 中，IoC 主要体现在实例维护上，开发者将维护实例职责交由Spring来完成，这就是Spring的 IoC 思想。而需要重点情况出的实例维护到底包含哪些内容？大致有这些：<code>配置管理</code>、<code>实例创建与销毁</code>、<code>实例的依赖查找</code>、<code>实例的依赖注入</code>等等，以上提到的都是 IoC 的职责。所以说IoC 是不等同于依赖注入的。通俗地说，依赖注入仅仅只是 Spring IoC 中的一项功能，如果依赖注入脱离了 IoC 的话，那么只是一个没有”上下文”的普通操作而已。</p>
 <p>&emsp;&emsp;在这再多说一句，依赖注入功能其实是依赖查找功能的超集，可以简单理解依赖注入操作时是隐含着依赖查找的，而且需要重点注意的是，依赖<code>注入中的依赖查找</code>和<code>主动依赖查找</code>并不相同。具体体现在主动依赖查找只会查找有BeanDefinition的Bean，而注入中的依赖查找还可以查找到 Spring 容器内部创建的 bean (譬如BeanFactory)。</p>
-<pre><code class="java">// 手动依赖查找
-@Test
-public void test() {
-    // 会抛出 NoSuchBeanDefinitionException 
-    applicationContext.getBean(BeanFactory.class);
-}
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 手动依赖查找</span><br><span class="hljs-meta">@Test</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-comment">// 会抛出 NoSuchBeanDefinitionException </span><br>    applicationContext.getBean(BeanFactory<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;<br>&#125;<br><br><span class="hljs-comment">// 依赖注入（自动装配依赖查找 + 注入依赖）</span><br><span class="hljs-meta">@Autowired</span><br><span class="hljs-keyword">private</span> BeanFactory beanFactory; <span class="hljs-comment">// 可以获取到 BeanFactory 实例</span><br></code></pre></td></tr></table></figure>
 
-// 依赖注入（自动装配依赖查找 + 注入依赖）
-@Autowired
-private BeanFactory beanFactory; // 可以获取到 BeanFactory 实例</code></pre>
 <p>上面的手动依赖查找之所以会抛出 NoSuchBeanDefinitionException 是因为 BeanFactory 是 Spring 容器的内部创建的 Bean ，因此在手动依赖查找是并不会找到 BeanFactory 的 BeanDefinition，因此才会抛出这个异常。而除了 BeanFactory 之外，ResourceLoader、ApplicationContext、Environment、ApplicationEventPublisher 等都是内置 Bean（参考AbstractApplicationContext#prepareBeanFactory）。</p>
 <blockquote>
 <p>依赖注入和依赖查找的基本流程</p>
@@ -189,51 +265,18 @@ private BeanFactory beanFactory; // 可以获取到 BeanFactory 实例</code></p
 <p>基本介绍</p>
 </blockquote>
 <p>构造器注入指的是通过<strong>带参构造器</strong>或<strong>@Bean 注解方法</strong>来产生实例并注入依赖的方式。因为构造器注入是 Spring 默认的依赖注入方式，因此在使用构造器注入时我们并不需要添加额外的注解配置</p>
-<pre><code class="java">@Configuration
-public class TestConfig {
-    private PersonRepo personRepo;
-    // 如果使用带参构造器方式实现构造器注入
-    // 就需要保证构造器本身的唯一性，而如果有多个构造器但又希望用构造器注入
-    // 则可以采用 @Bean 注解方法的方式实现
-    public TestConfig(PersonRepo personRepo) {
-        this.personRepo = this.getPersonRepo();
-    }
-}</code></pre>
-<p>值得注意的是，如果采用 @Bean 注解方法来实现构造器注入，则需要记住的规则是<code>内部注解优先于标注在方法上的注解或在方法内部相同属性的定义</code>。例子如下：</p>
-<pre><code class="java">@Configuration
-@ComponentScan(&quot;spring&quot;)
-public class JavaConfig {
-    @Bean
-    @Value(&quot;哼哼哈兮&quot;)
-    public Person person(String name) {
-        return new Person(name);
-    }
-}
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TestConfig</span> </span>&#123;<br>    <span class="hljs-keyword">private</span> PersonRepo personRepo;<br>    <span class="hljs-comment">// 如果使用带参构造器方式实现构造器注入</span><br>    <span class="hljs-comment">// 就需要保证构造器本身的唯一性，而如果有多个构造器但又希望用构造器注入</span><br>    <span class="hljs-comment">// 则可以采用 @Bean 注解方法的方式实现</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">TestConfig</span><span class="hljs-params">(PersonRepo personRepo)</span> </span>&#123;<br>        <span class="hljs-keyword">this</span>.personRepo = <span class="hljs-keyword">this</span>.getPersonRepo();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
-@Component
-public class Person {
-    @Value(&quot;sam&quot;)
-    private String name;
-}</code></pre>
+<p>值得注意的是，如果采用 @Bean 注解方法来实现构造器注入，则需要记住的规则是<code>内部注解优先于标注在方法上的注解或在方法内部相同属性的定义</code>。例子如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-meta">@ComponentScan</span>(<span class="hljs-string">"spring"</span>)<br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JavaConfig</span> </span>&#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"哼哼哈兮"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> Person <span class="hljs-title">person</span><span class="hljs-params">(String name)</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Person(name);<br>    &#125;<br>&#125;<br><br><span class="hljs-meta">@NoArgsConstructor</span><br><span class="hljs-meta">@AllArgsConstructor</span><br><span class="hljs-meta">@Data</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span> </span>&#123;<br>    <span class="hljs-meta">@Value</span>(<span class="hljs-string">"sam"</span>)<br>    <span class="hljs-keyword">private</span> String name;<br>&#125;<br></code></pre></td></tr></table></figure>
+
 <p>以上例子 Person 实例的 name 值最后为 sam</p>
 <blockquote>
 <p>源码浅析</p>
 </blockquote>
 <p>上面已经提到过，构造器注入会在实例化 Bean 时注入依赖 。而要证明这一点其实很简单，我们可以在 Bean 生命周期的<strong>属性填充</strong>阶段 Debug 一下就可以观察到了</p>
-<pre><code class="java">@Configuration
-public class TestConfig {
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TestConfig</span> </span>&#123;<br><br>    <span class="hljs-keyword">private</span> PersonRepo personRepo;<br>    <span class="hljs-keyword">private</span> TransactionTemplate transactionTemplate;<br><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">TestConfig</span><span class="hljs-params">(PersonRepo personRepo, TransactionTemplate transactionTemplate)</span> </span>&#123;<br>        <span class="hljs-keyword">this</span>.personRepo = personRepo;<br>        <span class="hljs-keyword">this</span>.transactionTemplate = transactionTemplate;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-    private PersonRepo personRepo;
-    private TransactionTemplate transactionTemplate;
-
-    public TestConfig(PersonRepo personRepo, TransactionTemplate transactionTemplate) {
-        this.personRepo = personRepo;
-        this.transactionTemplate = transactionTemplate;
-    }
-}</code></pre>
 <img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/004.png" style="zoom: 50%;">
 
 
@@ -249,13 +292,8 @@ public class TestConfig {
 <blockquote>
 <p>源码浅析</p>
 </blockquote>
-<pre><code class="java">@Configuration
-public class TestConfig {
-    @Autowired
-    private PersonRepo personRepo;
-    @Autowired
-    private TransactionTemplate transactionTemplate;
-}</code></pre>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TestConfig</span> </span>&#123;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> PersonRepo personRepo;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> TransactionTemplate transactionTemplate;<br>&#125;<br></code></pre></td></tr></table></figure>
+
 <p>首先证明在属性填充操作之前，依赖是没有被注入的</p>
 <p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/006.png" alt></p>
 <p>执行属性填充之后，Bean 状态如下</p>
@@ -273,18 +311,8 @@ public class TestConfig {
 <blockquote>
 <p>源码浅析</p>
 </blockquote>
-<pre><code class="java">@Configuration
-public class TestConfig implements ApplicationContextAware {
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TestConfig</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">ApplicationContextAware</span> </span>&#123;<br><br>    <span class="hljs-keyword">private</span> PersonRepo personRepo;<br>    <span class="hljs-keyword">private</span> TransactionTemplate transactionTemplate;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setApplicationContext</span><span class="hljs-params">(ApplicationContext applicationContext)</span> <span class="hljs-keyword">throws</span> BeansException </span>&#123;<br>        <span class="hljs-keyword">this</span>.personRepo = applicationContext.getBean(PersonRepo<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;<br>        <span class="hljs-keyword">this</span>.transactionTemplate = applicationContext.getBean(TransactionTemplate<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-    private PersonRepo personRepo;
-    private TransactionTemplate transactionTemplate;
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.personRepo = applicationContext.getBean(PersonRepo.class);
-        this.transactionTemplate = applicationContext.getBean(TransactionTemplate.class);
-    }
-}</code></pre>
 <p>首先证明接口方法在被回调之前是没有被注入的</p>
 <img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/008.png" style="zoom: 67%;">
 
@@ -322,18 +350,8 @@ public class TestConfig implements ApplicationContextAware {
 <p>&emsp; &emsp; Spring 解决非构造器注入引起的循环依赖问题的思路是在 Bean A 实例化时暴露一个 ObjectFactory 到 DefaultSingletonBeanRegistry.singletonFactories 中，而该接口的 getObject 方法封装的是获取或创建当前 Bean A 的逻辑实现（如果马上执行 getObject 可获得当前还没注入依赖的 Bean A 实例）。这时假设发生了循环依赖，Bean A 在填充属性时就会去实例化 Bean B（Bean B 亦会暴露一个 ObjectFactory），而 Bean B 因为又依赖了 Bean A，因此 Bean B 在获取依赖查找时可以从 DefaultSingletonBeanRegistry.singletonFactories 中的 ObjectFactory 获取到 Bean A 的引用从而解决解决了无法获取到已经实例化的 Bean A 依赖问题，进而解决了循环依赖。</p>
 <h3 id="为什么构造器注入导致的循环依赖无法解决？"><a href="#为什么构造器注入导致的循环依赖无法解决？" class="headerlink" title="为什么构造器注入导致的循环依赖无法解决？"></a>为什么构造器注入导致的循环依赖无法解决？</h3><p>其实原因在上面介绍中已经有结论了，是因为依赖之间在实例化时造成了死循环而导致的。</p>
 <p>那么现在我们来看看 Spring 是如何进行构造器注入的，以下是一个构造器注入而导致循环依赖的案例：</p>
-<pre><code class="java">@Configuration
-public class JavaConfig {
-    @Bean
-    public Person person(Student student) {
-        return new Person();
-    }
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JavaConfig</span> </span>&#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> Person <span class="hljs-title">person</span><span class="hljs-params">(Student student)</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Person();<br>    &#125;<br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> Student <span class="hljs-title">student</span><span class="hljs-params">(Person person)</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Student();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-    @Bean
-    public Student student(Person person) {
-        return new Student();
-    }
-}</code></pre>
 <p>参考上面的案例，因为 Person 和 Student 使用了 @Bean 标注方法的形式来进入容器，所以其方法会被视为一个 FactoryMethod（工厂方法模式），因此 Person 和 Student 都会使用 FactoryMethod 实例方案来实例化。除此之外，各自都在构造时通过参数列表传入依赖，所以会采用默认的注入方式（构造器注入）来注入依赖。</p>
 <p>首先，在容器启动时 Person 因为默认是 Singleton 域的原因会被马上实例化</p>
 <img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/011.png" style="zoom: 50%;">
@@ -374,31 +392,8 @@ public class JavaConfig {
 
 
 <h3 id="非构造器提前暴露引用过程"><a href="#非构造器提前暴露引用过程" class="headerlink" title="非构造器提前暴露引用过程"></a>非构造器提前暴露引用过程</h3><p>案例代码如下</p>
-<pre><code class="java">@Configuration
-public class JavaConfig {
-    @Bean
-    public Person person() {
-        return new Person();
-    }
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JavaConfig</span> </span>&#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> Person <span class="hljs-title">person</span><span class="hljs-params">()</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Person();<br>    &#125;<br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> Student <span class="hljs-title">student</span><span class="hljs-params">()</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Student();<br>    &#125;<br>&#125;<br><br><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span> </span>&#123;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> Student sutdent;<br>    <span class="hljs-comment">//...</span><br>&#125;<br><br><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Student</span> </span>&#123;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> Person person;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-    @Bean
-    public Student student() {
-        return new Student();
-    }
-}
-
-@Data
-public class Person {
-    @Autowired
-    private Student sutdent;
-    //...
-}
-
-@Data
-public class Student {
-    @Autowired
-    private Person person;
-}</code></pre>
 <p>相较于构造器注入案例代码只是删掉了参数列表，而改用通过 @Autowired 标注在字段上来进行依赖注入。因此 Bean 实例依然会使用 FactoryMethod 方案实例化，而注入方式为针对字段的自动注入。</p>
 <p>启动 Spring 容器执行代码，观察 Person 的 Bean 创建过程：</p>
 <img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/023.png" style="zoom: 50%;">
@@ -430,76 +425,260 @@ public class Student {
 <li><a href="https://spring.io/blog/2007/07/11/setter-injection-versus-constructor-injection-and-the-use-of-required" target="_blank" rel="noopener">Setter injection versus constructor injection and the use of @Required</a></li>
 </ul>
 
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/Spring%E5%85%A8%E5%AE%B6%E6%A1%B6/">Spring全家桶</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Spring%E5%85%A8%E5%AE%B6%E6%A1%B6/">Spring全家桶</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/Java%E4%B8%AD%E4%B8%8D%E5%8F%AA%E6%9C%89%E5%80%BC%E4%BC%A0%E9%80%92/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Java中不只有值传递</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/">
+                        <span class="hidden-mobile">Spring源码浅析之SingletonBean实例化过程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
 
-  <!-- 文章原地址信息 -->
-  <div id="article-origin">
-    文章作者: TanDi <br/>
-    文章链接: 
-    <a href="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/">
-      Spring源码浅析之依赖注入
-    </a> <br/>
-    版权声明: 转载请注明来自 
-    <a href="https://tandi.pub">
-      https://tandi.pub
-    </a>
-  </div>
-
-  <!-- 其他内容 -->
-
-
-  <!-- Gitalk 评论功能 -->
-  
-    <div id="gitalk-container"></div>
-    <script type="text/javascript">
-      var gitalk = new Gitalk({
+            
+              <!-- Comments -->
+              <article class="comments" id="comments">
+                
+                
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.waitElementVisible('gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', function () {
+        var gitalk = new Gitalk({
           clientID: '38b84fb92012be686d1c',
           clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
           repo: 'hexo-comments',
           owner: 'oomgomgxx',
-          admin: ['oomgomgxx'],
-          id: md5('Spring源码浅析之依赖注入'),
+          admin: ["oomgomgxx"],
+          id: '06a7ea927e6e5fbe4b46ea22de725f74',
+          language: 'zh-CN',
+          labels: ["Gitalk"],
+          perPage: 10,
+          pagerDirection: 'last',
+          createIssueManually: true,
           distractionFreeMode: false
-        })
-        gitalk.render('gitalk-container')           
-    </script>
-  
-  
-</article>
-<!-- 分页 -->
-<div id="paginator">
-  
-</div>
-<!-- 文章目录 -->
-<div id="mytoc">
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内容修订"><span class="toc-text">内容修订</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于控制反转和依赖注入"><span class="toc-text">关于控制反转和依赖注入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring支持的几种依赖注入方式"><span class="toc-text">Spring支持的几种依赖注入方式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简介"><span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#注入方式详解"><span class="toc-text">注入方式详解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#构造器注入"><span class="toc-text">构造器注入</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方法（设值）注入和字段注入"><span class="toc-text">方法（设值）注入和字段注入</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#接口方法回调注入"><span class="toc-text">接口方法回调注入</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何选择依赖注入方式？"><span class="toc-text">如何选择依赖注入方式？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#为什么构造器无法解决循环依赖"><span class="toc-text">为什么构造器无法解决循环依赖</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#什么是循环依赖？"><span class="toc-text">什么是循环依赖？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#为什么构造器注入导致的循环依赖无法解决？"><span class="toc-text">为什么构造器注入导致的循环依赖无法解决？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#非构造器提前暴露引用过程"><span class="toc-text">非构造器提前暴露引用过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Prototype原型域实例无法解决循环依赖"><span class="toc-text">Prototype原型域实例无法解决循环依赖</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考"><span class="toc-text">参考</span></a></li></ol>
-</div>
+        });
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
 
-      </div>
 
-      <!-- 页脚导航 
-      <div id="bottom-outer">
-        <div id="bottom-inner">
-          <font class="foot_msg">
-            魔鬼藏在细节中
-          </font>
-         
-          <span>
-            <a id="bottom-totop" href="/">网站首页</a>
-            <a id="bottom-totop" href="#">回到顶部</a>
-          </span>
+              </article>
+            
+          </article>
         </div>
       </div>
-      -->
-
     </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
 
-    <!-- container end -->
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
   </div>
 
-<!-- 启动代码块高亮 -->
-<script>
-    hljs.initHighlightingOnLoad();
-</script>
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+    
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":200})
+    NProgress.start()
+    document.addEventListener('DOMContentLoaded', function() {
+      window.NProgress && window.NProgress.inc();
+    })
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      var inputArea = document.querySelector("#local-search-input");
+      inputArea.onclick = function () {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+        this.onclick = null
+      }
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
 
 </body>
 </html>
