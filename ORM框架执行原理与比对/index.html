@@ -178,7 +178,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      5.1k 字
+      5.6k 字
     </span>
   
 
@@ -188,7 +188,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      60
+      67
        分钟
     </span>
   
@@ -396,6 +396,37 @@
 <p>@MapperScan 流程</p>
 </blockquote>
 <img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/053.png" style="zoom: 50%;">
+
+<h3 id="主键获取"><a href="#主键获取" class="headerlink" title="主键获取"></a>主键获取</h3><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>在 MyBatis 中，默认执行完 Insert 语句后返回的是更新记录的数量，所以如果想有获取其自增的主键值时，就需要依赖 MyBatis 提供的 KeyGenerator 接口来实现。KeyGenerator 可以做到在执行 SQL 后将其 ID 值保存回实体中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">KeyGenerator</span> </span>&#123;<br>  <span class="hljs-comment">// SQL执行前触发</span><br>  <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">processBefore</span><span class="hljs-params">(Executor executor, MappedStatement ms, Statement stmt, Object parameter)</span></span>;<br>  <span class="hljs-comment">// SQL执行后触发</span><br>  <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">processAfter</span><span class="hljs-params">(Executor executor, MappedStatement ms, Statement stmt, Object parameter)</span></span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>KeyGenerator 有 3 个实现</p>
+<ul>
+<li>NoKeyGenerator：默认，即不需要返回 ID 值</li>
+<li>Jdbc3KeyGenerator：用于支持自增主键的数据库，例如 MySQL</li>
+<li>SelectKeyGenerator：支持可以手动获取最新 ID 主键值的数据库，例如 Oracle、MySQL<ul>
+<li>即 SelectKey 动态查询标签</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>快速回顾：JDBC如何实现插入数据后返回其主键值</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JDBCTest</span> </span>&#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> String MYSQL_PROPS_FILE_PATH = <span class="hljs-string">"jdbc.properties"</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> String MYSQL_PROP_URL_KEY = <span class="hljs-string">"mysql.url"</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> String MYSQL_PROP_USERNAME_KEY = <span class="hljs-string">"mysql.username"</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> String MYSQL_PROP_PASSWORD_KEY = <span class="hljs-string">"mysql.password"</span>;<br><br>    <span class="hljs-function"><span class="hljs-keyword">private</span> Properties <span class="hljs-title">readProps</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        Properties properties = <span class="hljs-keyword">new</span> Properties();<br><br>        <span class="hljs-comment">// 加载类路径下的配置文件</span><br>        ClassLoader classLoader = getClass().getClassLoader();<br>        InputStream inputStream = classLoader.getResourceAsStream(MYSQL_PROPS_FILE_PATH);<br>        properties.load(<span class="hljs-keyword">new</span> BufferedInputStream(inputStream));<br>        <span class="hljs-keyword">return</span> properties;<br>    &#125;<br><br>    <span class="hljs-comment">// 注意：真是操作会使用反射来解决类型的不确定性</span><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        Properties props = readProps();<br>        String url = props.getProperty(MYSQL_PROP_URL_KEY);<br>        String name = props.getProperty(MYSQL_PROP_USERNAME_KEY);<br>        String password = props.getProperty(MYSQL_PROP_PASSWORD_KEY);<br><br>        Connection connection = DriverManager.getConnection(url, name, password);<br><br>        String sql = <span class="hljs-string">"insert into user(`name`, `age`) values(?, ?)"</span>;<br>        PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);<br><br>        User user = User.builder().name(<span class="hljs-string">"sam"</span>).age(<span class="hljs-number">18</span>).build();<br>        statement.setString(<span class="hljs-number">1</span>, user.getName());<br>        statement.setInt(<span class="hljs-number">2</span>, user.getAge());<br><br>        <span class="hljs-keyword">int</span> updateRowNums = statement.executeUpdate();<br><br>        <span class="hljs-comment">// 返回当前insert操作生成的自增主键</span><br>        ResultSet keysRS = statement.getGeneratedKeys();<br>        <span class="hljs-keyword">if</span> (updateRowNums == <span class="hljs-number">1</span>) &#123;<br>            keysRS.next();<br>            user.setId(keysRS.getInt(Statement.RETURN_GENERATED_KEYS));<br>        &#125;<br><br>        System.out.println(<span class="hljs-string">"当前插入的记录："</span> + user);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>MyBatis 实现，以 Jdbc3KeyGenerator 为例子</p>
+</blockquote>
+<p>Mapper</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Mapper</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">UserMapper</span> </span>&#123;<br><br>    <span class="hljs-meta">@Options</span>(useGeneratedKeys = <span class="hljs-keyword">true</span>, keyProperty=<span class="hljs-string">"id"</span>, keyColumn = <span class="hljs-string">"id"</span>)<br>    <span class="hljs-meta">@Insert</span>(<span class="hljs-string">"insert into user(name,age) values(#&#123;name&#125;, #&#123;age&#125;)"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">insert</span><span class="hljs-params">(User user)</span></span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>使用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Test</span><br><span class="hljs-meta">@Transactional</span><br><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">testMapper</span><span class="hljs-params">()</span> </span>&#123;<br>    User user = User.builder().name(<span class="hljs-string">"lisa"</span>).age(<span class="hljs-number">18</span>).build();<br>    userMapper.insert(user);<br>    System.out.println(user);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
 
 <h3 id="使用建议"><a href="#使用建议" class="headerlink" title="使用建议"></a>使用建议</h3><p>在 MyBatis 3 版本开始，已经推荐使用 JavaConfig 来代替传统的 XML 配置。</p>
 <p>譬如，提供 @Insert、@Update、@Delete、@Select、@InsertProvider、@DeleteProvider、@UpdateProvider、@SelectProvider 等等注解来完成 CURD 模板定义，以及动态SQL定义（注解 + SQL构建器）。</p>

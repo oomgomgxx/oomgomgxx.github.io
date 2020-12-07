@@ -178,7 +178,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      4.5k 字
+      4.4k 字
     </span>
   
 
@@ -229,6 +229,7 @@
 <li><p>优化手段有很多，如最基本的<code>SQL优化</code>、<code>表结构优化</code>、<code>数据库服务器软硬件优化</code>等等，如果站在应用层面还可以通过 <code>缓存</code> 、<code>流量削峰</code> 、 <code>请求限流</code> 、<code>资源限流</code>等方案减轻其数据库的访问压力</p>
 </li>
 </ul>
+<h2 id="常用存储引擎区别"><a href="#常用存储引擎区别" class="headerlink" title="常用存储引擎区别"></a>常用存储引擎区别</h2><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/2.png" alt></p>
 <h2 id="常用数据库优化手段"><a href="#常用数据库优化手段" class="headerlink" title="常用数据库优化手段"></a>常用数据库优化手段</h2><blockquote>
 <p>简介</p>
 </blockquote>
@@ -370,7 +371,7 @@
 </li>
 </ul>
 <h2 id="水平拆分和垂直拆分"><a href="#水平拆分和垂直拆分" class="headerlink" title="水平拆分和垂直拆分"></a>水平拆分和垂直拆分</h2><h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/7.png" alt></p>
-<p>有些数据库是支持表分区的（如MySQL），即通过物理拆分将数据存储到不同的物理分区。例如可以利用分区功能将一个表的数据保存到不同的硬盘上就可以利用其分区策略快速等位到数据以提高查询效率</p>
+<p>出了以上之外，有些数据库还支持表分区的，譬如MySQL。即通过物理拆分将数据存储到不同的物理分区，并利用分区查找提高其检索效率。</p>
 <h3 id="例子-表的水平拆分"><a href="#例子-表的水平拆分" class="headerlink" title="例子 - 表的水平拆分"></a>例子 - 表的水平拆分</h3><h4 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 用户表</span><br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> <span class="hljs-keyword">user</span>(<br>	u_id <span class="hljs-built_in">int</span> primary <span class="hljs-keyword">key</span> auto_increment,<br>	u_name <span class="hljs-built_in">varchar</span>(<span class="hljs-number">10</span>)<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">charset</span> = utf8 ; <br><span class="hljs-comment">-- 插入用户数据</span><br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> <span class="hljs-keyword">user</span>(u_name) <span class="hljs-keyword">values</span>(<span class="hljs-string">'张三'</span>),(<span class="hljs-string">'李四'</span>),(<span class="hljs-string">'王五'</span>);<br><br><span class="hljs-comment">-- 用户订单表</span><br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> uorder(<br>	o_id <span class="hljs-built_in">int</span> primary <span class="hljs-keyword">key</span> auto_increment,<br>	u_id <span class="hljs-built_in">int</span>,<br>	o_desc <span class="hljs-built_in">varchar</span>(<span class="hljs-number">100</span>)<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">charset</span> = utf8 ; <br><br><span class="hljs-comment">-- 批量插入模拟用订单数据</span><br><span class="hljs-comment">-- userid 用户id</span><br><span class="hljs-comment">-- produce 订单产品</span><br><span class="hljs-comment">-- num 插入数量</span><br><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> pro_insert_data(<span class="hljs-keyword">IN</span> userid <span class="hljs-built_in">INT</span>,<span class="hljs-keyword">IN</span> produce <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">10</span>), <span class="hljs-keyword">IN</span> <span class="hljs-keyword">num</span> <span class="hljs-built_in">INT</span>)<br><span class="hljs-keyword">BEGIN</span><br>	<span class="hljs-keyword">DECLARE</span> temp <span class="hljs-built_in">INT</span>;<br>	<span class="hljs-keyword">SET</span> temp = <span class="hljs-number">1</span>;<br>	REPEAT<br>		<span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> uorder(u_id, o_desc) <span class="hljs-keyword">values</span>(userid, <span class="hljs-keyword">CONCAT</span>(produce,temp));<br>		<span class="hljs-keyword">SET</span> temp = temp + <span class="hljs-number">1</span>;<br>	UNTIL temp&gt;num END REPEAT;<br><span class="hljs-keyword">END</span><br><br><span class="hljs-comment">-- 插入订单数据</span><br><span class="hljs-keyword">call</span> pro_insert_data(<span class="hljs-number">1</span>, <span class="hljs-string">'manhua'</span>, <span class="hljs-number">20</span>);<br><span class="hljs-keyword">call</span> pro_insert_data(<span class="hljs-number">2</span>, <span class="hljs-string">'wanju'</span>, <span class="hljs-number">30</span>);<br><span class="hljs-keyword">call</span> pro_insert_data(<span class="hljs-number">3</span>, <span class="hljs-string">'fushi'</span>, <span class="hljs-number">30</span>);<br></code></pre></td></tr></table></figure>
 
 <h4 id="拆分工作"><a href="#拆分工作" class="headerlink" title="拆分工作"></a>拆分工作</h4><p>1）现在打算对 uorder 进行拆分</p>
@@ -463,11 +464,11 @@
 
 
 <h2 id="MySQL复制"><a href="#MySQL复制" class="headerlink" title="MySQL复制"></a>MySQL复制</h2><h3 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h3><ul>
-<li><p>指将一个数据库（主库）上的数据冗余到到另一个数据库（从库）中</p>
+<li><p>将一个数据库（主库）上的数据冗余到到另一个数据库（从库）中</p>
 </li>
-<li><p>在 MySQL 中默认情况下复制是异步的</p>
+<li><p>默认情况下复制操作是异步进行的</p>
 </li>
-<li><p>根据配置可以有选择性地指定需要复制的库或表</p>
+<li><p>可根据配置实现有选择性地复制具体的库或表</p>
 </li>
 </ul>
 <p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/6.png" alt></p>
