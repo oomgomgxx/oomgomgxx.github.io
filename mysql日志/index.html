@@ -225,7 +225,8 @@
 <li>2019年07月1日15:05:58 — 修改对InnoDB日志的理解</li>
 <li>2020年4月27日10:51:17 — 日志输出定向到 table 相关内容</li>
 </ul>
-<h2 id="日志的种类"><a href="#日志的种类" class="headerlink" title="日志的种类"></a>日志的种类</h2><h3 id="二进制-归档-日志"><a href="#二进制-归档-日志" class="headerlink" title="二进制(归档)日志"></a>二进制(归档)日志</h3><h4 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h4><p>记录修改数据的操作</p>
+<h2 id="MySQL中的日志"><a href="#MySQL中的日志" class="headerlink" title="MySQL中的日志"></a>MySQL中的日志</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><p><img src="/mysql%E6%97%A5%E5%BF%97/006.png" alt></p>
+<h3 id="二进制-归档-日志"><a href="#二进制-归档-日志" class="headerlink" title="二进制(归档)日志"></a>二进制(归档)日志</h3><h4 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h4><p>记录修改数据的操作</p>
 <h4 id="查看是否开启"><a href="#查看是否开启" class="headerlink" title="查看是否开启"></a>查看是否开启</h4><p>二进制日志默认是关闭的，需要手动开启</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 是否开启</span><br><span class="hljs-keyword">show</span> <span class="hljs-keyword">variables</span> <span class="hljs-keyword">like</span> <span class="hljs-string">'%log_bin%'</span>;<br><span class="hljs-comment">-- 输出二进制日志文件的名字</span><br><span class="hljs-keyword">show</span> <span class="hljs-built_in">binary</span> <span class="hljs-keyword">logs</span>;<br></code></pre></td></tr></table></figure>
 
@@ -334,18 +335,17 @@
 <h3 id="错误日志"><a href="#错误日志" class="headerlink" title="错误日志"></a>错误日志</h3><p>用于记录 mysql 运行过程中的错误，默认是开启的。但可以通过配置文件指定日志的生成路径和名字</p>
 <figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs properties"><span class="hljs-attr">[mysqld]</span><br><span class="hljs-attr">log_error</span> = <span class="hljs-string">"error_log"</span><br></code></pre></td></tr></table></figure>
 
-<h2 id="InnoDB的redo、redo"><a href="#InnoDB的redo、redo" class="headerlink" title="InnoDB的redo、redo"></a>InnoDB的redo、redo</h2><h3 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h3><p>redo log是InnoDB事务日志的组成部分（事务日志 = redo log + 日志缓冲区）。</p>
-<p>用于记录数据页更改的物理情况，主要是保证事务的一致性。</p>
-<p>与 bin log 的对比：</p>
+<h2 id="InnoDB的redo、redo"><a href="#InnoDB的redo、redo" class="headerlink" title="InnoDB的redo、redo"></a>InnoDB的redo、redo</h2><h3 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h3><p>redo log是InnoDB中事务日志的组成部分，用于记录数据页的修改情况。</p>
+<p>与 binlog 对比</p>
 <ul>
-<li>bin log 是 server 层面的日志，用于记录修改数据的操作，在事务提交之前写入磁盘</li>
-<li>redo log 是 InnoDB 层面的日志，用于记录数据页的物理情况。内容先写入日志缓冲区，随后默认每隔1s刷新到磁盘日志文件中</li>
-<li>redo log 属于写前日志，即修改操作之前就会先记录，且在事务操作期间不断积累</li>
+<li>binlog 是 Server 层面的日志，用于记录修改数据的操作，在事务提交之前写入磁盘</li>
+<li>redo log 是 InnoDB 层面的日志，用于记录数据页的修改情况。其内容会在事务期间不断写入日志缓冲区中国年，并（默认）每隔 1s 刷新到磁盘上对应的日志文件中</li>
+<li>redo log 属于 binlog 的写前日志。即修改操作之前就会先记录，以防在写 binlog 前宕机恢复数据的场景。</li>
 </ul>
-<h3 id="undo段"><a href="#undo段" class="headerlink" title="undo段"></a>undo段</h3><ul>
-<li>undo 段主要用来保证事务的回滚，以及作为隔离级别读取一致性的基础</li>
-<li>功能和 redo log 相反，用于记录数据页修改前的状态</li>
-<li>undo 并不位于日志文件，而是在数据库内部的一个内存段中</li>
+<h3 id="undo-log段"><a href="#undo-log段" class="headerlink" title="undo log段"></a>undo log段</h3><ul>
+<li>undo log 段主要用来给事务回滚提供版本依据，以及实现 MVCC 的快照读操作</li>
+<li>功能和 redo log 相反，它会在记录被修改之前记录下其当前的版本状态</li>
+<li>undo log 没有对应的物理日志文件，它是数据库特定的一个内存段</li>
 </ul>
 <h3 id="查看redo和undo"><a href="#查看redo和undo" class="headerlink" title="查看redo和undo"></a>查看redo和undo</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs mysql">mysql&gt; show global variables like &#39;%engine%&#39;;<br>+----------------------------------+--------+<br>| Variable_name                    | Value  |<br>+----------------------------------+--------+<br>| default_storage_engine           | InnoDB |  默认引擎用的是InnoDB就会开启 redo 和 undo<br>| default_tmp_storage_engine       | InnoDB |<br>| disabled_storage_engines         |        |<br>| internal_tmp_disk_storage_engine | InnoDB |<br>+----------------------------------+--------+<br>4 行于数据集 (0.01 秒)<br><br>mysql&gt; show global variables like &#39;%innodb_log%&#39;;<br>+-----------------------------+----------+<br>| Variable_name               | Value    |<br>+-----------------------------+----------+<br>| innodb_log_buffer_size      | 16777216 | 缓冲区大少<br>| innodb_log_checksums        | ON       |<br>| innodb_log_compressed_pages | ON       |<br>| innodb_log_file_size        | 50331648 | redolog和undolog文件大小<br>| innodb_log_files_in_group   | 2        |<br>| innodb_log_group_home_dir   | .&#x2F;       | redolog和undolog所在位置：lb_logfile*的文件<br>| innodb_log_write_ahead_size | 8192     |<br>+-----------------------------+----------+<br>7 行于数据集 (0.01 秒)<br></code></pre></td></tr></table></figure>
 
