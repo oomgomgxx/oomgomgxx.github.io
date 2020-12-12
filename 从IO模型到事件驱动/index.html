@@ -151,7 +151,7 @@
 </nav>
 
     <div class="banner intro-2" id="background" parallax=true
-         style="background: url('/img/default.png') no-repeat center center;
+         style="background: url('https://s3.ax1x.com/2020/12/12/rVB8TU.png') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -178,7 +178,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      6.1k 字
+      6.2k 字
     </span>
   
 
@@ -325,7 +325,7 @@
 <ul>
 <li>无最大文件描述符数量限制</li>
 <li>存在状态，内部维护着<strong>一颗红黑树</strong>和<strong>双向链表</strong>，所以用户线程无需多次拷贝感兴趣的文件描述符</li>
-<li>epoll 将用户程序感兴趣的文件描述符注册在红黑树上，当有就绪的文件描述符时内核会将其添加到 epoll 的双向链表（rdllist）中，而当执行 epoll_wait 时就只需要遍历 rdllist 即可而无需遍历整个红黑树</li>
+<li>epoll 将用户程序感兴趣的文件描述符注册在红黑树上，当有就绪的文件描述符时内核会通过事件驱动方式将其添加到双向链表（rdllist）中，即当执行 epoll_wait 时就只需要从 rdllist 中获取就绪文件描述符即可，而无需遍历整个红黑树</li>
 <li>epoll 整个过程是通过事件驱动的方式来完成的，即当有就绪的文件描述符时内核会自动回调 ep_poll_callback 方法将就绪的文件描述符添加到双向链表（rdllist）中并唤醒等待的内核线程，所以避免了繁重的轮询操作，大大降低了系统的开销</li>
 <li>epoll 的时间复杂度为 O(1)，从上面的源码可以得出结论就是 epoll 不会随着并发连接数的增多而降低效率，因为它是基事件驱动的，而且没有轮询操作</li>
 </ul>
