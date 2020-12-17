@@ -413,14 +413,14 @@
 <p>过程</p>
 </blockquote>
 <p>一、初始化过程</p>
-<pre><code>  1. 容器启动，实例化 ConfigurationAnnotationProcessor，解析@Configuration 配置类上 @MapperScan 上的信息
+<pre><code> 1. 容器启动，实例化 ConfigurationAnnotationProcessor，解析@Configuration 配置类上 @MapperScan 上的信息
 2. 实例化 MapperScannerConfigurer 并执行其 postProcessBeanDefinitionRegistry 方法
-* 该方法源自 BeanDefinitionRegistryPostProcessor 
+         1. 该方法源自 BeanDefinitionRegistryPostProcessor 
 3. 创建一个 ClassPathMapperScanner，用来扫描 @MapperScan 中指定包上的 Mapper，并为其生成与之对应的 MapperFactoryBean 的 BeanDefinition，添加到容器中
 4. 实例化 MapperFactoryBean
 5. 执行 MapperFactoryBean#afterPropertiesSet（初始化方法）
 6. 执行 MapperFactoryBean#checkDaoConfig，将抽象方法上面的注解信息，解析为 MappedStatement，并保存在 Configuration 中提供后续 MapperProxy 操作使用
-* MappedStatement 包含了 sqlSource、keyGenerator 的一些信息。其中 sqlSource 用于返回 BoundSql ，而 BoundSql 是 SQL 相关的元信息（包含解析出来的 SQL 语句以及入参名字）</code></pre><p>二、使用过程</p>
+         1. MappedStatement 包含了 sqlSource、keyGenerator 的一些信息。其中 sqlSource 用于返回 BoundSql ，而 BoundSql 是 SQL 相关的元信息（包含解析出来的 SQL 语句以及入参名字）</code></pre><p>二、使用过程</p>
 <ol>
 <li>有其他 Bean 依赖了 Mapper 接口，那么在该 Bean 填充属性阶段就会用对应的 MapperFactoryBean#getObject 方法返回一个 Mapper 的代理实例（JDK动态代理）</li>
 </ol>
