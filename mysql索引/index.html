@@ -1,0 +1,638 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="学然后知不足">
+  <meta name="author" content="TanDi">
+  <meta name="keywords" content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux">
+  <title>MySQL索引闲记 - 学然后知不足</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"tandi.pub","root":"/","version":"1.8.6","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":"#"},"copy_btn":true,"image_zoom":{"enable":true},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":"https://www.google-analytics.com/analytics.js","gtag":255232504,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+
+<body>
+  <header style="height: 45vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>学然后知不足</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner intro-2" id="background" parallax=true
+         style="background: url('https://s3.ax1x.com/2020/12/12/rVB8TU.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="MySQL索引闲记">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2019-06-26 20:03" pubdate>
+        2019年6月26日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      2k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      21
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">MySQL索引闲记</h1>
+            
+            <div class="markdown-body">
+              <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年7月1日11:01:51 — 丰富索引数据结构概念，删减多余内容</li>
+</ul>
+<h2 id="什么是索引？"><a href="#什么是索引？" class="headerlink" title="什么是索引？"></a>什么是索引？</h2><blockquote>
+<p>简介</p>
+</blockquote>
+<ol>
+<li>索引是一种用来快速定位主体（数据）且独立于主体的数据结构</li>
+<li>不同的索引类型实现方式不同，即使是相同类型的索引在不同的数据库中也可能不同</li>
+</ol>
+<blockquote>
+<p>什么时候需要索引？</p>
+</blockquote>
+<p>表数据量增大，搜索时间被延长时</p>
+<blockquote>
+<p>什么字段适合做索引？</p>
+</blockquote>
+<ol>
+<li>频繁被作为查询、表连接、分组、排序等条件的字段</li>
+<li>离散程度高的字段</li>
+</ol>
+<blockquote>
+<p>什么字段不适合做索引？</p>
+</blockquote>
+<ol>
+<li>频繁被修改的字段</li>
+<li>值较大的字段</li>
+<li>离散度低的字段</li>
+</ol>
+<blockquote>
+<p>索引是不是越多越好？</p>
+</blockquote>
+<p>答案是否定的。原因是索引是独立的数据结构，需要花费额外的时间和磁盘空间来维护</p>
+<h2 id="索引类型"><a href="#索引类型" class="headerlink" title="索引类型"></a>索引类型</h2><img src="/mysql%E7%B4%A2%E5%BC%95/8.png" style="zoom:50%;">
+
+
+
+<h2 id="常见索引数据结构"><a href="#常见索引数据结构" class="headerlink" title="常见索引数据结构"></a>常见索引数据结构</h2><h3 id="散列表"><a href="#散列表" class="headerlink" title="散列表"></a>散列表</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<img src="/mysql%E7%B4%A2%E5%BC%95/3.png" style="zoom: 33%;">
+
+<ul>
+<li>散列表数据结构通常由<strong>数组</strong>和<strong>链表</strong>组成。散列表中的元素会根据关键字段的哈希值来计算出自己在数组中的存储位置</li>
+<li>散列表最理想的查询时间复杂度是O(1)</li>
+<li>如果字段的离散度非常高的话（如身份证号码），那么用散列表作为索引结构来做等值查询优势最为明显。</li>
+<li>使用散列表作为索引数据结构时会存在以下问题：<ul>
+<li>散列表并不支持联合索引的最佳左前缀原则。因为计算数组下标时会将多个列一同进行哈希运算，无法确分前后</li>
+<li>因为采用哈希算法确立数组下标的原因，导致散列表存储时会乱序，所以它并是不支持<strong>区间</strong>或<strong>排序</strong>等查询操作</li>
+<li>散列表最适合的是做简单的等值查询操作</li>
+</ul>
+</li>
+</ul>
+<h3 id="有序数组"><a href="#有序数组" class="headerlink" title="有序数组"></a>有序数组</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<img src="/mysql%E7%B4%A2%E5%BC%95/4.png" style="zoom: 33%;">
+
+<ul>
+<li>有序数组的特点是内存连续，所以在<strong>随机访问查询</strong>和<strong>区间查询</strong>上效率是非常高</li>
+<li>有序数组因为下标时连续的，所以在增加删除操作时，附近的元素需要集合挪动下标，这时效率相对较低</li>
+<li>有序数组适用<strong>读多写少</strong>、<strong>常进行区间查询</strong>的场景</li>
+</ul>
+<h3 id="二叉查找树、平衡二叉查找树、红黑树的区别"><a href="#二叉查找树、平衡二叉查找树、红黑树的区别" class="headerlink" title="二叉查找树、平衡二叉查找树、红黑树的区别"></a>二叉查找树、平衡二叉查找树、红黑树的区别</h3><blockquote>
+<p> 图片源自网络</p>
+</blockquote>
+<img src="/mysql%E7%B4%A2%E5%BC%95/5.png" style="zoom: 33%;">
+
+<ul>
+<li>二叉查找树的特点是左边节点小于右边节点，因此除了能保持顺序之外，还天然支持二分查找，所以个人认为二叉查找树其实是有序数组和散列表的折中</li>
+<li>虽然二叉查找树从综合性角度来看并不差，但它存在一定的问题。譬如在极端的情况下会退化成链表，即从O（logn）变成O（n）</li>
+<li>针对二叉查找树的退化问题，我们可以用平衡二叉查找树来解决。所谓平衡二叉树指的是左右子树的树高不能超过1的二叉查找树</li>
+<li>平衡二叉查找树虽然能够解决退化成链表的问题，但随着数量量增多，它所花费在处理平衡上的开销就越大，这时优势就会下降，甚至可能对 CPU 造成负担</li>
+<li>红黑树是二叉查找树和平衡二叉查找树的折中，它也是一颗平衡树，只不过它只要求黑色节点平衡</li>
+</ul>
+<h3 id="B-树"><a href="#B-树" class="headerlink" title="B+树"></a>B+树</h3><blockquote>
+<p>图片源自网络 </p>
+</blockquote>
+<img src="/mysql%E7%B4%A2%E5%BC%95/7.png" style="zoom:67%;">
+
+<ul>
+<li>B+树的B是balance的意思，即B+Tree也是平衡树，且是棵多叉树。B+树一般树高维持在 3~4 左右，即一次查找只需 3~4 次 IO 即可</li>
+<li>B+树的特点是普通节点不记录数据，而是由叶子节点记录，即所谓的聚簇索引，而且B+树的叶子节点从左往右呈有序递增，且每个叶子节点都包含左右两边叶子节点的引用，所以天然支持<strong>区间</strong>和<strong>排序</strong>等操作</li>
+<li>B+树的思想是希望普通节点尽可能记录多一些子节点的信息，从而减少 IO 的次数，因为一个节点其实相当于一个内存页（16K），而一个内存页就相当于一次 IO 查询</li>
+</ul>
+<blockquote>
+<p>拓展</p>
+</blockquote>
+<p>1）为什么 MongoDB 使用 B树而不是 B+树？</p>
+<img src="/mysql%E7%B4%A2%E5%BC%95/9.png" style="zoom: 50%;">
+
+<ul>
+<li>其实 MongoDB 使用的 WiredTriger 和 InnoDB 一样使用的是 B+树</li>
+<li>可参考 WiredTriger 手册<ul>
+<li><a href="http://source.wiredtiger.com/3.2.1/tune_page_size_and_comp.html" target="_blank" rel="noopener">http://source.wiredtiger.com/3.2.1/tune_page_size_and_comp.html</a></li>
+<li><a href="https://mongoing.com/archives/2540" target="_blank" rel="noopener">https://mongoing.com/archives/2540</a> </li>
+</ul>
+</li>
+</ul>
+<p>2）什么是聚簇索引？</p>
+<ul>
+<li>聚簇索引是一种数据的存储方式，而并非一种索引结构。指的是数据顺序和索引顺序一样。譬如 InnoDB 中的主键就是一个聚簇索引</li>
+</ul>
+<h2 id="索引和约束"><a href="#索引和约束" class="headerlink" title="索引和约束"></a>索引和约束</h2><ul>
+<li><p>使用 primary key 时，除了会创建<strong>主键索引</strong>外，还会添加<strong>unique</strong>和<strong>not null</strong>两种约束</p>
+</li>
+<li><p>使用 foreign key 时，会添加<strong>外键约束</strong>和创建一个<strong>普通索引</strong></p>
+</li>
+<li><p>使用 unique key 时，会添加<strong>唯一约束</strong>和创建一个<strong>普通索引</strong></p>
+</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> address(<br>	a_id <span class="hljs-built_in">INT</span> PRIMARY <span class="hljs-keyword">KEY</span> auto_increment,<br>	a_addr <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">100</span>)<br>)<span class="hljs-keyword">ENGINE</span>=<span class="hljs-keyword">INNODB</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">CHARSET</span>=utf8<br><br><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> person(<br>	p_id <span class="hljs-built_in">int</span> PRIMARY <span class="hljs-keyword">KEY</span> auto_increment, <span class="hljs-comment">-- 主键（默认约束 unique 和 not null）</span><br>	p_id_card <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">18</span>) <span class="hljs-keyword">UNIQUE</span>, <span class="hljs-comment">-- 方法1: 添加唯一约束且创建唯一索引</span><br>	p_name <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">10</span>), <br>	p_addr <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">UNIQUE</span>,<br>	p_age <span class="hljs-built_in">INT</span>,<br>	<span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">KEY</span> uindex_age (p_age), <span class="hljs-comment">-- 方法2: 添加唯一约束且创建唯一索引</span><br>	<span class="hljs-comment">-- CONSTRAINT uindex_age UNIQUE KEY (p_age), -- 方法3: 添加唯一约束且创建唯一索引</span><br>	<span class="hljs-keyword">CONSTRAINT</span> fk_addr_address_a_addr <span class="hljs-keyword">FOREIGN</span> <span class="hljs-keyword">KEY</span>(p_addr) <span class="hljs-keyword">references</span> test.address(a_addr)  <span class="hljs-comment">-- 添加外键约束且创建一个普通索引</span><br>)<span class="hljs-keyword">ENGINE</span>=<span class="hljs-keyword">INNODB</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">CHARSET</span>=utf8<br></code></pre></td></tr></table></figure>
+
+<p>外键是一个跨表约束机制，是一种保证数据库完整性的手段。其值可以为null，也可以重复，但要求出现的值不能超出所关联的字段值的范围。例如 student.tid（子表） 外键引用了 teacher.id（父表），现在假设 teacher.id 有 （1，2，3），那么就表示 student.tid 的值时 （1，2，3）以外的值</p>
+<h2 id="什么是覆盖索引？"><a href="#什么是覆盖索引？" class="headerlink" title="什么是覆盖索引？"></a>什么是覆盖索引？</h2><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<ul>
+<li>覆盖索引和聚簇索引一样都不是索引的类型，引准确点它其实是一种现象，即更具索引去查询数据时，从索引中得到了想要的数据</li>
+<li>覆盖索引的效率是非常高的，因为它并不需要真正去查找数据</li>
+<li>在日常开发中我们应该尽量少用”select *”操作，有以下两个原因：<ul>
+<li>通常的查询操作并不会需要所有字段，所以”select *”会返回冗余数据，导致 SQL 变慢和增加网络传输开销</li>
+<li>需要的字段越多，覆盖索引出现的几率就越低</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>如何提高覆盖索引的出现率？</p>
+</blockquote>
+<ul>
+<li>少用”select *”</li>
+<li>将频经常一起出现且作为查询条件的字段设置为组合索引</li>
+</ul>
+<h2 id="什么是回表查询？"><a href="#什么是回表查询？" class="headerlink" title="什么是回表查询？"></a>什么是回表查询？</h2><p>回表查询指的是使用了二级（辅助）索引来去检索，但没有出现覆盖索引的情况。</p>
+<p>出现回表的主要原因是因为二级索引的叶子节点保存的是主键的值。</p>
+<p>回表查询经过：</p>
+<ol>
+<li>根据二级索引检索，得到主键值</li>
+<li>再根据主键值查询得到记录，而这一步就叫回表查询</li>
+</ol>
+<h2 id="什么情况下索引会失效"><a href="#什么情况下索引会失效" class="headerlink" title="什么情况下索引会失效"></a>什么情况下索引会失效</h2><ul>
+<li>索引值类型为<strong>字符型</strong>时，<strong>使用其值进行运算</strong>或<strong>不使用引号包裹</strong>等情况都会导致索引失效</li>
+<li>索引值类型为<strong>字符型</strong>或为<strong>组合索引</strong>时，使用了 <strong>!=</strong> 或 <strong>&lt;&gt;</strong> 操作就会导致索引失效</li>
+<li>在索引列上使用了<strong>函数</strong>或进行了<strong>运算</strong>，就会导致索引失效<ul>
+<li>注意这里不是指值，而是索引列。譬如 left(‘empId’, 5) = 100</li>
+</ul>
+</li>
+<li>使用了左模糊匹配会导致索引失效</li>
+<li>使用<strong>组合索引</strong>时，会导致其索引失效的情况<ul>
+<li>没有遵循最佳左前缀</li>
+<li>使用 <strong>!=</strong> 和 <strong>&lt;&gt;</strong> 操作</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://mongoing.com/archives/2540" target="_blank" rel="noopener">MongoDB Wiredtiger存储引擎实现原理</a></li>
+</ul>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">分布式的一致性与共识性</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/%E9%80%9A%E8%BF%87Nginx%E5%AE%9E%E7%8E%B0HTTPS%E8%AE%BF%E9%97%AE/">
+                        <span class="hidden-mobile">申请免费DV-SSL证书并使用Nginx实现HTTPS访问</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments">
+                
+                
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.waitElementVisible('gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', function () {
+        var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ["oomgomgxx"],
+          id: '9a032e7fdce529a3ba8608d8fd5e6660',
+          language: 'zh-CN',
+          labels: ["Gitalk"],
+          perPage: 10,
+          pagerDirection: 'last',
+          createIssueManually: true,
+          distractionFreeMode: false
+        });
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+    <font color="red">温馨提示：网站修建中。。。</font>
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":200})
+    NProgress.start()
+    document.addEventListener('DOMContentLoaded', function() {
+      window.NProgress && window.NProgress.inc();
+    })
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      var inputArea = document.querySelector("#local-search-input");
+      inputArea.onclick = function () {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+        this.onclick = null
+      }
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>

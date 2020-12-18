@@ -1,0 +1,856 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="学然后知不足">
+  <meta name="author" content="TanDi">
+  <meta name="keywords" content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux">
+  <title>MySQL优化入门 - 学然后知不足</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"tandi.pub","root":"/","version":"1.8.6","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":"#"},"copy_btn":true,"image_zoom":{"enable":true},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":"https://www.google-analytics.com/analytics.js","gtag":255232504,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+
+<body>
+  <header style="height: 45vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>学然后知不足</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner intro-2" id="background" parallax=true
+         style="background: url('https://s3.ax1x.com/2020/12/12/rVB8TU.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="MySQL优化入门">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2019-06-20 15:49" pubdate>
+        2019年6月20日 下午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      4.4k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      65
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">MySQL优化入门</h1>
+            
+            <div class="markdown-body">
+              <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ul>
+<li><p>关于优化个人认为是一个比较复杂的环节，不能一概而论</p>
+</li>
+<li><p>数据库优化需要结合实际的使用场景，一步一个脚印地针对出现的问题来解决</p>
+</li>
+<li><p>优化手段有很多，如最基本的<code>SQL优化</code>、<code>表结构优化</code>、<code>数据库服务器软硬件优化</code>等等，如果站在应用层面还可以通过 <code>缓存</code> 、<code>流量削峰</code> 、 <code>请求限流</code> 、<code>资源限流</code>等方案减轻其数据库的访问压力</p>
+</li>
+</ul>
+<h2 id="常用存储引擎区别"><a href="#常用存储引擎区别" class="headerlink" title="常用存储引擎区别"></a>常用存储引擎区别</h2><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/2.png" alt></p>
+<h2 id="常用数据库优化手段"><a href="#常用数据库优化手段" class="headerlink" title="常用数据库优化手段"></a>常用数据库优化手段</h2><blockquote>
+<p>简介</p>
+</blockquote>
+<ul>
+<li><p>SQL优化</p>
+<ul>
+<li>添加索引</li>
+<li>进行执行计划分析优化</li>
+<li>必要时使用存储过程</li>
+</ul>
+</li>
+<li><p>加入缓存层降低数据库访问压力</p>
+</li>
+<li><p>表优化</p>
+<ul>
+<li>水平拆分</li>
+<li>垂直（纵向）拆分</li>
+<li>分区</li>
+</ul>
+</li>
+<li><p>数据库优化</p>
+<ul>
+<li>水平拆分</li>
+<li>垂直（纵向）拆分</li>
+<li>主从复制</li>
+<li>数据库集群</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>那么什么情况下分表，什么情况下分库呢？</p>
+</blockquote>
+<p>个人理解一般是数据量大考虑分表，负载高就考虑分库。但能不拆就不拆，且能少拆就少拆，因为拆得越多越细会大大提高后期维护成本，所以分库分表其实是没有办法中的办法。</p>
+<h2 id="执行计划"><a href="#执行计划" class="headerlink" title="执行计划"></a>执行计划</h2><h3 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h3><p>&emsp;&emsp;执行计划指的是数据层对 SQL 语句的执行方案。例如在连接查询中到底是先执行左表还是先执行右表呢？这都是执行计划的一部分即<strong>执行计划 = 执行引擎的处理方法</strong> </p>
+<h3 id="如何看执行计划"><a href="#如何看执行计划" class="headerlink" title="如何看执行计划"></a>如何看执行计划</h3><p>使用 desc 或者 explain 关键字</p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/1.png" alt></p>
+<p>或添加 \G 以列键值对展示方式</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql">mysql&gt; desc select count(*) from book \G<br>*************************** 1. 行 ***************************<br>id           : 1<br>select_type  : SIMPLE<br>table        : book<br>partitions   : NULL<br>type         : index<br>possible_keys: NULL<br>key          : PRIMARY<br>key_len      : 4<br>ref          : NULL<br>rows         : 251513<br>filtered     : 100.00<br>Extra        : Using index<br>1 行于数据集 (0.02 秒)<br></code></pre></td></tr></table></figure>
+
+<p>explain适用于以下语句：</p>
+<ul>
+<li><a href="https://dev.mysql.com/doc/refman/8.0/en/explain.html" target="_blank" rel="noopener">EXPLAIN</a> works with <a href="https://dev.mysql.com/doc/refman/8.0/en/select.html" target="_blank" rel="noopener">SELECT</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/delete.html" target="_blank" rel="noopener">DELETE</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/insert.html" target="_blank" rel="noopener">INSERT</a>, <a href="https://dev.mysql.com/doc/refman/8.0/en/replace.html" target="_blank" rel="noopener">REPLACE</a>, and <a href="https://dev.mysql.com/doc/refman/8.0/en/update.html" target="_blank" rel="noopener">UPDATE</a> statements.</li>
+</ul>
+<h3 id="了解执行计划"><a href="#了解执行计划" class="headerlink" title="了解执行计划"></a>了解执行计划</h3><blockquote>
+<p>参考</p>
+</blockquote>
+<ul>
+<li><p><a href="https://dev.mysql.com/doc/refman/8.0/en/optimization.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/optimization.html</a></p>
+</li>
+<li><p><a href="https://yq.aliyun.com/articles/688754" target="_blank" rel="noopener">https://yq.aliyun.com/articles/688754</a></p>
+</li>
+<li><p><a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/8.0/en/explain-output.html</a></p>
+</li>
+</ul>
+<blockquote>
+<p>字段意思</p>
+</blockquote>
+<ul>
+<li><p>id：查询id</p>
+<ul>
+<li>id相同时，由上而下执行</li>
+<li>id不同时，大的先执行</li>
+</ul>
+</li>
+<li><p>select_type：SQL 的查询类型</p>
+</li>
+<li><p>simple：简单查询。不包含如子查询、union等操作</p>
+</li>
+<li><p>primary：子查询的外层查询</p>
+<ul>
+<li>subquery：子查询的内层查询</li>
+<li>union：并集查询</li>
+</ul>
+</li>
+<li><p>derived：子查询中的衍生查询（表示使用了临时表）。例如使用了 in 或 union/union all</p>
+</li>
+<li><p>partitions：所匹配到的分区，如果为null表示当前查询为非分区查询</p>
+</li>
+<li><p>table：表名</p>
+</li>
+<li><p>type：常见<strong>索引操作</strong>类型</p>
+<ul>
+<li>system：系统表主查询</li>
+<li>const：使用了 unique 或 primary key 作为查询条件，且只返回了一个结果</li>
+<li>eq_ref：查询的内容是唯一的</li>
+<li><strong>ref：</strong>通过索引查询后没有进行额外的筛选操作</li>
+<li><strong>range：</strong>进行了区间查找</li>
+<li>index：扫描了所有索引</li>
+<li>all：进行了全表扫描</li>
+<li>效率：system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; all。一般优化到 ref、range 就不错了</li>
+</ul>
+</li>
+<li><p>possible_keys：当前查询中可能使用到的索引（预测值，不准确）</p>
+</li>
+<li><p>key：实际使用的索引</p>
+</li>
+<li><p>key_len：索引长度</p>
+<ul>
+<li>可用该值来判断组合索引是否全用上</li>
+<li>计算方式：<ul>
+<li>在 MySQL 中，5.X 开始 varchar 中的值表示字符而不是字节</li>
+<li>例如假设一张 utf8 （一个字符3个字节）的表中 msg char（20）是索引，那么 key_len 就为 3x20=60，又因为 msg 可以为 null（规定用1个字节表示），所以从长度为 60+1=61</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>rows：查询所扫描的记录数。该值越少越好</p>
+</li>
+<li><p>filtered：在 rows 中被过略掉的数据的百分比值。该值越大越好</p>
+</li>
+<li><p>extra：查询的额外信息</p>
+<ul>
+<li>use index：进行了覆盖索引查询。没有进行回表操作，性能最好</li>
+<li>use index dondition：存储引擎对查询的数据进行了优化</li>
+<li>using where：使用了索引，但存在回表操作</li>
+<li>using temporary：使用了临时表<ul>
+<li>通常是因为使用了索引作为条件进行查询，但没有使用相同索引条件作为分组查询条件所导致的</li>
+<li>以下常见操作默认会使用临时表<ul>
+<li>group by（如果与 order by 一起使用，则尽量保证用相同的列作为条件）</li>
+<li>distinct</li>
+<li>union</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>using join buffer：引擎使用了连接缓存</li>
+<li>using filesort：进行了文件排序（额外排序）<ul>
+<li>通常伴随 order by 出现。原因是使用了索引进行条件查询，但没有使用相同索引条件作为排序条件所导致的</li>
+<li>还有一种特殊情况就是跨列使用组合索引导致的。譬如 where a1.. and a2 order by a4 操作，其中组合索引 （a1,a2,a3,ab），而在这次查询中因为 a2 到 a4 跨了列而导致 a4 失效，但 a4 又了作为了排序条件，所以 a4 相当于不属于当前使用到的组合索引，因为就需要额外的 using filesort 操作（因为索引本身有序，但搜索引擎觉得 a4 是无序的）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>ref：当前表所参照的字段。例如在关联查询中该值为 null，则可能没有使用到索引</p>
+<ul>
+<li>const：表示索引（key）依赖的是一个常量</li>
+<li>fucn：表索引（key）依赖的是一个函数返回的值</li>
+</ul>
+</li>
+</ul>
+<h2 id="水平拆分和垂直拆分"><a href="#水平拆分和垂直拆分" class="headerlink" title="水平拆分和垂直拆分"></a>水平拆分和垂直拆分</h2><h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/7.png" alt></p>
+<p>出了以上之外，有些数据库还支持表分区的，譬如MySQL。即通过物理拆分将数据存储到不同的物理分区，并利用分区查找提高其检索效率。</p>
+<h3 id="例子-表的水平拆分"><a href="#例子-表的水平拆分" class="headerlink" title="例子 - 表的水平拆分"></a>例子 - 表的水平拆分</h3><h4 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 用户表</span><br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> <span class="hljs-keyword">user</span>(<br>	u_id <span class="hljs-built_in">int</span> primary <span class="hljs-keyword">key</span> auto_increment,<br>	u_name <span class="hljs-built_in">varchar</span>(<span class="hljs-number">10</span>)<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">charset</span> = utf8 ; <br><span class="hljs-comment">-- 插入用户数据</span><br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> <span class="hljs-keyword">user</span>(u_name) <span class="hljs-keyword">values</span>(<span class="hljs-string">'张三'</span>),(<span class="hljs-string">'李四'</span>),(<span class="hljs-string">'王五'</span>);<br><br><span class="hljs-comment">-- 用户订单表</span><br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> uorder(<br>	o_id <span class="hljs-built_in">int</span> primary <span class="hljs-keyword">key</span> auto_increment,<br>	u_id <span class="hljs-built_in">int</span>,<br>	o_desc <span class="hljs-built_in">varchar</span>(<span class="hljs-number">100</span>)<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">charset</span> = utf8 ; <br><br><span class="hljs-comment">-- 批量插入模拟用订单数据</span><br><span class="hljs-comment">-- userid 用户id</span><br><span class="hljs-comment">-- produce 订单产品</span><br><span class="hljs-comment">-- num 插入数量</span><br><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">PROCEDURE</span> pro_insert_data(<span class="hljs-keyword">IN</span> userid <span class="hljs-built_in">INT</span>,<span class="hljs-keyword">IN</span> produce <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">10</span>), <span class="hljs-keyword">IN</span> <span class="hljs-keyword">num</span> <span class="hljs-built_in">INT</span>)<br><span class="hljs-keyword">BEGIN</span><br>	<span class="hljs-keyword">DECLARE</span> temp <span class="hljs-built_in">INT</span>;<br>	<span class="hljs-keyword">SET</span> temp = <span class="hljs-number">1</span>;<br>	REPEAT<br>		<span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> uorder(u_id, o_desc) <span class="hljs-keyword">values</span>(userid, <span class="hljs-keyword">CONCAT</span>(produce,temp));<br>		<span class="hljs-keyword">SET</span> temp = temp + <span class="hljs-number">1</span>;<br>	UNTIL temp&gt;num END REPEAT;<br><span class="hljs-keyword">END</span><br><br><span class="hljs-comment">-- 插入订单数据</span><br><span class="hljs-keyword">call</span> pro_insert_data(<span class="hljs-number">1</span>, <span class="hljs-string">'manhua'</span>, <span class="hljs-number">20</span>);<br><span class="hljs-keyword">call</span> pro_insert_data(<span class="hljs-number">2</span>, <span class="hljs-string">'wanju'</span>, <span class="hljs-number">30</span>);<br><span class="hljs-keyword">call</span> pro_insert_data(<span class="hljs-number">3</span>, <span class="hljs-string">'fushi'</span>, <span class="hljs-number">30</span>);<br></code></pre></td></tr></table></figure>
+
+<h4 id="拆分工作"><a href="#拆分工作" class="headerlink" title="拆分工作"></a>拆分工作</h4><p>1）现在打算对 uorder 进行拆分</p>
+<ul>
+<li>因为这张表的关联字段是 u_id，所以需要使用 u_id 作为分拆策略字段</li>
+<li>因为 uorder 表中共有80条记录，所以现在打算将 uorder 拆分成 2 个，即 uorder0、uorder1，其中每张表各存 40 条记录</li>
+<li>分区定位策略为 <strong>hash（u_id）%2</strong> 或 <strong>hash（u_id）&amp;2-1</strong> </li>
+</ul>
+<p>2）按照策略将数据转移（可使用程序操作）到分拆表中</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 拆分0表</span><br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> uorder0(<br>	o_id <span class="hljs-built_in">int</span> primary <span class="hljs-keyword">key</span> auto_increment,<br>	u_id <span class="hljs-built_in">int</span>,<br>	o_desc <span class="hljs-built_in">varchar</span>(<span class="hljs-number">100</span>)<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">charset</span> = utf8 ; <br><br><span class="hljs-comment">-- 拆分1表</span><br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> uorder1(<br>	o_id <span class="hljs-built_in">int</span> primary <span class="hljs-keyword">key</span> auto_increment,<br>	u_id <span class="hljs-built_in">int</span>,<br>	o_desc <span class="hljs-built_in">varchar</span>(<span class="hljs-number">100</span>)<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">charset</span> = utf8 ;<br></code></pre></td></tr></table></figure>
+
+<h4 id="使用程序测试查询"><a href="#使用程序测试查询" class="headerlink" title="使用程序测试查询"></a>使用程序测试查询</h4><p>实体</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-meta">@Entity</span><br><span class="hljs-meta">@Table</span>(name = <span class="hljs-string">"uorder0"</span>)<br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Order0</span> </span>&#123;<br>    <span class="hljs-meta">@Id</span><br>    <span class="hljs-keyword">private</span> Integer oId;<br>    <span class="hljs-meta">@Column</span>(name=<span class="hljs-string">"u_id"</span>)<br>    <span class="hljs-keyword">private</span> Integer uId;<br>    <span class="hljs-meta">@Column</span>(name=<span class="hljs-string">"o_desc"</span>)<br>    <span class="hljs-keyword">private</span> String oDesc;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-meta">@Entity</span><br><span class="hljs-meta">@Table</span>(name = <span class="hljs-string">"uorder1"</span>)<br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Order1</span> </span>&#123;<br>    <span class="hljs-meta">@Id</span><br>    <span class="hljs-keyword">private</span> Integer oId;<br>    <span class="hljs-meta">@Column</span>(name=<span class="hljs-string">"u_id"</span>)<br>    <span class="hljs-keyword">private</span> Integer uId;<br>    <span class="hljs-meta">@Column</span>(name=<span class="hljs-string">"o_desc"</span>)<br>    <span class="hljs-keyword">private</span> String oDesc;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>dao层</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">OrderRepository0</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">JpaRepository</span>&lt;<span class="hljs-title">Order0</span>, <span class="hljs-title">Integer</span>&gt; </span>&#123;<br>    <span class="hljs-function">List&lt;Order0&gt; <span class="hljs-title">findByUId</span><span class="hljs-params">(<span class="hljs-keyword">int</span> userId)</span></span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">OrderRepository1</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">JpaRepository</span>&lt;<span class="hljs-title">Order1</span>, <span class="hljs-title">Integer</span>&gt; </span>&#123;<br>    <span class="hljs-function">List&lt;Order1&gt; <span class="hljs-title">findByUId</span><span class="hljs-params">(<span class="hljs-keyword">int</span> userId)</span></span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>service层</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">OrderService</span> </span>&#123;<br><br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> OrderRepository0 repository0;<br><br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> OrderRepository1 repository1;<br><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Order0&gt; <span class="hljs-title">findByUId0</span><span class="hljs-params">(<span class="hljs-keyword">int</span> userId)</span></span>&#123;<br>        <span class="hljs-keyword">return</span> repository0.findByUId(userId);<br>    &#125;<br><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Order1&gt; <span class="hljs-title">findByUId1</span><span class="hljs-params">(<span class="hljs-keyword">int</span> userId)</span></span>&#123;<br>        <span class="hljs-keyword">return</span> repository1.findByUId(userId);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>单元测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@RunWith</span>(SpringRunner<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span><br><span class="hljs-class">@<span class="hljs-title">SpringBootTest</span></span><br><span class="hljs-class"><span class="hljs-title">public</span> <span class="hljs-title">class</span> <span class="hljs-title">DbtestApplicationTests</span> </span>&#123;<br><br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> OrderService service;<br><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test</span><span class="hljs-params">()</span> </span>&#123;<br>      	<span class="hljs-comment">// 模拟查找出user的id</span><br>        <span class="hljs-keyword">int</span> userId = <span class="hljs-number">2</span>;<br>      	<span class="hljs-comment">// 进行取模策略计算</span><br>      	<span class="hljs-keyword">int</span> userIdMod = userId.hashCode() % <span class="hljs-number">2</span>;<br>        <br>        <span class="hljs-keyword">if</span> (userIdMod == <span class="hljs-number">0</span>) &#123;<br>            service.findByUId0(userId).forEach( item -&gt; System.out.println(item));<br><br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (userIdMod == <span class="hljs-number">1</span>) &#123;<br>            service.findByUId1(userId).forEach( item -&gt; System.out.println(item));<br><br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> RuntimeException(<span class="hljs-string">"处理失败"</span>);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>输出</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs java">Order0(oId=<span class="hljs-number">1</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju1)<br>Order0(oId=<span class="hljs-number">2</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju2)<br>Order0(oId=<span class="hljs-number">3</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju3)<br>Order0(oId=<span class="hljs-number">4</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju4)<br>Order0(oId=<span class="hljs-number">5</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju5)<br>Order0(oId=<span class="hljs-number">6</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju6)<br>Order0(oId=<span class="hljs-number">7</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju7)<br>Order0(oId=<span class="hljs-number">8</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju8)<br>Order0(oId=<span class="hljs-number">9</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju9)<br>Order0(oId=<span class="hljs-number">10</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju10)<br>Order0(oId=<span class="hljs-number">11</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju11)<br>Order0(oId=<span class="hljs-number">12</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju12)<br>Order0(oId=<span class="hljs-number">13</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju13)<br>Order0(oId=<span class="hljs-number">14</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju14)<br>Order0(oId=<span class="hljs-number">15</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju15)<br>Order0(oId=<span class="hljs-number">16</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju16)<br>Order0(oId=<span class="hljs-number">17</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju17)<br>Order0(oId=<span class="hljs-number">18</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju18)<br>Order0(oId=<span class="hljs-number">19</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju19)<br>Order0(oId=<span class="hljs-number">20</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju20)<br>Order0(oId=<span class="hljs-number">21</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju21)<br>Order0(oId=<span class="hljs-number">22</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju22)<br>Order0(oId=<span class="hljs-number">23</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju23)<br>Order0(oId=<span class="hljs-number">24</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju24)<br>Order0(oId=<span class="hljs-number">25</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju25)<br>Order0(oId=<span class="hljs-number">26</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju26)<br>Order0(oId=<span class="hljs-number">27</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju27)<br>Order0(oId=<span class="hljs-number">28</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju28)<br>Order0(oId=<span class="hljs-number">29</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju29)<br>Order0(oId=<span class="hljs-number">30</span>, uId=<span class="hljs-number">2</span>, oDesc=wanju30)<br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="例子-表分区"><a href="#例子-表分区" class="headerlink" title="例子 - 表分区"></a>例子 - 表分区</h3><h4 id="range分区（常用）"><a href="#range分区（常用）" class="headerlink" title="range分区（常用）"></a>range分区（常用）</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> person (<br>    p_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span>,<br>    p_name <span class="hljs-built_in">varchar</span>(<span class="hljs-number">30</span>),<br>		store_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">by</span> <span class="hljs-keyword">RANGE</span> (store_id) (<br>	<span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">less</span> <span class="hljs-keyword">than</span> (<span class="hljs-number">1000</span>),<br>	<span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">less</span> <span class="hljs-keyword">than</span> (<span class="hljs-number">5000</span>),<br>	<span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">less</span> <span class="hljs-keyword">than</span> (<span class="hljs-number">10000</span>),<br>	<span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">less</span> <span class="hljs-keyword">than</span> MAXVALUE<br>);<br></code></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">5</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">2</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">5555</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">3</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">9999</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">4</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">11111</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查看分区信息</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="hljs-keyword">WHERE</span> TABLE_NAME = <span class="hljs-string">'person'</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs angelscript">p0	<span class="hljs-number">1</span><br>p1	<span class="hljs-number">0</span><br>p2	<span class="hljs-number">2</span><br>p3	<span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+
+<p>增加分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> person <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">PARTITION</span> (<span class="hljs-keyword">PARTITION</span> p5 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">LESS</span> <span class="hljs-keyword">THAN</span> (<span class="hljs-number">20000</span>)) ;<br></code></pre></td></tr></table></figure>
+
+<p>删除分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">TABLE</span> person <span class="hljs-keyword">DROP</span> <span class="hljs-keyword">PARTITION</span> p5 ;<br></code></pre></td></tr></table></figure>
+
+<p>查看详细情况</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="hljs-keyword">WHERE</span> TABLE_NAME = <span class="hljs-string">'person'</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="list分区"><a href="#list分区" class="headerlink" title="list分区"></a>list分区</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> person (<br>    p_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span>,<br>    p_name <span class="hljs-built_in">varchar</span>(<span class="hljs-number">30</span>),<br>	store_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">by</span> <span class="hljs-keyword">list</span> (store_id) (<br>	<span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">in</span> (<span class="hljs-number">1</span>,<span class="hljs-number">3</span>,<span class="hljs-number">5</span>,<span class="hljs-number">7</span>,<span class="hljs-number">9</span>),<br>	<span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">in</span> (<span class="hljs-number">2</span>,<span class="hljs-number">4</span>,<span class="hljs-number">6</span>,<span class="hljs-number">8</span>,<span class="hljs-number">10</span>)<br>) ;<br></code></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">2</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">2</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">4</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">3</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">3</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">4</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">5</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查看数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="hljs-keyword">WHERE</span> TABLE_NAME = <span class="hljs-string">'person'</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs angelscript">p0	<span class="hljs-number">2</span><br>p1	<span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="hash分区"><a href="#hash分区" class="headerlink" title="hash分区"></a>hash分区</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> person (<br>    p_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span>,<br>    p_name <span class="hljs-built_in">varchar</span>(<span class="hljs-number">30</span>),<br>	store_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">by</span> <span class="hljs-keyword">HASH</span> (store_id)<br><span class="hljs-keyword">PARTITIONS</span> <span class="hljs-number">4</span> ;<br></code></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">2</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">2</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">4</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">3</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">3</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">4</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">5</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查看数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="hljs-keyword">WHERE</span> TABLE_NAME = <span class="hljs-string">'person'</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs angelscript">p0	<span class="hljs-number">1</span><br>p1	<span class="hljs-number">1</span><br>p2	<span class="hljs-number">1</span><br>p3	<span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="ksy分区"><a href="#ksy分区" class="headerlink" title="ksy分区"></a>ksy分区</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> person (<br>    p_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span>,<br>    p_name <span class="hljs-built_in">varchar</span>(<span class="hljs-number">30</span>),<br>	store_id <span class="hljs-built_in">int</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">null</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">by</span> LINEAR <span class="hljs-keyword">KEY</span> (store_id)<br><span class="hljs-keyword">PARTITIONS</span> <span class="hljs-number">2</span> ;<br></code></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">2</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">2</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">4</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">3</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">3</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(p_id, p_name, store_id) <span class="hljs-keyword">values</span>(<span class="hljs-number">4</span>, <span class="hljs-string">'test'</span>, <span class="hljs-number">5</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查看数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="hljs-keyword">WHERE</span> TABLE_NAME = <span class="hljs-string">'person'</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs angelscript">p0	<span class="hljs-number">2</span><br>p1	<span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="MySQL复制"><a href="#MySQL复制" class="headerlink" title="MySQL复制"></a>MySQL复制</h2><h3 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h3><ul>
+<li><p>将一个数据库（主库）上的数据冗余到到另一个数据库（从库）中</p>
+</li>
+<li><p>默认情况下复制操作是异步进行的</p>
+</li>
+<li><p>可根据配置实现有选择性地复制具体的库或表</p>
+</li>
+</ul>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/6.png" alt></p>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>以一主一从为例</p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/3.png" alt></p>
+<ol>
+<li>首先从库会创建一条<strong>IO线程</strong>去读取主库的 binlog</li>
+<li>主库在发现从库连接后，会创建一条<strong>复制处理线程</strong>来处理从库的复制请求<ul>
+<li>首先会向本地 binlog 提交从库的信息</li>
+<li>告知从库已经准备好复制工作</li>
+</ul>
+</li>
+<li>从库读取 binlog 并将内容写入中继日志中（复制延迟主要在这里）</li>
+<li>从库启动<strong>SQL线程</strong>将中继日志的内容入读库中</li>
+</ol>
+<h3 id="主从复制配置"><a href="#主从复制配置" class="headerlink" title="主从复制配置"></a>主从复制配置</h3><h4 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h4><ol>
+<li>在主库中开启 binlog</li>
+<li>在主库中创建一个专门用来做复制的用户账号</li>
+<li>设置从库的唯一id（server_id）</li>
+<li>在 slave 中远程备份 master</li>
+<li>在 slave 中恢复 master 备份的数据</li>
+<li>使用<code>show master status</code>查看主库状态</li>
+<li>在 slave 中执行 <code>change master to</code> 命令指向主库</li>
+</ol>
+<h4 id="配置案例"><a href="#配置案例" class="headerlink" title="配置案例"></a>配置案例</h4><p>为了方便，当前例子会在 Docker 容器中进行，使用的是 mysql5.7 镜像</p>
+<p>1）启动 MySQL 容器</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 主库</span><br>docker run --name mysql57-master --expose 3306 -p 3307:3306 --privileged=<span class="hljs-literal">true</span> -v /Users/tandi/DockerMount/mysql57-master/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-master/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9<br><br><span class="hljs-comment"># 从库</span><br>docker run --name mysql57-slave --expose 3306 -p 3308:3306 --privileged=<span class="hljs-literal">true</span> -v /Users/tandi/DockerMount/mysql57-slave/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-slave/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9<br></code></pre></td></tr></table></figure>
+
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/4.png" alt></p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/5.png" alt></p>
+<p>2）开启 master 的二进制日志记录</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs properties"><span class="hljs-attr">[mysqld]</span><br><span class="hljs-meta">server-id</span> = <span class="hljs-string">1</span><br><span class="hljs-meta">log-bin</span> = <span class="hljs-string">mysql-bin-log</span><br></code></pre></td></tr></table></figure>
+
+<p>3）在 master 库中创建复制用户</p>
+<p>进入容器：docker exec -it mysql57-master /bin/bash</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">mysql&gt; grant replication slave on *.* to <span class="hljs-string">'binlog_user'</span>@<span class="hljs-string">'%'</span> identified by <span class="hljs-string">'123456'</span>;<br></code></pre></td></tr></table></figure>
+
+<p>4）在master创建测试用数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">create</span> <span class="hljs-keyword">database</span> masterdb;<br><span class="hljs-keyword">use</span> masterdb;<br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> person(pid <span class="hljs-built_in">int</span>, pname <span class="hljs-built_in">varchar</span>(<span class="hljs-number">10</span>)) <span class="hljs-keyword">default</span> <span class="hljs-keyword">charset</span>=utf8;<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> person(pid,pname) <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>,<span class="hljs-string">'张三'</span>),(<span class="hljs-number">2</span>,<span class="hljs-string">'李四'</span>);<br></code></pre></td></tr></table></figure>
+
+<p>5）设置 slave 的 server_id</p>
+<p>不能与主库相同</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs properties"><span class="hljs-attr">[mysqld]</span><br><span class="hljs-meta">server-id</span> = <span class="hljs-string">2</span><br><span class="hljs-meta">log-bin</span> = <span class="hljs-string">mysql-bin-log</span><br></code></pre></td></tr></table></figure>
+
+<p>6）在slave中远程备份master并恢复到本地</p>
+<p>查看 master 容器ip：docker inspect mysql57-master | grep IPAddress</p>
+<p>进入 salve 容器：docker exec -it mysql57-slave /bin/bash</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 备份master的数据到本地</span><br>mysqldump -h 172.17.0.2 -u root -p123456 --default-character-set=utf8 masterdb &gt; dump.sql<br><br><span class="hljs-comment"># 创建对应的数据库schema</span><br>mysql -uroot -p123456<br>mysql&gt; create database masterdb;<br>mysql&gt; <span class="hljs-built_in">exit</span><br><br><span class="hljs-comment"># 根据备份文件将数据还原到数据库（从）</span><br>mysql -u root -p123456 masterdb &lt; dump.sql<br></code></pre></td></tr></table></figure>
+
+<p>7）查看master的状态</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">mysql&gt; show master status;<br>+----------------------+----------+--------------+------------------+-------------------+<br>| File                 | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |<br>+----------------------+----------+--------------+------------------+-------------------+<br>| mysql-bin-log.000003 | 2664     |              |                  |                   |<br>+----------------------+----------+--------------+------------------+-------------------+<br></code></pre></td></tr></table></figure>
+
+<p>8）配置slave</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 配置从属关系</span><br>mysql&gt; change master to master_host=<span class="hljs-string">'172.17.0.2'</span>, master_user=<span class="hljs-string">'binlog_user'</span>, master_password=<span class="hljs-string">'123456'</span>, master_log_file=<span class="hljs-string">'mysql-bin-log.000003'</span>, master_log_pos=2664;<br><span class="hljs-comment"># 意思是复制mysql-bin-log.000003，从2664开始复制</span><br><br><span class="hljs-comment"># 启动从属关系</span><br>mysql&gt; start slave;<br></code></pre></td></tr></table></figure>
+
+<p>9）查看slave的状态看是否配置成功</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs mysql">mysql&gt; show slave status\G<br>*************************** 1. 行 ***************************<br>Slave_IO_State               : Waiting for master to send event<br>Master_Host                  : 172.17.0.2 <br>Master_User                  : binlog_user<br>Master_Port                  : 3306<br>Connect_Retry                : 60<br>Master_Log_File              : mysql-bin-log.000003<br>Read_Master_Log_Pos          : 1881<br>Relay_Log_File               : 5742231876e9-relay-bin.000002<br>Relay_Log_Pos                : 606<br>Relay_Master_Log_File        : mysql-bin-log.000003<br>Slave_IO_Running             : Yes<br>Slave_SQL_Running            : Yes<br></code></pre></td></tr></table></figure>
+
+<h4 id="测试主从复制"><a href="#测试主从复制" class="headerlink" title="测试主从复制"></a>测试主从复制</h4><p>1）在 master 中创建一个数据</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">mysql&gt; use masterdb;<br>mysql&gt; insert into person(pid, pname) values(100, '测试用户');<br></code></pre></td></tr></table></figure>
+
+<p>2）到 slave 中查看是否有复制到数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql">mysql&gt; use masterdb;<br>mysql&gt; select * from person where pid = 100;<br>+<span class="hljs-comment">------+--------------+</span><br>| pid  | pname        |<br>+<span class="hljs-comment">------+--------------+</span><br>| 100  | 测试用户 			|<br>+<span class="hljs-comment">------+--------------+</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h4><ul>
+<li>应该先备份 master 数据，如果不进行备份就只能同步到在<code>start slave</code>开始的数据，而不能同步到之前的操作</li>
+<li>从节点在恢复 master 数据之前，应该使用相同的 schema 来创建库和表结构，否则可能会导致同步失败</li>
+<li>同步失败解决参考：<a href="https://blog.csdn.net/xiaoxinla/article/details/7679578" target="_blank" rel="noopener">https://blog.csdn.net/xiaoxinla/article/details/7679578</a></li>
+</ul>
+<h3 id="使用MyCat实现读写分离"><a href="#使用MyCat实现读写分离" class="headerlink" title="使用MyCat实现读写分离"></a>使用MyCat实现读写分离</h3><h4 id="基本概念-1"><a href="#基本概念-1" class="headerlink" title="基本概念"></a>基本概念</h4><p>通过 MyCat 来代理 master 和 slave 两个数据节点。这对于程序而言是无感知的，程序只需要正常执行 sql 操作即可，因为数据库中间件可以屏蔽数据库层的复杂性。</p>
+<h4 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h4><p>官网：<a href="http://www.mycat.io/" target="_blank" rel="noopener">http://www.mycat.io/</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">wget http://dl.mycat.io/1.6.7.1/Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz<br>tar -zxvf Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz<br></code></pre></td></tr></table></figure>
+
+<h4 id="模拟环境说明"><a href="#模拟环境说明" class="headerlink" title="模拟环境说明"></a>模拟环境说明</h4><table>
+<thead>
+<tr>
+<th>服务器</th>
+<th>本地机器 ip:port</th>
+<th>docker ip:port</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mysql-master</td>
+<td>127.0.0.1:3307</td>
+<td>172.17.0.2:3306</td>
+</tr>
+<tr>
+<td>mysql-slave</td>
+<td>127.0.0.1:3308</td>
+<td>172.17.0.3:3306</td>
+</tr>
+<tr>
+<td>mycat</td>
+<td>127.0.0.1:8066</td>
+<td></td>
+</tr>
+</tbody></table>
+<h4 id="配置MyCat的读写分离策略"><a href="#配置MyCat的读写分离策略" class="headerlink" title="配置MyCat的读写分离策略"></a>配置MyCat的读写分离策略</h4><p>server.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span><br><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-meta-keyword">mycat</span>:server <span class="hljs-meta-keyword">SYSTEM</span> <span class="hljs-meta-string">"server.dtd"</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">mycat:server</span> <span class="hljs-attr">xmlns:mycat</span>=<span class="hljs-string">"http://io.mycat/"</span>&gt;</span><br>	<span class="hljs-comment">&lt;!-- mycat配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">system</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"nonePasswordLogin"</span>&gt;</span>0<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"useHandshakeV10"</span>&gt;</span>1<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"useSqlStat"</span>&gt;</span>0<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"useGlobleTableCheck"</span>&gt;</span>0<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span> <br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"sequnceHandlerType"</span>&gt;</span>2<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"subqueryRelationshipCheck"</span>&gt;</span>false<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"processorBufferPoolType"</span>&gt;</span>0<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"handleDistributedTransactions"</span>&gt;</span>0<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"useOffHeapForMerge"</span>&gt;</span>1<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"memoryPageSize"</span>&gt;</span>64k<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"spillsFileBufferSize"</span>&gt;</span>1k<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"useStreamOutput"</span>&gt;</span>0<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"systemReserveMemorySize"</span>&gt;</span>384m<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"useZKSwitch"</span>&gt;</span>false<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"strictTxIsolation"</span>&gt;</span>false<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"useZKSwitch"</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-comment">&lt;!-- mycat端口 --&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"serverPort"</span>&gt;</span>8066<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">system</span>&gt;</span><br><br>	<span class="hljs-comment">&lt;!-- mycat用户配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">user</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"mroot"</span> <span class="hljs-attr">defaultAccount</span>=<span class="hljs-string">"true"</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"password"</span>&gt;</span>123456<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"schemas"</span>&gt;</span>mycat_masterdb<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">user</span>&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">user</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"muser"</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"password"</span>&gt;</span>123456<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"schemas"</span>&gt;</span>mycat_masterdb<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"readOnly"</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">user</span>&gt;</span><br><br><span class="hljs-tag">&lt;/<span class="hljs-name">mycat:server</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>schema.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-meta">&lt;?xml version="1.0"?&gt;</span><br><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-meta-keyword">mycat</span>:schema <span class="hljs-meta-keyword">SYSTEM</span> <span class="hljs-meta-string">"schema.dtd"</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">mycat:schema</span> <span class="hljs-attr">xmlns:mycat</span>=<span class="hljs-string">"http://io.mycat/"</span>&gt;</span><br><br>	<span class="hljs-comment">&lt;!-- mycat schemas --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">schema</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"mycat_masterdb"</span> <span class="hljs-attr">checkSQLschema</span>=<span class="hljs-string">"false"</span> <span class="hljs-attr">sqlMaxLimit</span>=<span class="hljs-string">"100"</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">"dn1"</span> &gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">schema</span>&gt;</span><br><br>	<span class="hljs-comment">&lt;!-- mycat datanodes --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataNode</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"dn1"</span> <span class="hljs-attr">dataHost</span>=<span class="hljs-string">"localhost1"</span> <span class="hljs-attr">database</span>=<span class="hljs-string">"masterdb"</span> /&gt;</span><br><br>	<span class="hljs-comment">&lt;!-- 数据库节点配置 --&gt;</span><br>	<span class="hljs-comment">&lt;!--</span><br><span class="hljs-comment">		balance:</span><br><span class="hljs-comment">			0：不用读写分离</span><br><span class="hljs-comment">			1：读操作发送到当前writeHost下的readHost和备用writHost</span><br><span class="hljs-comment">			2：writeHost和readHost共同分摊读操作</span><br><span class="hljs-comment">			3：所有读操作都发送给writeHost下的readHost，比较合适与一主多从</span><br><span class="hljs-comment">	--&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataHost</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"localhost1"</span> <span class="hljs-attr">maxCon</span>=<span class="hljs-string">"1000"</span> <span class="hljs-attr">minCon</span>=<span class="hljs-string">"3"</span> <span class="hljs-attr">balance</span>=<span class="hljs-string">"1"</span> <span class="hljs-attr">writeType</span>=<span class="hljs-string">"0"</span> <span class="hljs-attr">dbType</span>=<span class="hljs-string">"mysql"</span> <span class="hljs-attr">dbDriver</span>=<span class="hljs-string">"native"</span> <span class="hljs-attr">switchType</span>=<span class="hljs-string">"2"</span>  <span class="hljs-attr">slaveThreshold</span>=<span class="hljs-string">"100"</span>&gt;</span><br>		<br>		<span class="hljs-comment">&lt;!-- 心跳测试 --&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">heartbeat</span>&gt;</span>show slave status<span class="hljs-tag">&lt;/<span class="hljs-name">heartbeat</span>&gt;</span><br><br>		<span class="hljs-comment">&lt;!-- 写库（master） --&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">writeHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">"mysql57-master"</span> <span class="hljs-attr">url</span>=<span class="hljs-string">"localhost:3307"</span> <span class="hljs-attr">user</span>=<span class="hljs-string">"root"</span> <span class="hljs-attr">password</span>=<span class="hljs-string">"123456"</span> &gt;</span><br>			<span class="hljs-comment">&lt;!-- 读库（slave） --&gt;</span><br>			<span class="hljs-tag">&lt;<span class="hljs-name">readHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">"mysql57-slave"</span> <span class="hljs-attr">url</span>=<span class="hljs-string">"localhost:3308"</span> <span class="hljs-attr">user</span>=<span class="hljs-string">"root"</span> <span class="hljs-attr">password</span>=<span class="hljs-string">"123456"</span> /&gt;</span><br>		<span class="hljs-tag">&lt;/<span class="hljs-name">writeHost</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">dataHost</span>&gt;</span><br><br><span class="hljs-tag">&lt;/<span class="hljs-name">mycat:schema</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="启动MyCat"><a href="#启动MyCat" class="headerlink" title="启动MyCat"></a>启动MyCat</h4><blockquote>
+<p>./bin/mycat stop 停止</p>
+<p>./bin/mycat restart 重启</p>
+<p>./bin/mycat console 打印日志</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">./bin/mycat start<br></code></pre></td></tr></table></figure>
+
+<h4 id="代码测试"><a href="#代码测试" class="headerlink" title="代码测试"></a>代码测试</h4><p><strong>JpaTrasactionConfig</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-meta">@EnableJpaRepositories</span>(basePackages = <span class="hljs-string">"com.td.dbtest.jpa"</span>, enableDefaultTransactions = <span class="hljs-keyword">false</span>)<br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JpaTransactionConfig</span> </span>&#123;<br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * Jpa默认的事务管理对读操作添加了readOnly=true事务</span><br><span class="hljs-comment">     * 而MyCat只要是处于事务的sql都会走write库，所以需要修改参数 enableDefaultTransactions = false</span><br><span class="hljs-comment">     * 除此之外，还可以在sql前添加 /*balance*\/ 来解决</span><br><span class="hljs-comment">     */</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>service</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PersonService</span> </span>&#123;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> PersonRepository repository;<br><br>    <span class="hljs-meta">@Transactional</span>(propagation = Propagation.NOT_SUPPORTED)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;Person&gt; <span class="hljs-title">findAll</span><span class="hljs-params">()</span></span>&#123;<br>        <span class="hljs-keyword">return</span> repository.findAll();<br>    &#125;<br><br>    <span class="hljs-meta">@Transactional</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">save</span><span class="hljs-params">(Person person)</span> </span>&#123;<br>        repository.save(person);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>配置</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs properties"><span class="hljs-meta">spring.datasource.driver-class-name</span>=<span class="hljs-string">com.mysql.jdbc.Driver</span><br><span class="hljs-meta">spring.datasource.url</span>=<span class="hljs-string">jdbc:mysql://localhost:8066/mycat_masterdb?useSSL=false</span><br><span class="hljs-meta">spring.datasource.username</span>=<span class="hljs-string">mroot</span><br><span class="hljs-meta">spring.datasource.password</span>=<span class="hljs-string">123456</span><br><span class="hljs-meta">spring.jpa.hibernate.ddl-auto</span>=<span class="hljs-string">update</span><br><span class="hljs-meta">spring.jpa.show-sql</span>=<span class="hljs-string">true</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>测试</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@RunWith</span>(SpringRunner<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span><br><span class="hljs-class">@<span class="hljs-title">SpringBootTest</span></span><br><span class="hljs-class"><span class="hljs-title">public</span> <span class="hljs-title">class</span> <span class="hljs-title">DbtestApplicationTests</span> </span>&#123;<br><br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> PersonService service;<br><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">findTest</span><span class="hljs-params">()</span> </span>&#123;<br>        service.findAll().forEach( item -&gt; System.out.println(item) );<br>    &#125;<br><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">saveTest</span><span class="hljs-params">()</span> </span>&#123;<br>        Person person = <span class="hljs-keyword">new</span> Person();<br>        person.setPId(<span class="hljs-number">10001</span>);<br>        person.setPName(<span class="hljs-string">"batman"</span>);<br>        service.save(person);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="拓展"><a href="#拓展" class="headerlink" title="拓展"></a>拓展</h2><ul>
+<li>默认情况下 MySQL 的最大 max_connections 为 100，所以可以在配置文件中添加 max_connections=600 来提高其并发连接数</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/%E5%9F%BA%E4%BA%8EOauth2%E5%BC%80%E6%94%BE%E6%8E%88%E6%9D%83%E5%8D%8F%E8%AE%AE%E5%AE%9E%E7%8E%B0%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%94%E7%94%A8%E6%8E%88%E6%9D%83-%E6%8E%88%E6%9D%83%E7%A0%81%E6%A8%A1%E5%BC%8F%E6%A1%88%E4%BE%8B/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">基于Oauth2开放授权协议实现第三方应用授权（授权码模式）</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/mysql%E6%97%A5%E5%BF%97/">
+                        <span class="hidden-mobile">MySQL日志</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments">
+                
+                
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.waitElementVisible('gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', function () {
+        var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ["oomgomgxx"],
+          id: '3fa4b868d233da4aa4442ab5134f9555',
+          language: 'zh-CN',
+          labels: ["Gitalk"],
+          perPage: 10,
+          pagerDirection: 'last',
+          createIssueManually: true,
+          distractionFreeMode: false
+        });
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+    <font color="red">温馨提示：网站修建中。。。</font>
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":200})
+    NProgress.start()
+    document.addEventListener('DOMContentLoaded', function() {
+      window.NProgress && window.NProgress.inc();
+    })
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      var inputArea = document.querySelector("#local-search-input");
+      inputArea.onclick = function () {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+        this.onclick = null
+      }
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>

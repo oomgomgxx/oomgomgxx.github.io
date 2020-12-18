@@ -1,0 +1,617 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="学然后知不足">
+  <meta name="author" content="TanDi">
+  <meta name="keywords" content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux">
+  <title>基于Java探针和字节码框架来动态修改代码运行时行为 - 学然后知不足</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"tandi.pub","root":"/","version":"1.8.6","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":"#"},"copy_btn":true,"image_zoom":{"enable":true},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":"https://www.google-analytics.com/analytics.js","gtag":255232504,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+
+<body>
+  <header style="height: 45vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>学然后知不足</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner intro-2" id="background" parallax=true
+         style="background: url('https://s3.ax1x.com/2020/12/12/rVB8TU.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="基于Java探针和字节码框架来动态修改代码运行时行为">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2019-12-01 16:18" pubdate>
+        2019年12月1日 下午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      2.4k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      36
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">基于Java探针和字节码框架来动态修改代码运行时行为</h1>
+            
+            <div class="markdown-body">
+              <h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><blockquote>
+<p>是什么？</p>
+</blockquote>
+<ul>
+<li><code>Java探针</code>其实就是指Java Agent，一种能够直接与 JVM 交互的代理</li>
+<li>Java Agent能与JVM交互的前提是JVM本身支持JVM TI（<a href="https://docs.oracle.com/javase/8/docs/platform/jvmti/jvmti.html" target="_blank" rel="noopener">JVM Tool Interface</a>）。这样说的原因是并非所有JVM都支持JVM TI，即JVM TI并不是规范</li>
+<li>JVM TI 支持需要访问JVM状态的全部工具，包括但不限于：<code>性能分析</code>，<code>Debug调试</code>，<code>监控</code>，<code>线程分析</code>和<code>覆盖率分析</code>等等。从这点可以看出 JVM TI 是很强大的</li>
+<li>Java从JDK5开始提供了实现Java Agent的API，位于<code>java.lang.instrument</code>包下</li>
+</ul>
+<a id="more"></a>
+
+<blockquote>
+<p>Java Agent与 JVM TI 的关系</p>
+</blockquote>
+<ul>
+<li><p>Java Agent通过实现JVM TI的回调方法来获取或操作 JVM 的相关性信息</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/001.png" alt></p>
+</li>
+<li><p>Java Agent可以简单理解为是一段需要依附在主程序上的代码。目前的依附方式有两种（都属于本机内操作）</p>
+<ul>
+<li><p><strong>启动依附：</strong>即在启动主程序时指定Java Agent <code>-javaagent:代理.jar[=参数]</code></p>
+</li>
+<li><p><strong>使用 Attach API 依附：</strong>该API位于 <code>tool.jar</code> 的<code>com.sun.tools.attach</code>包下。该方式可以实现动态依附，既即使主程序正在运行也可以操作</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/002.png" alt></p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>可能经过上面一番说明你依然感觉很困惑，但没关系，我们来看看Java Agent 的身影</p>
+</blockquote>
+<ul>
+<li>热部署插件JRebel</li>
+<li>懒人开发包Lombok</li>
+<li>分布式链路追中服务的Java探针（例如SkyWalking和Pinpoint）</li>
+<li>安全(不能改内容)且动态的Java跟踪工具 BTrace</li>
+<li>阿里开源的在线分析诊断工具 Arthas</li>
+<li>JDK自带的诊断工具，例如 Visual VM、JConsole </li>
+</ul>
+<h2 id="Java-Agent实现"><a href="#Java-Agent实现" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h2><h3 id="了解基本API"><a href="#了解基本API" class="headerlink" title="了解基本API"></a>了解基本API</h3><p>经过一番了解过后我想大家对 Java Agent 的情况已经略知一二了。接下来以案例的形式对 Java Agent 开发进行快速入门。案例分为两部分：</p>
+<ul>
+<li>第1部分，以<code>-javaagent</code>参数进行依附，模拟在不修改主程序源码情况下为目标类增加方法</li>
+<li>第2部分，以<code>Attach API</code>进行依附，模拟主程序处于运行时，为目标织入环绕代码（类似于Spring AOP中的 @Around 功能）</li>
+</ul>
+<blockquote>
+<p>在这之前先了解一下 Java Agent 的 jar 包结构：</p>
+</blockquote>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/003.png" alt></p>
+<ul>
+<li><p>Agent class</p>
+<p>实现了 JVM TI 回调方法的代理类，相当于普通程序的入口类(Main)。其中有两个回调方法可以实现，分别是：premain 和 agentmain，各自为 <code>-javaagent</code>依附和<code>Attach API</code>依附的入口方法</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/004.png" alt></p>
+</li>
+<li><p>Packaging</p>
+<p>即包结构，如图所示需要创建 <code>META-INF/MANIFEST.MF</code>文件结构。其中 MANIFEST.MF 包含以下描述配置</p>
+<ul>
+<li>Agent-Class：实现了agentmain回调方法的入口类限定名</li>
+<li>Premain-Class：实现了premain 回调方法的入口类限定名</li>
+<li>Boot-Class-Path：依赖的路径，可以省略但需要将依赖一同编译进jar包</li>
+<li>Can-Redefine-Classes：是否允许重新定义类，默认为false</li>
+<li>Can-Retransform-Classes：是否允许替换类的字节码，默认为false</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>JDK 5 开始提供的Instrumentation API</p>
+</blockquote>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/005.png" alt></p>
+<h3 id="不修改主程序源码情况下为目标类增加方法"><a href="#不修改主程序源码情况下为目标类增加方法" class="headerlink" title="不修改主程序源码情况下为目标类增加方法"></a>不修改主程序源码情况下为目标类增加方法</h3><h4 id="主程序"><a href="#主程序" class="headerlink" title="主程序"></a>主程序</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-comment">&lt;!-- 用于指定程序入口，如果不做以下操作运行需要使用-cp参数指定入口类 --&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">build</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">plugins</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">plugin</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>maven-jar-plugin<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.1<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">configuration</span>&gt;</span><br>                <span class="hljs-tag">&lt;<span class="hljs-name">archive</span>&gt;</span><br>                    <span class="hljs-tag">&lt;<span class="hljs-name">manifest</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">addClasspath</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">addClasspath</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">mainClass</span>&gt;</span>wiki.td.Main<span class="hljs-tag">&lt;/<span class="hljs-name">mainClass</span>&gt;</span><br>                    <span class="hljs-tag">&lt;/<span class="hljs-name">manifest</span>&gt;</span><br>                <span class="hljs-tag">&lt;/<span class="hljs-name">archive</span>&gt;</span><br>            <span class="hljs-tag">&lt;/<span class="hljs-name">configuration</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">plugin</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">plugins</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">build</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>主程序代码</p>
+</blockquote>
+<p>Person</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span> </span>&#123;<br>    <span class="hljs-keyword">private</span> String name;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Person</span><span class="hljs-params">()</span> </span>&#123;<br>    &#125;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Person</span><span class="hljs-params">(String name)</span> </span>&#123;<br>        <span class="hljs-keyword">this</span>.name = name;<br>    &#125;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">getName</span><span class="hljs-params">()</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> name;<br>    &#125;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setName</span><span class="hljs-params">(String name)</span> </span>&#123;<br>        <span class="hljs-keyword">this</span>.name = name;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>Main</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Main</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        System.out.println(<span class="hljs-string">"============ main ==========="</span>);<br>        Person person = <span class="hljs-keyword">new</span> Person(<span class="hljs-string">"Sam"</span>);<br>        System.out.println(person.toString());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="Java-Agent实现-1"><a href="#Java-Agent实现-1" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-comment">&lt;!-- 字节码框架Javassit --&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.javassist<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>javassist<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>3.26.0-GA<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 打包插件 --&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">build</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">plugins</span>&gt;</span><br><br>        <span class="hljs-comment">&lt;!--            &lt;plugin&gt;</span><br><span class="hljs-comment">                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span><br><span class="hljs-comment">                &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</span><br><span class="hljs-comment">                &lt;version&gt;3.1.1&lt;/version&gt;</span><br><span class="hljs-comment">                &lt;configuration&gt;</span><br><span class="hljs-comment">                    &lt;archive&gt;</span><br><span class="hljs-comment">                        &lt;manifest&gt;</span><br><span class="hljs-comment">                            &lt;addClasspath&gt;true&lt;/addClasspath&gt;</span><br><span class="hljs-comment">                        &lt;/manifest&gt;</span><br><span class="hljs-comment">                        &lt;manifestEntries&gt;</span><br><span class="hljs-comment">                            &lt;Premain-Class&gt;wiki.td.Agent&lt;/Premain-Class&gt;</span><br><span class="hljs-comment">                            &lt;Agent-Class&gt;wiki.td.Agent&lt;/Agent-Class&gt;</span><br><span class="hljs-comment">                            &lt;Can-Redefine-Classes&gt;true&lt;/Can-Redefine-Classes&gt;</span><br><span class="hljs-comment">                            &lt;Can-Retransform-Classes&gt;true&lt;/Can-Retransform-Classes&gt;</span><br><span class="hljs-comment">                            &amp;lt;!&amp;ndash; 指定依赖的classpath &amp;ndash;&amp;gt;</span><br><span class="hljs-comment">                            &amp;lt;!&amp;ndash; 如果不配置则启动时指定：java -classpath &amp;ndash;&amp;gt;</span><br><span class="hljs-comment">                            &lt;Boot-Class-Path&gt;E:/ProgrammingEnvironment/maven/LocalRepository/org/javassist/javassist/3.26.0-GA/javassist-3.26.0-GA.jar&lt;/Boot-Class-Path&gt;</span><br><span class="hljs-comment">                        &lt;/manifestEntries&gt;</span><br><span class="hljs-comment">                    &lt;/archive&gt;</span><br><span class="hljs-comment">                &lt;/configuration&gt;</span><br><span class="hljs-comment">            &lt;/plugin&gt;--&gt;</span><br><br>        <span class="hljs-comment">&lt;!--</span><br><span class="hljs-comment">                1. 将依赖一同打包进jar（因为依赖会一起打包所以无需像maven-jar-plugin那样指定依赖的classpath）</span><br><span class="hljs-comment">                2. 指定 Premain-Class、Agent-Class、Can-Redefine-Classes、Can-Retransform-Classes</span><br><span class="hljs-comment">            --&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">plugin</span>&gt;</span><br>                <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>                <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>maven-assembly-plugin<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>                <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>3.1.1<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>                <span class="hljs-tag">&lt;<span class="hljs-name">configuration</span>&gt;</span><br>                    <span class="hljs-tag">&lt;<span class="hljs-name">archive</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">index</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">index</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">manifest</span>&gt;</span><br>                            <span class="hljs-tag">&lt;<span class="hljs-name">addClasspath</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">addClasspath</span>&gt;</span><br>                        <span class="hljs-tag">&lt;/<span class="hljs-name">manifest</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">manifestEntries</span>&gt;</span><br>                            <span class="hljs-tag">&lt;<span class="hljs-name">Premain-Class</span>&gt;</span>wiki.td.Agent<span class="hljs-tag">&lt;/<span class="hljs-name">Premain-Class</span>&gt;</span><br>                            <span class="hljs-tag">&lt;<span class="hljs-name">Agent-Class</span>&gt;</span>wiki.td.Agent<span class="hljs-tag">&lt;/<span class="hljs-name">Agent-Class</span>&gt;</span><br>                            <span class="hljs-tag">&lt;<span class="hljs-name">Can-Redefine-Classes</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">Can-Redefine-Classes</span>&gt;</span><br>                            <span class="hljs-tag">&lt;<span class="hljs-name">Can-Retransform-Classes</span>&gt;</span>true<span class="hljs-tag">&lt;/<span class="hljs-name">Can-Retransform-Classes</span>&gt;</span><br>                        <span class="hljs-tag">&lt;/<span class="hljs-name">manifestEntries</span>&gt;</span><br>                    <span class="hljs-tag">&lt;/<span class="hljs-name">archive</span>&gt;</span><br>                    <span class="hljs-comment">&lt;!-- 将当前项目的依赖一同打包进jar --&gt;</span><br>                    <span class="hljs-tag">&lt;<span class="hljs-name">descriptorRefs</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">descriptorRef</span>&gt;</span>jar-with-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">descriptorRef</span>&gt;</span><br>                    <span class="hljs-tag">&lt;/<span class="hljs-name">descriptorRefs</span>&gt;</span><br>                <span class="hljs-tag">&lt;/<span class="hljs-name">configuration</span>&gt;</span><br>                <span class="hljs-tag">&lt;<span class="hljs-name">executions</span>&gt;</span><br>                    <span class="hljs-tag">&lt;<span class="hljs-name">execution</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">id</span>&gt;</span>make-assembly-dir<span class="hljs-tag">&lt;/<span class="hljs-name">id</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">phase</span>&gt;</span>package<span class="hljs-tag">&lt;/<span class="hljs-name">phase</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">goals</span>&gt;</span><br>                            <span class="hljs-tag">&lt;<span class="hljs-name">goal</span>&gt;</span>single<span class="hljs-tag">&lt;/<span class="hljs-name">goal</span>&gt;</span><br>                        <span class="hljs-tag">&lt;/<span class="hljs-name">goals</span>&gt;</span><br>                    <span class="hljs-tag">&lt;/<span class="hljs-name">execution</span>&gt;</span><br>                <span class="hljs-tag">&lt;/<span class="hljs-name">executions</span>&gt;</span><br>            <span class="hljs-tag">&lt;/<span class="hljs-name">plugin</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">plugins</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">build</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Java Agent实现</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Agent</span> </span>&#123;<br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * 启动依附回调方法</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> agentArgs</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> inst</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">premain</span><span class="hljs-params">(String agentArgs, Instrumentation inst)</span> </span>&#123;<br>        System.out.println(<span class="hljs-string">"========================= into premain ========================="</span>);<br>        System.out.println(<span class="hljs-string">"参数："</span> + agentArgs);<br>        inst.addTransformer(<span class="hljs-keyword">new</span> PersonClassFileTransformer(agentArgs), <span class="hljs-keyword">true</span>);<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * Attach API依附回调方法</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> agentArgs</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> inst</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">agentmain</span><span class="hljs-params">(String agentArgs, Instrumentation inst)</span> </span>&#123;<br>		premain(agentArgs, inst);<br>    &#125;<br>&#125;<br><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PersonClassFileTransformer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">ClassFileTransformer</span> </span>&#123;<br>    <span class="hljs-keyword">private</span> String targetClassName;<br><br>    PersonClassFileTransformer(String targetClassName) &#123;<br>        <span class="hljs-keyword">this</span>.targetClassName = targetClassName;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">byte</span>[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined,<br>                            ProtectionDomain protectionDomain, <span class="hljs-keyword">byte</span>[] classfileBuffer) <span class="hljs-keyword">throws</span> IllegalClassFormatException &#123;<br>		<span class="hljs-comment">// 修改类的限定名格式</span><br>        String target = className.replace(<span class="hljs-string">"/"</span>, <span class="hljs-string">"."</span>);<br>		<br>        <span class="hljs-keyword">if</span> (targetClassName.equals(target)) &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>				<span class="hljs-comment">// 获取目标类</span><br>                ClassPool classPool = ClassPool.getDefault();<br>                CtClass ctClass = classPool.makeClass(<span class="hljs-keyword">new</span> ByteArrayInputStream(classfileBuffer));<br>				<br>				<span class="hljs-comment">// 构建一个新的方法，案例以toString为例</span><br>				<span class="hljs-comment">// 如果不重写toString，默认对象会用Object的toString，输出类容是限定名加十六进制地址</span><br>				<span class="hljs-comment">// 这里我们重载toString让其输出Person的name</span><br>                <span class="hljs-keyword">final</span> String method = <span class="hljs-keyword">new</span> StringBuilder()<br>                        .append(<span class="hljs-string">"public String toString() &#123; "</span>)<br>                        .append(<span class="hljs-string">"return \"name=\" + this.name; &#125;"</span>)<br>                        .toString();<br>                CtMethod make = CtNewMethod.make(method, ctClass);<br>				<br>                <span class="hljs-comment">// 将添加到类中（注意：如果是修改操作无需进行addMethod）</span><br>                ctClass.addMethod(make);<br>                <span class="hljs-keyword">return</span> ctClass.toBytecode();<br>            &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="打包并测试"><a href="#打包并测试" class="headerlink" title="打包并测试"></a>打包并测试</h4><p>未使用agent之前</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">~ java -jar hello.jar<br>============ main ===========<br>wiki.td.Person@75b84c92<br></code></pre></td></tr></table></figure>
+
+<p>使用agent之后</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs shell">~ java -javaagent:agent.jar=wiki.td.Person -jar hello.jar<br>========================= into premain =========================<br>参数：wiki.td.Person<br>============ main ===========<br>name=Sam<br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="主程序处于运行时，为目标织入Around代码"><a href="#主程序处于运行时，为目标织入Around代码" class="headerlink" title="主程序处于运行时，为目标织入Around代码"></a>主程序处于运行时，为目标织入Around代码</h3><h4 id="主程序-1"><a href="#主程序-1" class="headerlink" title="主程序"></a>主程序</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-comment">&lt;!-- 因为检索不到tools的缘故，所以这里我硬编指定本地依赖 --&gt;</span><br>    <span class="hljs-comment">&lt;!-- attach api --&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.sun<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>tools<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.8.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>system<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">systemPath</span>&gt;</span>C:/Program Files/Java/jdk1.8.0_231/lib/tools.jar<span class="hljs-tag">&lt;/<span class="hljs-name">systemPath</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>主程序代码</p>
+</blockquote>
+<p>Person</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">sayHi</span><span class="hljs-params">()</span> </span>&#123;<br>        System.out.println(<span class="hljs-string">"你好呀"</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>Main</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Main</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        <span class="hljs-comment">// 让程序一直循环以便观察</span><br>        <span class="hljs-keyword">for</span> (; ; ) &#123;<br>            <span class="hljs-keyword">new</span> Person().sayHi();<br>            TimeUnit.SECONDS.sleep(<span class="hljs-number">3</span>);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="Java-Agent实现-2"><a href="#Java-Agent实现-2" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h4><blockquote>
+<p>Java Agent实现（依赖和上面案例一样不变）</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Agent</span> </span>&#123;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * 启动依附回调方法</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> agentArgs</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> inst</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">premain</span><span class="hljs-params">(String agentArgs, Instrumentation inst)</span> </span>&#123;<br>        agentmain(agentArgs, inst)<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * Attach API依附回调方法</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> agentArgs</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> inst</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">agentmain</span><span class="hljs-params">(String agentArgs, Instrumentation inst)</span> </span>&#123;<br>        System.out.println(<span class="hljs-string">"========================= into agentmain ========================="</span>);<br>        System.out.println(<span class="hljs-string">"参数："</span> + agentArgs);<br><br>        <span class="hljs-comment">// 获取所有已加载的类</span><br>        Class[] allLoadedClasses = inst.getAllLoadedClasses();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; allLoadedClasses.length; i++) &#123;<br>            Class clazz = allLoadedClasses[i];<br>			<span class="hljs-comment">// 只往目标类织入代码</span><br>            <span class="hljs-keyword">if</span> (clazz.getName().equals(agentArgs)) &#123;<br>                <span class="hljs-keyword">try</span> &#123;<br>					<span class="hljs-comment">// 添加转换器</span><br>                    inst.addTransformer(<span class="hljs-keyword">new</span> PersonClassFileTransformer(agentArgs), <span class="hljs-keyword">true</span>);<br>					<span class="hljs-comment">// 用转换器重新转换类</span><br>                    inst.retransformClasses(clazz);<br>                &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br><br>&#125;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PersonClassFileTransformer</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">ClassFileTransformer</span> </span>&#123;<br>    <span class="hljs-keyword">private</span> String targetClassName;<br><br>    PersonClassFileTransformer(String targetClassName) &#123;<br>        <span class="hljs-keyword">this</span>.targetClassName = targetClassName;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">byte</span>[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined,<br>                            ProtectionDomain protectionDomain, <span class="hljs-keyword">byte</span>[] classfileBuffer) <span class="hljs-keyword">throws</span> IllegalClassFormatException &#123;<br>        String target = className.replace(<span class="hljs-string">"/"</span>, <span class="hljs-string">"."</span>);<br>        <span class="hljs-keyword">if</span> (targetClassName.equals(target)) &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>				<span class="hljs-comment">// 获取到类</span><br>                ClassPool classPool = ClassPool.getDefault();<br>                CtClass ctClass = classPool.get(targetClassName);<br>				<span class="hljs-comment">// 获取到目标类的sayHi方法</span><br>                CtMethod method = ctClass.getDeclaredMethod(<span class="hljs-string">"sayHi"</span>);<br>				<span class="hljs-comment">// 在say之前和之后织入环绕代码</span><br>                method.insertBefore(<span class="hljs-string">"&#123; System.out.println(\"----- agent before -----\"); &#125;"</span>);<br>                method.insertAfter(<span class="hljs-string">"&#123; System.out.println(\"----- agent after -----\"); &#125;"</span>);<br>				<span class="hljs-comment">// 返回类的最终字节流</span><br>                <span class="hljs-keyword">return</span> ctClass.toBytecode();<br>            &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="测试类（Attach-API操作）"><a href="#测试类（Attach-API操作）" class="headerlink" title="测试类（Attach API操作）"></a>测试类（Attach API操作）</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AgentTest</span> </span>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>&#123;<br>        <span class="hljs-comment">// 遍历所有vm进程来获取目标进程（代替手动jps查找）</span><br>        List&lt;VirtualMachineDescriptor&gt; vms = VirtualMachine.list();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; vms.size(); i++) &#123;<br>            VirtualMachineDescriptor descriptor = vms.get(i);<br>            <span class="hljs-comment">// 要求主程序为wiki.td.Main才进行attach</span><br>            <span class="hljs-keyword">if</span> (<span class="hljs-string">"wiki.td.Main"</span>.equals(descriptor.displayName())) &#123;<br>                <span class="hljs-comment">// 往目标attach agent</span><br>                VirtualMachine attach = VirtualMachine.attach(descriptor.id());<br>                <span class="hljs-comment">// 参数1：agent jar, 参数2：agent参数</span><br>                attach.loadAgent(<span class="hljs-string">"E:/ProgrammingEnvironment/workspace/IdeaProjects/agent/target/agent-1.0-jar-with-dependencies.jar"</span>, <span class="hljs-string">"wiki.td.Person"</span>);<br>                TimeUnit.SECONDS.sleep(<span class="hljs-number">20</span>);<br>                attach.detach(); <span class="hljs-comment">// 20s后detach agent</span><br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/006.gif" alt></p>
+<p>OK<del>~</del>，这就完成了我们的无代码侵入aop操作了 </p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-jpda2/index.html" target="_blank" rel="noopener">JVMTI 和 Agent 实现</a></li>
+<li><a href="https://www.youtube.com/watch?v=tlcF8awgUEE" target="_blank" rel="noopener">How to Create a Java Agent and Why Would You Need One?</a></li>
+<li><a href="[https://zh.wikipedia.org/wiki/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90](https://zh.wikipedia.org/wiki/性能分析)">性能分析</a></li>
+<li><a href="https://www.smartik.net/2017/11/method-breakpoints-are-evil.html" target="_blank" rel="noopener">Method Breakpoints are Evil</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/java/j-lo-jvmti/" target="_blank" rel="noopener">基于 JVMTI 实现 Java 线程的监控</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/JavaSE/">JavaSE</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/JavaSE/">JavaSE</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Spring源码浅析之SingletonBean实例化过程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/">
+                        <span class="hidden-mobile">ConcurrentHashMap中的位运算应用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments">
+                
+                
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.waitElementVisible('gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', function () {
+        var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ["oomgomgxx"],
+          id: 'd9b262b292d7dcbfeb7612707347d2d1',
+          language: 'zh-CN',
+          labels: ["Gitalk"],
+          perPage: 10,
+          pagerDirection: 'last',
+          createIssueManually: true,
+          distractionFreeMode: false
+        });
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+    <font color="red">温馨提示：网站修建中。。。</font>
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":200})
+    NProgress.start()
+    document.addEventListener('DOMContentLoaded', function() {
+      window.NProgress && window.NProgress.inc();
+    })
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      var inputArea = document.querySelector("#local-search-input");
+      inputArea.onclick = function () {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+        this.onclick = null
+      }
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>

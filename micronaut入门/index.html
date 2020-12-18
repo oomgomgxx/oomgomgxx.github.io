@@ -1,0 +1,604 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+
+  <!-- google seo -->
+  <meta name="google-site-verification" content="-Tun6WZu4MnAXucY6rUK-udbDuzBndQkKEn0FTgBvAs" />
+  <!-- 小图标 -->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="学然后知不足">
+  <meta name="author" content="TanDi">
+  <meta name="keywords" content="Java,Python,Web,Spring,SpringCloud,Golang,Web,Linux">
+  <title>Micronaut入门 - 学然后知不足</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.4.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"tandi.pub","root":"/","version":"1.8.6","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":"#"},"copy_btn":true,"image_zoom":{"enable":true},"lazyload":{"enable":true,"onlypost":false},"web_analytics":{"enable":false,"baidu":null,"google":"https://www.google-analytics.com/analytics.js","gtag":255232504,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"><link rel="alternate" href="/atom.xml" title="学然后知不足" type="application/atom+xml">
+</head>
+
+
+<body>
+  <header style="height: 45vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>学然后知不足</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" href="javascript:">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner intro-2" id="background" parallax=true
+         style="background: url('https://s3.ax1x.com/2020/12/12/rVB8TU.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Micronaut入门">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2018-10-06 23:30" pubdate>
+        2018年10月6日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      3.3k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      50
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Micronaut入门</h1>
+            
+            <div class="markdown-body">
+              <h2 id="what？"><a href="#what？" class="headerlink" title="what？"></a>what？</h2><ul>
+<li>micronaut是一种现代的，基于JVM字节码注入的微服务全栈框架</li>
+<li>用于构建模块化，易于测试的微服务和无服务器应用程序（专门为cloud native设计/云原生应用）</li>
+</ul>
+<ul>
+<li><p>包含以下特性：</p>
+<ul>
+<li><p>依赖注入(无需通过反射) 和 控制翻转</p>
+</li>
+<li><p>明智的默认值 和 自动配置</p>
+</li>
+<li><p>基于netty</p>
+</li>
+<li><p>配置共享</p>
+</li>
+<li><p>服务发现</p>
+</li>
+<li><p>HTTP路由</p>
+</li>
+<li><p>客户端负载均衡的HTTP客户端</p>
+</li>
+<li><p>支持java，groovy，kotlin等语言</p>
+</li>
+<li><p>启动速度快</p>
+</li>
+<li><p>内存占用少</p>
+</li>
+<li><p>简单的单元测试</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h2><p>官网文档：<a href="https://docs.micronaut.io/latest/guide/index.html" target="_blank" rel="noopener">https://docs.micronaut.io/latest/guide/index.html</a></p>
+<p>GitHub：</p>
+<p><a href="https://github.com/micronaut-projects" target="_blank" rel="noopener">https://github.com/micronaut-projects</a></p>
+<p><a href="https://github.com/micronaut-guides" target="_blank" rel="noopener">https://github.com/micronaut-guides</a></p>
+<h2 id="hello-world"><a href="#hello-world" class="headerlink" title="hello-world"></a>hello-world</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><code class="hljs bash">CentOS7安装<br>步骤1：安装sdkman<br>curl -s <span class="hljs-string">"https://get.sdkman.io"</span> | bash<br><span class="hljs-built_in">source</span> <span class="hljs-string">"<span class="hljs-variable">$HOME</span>/.sdkman/bin/sdkman-init.sh"</span><br>sdk version<br><br>步骤2：使用sdkman安装micronaut<br>sdk install micronaut 或者 sdk install micronaut 1.1.0.M1<br><br>步骤3：快速入门案例<br>1）使用micronaut快速构建一个maven管理的java项目<br>[root@localhost files]<span class="hljs-comment"># mn create-app hello-world // gradle</span><br>或<br>[root@localhost files]<span class="hljs-comment"># sdk use maven // 安装maven</span><br>[root@localhost files]<span class="hljs-comment"># mn create-app --build maven hello-world</span><br>【启动类】<br>	import io.micronaut.runtime.Micronaut;<br>	public class Application &#123;<br>		public static void main(String[] args) &#123;<br>			Micronaut.run(Application.class);<br>		&#125;<br>	&#125;<br>【默认情况下，Micronaut HTTP服务器配置为在端口8080上运行】<br><br>2）在添加交互代码<br>	package hello;<br><br>	import io.micronaut.http.MediaType;<br>	import io.micronaut.http.annotation.Controller;<br>	import io.micronaut.http.annotation.Get;<br><br>	@Controller(<span class="hljs-string">"/hello"</span>) <br>	public class HelloController &#123;<br>		@Get(produces = MediaType.TEXT_PLAIN) <br>		public String <span class="hljs-function"><span class="hljs-title">index</span></span>() &#123;<br>			<span class="hljs-built_in">return</span> <span class="hljs-string">"Hello World"</span>; <br>		&#125;<br>	&#125;<br><br><br>3）进入hello-world下运行<br>【gradle运行】<br>./gradlew run<br>【maven运行】<br>或<br>[root@localhost hello]<span class="hljs-comment"># mvn compile package</span><br>[root@localhost target]<span class="hljs-comment"># java -jar hello-0.1.jar </span><br>17:59:44.811 [main] INFO  io.micronaut.runtime.Micronaut - Startup completed <span class="hljs-keyword">in</span> 6505ms. Server Running: http://localhost.localdomain:8080<br><br>4）访问<br>[root@localhost conf]<span class="hljs-comment"># curl http://localhost:8080/hello</span><br>Micronaut Hello World<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="ioc"><a href="#ioc" class="headerlink" title="ioc"></a>ioc</h2><h3 id="ioc例子"><a href="#ioc例子" class="headerlink" title="ioc例子"></a>ioc例子</h3><p>1）添加依赖（gradle）</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs json">plugins &#123;<br>  id "net.ltgt.apt" version "0.18"<br>&#125;<br><br>dependencies &#123;<br>    annotationProcessor "io.micronaut:micronaut-inject-java:1.0.4"<br>    compile "io.micronaut:micronaut-inject:1.0.4"<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>2）定义bean</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">import</span> javax.inject.*<br><br><span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Engine</span> </span>&#123; <br>    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">getCylinders</span><span class="hljs-params">()</span></span><br><span class="hljs-function">    String <span class="hljs-title">start</span><span class="hljs-params">()</span></span><br><span class="hljs-function">&#125;</span><br><span class="hljs-function"></span><br><span class="hljs-function">@Singleton </span><br><span class="hljs-function">class V8Engine implements Engine </span>&#123;<br>    <span class="hljs-keyword">int</span> cylinders = <span class="hljs-number">8</span><br><br>    <span class="hljs-function">String <span class="hljs-title">start</span><span class="hljs-params">()</span> </span>&#123;<br>        <span class="hljs-string">"Starting V8"</span><br>    &#125;<br>&#125;<br><br><span class="hljs-meta">@Singleton</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Vehicle</span> </span>&#123;<br>    <span class="hljs-keyword">final</span> Engine engine<br><br>    Vehicle(Engine engine) &#123; <br>        <span class="hljs-keyword">this</span>.engine = engine<br>    &#125;<br><br>    <span class="hljs-function">String <span class="hljs-title">start</span><span class="hljs-params">()</span> </span>&#123;<br>        engine.start()<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>3）构建bean</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">try</span> (ApplicationContext context = ApplicationContext.run()) &#123; <br>    MyBean myBean = context.getBean(MyBean<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>; <br>    <span class="hljs-comment">// do something with your bean</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="依赖注入是如何工作的？"><a href="#依赖注入是如何工作的？" class="headerlink" title="依赖注入是如何工作的？"></a>依赖注入是如何工作的？</h3><ul>
+<li>micronaut不是通过反射来实现依赖注入</li>
+<li>micronaut使用的是<strong>AST转换</strong>（用于Groovy）和<strong>注释处理器</strong>（用于Java）来生成实现BeanDefinition接口的类</li>
+<li>micronaut使用<strong>ASM字节码库</strong>生成类，并由于micronaut提前知道注入点（基于jvm），因此不需要像Spring等其他框架一样在运行时扫描所有方法，字段，构造函数等来得知注入点</li>
+<li>此外，由于在构造bean的时候不是通过反射来实现依赖注入，因此jvm可以更好地内联和优化代码，从而提高运行时性能并减少内存的消耗。这对于非单例范围的bean尤为重要，<strong>因为应用程序性能取决于bean创建性能</strong></li>
+<li>使用micronaut开发，应用程序<strong>启动时间</strong>和<strong>内存消耗</strong>不会像使用反射的ioc框架一样取决于代码库的大小，因为基于反射的ioc框架会为代码中的每个字段，方法，构造函数等，加载和缓存反射数据。因此，随着代码规模的增长，应用对内存的需求也会增加，而使用micronaut则不是这样</li>
+</ul>
+<h3 id="BeanContext"><a href="#BeanContext" class="headerlink" title="BeanContext"></a>BeanContext</h3><p>该BeanContext中是您所有的bean定义一个容器对象（它也实现BeanDefinitionRegistry），这也是Micronaut的初始化点。但是，一般来说，您不必直接与BeanContextAPI 交互，只需使用javax.inject注解和io.micronaut.context.annotation包中定义的注解来满足依赖注入需求</p>
+<h3 id="Requires"><a href="#Requires" class="headerlink" title="@Requires"></a>@Requires</h3><h4 id="简单用例"><a href="#简单用例" class="headerlink" title="简单用例"></a>简单用例</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Singleton</span><br><span class="hljs-meta">@Requires</span>(beans = DataSource<span class="hljs-class">.<span class="hljs-keyword">class</span>) // 应用中必须存在 <span class="hljs-title">DataSource</span>.<span class="hljs-title">class</span> <span class="hljs-title">bean</span>实例</span><br><span class="hljs-class">@<span class="hljs-title">Requires</span>(<span class="hljs-title">property</span> </span>= <span class="hljs-string">"datasource.url"</span>) <span class="hljs-comment">// 引用中必须存在 datasource.url 配置</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JdbcBookService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BookService</span> </span>&#123;<br><br>    DataSource dataSource;<br><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">JdbcBookService</span><span class="hljs-params">(DataSource dataSource)</span> </span>&#123;<br>        <span class="hljs-keyword">this</span>.dataSource = dataSource;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="使用-Requires创建派生注解"><a href="#使用-Requires创建派生注解" class="headerlink" title="使用@Requires创建派生注解"></a>使用@Requires创建派生注解</h4><p>定义</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Documented</span><br><span class="hljs-meta">@Retention</span>(RetentionPolicy.RUNTIME)<br><span class="hljs-meta">@Target</span>(&#123;ElementType.PACKAGE, ElementType.TYPE&#125;)<br><span class="hljs-meta">@Requires</span>(beans = DataSource<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span><br><span class="hljs-class">@<span class="hljs-title">Requires</span>(<span class="hljs-title">property</span> </span>= <span class="hljs-string">"datasource.url"</span>)<br><span class="hljs-keyword">public</span> <span class="hljs-meta">@interface</span> RequiresJdbc &#123;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>使用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@RequiresJdbc</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">JdbcBookService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">BookService</span> </span>&#123;<br>    ...<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="其他使用"><a href="#其他使用" class="headerlink" title="其他使用"></a>其他使用</h4><p><img src="/micronaut%E5%85%A5%E9%97%A8/011.png" alt></p>
+<h2 id="micronaut-environment"><a href="#micronaut-environment" class="headerlink" title="micronaut environment"></a>micronaut environment</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">package</span> com.td;<br><br><span class="hljs-keyword">import</span> io.micronaut.context.ApplicationContext;<br><span class="hljs-keyword">import</span> io.micronaut.context.env.Environment;<br><span class="hljs-keyword">import</span> io.micronaut.runtime.server.EmbeddedServer;<br><span class="hljs-keyword">import</span> org.junit.BeforeClass;<br><span class="hljs-keyword">import</span> org.junit.Test;<br><br><span class="hljs-keyword">import</span> java.util.Map;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 注意：进行junit时，micronaut自动开启test环境配置（application-test.yml）</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@Requires</span>(env = "test") // 注解到类上，表示当前类只有在测试环境才可用</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MicronautTest</span> </span>&#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> EmbeddedServer server;<br><br>    <span class="hljs-meta">@BeforeClass</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setupServer</span><span class="hljs-params">()</span> </span>&#123;<br>        server = ApplicationContext.run(EmbeddedServer<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;<br>    &#125;<br><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test</span><span class="hljs-params">()</span> </span>&#123;<br><br>        <span class="hljs-comment">// 激活环境</span><br>        ApplicationContext applicationContext = ApplicationContext.run(<span class="hljs-string">"test"</span>,<span class="hljs-string">"android"</span>,<span class="hljs-string">"dev"</span>); <span class="hljs-comment">// 激活多个配置，默认使用最后一个</span><br><span class="hljs-comment">//        ApplicationContext applicationContext = ApplicationContext.run(); // 测试环境默认使用test，即application-test.yml</span><br><span class="hljs-comment">//        ApplicationContext applicationContext = ApplicationContext.run("dev");</span><br>        Environment environment = applicationContext.getEnvironment();<br><br>        <span class="hljs-comment">// 输入激活的环境</span><br>        System.out.println( environment.getActiveNames() );<br><br>        Map&lt;String, Object&gt; micronaut = applicationContext.getEnvironment().getProperties(<span class="hljs-string">"micronaut"</span>);<br>        System.out.println(<span class="hljs-string">"application.name = "</span> + micronaut.get(<span class="hljs-string">"application.name"</span>));<br>        System.out.println(<span class="hljs-string">"server.port = "</span> + micronaut.get(<span class="hljs-string">"server.port"</span>));<br>        System.out.println(<span class="hljs-string">"environments = "</span> + micronaut.get(<span class="hljs-string">"environments"</span>));<br>        System.out.println(<span class="hljs-string">"home = "</span> + micronaut.get(<span class="hljs-string">"home"</span>));<br><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="HTTP-Server（提供服务）"><a href="#HTTP-Server（提供服务）" class="headerlink" title="HTTP Server（提供服务）"></a>HTTP Server（提供服务）</h2><h3 id="gradle依赖"><a href="#gradle依赖" class="headerlink" title="gradle依赖"></a>gradle依赖</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs json">dependencies &#123;<br><br>    <span class="hljs-comment">/*依赖注入相关*/</span><br>    annotationProcessor "io.micronaut:micronaut-inject-java"<br>    compileOnly "io.micronaut:micronaut-inject-java"<br>    testCompile "io.micronaut:micronaut-inject-java"<br>    compile "io.micronaut:micronaut-inject"<br>    testCompile "org.hamcrest:hamcrest-all:1.3"<br><br>    <span class="hljs-comment">/* swagger(openapi协议实现) */</span><br>    annotationProcessor "io.micronaut.configuration:micronaut-openapi"<br>    compile "io.swagger.core.v3:swagger-annotations"<br><br>    <span class="hljs-comment">/*校验*/</span><br>    annotationProcessor "io.micronaut:micronaut-validation"<br>    compile "io.micronaut:micronaut-validation"<br>    compile "io.micronaut:micronaut-runtime"<br><br>    <span class="hljs-comment">/*http-client*/</span><br>    compile "io.micronaut:micronaut-http-client"<br>    <span class="hljs-comment">/*http-server*/</span><br>    compile "io.micronaut:micronaut-http-server-netty"<br><br>    <span class="hljs-comment">/*logback日志*/</span><br>    runtime "ch.qos.logback:logback-classic:1.2.3"<br><br>    <span class="hljs-comment">/*服务注册发现*/</span><br>    compile "io.micronaut:micronaut-discovery-client:1.0.4"<br><br>    <span class="hljs-comment">/*junit单元测试*/</span><br>    compile "junit:junit:4.12"<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="controller"><a href="#controller" class="headerlink" title="controller"></a>controller</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">package</span> com.td.controller;<br><br><span class="hljs-keyword">import</span> io.micronaut.context.annotation.Requires;<br><span class="hljs-keyword">import</span> io.micronaut.http.annotation.*;<br><br><span class="hljs-meta">@Requires</span>(env = <span class="hljs-string">"test"</span>) <span class="hljs-comment">// 用于测试环境</span><br><span class="hljs-meta">@Controller</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloController</span> </span>&#123;<br><br><span class="hljs-comment">/*</span><br><span class="hljs-comment">    @Get</span><br><span class="hljs-comment">    @Post</span><br><span class="hljs-comment">    @Put</span><br><span class="hljs-comment">    @Delete</span><br><span class="hljs-comment">    @Head</span><br><span class="hljs-comment">    @Options</span><br><span class="hljs-comment">    @Patch</span><br><span class="hljs-comment">    @Trace</span><br><span class="hljs-comment">    public String hello3 ()&#123;</span><br><span class="hljs-comment">        return "";</span><br><span class="hljs-comment">    &#125;</span><br><span class="hljs-comment">*/</span><br><br>    <span class="hljs-meta">@Get</span>(<span class="hljs-string">"/hello"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">hello</span><span class="hljs-params">()</span></span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">"hello micronaut http!!!"</span>;<br>    &#125;<br><br>    <span class="hljs-comment">/** restful规则</span><br><span class="hljs-comment">     *      格式                     解释                               例子</span><br><span class="hljs-comment">         /books/&#123;id&#125;	        Simple match	                    /books/1</span><br><span class="hljs-comment">         /books/&#123;id:2&#125;	        A variable of 2 characters max	    /books/10</span><br><span class="hljs-comment">         /books&#123;/id&#125;	        An optional URI variable	        /books/10 or /books</span><br><span class="hljs-comment">         /book&#123;/id:[a-zA-Z]+&#125;	An optional URI variable with regex	/books/foo</span><br><span class="hljs-comment">         /books&#123;?max,offset&#125;	Optional query parameters	        /books?max=10&amp;offset=10</span><br><span class="hljs-comment">         /books&#123;/path:.*&#125;&#123;.ext&#125;	Regex path match with extension	    /books/foo/bar.xml</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Get</span>(<span class="hljs-string">"/&#123;number&#125;"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">hello2</span> <span class="hljs-params">(Integer number)</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">"请求的数字是："</span> + number;<br>    &#125;<br><br>    <span class="hljs-meta">@Get</span>(<span class="hljs-string">"/&#123;name&#125;/&#123;age&#125;"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">hello3</span> <span class="hljs-params">(String name, Integer age)</span> </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">"&#123;name:"</span>+ name +<span class="hljs-string">", age:"</span>+ age +<span class="hljs-string">"&#125;"</span>;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="junit-test（EmbeddedServer、HttpClient）"><a href="#junit-test（EmbeddedServer、HttpClient）" class="headerlink" title="junit test（EmbeddedServer、HttpClient）"></a>junit test（EmbeddedServer、HttpClient）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">package</span> com.td;<br><br><br><span class="hljs-keyword">import</span> io.micronaut.context.ApplicationContext;<br><span class="hljs-keyword">import</span> io.micronaut.http.HttpRequest;<br><span class="hljs-keyword">import</span> io.micronaut.http.client.HttpClient;<br><span class="hljs-keyword">import</span> io.micronaut.runtime.server.EmbeddedServer;<br><span class="hljs-keyword">import</span> org.junit.BeforeClass;<br><span class="hljs-keyword">import</span> org.junit.Test;<br><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HttpTest</span> </span>&#123;<br><br>    <span class="hljs-comment">// micronaut提供的嵌入server</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> EmbeddedServer server;<br>    <span class="hljs-comment">// http客户端</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> HttpClient client;<br><br>    <span class="hljs-meta">@BeforeClass</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setupServer</span><span class="hljs-params">()</span> </span>&#123;<br>        server = ApplicationContext.run(EmbeddedServer<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;<br>        System.out.println(<span class="hljs-string">"server.getURL() = "</span> + server.getURL());<br>        client = HttpClient.create( server.getURL() );<br>    &#125;<br><br>    <span class="hljs-comment">// 测试 HelloController @Get("/hello")</span><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test1</span><span class="hljs-params">()</span> </span>&#123;<br><br>        <span class="hljs-comment">/**</span><br><span class="hljs-comment">         * 作用：请求 server.getURL() + /hello</span><br><span class="hljs-comment">         * toBlocking()：返回一个适合测试和非生产场景的阻塞HTTP客户端</span><br><span class="hljs-comment">         * retrieve(HttpRequest.GET("/hello"))：取回 HttpRequest.GET("/hello") 请求返回的内容</span><br><span class="hljs-comment">         */</span><br>        System.out.println( client.toBlocking().retrieve(HttpRequest.GET(<span class="hljs-string">"/hello"</span>)) );<br>    &#125;<br><br>    <span class="hljs-comment">// 测试 @Get("/&#123;number&#125;")</span><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test2</span><span class="hljs-params">()</span> </span>&#123;<br>        System.out.println( client.toBlocking().retrieve(HttpRequest.GET(<span class="hljs-string">"/1"</span>)) );<br>    &#125;<br><br><br>    <span class="hljs-comment">// 测试动态绑定路由MyRoutes</span><br>    <span class="hljs-comment">// @Get("/hello/&#123;number&#125;")</span><br><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test3</span><span class="hljs-params">()</span></span>&#123;<br>        <span class="hljs-comment">// 原来的路由地址 @Get("/&#123;number&#125;")</span><br>        System.out.println( <span class="hljs-string">"@Get(\"/&#123;number&#125;\") = "</span> + client.toBlocking().retrieve(HttpRequest.GET(<span class="hljs-string">"/hello/10000"</span>)) );<br>        <span class="hljs-comment">// 动态绑定路由地址 @Get("/hello/&#123;number&#125;")</span><br>        System.out.println( <span class="hljs-string">"@Get(\"/hello/&#123;number&#125;\") = "</span> + client.toBlocking().retrieve(HttpRequest.GET(<span class="hljs-string">"/hello/10000"</span>)) );<br>    &#125;<br><br>    <span class="hljs-comment">// 测试 @Get("/&#123;name&#125;/&#123;age&#125;")</span><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">test4</span><span class="hljs-params">()</span> </span>&#123;<br>        System.out.println( client.toBlocking().retrieve(HttpRequest.GET(<span class="hljs-string">"/tandi/23"</span>)) );<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="编程式绑定路由"><a href="#编程式绑定路由" class="headerlink" title="编程式绑定路由"></a>编程式绑定路由</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">package</span> com.td.Building_Routes_Programmatically;<br><br><span class="hljs-keyword">import</span> com.td.controller.HelloController;<br><span class="hljs-keyword">import</span> io.micronaut.context.ExecutionHandleLocator;<br><span class="hljs-keyword">import</span> io.micronaut.context.annotation.Requires;<br><span class="hljs-keyword">import</span> io.micronaut.web.router.DefaultRouteBuilder;<br><br><span class="hljs-keyword">import</span> javax.inject.Inject;<br><span class="hljs-keyword">import</span> javax.inject.Singleton;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 功能：动态地帮助controller绑定路由</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">@Requires</span>(env = <span class="hljs-string">"test"</span>)<br><span class="hljs-comment">//@Requires(env = "dev") // 必须dev环境才可用</span><br><span class="hljs-meta">@Singleton</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyRoutes</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">DefaultRouteBuilder</span> </span>&#123;<br><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">MyRoutes</span><span class="hljs-params">(ExecutionHandleLocator executionHandleLocator, UriNamingStrategy uriNamingStrategy)</span> </span>&#123;<br>        <span class="hljs-keyword">super</span>(executionHandleLocator, uriNamingStrategy);<br>    &#125;<br><br>    <span class="hljs-meta">@Inject</span><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">issuesRoutes</span><span class="hljs-params">(HelloController helloController)</span> </span>&#123;<br>        <span class="hljs-comment">/**</span><br><span class="hljs-comment">         * 注意：原来helloController.hello2  <span class="hljs-doctag">@Get</span>("/&#123;number&#125;")</span><br><span class="hljs-comment">         *</span><br><span class="hljs-comment">         * 路由："/hello/&#123;number&#125;"</span><br><span class="hljs-comment">         * 目标控制器：helloController</span><br><span class="hljs-comment">         * 目标控制器方法：hello2</span><br><span class="hljs-comment">         * 传入参数的类型：Integer.class</span><br><span class="hljs-comment">         */</span><br>        GET(<span class="hljs-string">"/hello/&#123;number&#125;"</span>, helloController, <span class="hljs-string">"hello2"</span>, Integer<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="HTTP-Client（消费服务）"><a href="#HTTP-Client（消费服务）" class="headerlink" title="HTTP Client（消费服务）"></a>HTTP Client（消费服务）</h2><h3 id="gradle依赖-1"><a href="#gradle依赖-1" class="headerlink" title="gradle依赖"></a>gradle依赖</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs json">dependencies &#123;<br><br>    <span class="hljs-comment">/*依赖注入相关*/</span><br>    annotationProcessor "io.micronaut:micronaut-inject-java"<br>    compileOnly "io.micronaut:micronaut-inject-java"<br>    testCompile "io.micronaut:micronaut-inject-java"<br>    compile "io.micronaut:micronaut-inject"<br>    testCompile "org.hamcrest:hamcrest-all:1.3"<br><br>    <span class="hljs-comment">/* swagger(openapi协议实现) */</span><br>    annotationProcessor "io.micronaut.configuration:micronaut-openapi"<br>    compile "io.swagger.core.v3:swagger-annotations"<br><br>    <span class="hljs-comment">/*校验*/</span><br>    annotationProcessor "io.micronaut:micronaut-validation"<br>    compile "io.micronaut:micronaut-validation"<br>    compile "io.micronaut:micronaut-runtime"<br><br>    <span class="hljs-comment">/*http-client*/</span><br>    compile "io.micronaut:micronaut-http-client"<br>    <span class="hljs-comment">/*http-server*/</span><br>    compile "io.micronaut:micronaut-http-server-netty"<br><br>    <span class="hljs-comment">/*logback日志*/</span><br>    runtime "ch.qos.logback:logback-classic:1.2.3"<br><br>    <span class="hljs-comment">/*服务注册发现*/</span><br>    compile "io.micronaut:micronaut-discovery-client:1.0.4"<br><br>    <span class="hljs-comment">/*junit单元测试*/</span><br>    compile "junit:junit:4.12"<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="HttpClient简单使用"><a href="#HttpClient简单使用" class="headerlink" title="HttpClient简单使用"></a>HttpClient简单使用</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">package</span> com.td.controller;<br><br><span class="hljs-keyword">import</span> io.micronaut.http.HttpRequest;<br><span class="hljs-keyword">import</span> io.micronaut.http.annotation.Controller;<br><span class="hljs-keyword">import</span> io.micronaut.http.annotation.Get;<br><span class="hljs-keyword">import</span> io.micronaut.http.client.HttpClient;<br><span class="hljs-keyword">import</span> org.reactivestreams.Publisher;<br><br><span class="hljs-keyword">import</span> java.net.URL;<br><br><span class="hljs-meta">@Controller</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloController</span> </span>&#123;<br><br>    <span class="hljs-meta">@Get</span>(<span class="hljs-string">"/show"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> Publisher&lt;String&gt; <span class="hljs-title">show</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception</span>&#123;<br>        Publisher&lt;String&gt; retrieve = HttpClient.create(<span class="hljs-keyword">new</span> URL(<span class="hljs-string">"http://localhost:8080"</span>)).retrieve(HttpRequest.GET(<span class="hljs-string">"/"</span>));<br>        <span class="hljs-keyword">return</span> retrieve;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="微服务远程调用"><a href="#微服务远程调用" class="headerlink" title="微服务远程调用"></a>微服务远程调用</h3><blockquote>
+<p>参考文章《使用micronaut实现微服务》</p>
+</blockquote>
+<h2 id="websocket和server-sent-event（sse）区别"><a href="#websocket和server-sent-event（sse）区别" class="headerlink" title="websocket和server sent event（sse）区别"></a>websocket和server sent event（sse）区别</h2><blockquote>
+<p>以下参考文章：<a href="http://www.importnew.com/21967.html" target="_blank" rel="noopener">http://www.importnew.com/21967.html</a></p>
+</blockquote>
+<ol>
+<li>都可以进行服务端推送，并且都是长连接进行</li>
+<li>sse仍然使用http协议进行通讯，即正常的http报文；而websocket是使用http协议进行握手,然后再使用同一个链接进行websocket协议的通信</li>
+<li>websocket可以进行双向（双端）通讯，即server端可以向client端发送消息，client端也能向server端发送消息；sse是单向通讯，只能由server端发送消息给client端</li>
+<li>websocket自带连接的保持,即通过ping/pong协议保证连接可以始终维持,sse没有这个保证,不过可以参考ping/pong协议,自己周期性地发送信息来同样地进行处理.比如,5秒往客户端发一个特别的信息(通过type/name进行区分).其次,因为是基于浏览器的使用,sse有一个特性,就是浏览器发现一个连接断掉了,就会自动地进行重联,即重新发送请求.这样,服务端也不用担心连接被断开,不过需要处理新的请求必须和上一次请求的内容相连续,以及新的推送注册</li>
+<li>由于都是基于浏览器使用,因此建议的数据传输都是文本型.虽然websocket支持二进制frame传输,不过一些都不建议使用.sse只能传输文本</li>
+<li>不管是websocket还是sse,在用于通信时,都建议只用于进行数据的推送,而不是进行完整的应用处理.这里可以理解为,常规的业务处理仍然交给后端的服务来处理.这样,即可以使用之前的业务开发的优势,又可以使用推送的优势.而不是走向另一个级端,即所有的信息都想通过推送来传递</li>
+</ol>
+<h2 id="swagger（open-api接口规范）"><a href="#swagger（open-api接口规范）" class="headerlink" title="swagger（open api接口规范）"></a>swagger（open api接口规范）</h2><h3 id="open-api接口规范"><a href="#open-api接口规范" class="headerlink" title="open api接口规范"></a>open api接口规范</h3><p>OpenAPI规范始于Swagger规范，经过Reverb Technologies和SmartBear等公司多年的发展，OpenAPI计划拥有该规范（捐赠之后），OpenAPI Initiative在GitHub上托管社区驱动的规范。规范是一种与语言无关的格式，用于描述RESTful Web服务，应用程序可以解释生成的文件，这样才能生成代码、生成文档并根据其描述的服务创建模拟应用</p>
+<h3 id="micronaut-swagger"><a href="#micronaut-swagger" class="headerlink" title="micronaut swagger"></a>micronaut swagger</h3><h4 id="步骤1：配置依赖和application-yml"><a href="#步骤1：配置依赖和application-yml" class="headerlink" title="步骤1：配置依赖和application.yml"></a>步骤1：配置依赖和application.yml</h4><p>build.gradle</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs gradle"><span class="hljs-keyword">dependencies</span> &#123;<br><br>	<span class="hljs-comment">/* swagger(openapi协议实现) */</span><br>    annotationProcessor <span class="hljs-string">"io.micronaut.configuration:micronaut-openapi"</span><br>    <span class="hljs-keyword">compile</span> <span class="hljs-string">"io.swagger.core.v3:swagger-annotations"</span><br>    <br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>application.yml</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">micronaut:</span><br>    <span class="hljs-attr">application:</span><br>        <span class="hljs-attr">name:</span> <span class="hljs-string">ioc-normal</span> <span class="hljs-comment"># 应用名称</span><br>    <span class="hljs-attr">server:</span><br>        <span class="hljs-attr">port:</span> <span class="hljs-number">8888</span><br><span class="hljs-comment">#        port: -1  随机端口号</span><br><br><span class="hljs-comment">#	swagger配置</span><br>    <span class="hljs-attr">router:</span><br>      <span class="hljs-attr">static-resources:</span><br>        <span class="hljs-attr">swagger:</span><br>          <span class="hljs-attr">paths:</span> <span class="hljs-string">classpath:META-INF/swagger</span><br>          <span class="hljs-attr">mapping:</span> <span class="hljs-string">/swagger/**</span><br><span class="hljs-comment">#consul:</span><br><span class="hljs-comment">#  client:</span><br><span class="hljs-comment">#    registration:</span><br><span class="hljs-comment">#      enabled: true</span><br><span class="hljs-comment">#    defaultZone: "$&#123;CONSUL_HOST:192.168.4.163&#125;:$&#123;CONSUL_PORT:8500&#125;"</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h4 id="步骤2：应用open-api"><a href="#步骤2：应用open-api" class="headerlink" title="步骤2：应用open api"></a>步骤2：应用open api</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/*步骤1：配置swagger*/</span><br><span class="hljs-meta">@OpenAPIDefinition</span>(<br>    info = <span class="hljs-meta">@Info</span>(<br>        title = <span class="hljs-string">"Hello Swagger"</span>,<br>        version = <span class="hljs-string">"0.1"</span>,<br>        description = <span class="hljs-string">"第一次使用swagger"</span>,<br>        license = <span class="hljs-meta">@License</span>(name = <span class="hljs-string">"Apache 2.0"</span>, url = <span class="hljs-string">"http://localhost:8888"</span>),<br>        contact = <span class="hljs-meta">@Contact</span>(url = <span class="hljs-string">"http://tandi.cc"</span>, name = <span class="hljs-string">"TanDi"</span>, email = <span class="hljs-string">"tandi@163.com"</span>)<br>    )<br>)<br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Application</span> </span>&#123;<br><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> </span>&#123;<br>        Micronaut.run(Application<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="步骤3：使用例子"><a href="#步骤3：使用例子" class="headerlink" title="步骤3：使用例子"></a>步骤3：使用例子</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">package</span> com.td.controller;<br><br><span class="hljs-keyword">import</span> io.micronaut.http.MediaType;<br><span class="hljs-keyword">import</span> io.micronaut.http.annotation.Controller;<br><span class="hljs-keyword">import</span> io.micronaut.http.annotation.Get;<br><span class="hljs-keyword">import</span> io.swagger.v3.oas.annotations.Operation;<br><span class="hljs-keyword">import</span> io.swagger.v3.oas.annotations.Parameter;<br><span class="hljs-keyword">import</span> io.swagger.v3.oas.annotations.media.Content;<br><span class="hljs-keyword">import</span> io.swagger.v3.oas.annotations.media.Schema;<br><span class="hljs-keyword">import</span> io.swagger.v3.oas.annotations.responses.ApiResponse;<br><span class="hljs-keyword">import</span> io.swagger.v3.oas.annotations.tags.Tag;<br><br><span class="hljs-keyword">import</span> javax.validation.constraints.NotBlank;<br><span class="hljs-keyword">import</span> java.util.HashMap;<br><span class="hljs-keyword">import</span> java.util.Map;<br><br><span class="hljs-meta">@Controller</span><br><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloSwagger</span> </span>&#123;<br><br>    <span class="hljs-meta">@Get</span>(<span class="hljs-string">"/hello"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">hello</span><span class="hljs-params">()</span></span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">"hello swagger my name is tandi !!!"</span>;<br>    &#125;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * swagger注解使用</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> name</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span></span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-meta">@Get</span>(uri=<span class="hljs-string">"/hello/&#123;name&#125;"</span>, produces= MediaType.TEXT_PLAIN)<br>    <span class="hljs-meta">@Operation</span>(<br>       summary = <span class="hljs-string">"获取一个person"</span>,<br>       description = <span class="hljs-string">"通过名称来去获取一个person"</span><br>    )<br><br>    <span class="hljs-meta">@ApiResponse</span>(<br>        content = <span class="hljs-meta">@Content</span>(mediaType = <span class="hljs-string">"application/json"</span>,<br>        schema = <span class="hljs-meta">@Schema</span>(type=<span class="hljs-string">"string"</span>))<br>    )<br>    <span class="hljs-meta">@ApiResponse</span>(responseCode = <span class="hljs-string">"404"</span>, description = <span class="hljs-string">"没有找到该person"</span>)<br>    <span class="hljs-meta">@Tag</span>(name = <span class="hljs-string">"greeting"</span>)<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">hello</span><span class="hljs-params">(@Parameter(description=<span class="hljs-string">"person name（名称）"</span>)</span> @NotBlank String name) </span>&#123;<br>        Map&lt;String, String&gt; map = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();<br>        map.put(<span class="hljs-string">"tandi"</span>, <span class="hljs-string">"&#123;name:tandi, age:23&#125;"</span>);<br>        map.put(<span class="hljs-string">"zhangsan"</span>, <span class="hljs-string">"&#123;name:zhangsan, age:28&#125;"</span>);<br>        <span class="hljs-keyword">return</span> map.get(name);<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="步骤4：构建项目生产open-api文档"><a href="#步骤4：构建项目生产open-api文档" class="headerlink" title="步骤4：构建项目生产open api文档"></a>步骤4：构建项目生产open api文档</h4><blockquote>
+<p>构建过后，会在项目构建文件夹生成以下文件</p>
+</blockquote>
+<p><img src="/micronaut%E5%85%A5%E9%97%A8/012.png" alt></p>
+<p>io.micronaut.inject.BeanDefinitionReference</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">com<span class="hljs-selector-class">.td</span><span class="hljs-selector-class">.controller</span>.<span class="hljs-variable">$HelloSwaggerDefinitionClass</span><br></code></pre></td></tr></table></figure>
+
+<p>hello-swagger-0.1.yml</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">openapi:</span> <span class="hljs-number">3.0</span><span class="hljs-number">.1</span><br><span class="hljs-attr">info:</span><br>  <span class="hljs-attr">title:</span> <span class="hljs-string">Hello</span> <span class="hljs-string">Swagger</span><br>  <span class="hljs-attr">description:</span> <span class="hljs-string">第一次使用swagger</span><br>  <span class="hljs-attr">contact:</span><br>    <span class="hljs-attr">name:</span> <span class="hljs-string">TanDi</span><br>    <span class="hljs-attr">url:</span> <span class="hljs-string">http://tandi.cc</span><br>    <span class="hljs-attr">email:</span> <span class="hljs-string">tandi@163.com</span><br>  <span class="hljs-attr">license:</span><br>    <span class="hljs-attr">name:</span> <span class="hljs-string">Apache</span> <span class="hljs-number">2.0</span><br>    <span class="hljs-attr">url:</span> <span class="hljs-string">http://localhost:8888</span><br>  <span class="hljs-attr">version:</span> <span class="hljs-string">"0.1"</span><br><span class="hljs-attr">paths:</span><br>  <span class="hljs-string">/hello:</span><br>    <span class="hljs-attr">get:</span><br>      <span class="hljs-attr">operationId:</span> <span class="hljs-string">hello</span><br>      <span class="hljs-attr">parameters:</span> <span class="hljs-string">[]</span><br>      <span class="hljs-attr">responses:</span><br>        <span class="hljs-attr">default:</span><br>          <span class="hljs-attr">content:</span><br>            <span class="hljs-attr">application/json:</span><br>              <span class="hljs-attr">schema:</span><br>                <span class="hljs-attr">type:</span> <span class="hljs-string">string</span><br>  <span class="hljs-string">/hello/&#123;name&#125;:</span><br>    <span class="hljs-attr">get:</span><br>      <span class="hljs-attr">tags:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">greeting</span><br>      <span class="hljs-attr">summary:</span> <span class="hljs-string">获取一个person</span><br>      <span class="hljs-attr">description:</span> <span class="hljs-string">通过名称来去获取一个person</span><br>      <span class="hljs-attr">operationId:</span> <span class="hljs-string">hello</span><br>      <span class="hljs-attr">parameters:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">name</span><br>        <span class="hljs-attr">in:</span> <span class="hljs-string">path</span><br>        <span class="hljs-attr">description:</span> <span class="hljs-string">person</span> <span class="hljs-string">name（名称）</span><br>        <span class="hljs-attr">required:</span> <span class="hljs-literal">true</span><br>        <span class="hljs-attr">schema:</span><br>          <span class="hljs-attr">minLength:</span> <span class="hljs-number">1</span><br>          <span class="hljs-attr">type:</span> <span class="hljs-string">string</span><br>      <span class="hljs-attr">responses:</span><br>        <span class="hljs-attr">default:</span><br>          <span class="hljs-attr">content:</span><br>            <span class="hljs-attr">application/json:</span><br>              <span class="hljs-attr">schema:</span><br>                <span class="hljs-attr">type:</span> <span class="hljs-string">string</span><br>        <span class="hljs-attr">404:</span><br>          <span class="hljs-attr">description:</span> <span class="hljs-string">没有找到该person</span><br></code></pre></td></tr></table></figure>
+
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/">编程</a>
+                    
+                      <a class="hover-with-bg" href="/categories/%E7%BC%96%E7%A8%8B/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">搭建ELK日志收集系统</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/minio%E4%BD%BF%E7%94%A8/">
+                        <span class="hidden-mobile">认识Minio</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments">
+                
+                
+  <div id="gitalk-container"></div>
+  <script type="text/javascript">
+    Fluid.utils.waitElementVisible('gitalk-container', function() {
+      Fluid.utils.createCssLink('/css/gitalk.css')
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/gitalk@1.7.0/dist/gitalk.min.js', function () {
+        var gitalk = new Gitalk({
+          clientID: '38b84fb92012be686d1c',
+          clientSecret: '07d8c293396fc7241197da71eaf6bc0907e360a6',
+          repo: 'hexo-comments',
+          owner: 'oomgomgxx',
+          admin: ["oomgomgxx"],
+          id: '38405f77f28f3ca3ed87bace2cc97bb8',
+          language: 'zh-CN',
+          labels: ["Gitalk"],
+          perPage: 10,
+          pagerDirection: 'last',
+          createIssueManually: true,
+          distractionFreeMode: false
+        });
+        gitalk.render('gitalk-container');
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+    <font color="red">温馨提示：网站修建中。。。</font>
+  </div>
+  
+
+  
+
+  
+</footer>
+
+<!-- SCRIPTS -->
+
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":200})
+    NProgress.start()
+    document.addEventListener('DOMContentLoaded', function() {
+      window.NProgress && window.NProgress.inc();
+    })
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.0/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      var inputArea = document.querySelector("#local-search-input");
+      inputArea.onclick = function () {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+        this.onclick = null
+      }
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+
+</body>
+</html>
