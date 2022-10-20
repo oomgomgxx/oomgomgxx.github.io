@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      Redis高可用解决方案 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Jan 05, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      Redis高可用解决方案
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>官方为Redis提供了两个高可用解决方案，分别是：<code>Replica</code> 和 <code>Cluster</code></p>
+<p>其中 Replica 能够解决<code>单点故障</code>、<code>实时备份</code>和<code>负载均衡</code>等问题。而 Sentinel 和 Cluster 均基于 Replica。</p>
+<h2 id="Replica"><a href="#Replica" class="headerlink" title="Replica"></a>Replica</h2><blockquote>
+<p>Redis版本：5.0.5</p>
+<p>Replica存在问题：无法做到故障转移</p>
+</blockquote>
+<h3 id="建立复制的3种方法"><a href="#建立复制的3种方法" class="headerlink" title="建立复制的3种方法"></a>建立复制的3种方法</h3><h4 id="方法1：配置文件"><a href="#方法1：配置文件" class="headerlink" title="方法1：配置文件"></a>方法1：配置文件</h4><p>以下使用3个节点来做主从复制操作</p>
+<ul>
+<li>redis01（主节点）</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">bind 127.0.0.1</span><br><span class="line">port 6379</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>redis02</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bind 127.0.0.1</span><br><span class="line">port 6380</span><br><span class="line">replicaof 127.0.0.1 6379 # 复制目标</span><br><span class="line">replica-read-only yes # 从库只读，默认</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>redis03</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bind 127.0.0.1</span><br><span class="line">port 6381</span><br><span class="line">replicaof 127.0.0.1 6379 # 复制目标</span><br><span class="line">replica-read-only yes # 从库只读，默认</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>启动顺序：redis01 -&gt; redis02 和 redis03</p>
+</li>
+<li><p>测试复制</p>
+</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">连接上主节点6379</span></span><br><span class="line">➜  redis-replica redis01/bin/redis-cli </span><br><span class="line">127.0.0.1:6379&gt; set person:name zhangsan</span><br><span class="line">OK               </span><br><span class="line">127.0.0.1:6379&gt; get person:name</span><br><span class="line">&quot;zhangsan&quot;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">连接上从节点6380</span></span><br><span class="line">➜  redis-replica redis01/bin/redis-cli -p 6380</span><br><span class="line">127.0.0.1:6380&gt; get person:name # 获取到主节点写入的数据</span><br><span class="line">&quot;zhangsan&quot;</span><br><span class="line">127.0.0.1:6380&gt; set person:name2 lisi # 因为是从节点所以无法写入</span><br><span class="line">(error) READONLY You can&#x27;t write against a read only replica.</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="方法2：启动参数（推荐）"><a href="#方法2：启动参数（推荐）" class="headerlink" title="方法2：启动参数（推荐）"></a>方法2：启动参数（推荐）</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">bin/redis-server redis.conf</span><br><span class="line">bin/redis-server --port 6380 --replicaof 127.0.0.1 6379</span><br><span class="line">bin/redis-server --port 6381 --replicaof 127.0.0.1 6379</span><br></pre></td></tr></table></figure>
+
+<h4 id="方法3：使用命令"><a href="#方法3：使用命令" class="headerlink" title="方法3：使用命令"></a>方法3：使用命令</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  redis-replica redis01/bin/redis-cli -p 6380</span><br><span class="line">127.0.0.1:6380&gt; replicaof 127.0.0.1 6379</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="查看主从复制信息"><a href="#查看主从复制信息" class="headerlink" title="查看主从复制信息"></a>查看主从复制信息</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">从节点</span></span><br><span class="line">127.0.0.1:6380&gt; info replication</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Replication</span></span><br><span class="line">role:slave</span><br><span class="line">master_host:127.0.0.1</span><br><span class="line">master_port:6379</span><br><span class="line">master_link_status:up</span><br><span class="line">master_last_io_seconds_ago:9</span><br><span class="line">master_sync_in_progress:0</span><br><span class="line">slave_repl_offset:84</span><br><span class="line">slave_priority:100</span><br><span class="line">slave_read_only:1</span><br><span class="line">connected_slaves:0</span><br><span class="line">master_replid:86faaec0bb925d960589ab10cdc5552b33df81f9</span><br><span class="line">master_replid2:0000000000000000000000000000000000000000</span><br><span class="line">master_repl_offset:84</span><br><span class="line">second_repl_offset:-1</span><br><span class="line">repl_backlog_active:1</span><br><span class="line">repl_backlog_size:1048576</span><br><span class="line">repl_backlog_first_byte_offset:29</span><br><span class="line">repl_backlog_histlen:56</span><br><span class="line">127.0.0.1:6380&gt; </span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">主节点</span>                      </span><br><span class="line">127.0.0.1:6379&gt; info replication</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Replication</span></span><br><span class="line">role:master</span><br><span class="line">connected_slaves:2</span><br><span class="line">slave0:ip=127.0.0.1,port=6380,state=online,offset=266,lag=1</span><br><span class="line">slave1:ip=127.0.0.1,port=6381,state=online,offset=266,lag=1</span><br><span class="line">master_replid:86faaec0bb925d960589ab10cdc5552b33df81f9</span><br><span class="line">master_replid2:0000000000000000000000000000000000000000</span><br><span class="line">master_repl_offset:266</span><br><span class="line">second_repl_offset:-1</span><br><span class="line">repl_backlog_active:1</span><br><span class="line">repl_backlog_size:1048576</span><br><span class="line">repl_backlog_first_byte_offset:1</span><br><span class="line">repl_backlog_histlen:266</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="断开复制"><a href="#断开复制" class="headerlink" title="断开复制"></a>断开复制</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">➜  redis-replica redis01/bin/redis-cli -p 6381</span><br><span class="line">127.0.0.1:6381&gt; replicaof no one # 从节点断开复制</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">127.0.0.1:6381&gt; info replication</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Replication</span></span><br><span class="line">role:master # 断开复制后，节点晋升回主节点，可提供读写服务</span><br><span class="line">connected_slaves:0</span><br><span class="line">master_replid:9cc30a694d9593eec57d0af180b66889721abfa7</span><br><span class="line">master_replid2:86faaec0bb925d960589ab10cdc5552b33df81f9</span><br><span class="line">master_repl_offset:588</span><br><span class="line">second_repl_offset:589</span><br><span class="line">repl_backlog_active:1</span><br><span class="line">repl_backlog_size:1048576</span><br><span class="line">repl_backlog_first_byte_offset:253</span><br><span class="line">repl_backlog_histlen:336</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="复制的过程"><a href="#复制的过程" class="headerlink" title="复制的过程"></a>复制的过程</h3><ol>
+<li><strong>保存主节点信息</strong></li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">从节点</span></span><br><span class="line">127.0.0.1:6381&gt; info replication</span><br><span class="line">...</span><br><span class="line">master_host:127.0.0.1  # 主节点地址</span><br><span class="line">master_port:6379 # 主节点端口</span><br><span class="line">master_link_status:up # 连接状态（up/down）</span><br><span class="line">master_sync_in_progress:0 # 从节点是否正在进行全量复制（大于0表示是）</span><br><span class="line">master_repl_offset:4958 # 复制偏移量</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>主从建立socket连接</strong></li>
+</ol>
+<p>从节点内部有一个定时任务，作用是每隔1秒检测发现是否有新的主节点。</p>
+<p>当发现有新的主节点后，从节点就会建立一个端口为 24555 的套接字来接收主节点发送过来的数据。</p>
+<ol start="3">
+<li><strong>发送ping命令</strong></li>
+</ol>
+<p>成功建立socket连接之后，从节点会使用ping命令首次和主节点通信。</p>
+<p>目的如下：</p>
+<ul>
+<li>检测主从节点之间的套接字是否可用</li>
+<li>检测主节点是否可以接收处理命令</li>
+</ul>
+<p><code>注意：如果ping命令后没有收到pong命令（每隔1秒轮询），则从节点会先断开socket连接，等到下次定时任务启动再建立。</code></p>
+<ol start="4">
+<li><strong>权限验证</strong></li>
+</ol>
+<p>如果主节点设置了<code>requirepass</code>参数，既表示需要进行密码验证。这时从节点必须设置<code>masterauth</code> 参数来设置连接密码。</p>
+<ol start="5">
+<li><strong>同步数据集</strong></li>
+</ol>
+<p>在成功通信后，主节点会将自己所持有的数据全部复制（发送）给从节点（通过复制命令psync）。</p>
+<p>包含2种复制情况：</p>
+<ul>
+<li><p><strong>全量复制：</strong>当数据量大时，会对主节点和网络造成很大的开销</p>
+<ol>
+<li><code>第一次连接上主节点时，注意这时主节点会生成RDB快照文件并发送给从节点</code></li>
+<li>主节点运行 ID 改变时（例如重启。可以通过debug reload重启加载 redis 而不改变运行ID）</li>
+<li>复制积压缓冲区没有从节点需要的数据。譬如主从断开时间较长，期间主节点进行了大量写操作而导致缓冲区后写入的内容覆盖了早写入的内容</li>
+</ol>
+</li>
+<li><p><strong>增量复制</strong></p>
+<ol>
+<li>由于网络原因最近的数据没有成功同步（譬如断网或从节点宕机），而主节点复制积压缓冲区存在该命令（通过对比复制偏移量再次同步这部分数据）</li>
+</ol>
+</li>
+</ul>
+<ol start="6">
+<li><strong>命令持续复制</strong></li>
+</ol>
+<p>主节点会将当前接受到的写命令实时复制给从节点的同时会将发送内容记录在<code>复制积压缓冲区</code>。</p>
+<p>复制积压缓冲区相当于是一个主节点用来暂存稍后需要发送的增量数据的地方，它是一个环形结构的缓冲区，大小通过 repl_backlog_size 配置。</p>
+<p>值得注意的是因为是环形结构，所以即使缓冲区被写满主节点也会正常继续写入，这时就会导致新旧写入的内容被新写入的内容所覆盖。因此<code>复制积压缓冲区大小不宜过小，因为如果从节点故障恢复后发现主节点中并没有它确实的数据（通过对比主从的复制偏移量得知），就会触发全量复制，既主节点这时需要生成 RDB 文件并传输给从节点，因此复制效率会降低之余还会影响主节点性能</code>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info replication</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Replication</span></span><br><span class="line">...</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">复制积压缓冲区信息</span></span><br><span class="line">repl_backlog_active:1 # 是否开启，0为关闭</span><br><span class="line">repl_backlog_size:1048576 # 【重要】：复制积压缓冲区大小</span><br><span class="line">repl_backlog_first_byte_offset:1 # 起始偏移量</span><br><span class="line">repl_backlog_histlen:11482 # 存储在积压缓冲区的有效大小</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="关于Redis复制的使用问题"><a href="#关于Redis复制的使用问题" class="headerlink" title="关于Redis复制的使用问题"></a>关于Redis复制的使用问题</h3><h4 id="读写分离"><a href="#读写分离" class="headerlink" title="读写分离"></a>读写分离</h4><blockquote>
+<p>注意：其实不推荐直接使用复制来做读写分离，而是应该尽量考虑 Redis 集群</p>
+</blockquote>
+<p>读写分离可以解决Redis的高负载问题，通常在读多写少的场景使用，通过<code>主节点写</code>，<code>从节点读</code>解决。</p>
+<p>Redis读写分离存在以下问题：</p>
+<ul>
+<li><strong>复制数据延迟</strong></li>
+</ul>
+<p>复制延迟在网络上是一个不可避免的问题，延迟程序取决与<code>网络速度</code>和<code>命令阻塞程度</code></p>
+<ul>
+<li><strong>读到过期数据</strong></li>
+</ul>
+<p>存在这个问题是因为Redis的删除策略：<code>惰性删除</code>、<code>定时删除</code></p>
+<p><code>惰性删除</code>：主节点在获取key的时候会检查key是否过期，如果过期则删除key并将删除命令同步给从节点。</p>
+<p><code>定时删除</code>：除了惰性删除，Redis内部还维护了一个定时任务，用于轮询检测并删除过期的key，删除后会通过主节点同步删除命令给从节点。</p>
+<p>那么就可能会发生这么一种情况，在某时刻大量key失效，主节点无法及时将删除命令同步给从节点，而这是用户在从节点对某个过期（将要被删除）的key进行了访问，这就造成了读到过期数据的问题。</p>
+<ul>
+<li><strong>节点故障</strong></li>
+</ul>
+<p>Redis复制有个非常大的缺点，就是无法做到故障转移，且在主从复制中从节点通常为了避免导致数据不一致而被设置成只读。因为在上述基础上可能会出现以下情况：</p>
+<ol>
+<li><p>主节点故障：用户无法写入，只能进行读操作</p>
+</li>
+<li><p>从节点故障：读写分离下用户无法读取数据</p>
+</li>
+</ol>
+<p>之所以会出现上述两个问题的主要原因是<code>用户无法感知节点停止服务</code></p>
+<h4 id="配置问题"><a href="#配置问题" class="headerlink" title="配置问题"></a>配置问题</h4><p>在复制中从节点配置是可以和主节点不一致的，比如通常的做法是：<code>主节点关闭AOF备份，而在从节点上开启，这样做可以提高主节点的性能，而且主从复制也是备份的一种</code>。</p>
+<p>除此之外，从<code>Reids 5</code>开始提供参数<code>replica-ignore-maxmemory</code>来决定从节点是否忽略<code>maxmemory剔除策略，默认为yes</code>，既表示从节点不会自己剔除key，而必须通过主节点同步操作来删除。这样做的用意是<code>保证从节点不会因为maxmemory策略而导致数据与主节点不一致</code>。同样由于这个原因，从节点的 maxmemory 一般比主节点的 maxmemory 要大，因为从节点不会 maxmemory 剔除数据。</p>
+<h4 id="复制风暴问题"><a href="#复制风暴问题" class="headerlink" title="复制风暴问题"></a>复制风暴问题</h4><p><code>复制风暴指的是主节点在短时间内和多个从节点建立连接从而引起大量全量复制</code>。复制风暴会导致主节点 CPU 急剧升高，以及内存和宽带被大量消耗，从而降低主节点吞吐量。</p>
+<p>针对该问题 Redis 的做法是主节点为从节点生成 RDB 时，如果这时有多个从节点发起全量复制请求，那么这些从节点将共享当前生成的这个 RDB 文件，通过这种方式可以大大降低主节点的性能开销。</p>
+<blockquote>
+<p>如何避免复制风暴？</p>
+</blockquote>
+<ol>
+<li>减少主节点上的从节点数，改用树结构</li>
+</ol>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/003.png"></p>
+<ol start="2">
+<li>避免多个主节点部署在同一台机器上</li>
+</ol>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/002.png"></p>
+<h3 id="复制常用配置"><a href="#复制常用配置" class="headerlink" title="复制常用配置"></a>复制常用配置</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 主节点位置</span></span><br><span class="line"><span class="attr">replicaof</span> <span class="string">&lt;masterip&gt; &lt;masterport&gt;</span></span><br><span class="line"><span class="comment"># 从节点是否只读</span></span><br><span class="line"><span class="attr">replica-read-only</span> <span class="string">yes</span></span><br><span class="line"><span class="comment"># 复制超时，如果数据量很大，该值适当调高</span></span><br><span class="line"><span class="attr">repl-timeout</span> <span class="string">60</span></span><br><span class="line"><span class="comment"># 主节点密码</span></span><br><span class="line"><span class="attr">masterauth</span> <span class="string">&lt;master-password&gt;</span></span><br><span class="line"><span class="comment"># 积压缓冲区大小</span></span><br><span class="line"><span class="attr">repl-backlog-size</span> <span class="string">1mb</span></span><br><span class="line"><span class="comment"># 在没有从节点的情况下多久释放复制积压缓冲区</span></span><br><span class="line"><span class="attr">repl-backlog-ttl</span> <span class="string">3600</span></span><br><span class="line"><span class="comment"># 选举优先级别，范围在 0-100。数字越低，优先级越高</span></span><br><span class="line"><span class="attr">replica-priority</span> <span class="string">100</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># 延迟低于10s的从节点被视为健康节点</span></span><br><span class="line"><span class="attr">min-replicas-max-lag</span> <span class="string">10</span></span><br><span class="line"><span class="comment"># 健康节点至少有三个时，主节点才会向从节点进行写操作。（前提是从节点数超过3个）</span></span><br><span class="line"><span class="comment"># 除吃之外，该配置还可以解决脑裂问题</span></span><br><span class="line"><span class="attr">min-replicas-to-write</span> <span class="string">3</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Sentinel"><a href="#Sentinel" class="headerlink" title="Sentinel"></a>Sentinel</h2><h3 id="是什么有什么用？"><a href="#是什么有什么用？" class="headerlink" title="是什么有什么用？"></a>是什么有什么用？</h3><blockquote>
+<p>如图所示，Sentinel 是用来监控 Redis 的复制模式的。</p>
+</blockquote>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/004.png"></p>
+<p>Sentinel 其实是 Redis 的一种特殊节点，功能如下：</p>
+<ul>
+<li>发现故障</li>
+<li>故障转移</li>
+<li>通知客户端程序</li>
+</ul>
+<p>Sentinel 节点可以监控<code>数据节点</code> 以及 <code>监管其他Sentinel节点</code>，其操作如下：</p>
+<ul>
+<li>检测节点<code>是否可达</code>，不可达时则对该节点做<code>下线标示</code></li>
+<li>检测到<code>数据主节点不可达时</code>，Sentinel 节点之间会进行投票，在大多数 Sentinel节点都认定该数据主节点不可达时，<code>Sentinel领导者节点</code>就会发起<code>故障转移</code>操作并<code>通知客户端</code></li>
+</ul>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/005.png"></p>
+<h3 id="搭建使用"><a href="#搭建使用" class="headerlink" title="搭建使用"></a>搭建使用</h3><p>案例环境：</p>
+<ul>
+<li>数据节点 3 个</li>
+<li>Sentinel 节点 3 个</li>
+</ul>
+<p>在搭建 Sentinel 之前，需要给 Sentinel 一个监控目标。因此当前案例沿用上面主从复制的配置搭建一个 1 主 2 从的模型给 Sentinel 监控。</p>
+<blockquote>
+<p>Sentinel 的配置文件和普通数据节点一样，可以在 Redis 源码文件中找到模板</p>
+</blockquote>
+<ul>
+<li><strong>sentinel01</strong></li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">port 26381</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">mymaster：数据主节点的名称，自定义</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">127.0.0.1：数据主节点的ip</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">6379：数据主节点的port</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">2：判断数据主节点客观下线时所需要的最少的Sentinel节点，即quorum值</span></span><br><span class="line">sentinel monitor mymaster 127.0.0.1 6379 2</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">指定Sentinel发出ping时，目标必须在30s内回应，否则会被主观下线</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">适当地调小该值可以让哨兵更快地发现故障，但也不能过小，譬如连短暂网络波动都不允许的话，就导致哨兵误操作从而引发集群不可用</span></span><br><span class="line">sentinel down-after-milliseconds mymaster 30000</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>sentinel02</strong></li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">port 26380</span><br><span class="line">sentinel monitor mymaster 127.0.0.1 6379 2</span><br><span class="line">sentinel down-after-milliseconds mymaster 30000</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>sentinel03</strong></li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">port 26381</span><br><span class="line">sentinel monitor mymaster 127.0.0.1 6379 2</span><br><span class="line">sentinel down-after-milliseconds mymaster 30000</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>启动Sentinel</strong></li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">redis01/bin/redis-sentinel redis01/sentinel.conf</span><br><span class="line">redis02/bin/redis-sentinel redis02/sentinel.conf</span><br><span class="line">redis03/bin/redis-sentinel redis03/sentinel.conf</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">或者使用以下方式启动</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">bin/redis-server sentinel.conf --sentinel</span></span><br></pre></td></tr></table></figure>
+
+<p> 注意，当 Sentinel 节点启动后其下所属的配置文件就会发生编号，以 sentinel01 为例</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">port 26381</span><br><span class="line"></span><br><span class="line">sentinel myid d15ff199f291f4c6ef5308f27f32e29fe7b92520</span><br><span class="line">sentinel deny-scripts-reconfig yes</span><br><span class="line">sentinel monitor mymaster 127.0.0.1 6379 2</span><br><span class="line">sentinel config-epoch mymaster 0</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Generated by CONFIG REWRITE</span></span><br><span class="line">dir &quot;/home/tandi/apps/redis-sentinel&quot;</span><br><span class="line">protected-mode no</span><br><span class="line">sentinel leader-epoch mymaster 0</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">已知数据节点主节点上的从节点</span></span><br><span class="line">sentinel known-replica mymaster 127.0.0.1 6380</span><br><span class="line">sentinel known-replica mymaster 127.0.0.1 6381</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">已知其余的sentinel节点</span></span><br><span class="line">sentinel known-sentinel mymaster 127.0.0.1 26379 02131b4181217dd09aa4c711dea62cfd9cd82fbb</span><br><span class="line">sentinel known-sentinel mymaster 127.0.0.1 26380 87776bb454ad2b904af3a649a6abfa03e8f24b69</span><br><span class="line">sentinel current-epoch 0</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用客户单查看 sentinel 信息</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">➜  redis-replica redis01/bin/redis-cli -p 26379 info sentinel</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">Sentinel</span></span><br><span class="line">sentinel_masters:1</span><br><span class="line">sentinel_tilt:0</span><br><span class="line">sentinel_running_scripts:0</span><br><span class="line">sentinel_scripts_queue_length:0</span><br><span class="line">sentinel_simulate_failure_flags:0</span><br><span class="line">master0:name=mymaster,status=ok,address=127.0.0.1:6379,slaves=2,sentinels=3</span><br></pre></td></tr></table></figure>
+
+<h3 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取被监控的主节点信息</span></span><br><span class="line">sentinel masters</span><br><span class="line">sentinel master 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取指定从节点的信息</span></span><br><span class="line">sentinel replicas 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取指定的Sentinel集合信息（不包含当前Sentinel节点）</span></span><br><span class="line">sentinel sentinels 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">获取主节点的ip和port</span></span><br><span class="line">sentinel get-master-addr-by-name 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">重新发现从节点和Sentinel节点</span></span><br><span class="line">sentinel reset 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">（重要）强制故障转移(更换数据主节点)</span></span><br><span class="line">sentinel failover 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">（重要）检查当前Sentinel的quorum数是否达到配置要求</span></span><br><span class="line">sentinel ckquorum 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">取消监控</span></span><br><span class="line">sentinel remove 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">指定监控目标</span></span><br><span class="line">sentinel monitor 主节点名称 ip port quornum</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">动态设置Sentinel配置</span></span><br><span class="line">sentinel set 主节点名称</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">节点用于交换下线判断信息</span></span><br><span class="line">sentinel is-master-down-by-addr</span><br></pre></td></tr></table></figure>
+
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><h4 id="3个定时任务"><a href="#3个定时任务" class="headerlink" title="3个定时任务"></a>3个定时任务</h4><p>每隔 10 秒：Sentinel 节点会获取一次<code>info replication</code>信息以感知是否有新的数据节点加入到主从模型中。</p>
+<p>每隔 2 秒：Sentinel 节点会订阅<code>__sentinel__：hello</code>频道并向其发送<code>对数据主节点判断</code>以及<code>自己当前的 sentinel 信息</code>。</p>
+<p>每隔 1 秒：Sentinel 节点会向<code>数据节点</code>和<code>其他Sentinel节点</code>发送 ping 命令以检测节点是否可达。</p>
+<h4 id="主观下线和客观下线"><a href="#主观下线和客观下线" class="headerlink" title="主观下线和客观下线"></a>主观下线和客观下线</h4><blockquote>
+<p>主观下线</p>
+</blockquote>
+<p>当 Sentinel 节点去 ping 其他节点时，如果该节点没有 <code>down-after-milliseconds</code> 内响应，这是 Sentinel 节点就会对其做下线标记，而这种标记是非常主观的，因为这时无法确认其他 Sentinel 成员节点无法 ping 通该节点</p>
+<blockquote>
+<p>客观下线</p>
+</blockquote>
+<p><code>在数据节点被标记为主观下线后，且该节点又是主节点的话</code>。这时标记主观下线的 Sentinel 节点就会使用命令<code>sentinel is-master-down-by-addr</code>向其它 Sentinel 成员节点发起仲裁，要求其它 Sentinel 成员节点对主节点进行主观下线判断，并收集其信息对该主节点进行客观下线判断，当主观下线数量满足 <code>quorum</code> 时，则主节点就会被标记为客观下线。既这时 Sentinel 都认为主节点不能正常提供服务了，因此 Sentinel 会做故障转移，以及通知客户端。</p>
+<h4 id="Sentinel故障转移过程"><a href="#Sentinel故障转移过程" class="headerlink" title="Sentinel故障转移过程"></a>Sentinel故障转移过程</h4><blockquote>
+<p>注意：哨兵集群时通过对主节点进行 info 操作来获取到从节点集合的</p>
+</blockquote>
+<ol>
+<li><p>选择一个能够胜任从节点当主节点。首先会以<code>优先级</code>进行评选，其次通过<code>复制偏移量</code>，既复制数据较多的做主节点，如果以上都无法确认，则最后<code>runid 最小的作为主节点</code></p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/006.png"></p>
+</li>
+<li><p>向该从节点执行<code>replicaof no one</code>命令以断开原来的主从关系，此时节点会自动晋升为主节点从而恢复写服务</p>
+</li>
+<li><p>再向其余的从节点发起主节点变更</p>
+</li>
+<li><p>将原来主节点变更为从节点，并在其恢复后让其作为新主节点的从节点</p>
+</li>
+</ol>
+<h3 id="关于-Sentinel-领导者故障问题"><a href="#关于-Sentinel-领导者故障问题" class="headerlink" title="关于 Sentinel 领导者故障问题"></a>关于 Sentinel 领导者故障问题</h3><p>Sentinel 节点通信是通过发布&#x2F;订阅机制来实现的，而领导者节点选举则采用<code>Raft算法</code>。其中领导者节点主要负责当数据主节点故障时对数据节点集群做<code>故障转移</code>以及<code>通知客户端</code>的工作。</p>
+<p>在 Raft 算法中有两种超时机制，分别是<code>选举超时</code>和<code>心跳超时</code>。当领导者故障时，先发生心跳超时的从节点，会率先进入选举超时倒数，而一旦正式选举超时，该节点就会发起领导者选举投票，只要节点票数超过集群节点数的一半（包含自己那票）就可以当选这界选举的领导者，而当选举完毕后 Sentinel 集群就会恢复运作。</p>
+<p>需要补充一点的是在Raft算法中，率先发起选举的节点会将自己的选票投给自己，而接收到拉票请求的节点，则必须投给当前拉票的节点。譬如，在 3 个节点的集群中，主节点宕机后率先发出拉票请求的节点将会成为主节点。</p>
+<p>当然，如果是普通存储系统中的数据节点使用 Raft 算法的话，其实在拉票时应该还需要判断集群节点的数据偏移量，这时偏移量大的节点会成为领导者而不是率先发起拉票请求的节点。但因为 Sentinel 集群并不存储数据，因此个人理解并没有这个条件（有待证实）。</p>
+<h3 id="Java版客户端"><a href="#Java版客户端" class="headerlink" title="Java版客户端"></a>Java版客户端</h3><h4 id="Jedis"><a href="#Jedis" class="headerlink" title="Jedis"></a>Jedis</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- jedis --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>redis.clients<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jedis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>操作例子</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testJedisSentinel</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> <span class="variable">masterName</span> <span class="operator">=</span> <span class="string">&quot;mymaster&quot;</span>;</span><br><span class="line">    <span class="comment">// 哨兵集群</span></span><br><span class="line">    Set&lt;String&gt; sentinels = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    sentinels.add(<span class="string">&quot;127.0.0.1:26379&quot;</span>);</span><br><span class="line">    sentinels.add(<span class="string">&quot;127.0.0.1:26380&quot;</span>);</span><br><span class="line">    sentinels.add(<span class="string">&quot;127.0.0.1:26381&quot;</span>);</span><br><span class="line">    <span class="comment">// 连接池参数设置</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">GenericObjectPoolConfig</span> <span class="variable">config</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">GenericObjectPoolConfig</span>();</span><br><span class="line">    config.setMaxTotal(<span class="number">30</span>); <span class="comment">// 最大连接数</span></span><br><span class="line">    config.setMaxIdle(<span class="number">10</span>); <span class="comment">// 最大空闲连接数</span></span><br><span class="line">    config.setNumTestsPerEvictionRun(<span class="number">5</span>); <span class="comment">// 每次释放连接的最大数目</span></span><br><span class="line">    config.setTimeBetweenEvictionRunsMillis(<span class="number">30000</span>); <span class="comment">// 释放连接的扫描间隔（毫秒）</span></span><br><span class="line">    config.setMaxWaitMillis(<span class="number">1500</span>); <span class="comment">// 获取连接的最大等待时间（毫秒）</span></span><br><span class="line">    config.setTestOnBorrow(<span class="literal">true</span>); <span class="comment">// 获取连接时候检查有效性, 默认false</span></span><br><span class="line">    config.setTestWhileIdle(<span class="literal">true</span>); <span class="comment">// 空闲时检查有效性, 默认false</span></span><br><span class="line">    config.setBlockWhenExhausted(<span class="literal">false</span>); <span class="comment">// 连接耗尽时是否阻塞, false报异常,ture阻塞直到超时, 默认true</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="type">JedisSentinelPool</span> <span class="variable">jedisSentinelPool</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">JedisSentinelPool</span>(masterName, sentinels, config);</span><br><span class="line">    <span class="type">Jedis</span> <span class="variable">resource</span> <span class="operator">=</span> jedisSentinelPool.getResource();</span><br><span class="line">    resource.set(<span class="string">&quot;person:name&quot;</span>, <span class="string">&quot;zhangsan&quot;</span>);</span><br><span class="line">    System.out.println(resource.get(<span class="string">&quot;person:name&quot;</span>));</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面不难看出使用 Sentinel 集群后我们并不需要填写数据节点为地址，既 Sentinel 充当着服务发现的角色，这点类似于 RocketMQ 的 NameServer 服务</p>
+<h4 id="Spring-Data-Redis"><a href="#Spring-Data-Redis" class="headerlink" title="Spring Data Redis"></a>Spring Data Redis</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.commons<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-pool2<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.6.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>配置</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">redis:</span></span><br><span class="line">    <span class="attr">lettuce:</span></span><br><span class="line">      <span class="attr">pool:</span></span><br><span class="line">        <span class="attr">max-active:</span> <span class="number">8</span></span><br><span class="line">        <span class="attr">max-idle:</span> <span class="number">8</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">master:</span> <span class="string">mymaster</span></span><br><span class="line">      <span class="attr">nodes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:26379</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:26380</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:26381</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>操作例子</p>
+</blockquote>
+<p>因为用的是Spring Boot，所以和普通的连接操作一样使用即可。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> RedisTemplate&lt;String, String&gt; redisTemplate;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> StringRedisTemplate stringRedisTemplate;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testRedisTemplate</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">        //操作hash</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForHash();</span></span><br><span class="line"><span class="comment">        //操作list</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForList();</span></span><br><span class="line"><span class="comment">        //操作set</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForSet();</span></span><br><span class="line"><span class="comment">        //操作有序set</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForZSet();</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="comment">//操作字符串</span></span><br><span class="line">    redisTemplate.opsForValue().set(<span class="string">&quot;person:name&quot;</span>, <span class="string">&quot;zhangsan&quot;</span>);</span><br><span class="line">    System.out.println(redisTemplate.opsForValue().get(<span class="string">&quot;person:name&quot;</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testExecuteMethod</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">Boolean</span> <span class="variable">execute</span> <span class="operator">=</span> stringRedisTemplate.execute((RedisConnection connection) -&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> connection.set(<span class="string">&quot;hi&quot;</span>.getBytes(), <span class="string">&quot;test setnx&quot;</span>.getBytes(),</span><br><span class="line">                              Expiration.seconds(<span class="number">30</span>),</span><br><span class="line">                              RedisStringCommands.SetOption.SET_IF_ABSENT);</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    System.out.println(execute);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> LettuceConnectionFactory lettuceConnectionFactory;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取指定主节点的从节点ip和port</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">RedisSentinelConnection</span> <span class="variable">sentinelConnection</span> <span class="operator">=</span> lettuceConnectionFactory.getSentinelConnection();</span><br><span class="line">    <span class="type">RedisSentinelConfiguration</span> <span class="variable">sentinelConfiguration</span> <span class="operator">=</span> lettuceConnectionFactory.getSentinelConfiguration();</span><br><span class="line"></span><br><span class="line">    System.out.println(sentinelConnection.slaves(() -&gt; <span class="string">&quot;mymaster&quot;</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用注意"><a href="#使用注意" class="headerlink" title="使用注意"></a>使用注意</h2><ul>
+<li>Sentinel 功能只对主节点进行故障转移，所以在 Sentinel 模式下应该尽量使用一主多从模型，且尽量做到有两个以上的从节点以避免从节点宕机后主节点也宕机导致没有从节点替换的极端情况</li>
+<li>在 Sentinel 模式下实现读写分离的思路是，应用程序需要获取所有从节点地址，然后实现从节点池来完成从节点读操作，但这无疑是加大了集群的维护成本，所以并不推荐使用，因此建议使用 Cluster 模式。Cluster 拥有去中心化的特性，而且也基于主从模型，所以在吞吐量和维护成本上都要比 Sentinel 要有优势</li>
+</ul>
+<h2 id="Cluster"><a href="#Cluster" class="headerlink" title="Cluster"></a>Cluster</h2><h3 id="关于数据分区策略-负载均衡算法"><a href="#关于数据分区策略-负载均衡算法" class="headerlink" title="关于数据分区策略 - 负载均衡算法"></a>关于数据分区策略 - 负载均衡算法</h3><p>在了解Redis Cluster之前，需要理解什么是数据分区策略。掌握数据分区策略对于理解Redis Cluster的数据分布和故障转移有很大的帮助。</p>
+<p>常见的数据分区策略有<code>哈希取模</code>、<code>一致性哈希</code>，例如MySQL中还支持诸如<code>range</code>和<code>ksy</code>等策略，而Redis Cluster使用的则是<code>虚拟槽</code>。</p>
+<h4 id="哈希取模"><a href="#哈希取模" class="headerlink" title="哈希取模"></a>哈希取模</h4><p>哈希取模指的是从数据中选取一个适合的key进行哈希运算，并取模数据存储节点的数量后按照该结果来选择对应的数据存储节点来存取数据。</p>
+<p>公式：<code>hash(key) % n</code>，当节点间数为2的n次幂时可以使用<code>hash(key) &amp; (n-1)</code>来代替前一种方式可以提高计算效率，其中n为集群节点数</p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/007.png"></p>
+<p>哈希取模策略通常使用在分库分表上。但必须强调一下它的缺点，就是如果想要扩展节点数量，那么就需要重新将数据分配，这是一个相当大的代价，所以通常使用哈希取模策略进行分区前都应该预计充足的库表数量，确保在往后一段时间来都够用。而如果确实需要扩容的话，通常都是翻倍扩容。</p>
+<h4 id="一致性哈希"><a href="#一致性哈希" class="headerlink" title="一致性哈希"></a>一致性哈希</h4><p>一致性哈希的思想是，先计算出存储节点的token值（例如哈希值），这个token值位于0到2的32次幂范围。而0到2的32次幂形成了一个闭合的hash环，用于确立数据应该落在那个token值对应的存储节点上，如下：</p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/008.png"></p>
+<p>图中的例子有4个数据存储节点，那么数据的存储位置需要以下步骤来确立：</p>
+<ol>
+<li>使用数据的key计算出哈希值</li>
+<li>根据哈希值来查找存储节点；例如哈希值位于node1和node2之间，则需要按照<code>顺时针选择原则</code>，即这时数据存储节点应该是node2</li>
+</ol>
+<p>相较于哈希取模，一致性哈希在<code>增加</code>或<code>删减</code>节点时，只会影响到原来存储在<code>左边</code>或<code>右边</code>节点的数据，再加上Hash函数的离散，从而大大降低了因扩容和缩容后导致数据不命中的数据范围。</p>
+<p>其中Redis客户端Jedis提供的<code>ShardedJedis</code>就使用一致性哈希来进行分片操作的。除此之外Google Guava也同样提供一致性哈希的实现。</p>
+<p><strong>一致性哈希存在的问题：</strong></p>
+<p>1）增加和减少节点时，会影响左边或右边节点的数据命中。这时需要<code>人工解决</code>或<code>舍弃这部分数据</code>。也因此，<code>一致性哈希通常用在分布式缓存中</code>，因为数据足够离散，所以这部分数据其实对整体来说影响并不大。</p>
+<p>2）当节点数量少，节点数量发生变化就会对数据造成大影响，因为数据不够离散。这时体现不到一致性哈希的价值，因此不推荐使用。</p>
+<h4 id="虚拟槽"><a href="#虚拟槽" class="headerlink" title="虚拟槽"></a>虚拟槽</h4><p>虚拟槽和一致性哈希类似，不过它不是做成hash环，而是<code>哈希槽</code>。在Redis Cluster中有<code>16384</code>个槽（0~16383）。</p>
+<p>集群中的每个节点都负责维护部分槽和槽做映射的数据。</p>
+<p>数据通过公式<code>slot = CRC16(key) &amp; 16383</code>来决定存储的槽位。这样的好处是，做到了数据与数据存储节点之间的解耦，因此有利于以后的数据迁移。也可以简单理解，<code>数据存储节点 - 虚拟槽 - 数据</code>。</p>
+<p>假设集群中有3个数据存储节点，如下图：</p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/009.png"></p>
+<p>那么当扩展节点时，只需要将原来节点负责的槽位转移给新增节点即可，如下：</p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/010.png"></p>
+<blockquote>
+<p><strong>需要强调的是，对于Redis Cluster而言，扩容和缩容是非常灵活的，在此期间不会影响对外服务。</strong></p>
+</blockquote>
+<h3 id="Redis-Cluster搭建"><a href="#Redis-Cluster搭建" class="headerlink" title="Redis Cluster搭建"></a>Redis Cluster搭建</h3><h4 id="搭建步骤说明"><a href="#搭建步骤说明" class="headerlink" title="搭建步骤说明"></a>搭建步骤说明</h4><ol>
+<li>准备节点</li>
+<li>节点握手</li>
+<li>分配槽位</li>
+</ol>
+<h4 id="手动搭建"><a href="#手动搭建" class="headerlink" title="手动搭建"></a>手动搭建</h4><blockquote>
+<p>案例使用 6 个节点：3个数据节点、3个备份节点</p>
+</blockquote>
+<ol>
+<li><strong>准备节点</strong></li>
+</ol>
+<p>[ node1-6 ]</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">port 6379</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">6380 6381 6382 6383 6384</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">开启配置</span></span><br><span class="line">cluster-enabled yes</span><br><span class="line">cluster-config-file nodes-6379.conf</span><br><span class="line">cluster-node-timeout 15000</span><br></pre></td></tr></table></figure>
+
+<p>[ 启动节点 ]</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">redis01/bin/redis-server redis01/cluster.conf</span><br><span class="line">redis02/bin/redis-server redis02/cluster.conf</span><br><span class="line">redis03/bin/redis-server redis03/cluster.conf</span><br><span class="line">redis04/bin/redis-server redis04/cluster.conf</span><br><span class="line">redis05/bin/redis-server redis05/cluster.conf</span><br><span class="line">redis06/bin/redis-server redis06/cluster.conf</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>节点握手</strong></li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  redis01 bin/redis-cli -p 6379</span><br><span class="line">127.0.0.1:6379&gt; cluster nodes</span><br><span class="line">dc7c7c5a61088460a5f81245f1a5b39641385637 :6379@16379 myself,master - 0 0 0 connected</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>cluster nodes命令：查看当前节点感知到的其它集群成员。</p>
+<p>其中dc7c7c5a61088460a5f81245f1a5b39641385637为集群节点id。集群节点id不会因为重启导致改变，而是随着集群初始化而创建，以后亦可重用。</p>
+</blockquote>
+<p>可以看到目前6379节点只能感知到自己。</p>
+<p><strong>使用以下命令进行节点握手：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; cluster meet 127.0.0.1 6380</span><br><span class="line">127.0.0.1:6379&gt; cluster meet 127.0.0.1 6381</span><br><span class="line">127.0.0.1:6379&gt; cluster meet 127.0.0.1 6382</span><br><span class="line">127.0.0.1:6379&gt; cluster meet 127.0.0.1 6383</span><br><span class="line">127.0.0.1:6379&gt; cluster meet 127.0.0.1 6384</span><br></pre></td></tr></table></figure>
+
+<p>在此查看感知节点，如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; cluster nodes</span><br><span class="line">8c20fd831a27ee5c0891d6897c3b8404cd944691 127.0.0.1:6382@16382 master - 0 1571062568000 5 connected</span><br><span class="line">0a210a34f512f71d1d35895ccbaba8558eea601d 127.0.0.1:6384@16384 master - 0 1571062570279 4 connected</span><br><span class="line">6fab7a12e935b1a40c1bbae5c0b77142da71c89d 127.0.0.1:6380@16380 master - 0 1571062569276 0 connected</span><br><span class="line">a42be3d966c22da0e0a5d0206be459cf46dddec6 127.0.0.1:6381@16381 master - 0 1571062567000 2 connected</span><br><span class="line">36fa72da040b9c9497df65f91d4ea1e3ae4454f0 127.0.0.1:6383@16383 master - 0 1571062568273 3 connected</span><br><span class="line">dc7c7c5a61088460a5f81245f1a5b39641385637 127.0.0.1:6379@16379 myself,master - 0 1571062568000 1 connected</span><br></pre></td></tr></table></figure>
+
+<p>可以看到已经感知到了其他的成员节点。过程如下：</p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/011.png"></p>
+<p>当6379感知到其余5个节点后，其余5个节点就通过6379作为桥梁感知到大家的存在。</p>
+<ol start="3">
+<li><strong>分配槽位</strong></li>
+</ol>
+<p>集群在分配槽位之前是不可提供服务的，如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6380&gt; set name zhangsan</span><br><span class="line">(error) CLUSTERDOWN Hash slot not served</span><br><span class="line">127.0.0.1:6380&gt; cluster info</span><br><span class="line">cluster_state:fail</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>使用如下命令分配槽位：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">bin/redis-cli -h 127.0.0.1 -p 6379 cluster addslots &#123;0..5461&#125;</span><br><span class="line">bin/redis-cli -h 127.0.0.1 -p 6380 cluster addslots &#123;5462..10922&#125;</span><br><span class="line">bin/redis-cli -h 127.0.0.1 -p 6381 cluster addslots &#123;10923..16383&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再查看以下进群信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; cluster info</span><br><span class="line">cluster_state:ok # 可以看到集群已经启动</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>根据集群节点id，将其余3个节点设置为备份节点</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">bin/redis-cli -h 127.0.0.1 -p 6382 cluster replicate dc7c7c5a61088460a5f81245f1a5b39641385637</span><br><span class="line">bin/redis-cli -h 127.0.0.1 -p 6383 cluster replicate 6fab7a12e935b1a40c1bbae5c0b77142da71c89d</span><br><span class="line">bin/redis-cli -h 127.0.0.1 -p 6384 cluster replicate a42be3d966c22da0e0a5d0206be459cf46dddec6</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li><strong>测试集群</strong></li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6380&gt; set person:name zhangsan</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6380&gt; get person:name</span><br><span class="line">&quot;zhangsan&quot;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="redis-trib-rb搭建（Redis-5-x开始已经不推荐）"><a href="#redis-trib-rb搭建（Redis-5-x开始已经不推荐）" class="headerlink" title="redis-trib.rb搭建（Redis 5.x开始已经不推荐）"></a>redis-trib.rb搭建（Redis 5.x开始已经不推荐）</h4><blockquote>
+<p>说明</p>
+</blockquote>
+<p>除了手动搭建集群之外，Redis还提供了比较简单的搭建方法，就是使用ruby脚本来搭建。</p>
+<p>该脚本位于Redis源码包的src文件夹下。但新版本的Redis已经不推荐使用该方法来搭建，所有的集群搭建功能已经迁移到了redis-cli。</p>
+<blockquote>
+<p>下载配置ruby环境</p>
+</blockquote>
+<p>ubuntu环境</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">安装ruby</span></span><br><span class="line">sudo apt install ruby rubygems-integration</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">下载redis脚本</span></span><br><span class="line">sudo gem install redis</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>复制redis的ruby脚本</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">➜  redis-cluster cp ../redis-5.0.5/src/redis-trib.rb .</span><br><span class="line">➜  redis-cluster ll</span><br><span class="line">总用量 4.0K</span><br><span class="line">drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis01</span><br><span class="line">drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis02</span><br><span class="line">drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis03</span><br><span class="line">drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis04</span><br><span class="line">drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis05</span><br><span class="line">drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis06</span><br><span class="line">drwxrwx--- 1 root vboxsf    0 10月 20 12:02 redis07</span><br><span class="line">-rwxrwx--- 1 root vboxsf 3.6K 10月 21 11:03 redis-trib.rb</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>运行脚本</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">➜  redis-cluster ./redis-trib.rb       </span><br><span class="line">WARNING: redis-trib.rb is not longer available!</span><br><span class="line">You should use redis-cli instead.</span><br><span class="line"></span><br><span class="line">All commands and features belonging to redis-trib.rb have been moved</span><br><span class="line">to redis-cli.</span><br><span class="line">In order to use them you should call redis-cli with the --cluster</span><br><span class="line">option followed by the subcommand name, arguments and options.</span><br><span class="line"></span><br><span class="line">Use the following syntax:</span><br><span class="line">redis-cli --cluster SUBCOMMAND [ARGUMENTS] [OPTIONS]</span><br><span class="line"></span><br><span class="line">Example:</span><br><span class="line">redis-cli --cluster info 127.0.0.1:7000</span><br><span class="line"></span><br><span class="line">To get help about all subcommands, type:</span><br><span class="line">redis-cli --cluster help</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，ruby脚本已经不被推荐使用，而是推荐使用<code>redis-cli --cluster</code>。</p>
+<p>所以该搭建方法到此为止。例子查看之前的文章： <a target="_blank" rel="noopener" href="https://www.cnblogs.com/tandi19960505/p/7690020.html">https://www.cnblogs.com/tandi19960505/p/7690020.html</a> </p>
+<h4 id="新命令搭建"><a href="#新命令搭建" class="headerlink" title="新命令搭建"></a>新命令搭建</h4><blockquote>
+<p>搭建</p>
+</blockquote>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/013.png"></p>
+<p><strong>例子：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster create 127.0.0.1:6379 127.0.0.1:6380 127.0.0.1:6381 127.0.0.1:6382 127.0.0.1:6383 127.0.0.1:6384 --cluster-replicas 1</span><br></pre></td></tr></table></figure>
+
+<p>意思是在集群中每个主节点有1个备份，也就是说6个节点中，3个主3个从</p>
+<p>使用该方式配置可以自动分配槽位，所以推荐这种方式来配置集群</p>
+<blockquote>
+<p>扩容</p>
+</blockquote>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/014.png"></p>
+<p><strong>例子：添加节点</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster add-node 127.0.0.1:6385 127.0.0.1:6384 </span><br></pre></td></tr></table></figure>
+
+<p>其中 127.0.0.1:6384 是现任集群成员，指定成员的目的其实很明确，因为 Redis Cluster 采用的集群共识算法是 Gossip ，所以这里就是通过 127.0.0.1:6384 作为集群入口媒介，此后 127.0.0.1:6384 会新成员信息广播给集群中的其他成员，最后达到最终一致。</p>
+<p>注意：新添加的节点是不会主动分配槽的</p>
+<p><strong>例子：为新添加的节点分配槽位</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster reshard 127.0.0.1:6385</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/015.png"></p>
+<blockquote>
+<p>缩容</p>
+</blockquote>
+<p>删除从节点：</p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/016.png"></p>
+<p>删除主节点：</p>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/017.png"></p>
+<p>注意：应该先将主节点上的槽分给其他主节点然后再删除</p>
+<h3 id="节点扩容"><a href="#节点扩容" class="headerlink" title="节点扩容"></a>节点扩容</h3><ol>
+<li><strong>运行新节点</strong></li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cluster redis07/bin/redis-server redis07/cluster.conf</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>节点握手</strong></li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">bin/redis-cli -p 6379 cluster meet 127.0.0.1 6385</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">或者,前面为新节点，后面为meet节点</span></span><br><span class="line">redis-cli --cluster add-node 127.0.0.1:6385 127.0.0.1:6379</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><strong>槽和数据迁移</strong></li>
+</ol>
+<p>步骤1：目标节点执行<code>cluster setslot &#123;slot&#125; importing &#123;sourceNodeId&#125; </code>，表示目标节点准备接收slot；</p>
+<p>步骤2：源节点执行<code> cluster setslot&#123;slot&#125; migrating &#123;targetNodeId&#125;</code>，表示源节点准备导出slot；</p>
+<p>步骤3：源节点执行<code>cluster getkeysinslot &#123;slot&#125; &#123;count&#125;</code>，每执行一次就可以获取slot中count个key数据；</p>
+<p>步骤4：源节点执行<code>migrate &#123;targetIP&#125; &#123;targetPort&#125; key 0 &#123;timeout&#125;</code>，使用管道将<code>步骤3</code>得到的key发送给目标节点进行保存；</p>
+<p>步骤5：重复3-4步骤直到slot所有key都发送给目标节点；</p>
+<p>步骤6：所有集群节点执行<code>cluster setslot &#123;slot&#125; node &#123;targetNodeId&#125; </code>，达到告诉集群成员节点得知slot的变动；</p>
+<blockquote>
+<p>推荐文章： <a target="_blank" rel="noopener" href="https://enpsl.top/2019/01/23/2019-01-23-redis-cluster-operator/">https://enpsl.top/2019/01/23/2019-01-23-redis-cluster-operator/</a> </p>
+</blockquote>
+<h3 id="存取数据流程"><a href="#存取数据流程" class="headerlink" title="存取数据流程"></a>存取数据流程</h3><p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/012.png"></p>
+<p>客户端存取数据时可以随机选取节点进行操作，然后根据 key 哈希计算判断是否应在当前节点进行操作，如果不是，当前节点会通过 MOVED 命令要求客户端重新发送请求到正确的节点间中进行操作</p>
+<blockquote>
+<p>查看某个 key 所在的槽位</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; cluster keyslot person:name</span><br><span class="line">(integer) 7582</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="Java版客户端-1"><a href="#Java版客户端-1" class="headerlink" title="Java版客户端"></a>Java版客户端</h3><h4 id="Jedis-1"><a href="#Jedis-1" class="headerlink" title="Jedis"></a>Jedis</h4><p>依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- jedis --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>redis.clients<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jedis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testJedisCluster</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 集群节点</span></span><br><span class="line">    Set&lt;HostAndPort&gt; nodes = <span class="keyword">new</span> <span class="title class_">HashSet</span>&lt;&gt;();</span><br><span class="line">    nodes.add(<span class="keyword">new</span> <span class="title class_">HostAndPort</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6379</span>));</span><br><span class="line">    nodes.add(<span class="keyword">new</span> <span class="title class_">HostAndPort</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6380</span>));</span><br><span class="line">    nodes.add(<span class="keyword">new</span> <span class="title class_">HostAndPort</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6381</span>));</span><br><span class="line">    nodes.add(<span class="keyword">new</span> <span class="title class_">HostAndPort</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6382</span>));</span><br><span class="line">    nodes.add(<span class="keyword">new</span> <span class="title class_">HostAndPort</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6383</span>));</span><br><span class="line">    nodes.add(<span class="keyword">new</span> <span class="title class_">HostAndPort</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6384</span>));</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 连接池参数设置</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">GenericObjectPoolConfig</span> <span class="variable">config</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">GenericObjectPoolConfig</span>();</span><br><span class="line">    config.setMaxTotal(<span class="number">30</span>); <span class="comment">// 最大连接数</span></span><br><span class="line">    config.setMaxIdle(<span class="number">10</span>); <span class="comment">// 最大空闲连接数</span></span><br><span class="line">    config.setNumTestsPerEvictionRun(<span class="number">5</span>); <span class="comment">// 每次释放连接的最大数目</span></span><br><span class="line">    config.setTimeBetweenEvictionRunsMillis(<span class="number">30000</span>); <span class="comment">// 释放连接的扫描间隔（毫秒）</span></span><br><span class="line">    config.setMaxWaitMillis(<span class="number">1500</span>); <span class="comment">// 获取连接的最大等待时间（毫秒）</span></span><br><span class="line">    config.setTestOnBorrow(<span class="literal">true</span>); <span class="comment">// 获取连接时候检查有效性, 默认false</span></span><br><span class="line">    config.setTestWhileIdle(<span class="literal">true</span>); <span class="comment">// 空闲时检查有效性, 默认false</span></span><br><span class="line">    config.setBlockWhenExhausted(<span class="literal">false</span>); <span class="comment">// 连接耗尽时是否阻塞, false报异常,ture阻塞直到超时, 默认true</span></span><br><span class="line"></span><br><span class="line">    <span class="type">JedisCluster</span> <span class="variable">cluster</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">JedisCluster</span>(nodes, config);</span><br><span class="line"></span><br><span class="line">    cluster.set(<span class="string">&quot;person:name&quot;</span>, <span class="string">&quot;hello&quot;</span>);</span><br><span class="line">    System.out.println(cluster.get(<span class="string">&quot;person:name&quot;</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="Sprig-Data-Redis"><a href="#Sprig-Data-Redis" class="headerlink" title="Sprig Data Redis"></a>Sprig Data Redis</h4><p>依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.commons<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-pool2<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.6.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">redis:</span></span><br><span class="line">    <span class="attr">lettuce:</span></span><br><span class="line">      <span class="attr">pool:</span></span><br><span class="line">        <span class="attr">max-active:</span> <span class="number">8</span></span><br><span class="line">        <span class="attr">max-idle:</span> <span class="number">8</span></span><br><span class="line">    <span class="attr">cluster:</span></span><br><span class="line">      <span class="attr">nodes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6379</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6380</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6381</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6382</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6383</span></span><br><span class="line">        <span class="bullet">-</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span><span class="string">:6384</span></span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> RedisTemplate&lt;String, String&gt; redisTemplate;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> StringRedisTemplate stringRedisTemplate;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> LettuceConnectionFactory lettuceConnectionFactory;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取指定主节点的从节点ip和port</span></span><br><span class="line"><span class="comment">//    @Test</span></span><br><span class="line"><span class="comment">//    public void test() &#123;</span></span><br><span class="line"><span class="comment">//        RedisSentinelConnection sentinelConnection = lettuceConnectionFactory.getSentinelConnection();</span></span><br><span class="line"><span class="comment">//        List&lt;RedisServer&gt; slaves = (List&lt;RedisServer&gt;) sentinelConnection.slaves(() -&gt; &quot;mymaster&quot;);</span></span><br><span class="line"><span class="comment">//        System.out. println(sentinelConnection.slaves(() -&gt; &quot;mymaster&quot;));</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//        StringRedisTemplate template = new StringRedisTemplate();</span></span><br><span class="line"><span class="comment">//        template.setConnectionFactory(lettuceConnectionFactory);</span></span><br><span class="line"><span class="comment">//        template.afterPropertiesSet();</span></span><br><span class="line"><span class="comment">//        template.opsForValue().set(&quot;person:name&quot;, &quot;lise&quot;);</span></span><br><span class="line"><span class="comment">//        System.out.println(template.opsForValue().get(&quot;person:name&quot;));</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testRedisTemplate</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">        //操作hash</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForHash();</span></span><br><span class="line"><span class="comment">        //操作list</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForList();</span></span><br><span class="line"><span class="comment">        //操作set</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForSet();</span></span><br><span class="line"><span class="comment">        //操作有序set</span></span><br><span class="line"><span class="comment">        redisTemplate.opsForZSet();</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="comment">//操作字符串</span></span><br><span class="line">    redisTemplate.opsForValue().set(<span class="string">&quot;person:name&quot;</span>, <span class="string">&quot;张三&quot;</span>);</span><br><span class="line">    System.out.println(redisTemplate.opsForValue().get(<span class="string">&quot;person:name&quot;</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testExecuteMethod</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">Boolean</span> <span class="variable">execute</span> <span class="operator">=</span> stringRedisTemplate.execute((RedisConnection connection) -&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> connection.set(<span class="string">&quot;hi&quot;</span>.getBytes(), <span class="string">&quot;test setnx&quot;</span>.getBytes(),</span><br><span class="line">                              Expiration.seconds(<span class="number">30</span>),</span><br><span class="line">                              RedisStringCommands.SetOption.SET_IF_ABSENT);</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    System.out.println(execute);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="关于Redis高可用丢失数据问题"><a href="#关于Redis高可用丢失数据问题" class="headerlink" title="关于Redis高可用丢失数据问题"></a>关于Redis高可用丢失数据问题</h2><p>需要强调一下的是 Redis 构建出来的高可用架构是一个 AP 系统，既它并不能保证数据的一致性，因此会存储数据丢失问题。例如<code>延迟复制情况下Master宕机后Replica晋升为Master</code> 或出现<code>网络分区</code>时就会导致数据丢失。</p>
+<blockquote>
+<p>延时复制导致数据丢失</p>
+</blockquote>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/018.png"></p>
+<blockquote>
+<p>网络分区导致脑裂后丢失数据</p>
+</blockquote>
+<p><img src="/Redis%E9%AB%98%E5%8F%AF%E7%94%A8%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/019.png"></p>
+<p>因为出现网络分区，特定时间内哨兵无法通知 client-1 原 Master 已经被客观下线</p>
+<blockquote>
+<p>如何解决数据丢失？</p>
+</blockquote>
+<p>结论：目前而言 Redis 的高可用解决方案不能避免数据丢失，只能是尽量降低丢失数据的量。</p>
+<p>在 Redis 主从中有如下两个关键配置，可以利用其特定尽量减少数据丢失的量</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 要求复制延迟低于指定时间值（秒），否则拒绝提供写服务</span></span><br><span class="line"><span class="attr">min-replicas-max-lag</span> <span class="string">10</span></span><br><span class="line"><span class="comment"># 要求健康节点数（副本节点）要达到一定的数量，否则拒绝提供写服务</span></span><br><span class="line"><span class="comment"># 可解决脑裂问题</span></span><br><span class="line"><span class="attr">min-replicas-to-write</span> <span class="string">3</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>上面配置的意思是在主从复制中，必须有3个健康节点连接上Master且其复制的延时值不大于10秒，如果不满足条件则拒绝客户端的写服务</li>
+</ul>
+<p>多说一句，Redis 高可用属于 AP 架构，既可用性优先设计，因此尽量不要使用 Redis 来实现分布式锁。而官方所建议的 RedLock （即过半数则上锁成功）方案，其实在高并发场景性能也一般，甚至可能出现活锁而导致一直加锁不成功的极端情况。所以，如果需要实现分布式锁，则应该使用一致性优先的 CP 系统，譬如 ZooKeeper、Etcd 等</p>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年10月22日 14:40:20 — 添加集群相关内容</li>
+<li>2020年5月9日 12:14:58 — 添加关于数据丢失问题的相关内容</li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%85%B3%E4%BA%8Espring%E4%BA%8B%E5%8A%A1%E7%AE%A1%E7%90%86%E5%99%A8/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

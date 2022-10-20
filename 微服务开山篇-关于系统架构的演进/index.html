@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      微服务开山篇-架构的演进之路 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Aug 13, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      微服务开山篇-架构的演进之路
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年03月21日13:57:24 — 有新的理解，对文章整体内容进行重构</li>
+</ul>
+<h2 id="闲聊"><a href="#闲聊" class="headerlink" title="闲聊"></a>闲聊</h2><p>近年来微服务架构是越来越火，各大论坛、博客、公众号都是相关的内容，以至于貌似不聊聊微服务自己就变得落伍了，但实话实说个人并不太喜欢这样的氛围，因为如何设计一个系统或进行技术选型，其实是应该根据业务、资源、团队等多个因数考量后决定出来的，而并非越新越好或越潮越好，正所谓“合适优于行业领先”就是这个道理。</p>
+<p>虽然现在讨论微服务的确实大有人在，但经常能看见的只是技术类的话题，而聊聊自己公司为什么要使用微服务，又或者用了微服务之后和原来相比有什么好处这类型的话题是少之又少。当然，这也可能是因为大家都是技术出身，所以关注点很自然就落在技术上了。</p>
+<p>个人认为，在学习一门技术之前应该要了解一下它为什么而存在，只有知道它为什么存在才能更直观地知道它解决了什么问题，以及如何更好地使用它。</p>
+<h2 id="单体架构"><a href="#单体架构" class="headerlink" title="单体架构"></a>单体架构</h2><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>单体架构是最为<strong>直观</strong>和<strong>简单</strong>的系统架构，这样说的理由其实很简单，因为功能都在一个点上，方便了开发、测试和管理。但需要注意的是系统架构本身很多时候是把双刃剑，用得好自然好，用不好也很麻烦。</p>
+<p>譬如个人认为以下条件使用单体架构比较有优势：</p>
+<ul>
+<li>系统业务清晰和简单</li>
+<li>开发团队有着良好的编发规范</li>
+<li>资源有限，对性能没要求</li>
+</ul>
+<p>而单体架构的优缺点如下：</p>
+<ul>
+<li>优点<ul>
+<li>简单直观</li>
+<li>测试和部署简单</li>
+</ul>
+</li>
+<li>缺点<ul>
+<li>随着业务越来越复杂，系统会变得冗肿和难以维护（譬如牵一发而动全身），导致扩展性差</li>
+<li>代码耦合高，不利于团队开发（发团队有良好的编发规范除外）</li>
+<li>对开发者要求较高，一般需要前后端兼顾</li>
+<li>只能横向扩展，不利于资源的合理利用。譬如著名的二八定理就很好地解析这个问题</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>传统的单体架构</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/001.png"></p>
+<p>当前架构存在的问题是单点负载，无法应对业务越来越复杂，用户量越来越多的场景需要。</p>
+<blockquote>
+<p>横向扩展解决单点负载过高问题</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/003.png"></p>
+<p>虽然横向扩展服务节点能够解决单点负载问题，但与此同时亦带来问题。</p>
+<ul>
+<li>多服务节点下会话的管理问题。常见解决方案如下<ul>
+<li>Web服务器会话共享机制</li>
+<li>共享存储服务</li>
+<li>Nginx 的 IP 访问绑定</li>
+<li>使用 Token 进行交互</li>
+</ul>
+</li>
+<li>资源不能合理利用，因为在系统中可能只有几个功能被常用，但扩展式要全部部署</li>
+</ul>
+<blockquote>
+<p>前后端分离让技术边界更加明确</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/008.png"></p>
+<p>随着前端技术的迅速发展，前后端分离架构的普及度已经非常高了。前后端进行分离后，不仅可以让技术分工更加明确，而且相较于最早的单体架构而言，后端服务节点变得更加轻量和简洁。</p>
+<p>缺点是使用 Cookie - Sesssion 机制变得复杂，所以一般使用前后端分离架构后都会采用 Token 这种轻量的会话管理机制来维持通信。</p>
+<p>拓展：如何前后端分离后继续使用Session？</p>
+<ul>
+<li>通过 CORS 允许客户端传递 cookie </li>
+<li>通过 CORS 将 SessionId 设置到响应头</li>
+<li>将 SessionId 设置到 Token 中</li>
+</ul>
+<h2 id="分布式架构"><a href="#分布式架构" class="headerlink" title="分布式架构"></a>分布式架构</h2><h3 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h3><p>譬如以前一些网络游戏的注册功能是嵌套在游戏本身的，但随着发展公司又开发或代理了更多的游戏，而这时如果玩家每次玩这家公司的新游戏就要记住一套账号那用户体验未免也太差了。因此在往后的日子里很多公司都约定俗成地将用户管理这块功能从软件或游戏中单独抽离了出来并让其成为一个独立系统来提供服务。而个时的游戏或软件就成为了一个分布式系统了。即<strong>游戏本身再加上账号管理系统</strong>才能算是一套完成的系统。</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/002.png"></p>
+<p>结论：功能分布在不同进程上的系统就叫分布式系统。</p>
+<h3 id="什么时候应该使用分布式架构？"><a href="#什么时候应该使用分布式架构？" class="headerlink" title="什么时候应该使用分布式架构？"></a>什么时候应该使用分布式架构？</h3><ul>
+<li>需要应对业务扩展带来的挑战</li>
+<li>单体系统过于冗肿，以至于日常维护困难</li>
+</ul>
+<h3 id="分布式架构优缺点"><a href="#分布式架构优缺点" class="headerlink" title="分布式架构优缺点"></a>分布式架构优缺点</h3><p>优点：</p>
+<ul>
+<li>降低了代码和模块的耦合度</li>
+<li>提高了系统的性能<ul>
+<li>可扩展性</li>
+<li>伸缩（容错）性</li>
+<li>可复用性</li>
+</ul>
+</li>
+<li>部署变得灵活，能够有针对性地对特定的功能模块进行扩容缩容</li>
+<li>编码难度降低</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>测试变得复杂，特别是跨团队协作</li>
+<li>维护和运维成本变高</li>
+<li>引入跨服务问题<ul>
+<li>分布式事务一致性</li>
+<li>可用性降低</li>
+</ul>
+</li>
+<li>要开发和维护一套完善的分布式系统，对开发者自身的知识体系和能力有一定的要求</li>
+</ul>
+<h2 id="关于SOA架构"><a href="#关于SOA架构" class="headerlink" title="关于SOA架构"></a>关于SOA架构</h2><h3 id="服务化和SOA的关系"><a href="#服务化和SOA的关系" class="headerlink" title="服务化和SOA的关系"></a>服务化和SOA的关系</h3><p>服务化其实是一种在原分布式架构之上的进一步阐述。其强调应该将分布在各个进程上的功能点视作为一种服务，而这些服务应该有着<code>可复用</code>、<code>契约接口</code>、<code>模块化</code>、<code>服务自治</code>、<code>松耦合</code>、<code>无状态</code>等特点。而 SOA（面向服务架构）其实就是服务化大环境下的产物，它有着服务化的所有特点，及其相关技术的解决方案。</p>
+<h3 id="SOA-的到底是什么，及其价值所在"><a href="#SOA-的到底是什么，及其价值所在" class="headerlink" title="SOA 的到底是什么，及其价值所在"></a>SOA 的到底是什么，及其价值所在</h3><p> 个人认为可以站在不同层面来理解 SOA。譬如<code>站在企业层面</code>，SOA 架构是一套用来解决<strong>现有异构系统信息孤岛问题</strong>的解决方案。企业通常会因为<strong>成本效益问题</strong>而引入 ESB (SOA) 组件以解决各个系统的通信问题，毕竟与推倒现有系统重构相比，这种方案的风险和成本更低。企业系统在接入 ESB（企业服务总线）后，就可以进行数据互通了。而此时接入 ESB 的所有系统都可将其被视为一个服务，而服务与服务之间就形成了一个 SOA 架构风格的生态系统。</p>
+<p><code>站在应用系统层面</code>，系统应该进行模块化划分让其成为一个可复用和自治的功能单元（服务），且模块与模块之间能够以契约接口的方式进行通信和协作，以此来达到高内聚地耦合和提高可扩展性的需求。</p>
+<p>最后总的来说，<strong>SOA 并不是特指某些技术，而是一套系统服务协作的解决方案</strong>。它强调的是服务复用和互通。我们可以通过 SOA 架构思想来提高企业内部系统服务的可复用性和使用价值。</p>
+<h3 id="服务化常见技术"><a href="#服务化常见技术" class="headerlink" title="服务化常见技术"></a>服务化常见技术</h3><ul>
+<li>Web Service：可基于 SOAP 或 REST 进行远程服务调用，因为用的是 XML 进行交行户，所以与平台无关，因此常用于解决异构系统协作问题</li>
+<li>RPC：服务远程调用。譬如 Dubbo 就称自己为服务化 RPC 框架</li>
+<li>MQ：提供消息的发布和订阅功能</li>
+<li>ESB：企业服务总线。ESB 是 SOA 中极具代表性的组件，它一般会有以下功能和特点<ul>
+<li>协议转换</li>
+<li>请求路由</li>
+<li>可集成 JMS(MQ) 和 Web Service</li>
+</ul>
+</li>
+</ul>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/011.png"></p>
+<h3 id="ESB-存在的问题"><a href="#ESB-存在的问题" class="headerlink" title="ESB 存在的问题"></a>ESB 存在的问题</h3><ul>
+<li>ESB 是一个重量级组件，存在单点问题</li>
+<li>开发和维护成本高，所以企业一般会采购现成的产品（譬如 WebSphere ESB、Message Broker），而不是自己实现</li>
+<li>采购的 ESB 服务可能无法全面符合企业当前需求</li>
+<li>因存在残留系统，所以改造幅度有限，从而导致通信协议通常不够轻量，其交互过程常有较多没有价值的信息</li>
+<li>接入 ESB 时，对规范和标准要求较高，导致实施和推广难度加大</li>
+</ul>
+<h3 id="SOA-服务的两种协作模式"><a href="#SOA-服务的两种协作模式" class="headerlink" title="SOA 服务的两种协作模式"></a>SOA 服务的两种协作模式</h3><p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/010.png"></p>
+<p>第一种</p>
+<ul>
+<li>采用契约接口进行点对点通信，解决系统服务的复用问题</li>
+<li>缺点是接口管理复杂，维护成本会随着系统服务数量的增加而提升</li>
+</ul>
+<p>第二种：</p>
+<ul>
+<li>采用 ESB 中间件进行通讯枢纽，以集中式管理和协调通信</li>
+<li>缺点是 ESB 重且复杂，存在单点问题，一旦发生故障则瘫痪通信。要解决以上问题导致实施 SOA 变得复杂</li>
+</ul>
+<h3 id="为什么有人说-SOA-不适合互联网项目"><a href="#为什么有人说-SOA-不适合互联网项目" class="headerlink" title="为什么有人说 SOA 不适合互联网项目"></a>为什么有人说 SOA 不适合互联网项目</h3><p>首先个人并不完全认同这种说法。在上面已经提到过，SOA 并不是特指某些技术，而是一套系统服务协作的解决方案。譬如企业急需要解决残留系统的通信问题，这时自然就发挥 SOA（ESB）的作用了。譬如有一篇在网上广泛流传的文章《服务端高并发分布式架构演进之路》中就提及到，淘宝在第十二次架构的演进当中就引入了 ESB 来屏蔽接口调用时的协议差异。</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/004.png"></p>
+<p>而阿里巴巴在国内本就是互联网电商的龙头企业，所以说 SOA 不合适互联网是根本站不住脚的。但为什么我要说<strong>不完全认同</strong>而不是<strong>不认同</strong>呢？这是因为如果你是<code>站在系统应用层面</code>来看的话，SOA 确实并不符合现今互联网应用的发展需求。个人认为导致这种局面的主要原因是 <strong>SOA 的通信协议和核心组件（ESB）比较重，而互联网系统对性能、可扩展、稳定、可维护等特性都有较大的需求</strong>。</p>
+<h3 id="SOA（服务）治理"><a href="#SOA（服务）治理" class="headerlink" title="SOA（服务）治理"></a>SOA（服务）治理</h3><p>当企业内部的系统服务化成 SOA 架构后，系统服务的管理问题就很自然地被放大了，因为除了技术问题之外很可能还会引入跨团队协作。譬如现在 A 系统服务需要和 B 系统服务进行对接，但两个系统由不同公司的团队来维护，因此这时不仅会出现很多业务层面的问题，还有出现团队协作的问题。而所谓的服务治理其实就是用来解决这一问题的。我们也可以简单理解，<strong>服务治理其实就是如何让服务运行得更好的过程</strong>。它涵盖的范围非常广，譬如<code>开发治理</code> 、<code>测试治理</code>、<code>运维治理</code>、<code>管理治理</code>等多个方面 。而作为一个开发者而言，个人认为<code>开发治理</code>应该涵盖以下这些内容：</p>
+<ul>
+<li>服务网关，对服务入口进行统一管理，方便组织和访问</li>
+<li>服务的注册和发现，将服务的提供者和消费者解耦，让消费者能感知提供者是否可用</li>
+<li>服务容错，采用熔断机制，让系统在处理请求时即使有个别服务不可用，但依然能维持系统的可用性</li>
+<li>采用轻量级通信协议，实现服务的松耦合</li>
+<li>服务负载均衡，可用过前后端负载均衡，合理地分摊服务的请求负载</li>
+<li>服务功能开关，可通过配置中心实现，在必须要可进行功能开关以及逻辑切换</li>
+<li>服务限流，对请求或资源进行限额，保证服务能够在高负载下仍然能够继续提供服务</li>
+<li>服务的安全性，譬如幂等、鉴权、接口规范等设计和处理</li>
+<li>日志、度量、请求链路等监控，实时了解服务运行状态，应对各种突发情况</li>
+<li>服务接口版本管理，方便必要时可回滚和记录版本迭代过程</li>
+<li>服务版本治理，引入蓝绿发布和灰度发布（金丝雀发布），实现平滑地升级和回滚</li>
+<li>实现标准化部署，通过容器镜像实现标准化部署，屏蔽运行环境带来的不确定性</li>
+<li>关注服务的编排和伸缩性，依赖现今的流行的分布式支撑平台（譬如 Kubernetes）实现服务的动态伸缩，以及自动管理功能</li>
+<li>完善的单元测试用例，单元测试覆盖率越高，就可以大大降低后续集成时带来的问题</li>
+<li>合理的开发发布流程，引入持续集成方案，以提供一个可持续发布的应用系统版本</li>
+<li>善于运用开发管理工具，譬如 Jira、禅道等，以提高协作效率和系统缺陷反馈工作</li>
+<li>良好的源码版本控制，譬如采用 Git Flow 进行合理化的分支管理</li>
+</ul>
+<p>可以看到，光从技术角度来看服务治理就涵盖了很多内容，而且还不是全部，所以说服务治理是一个相当大的话题，而又因为个人目前的知识体系存在一定的局限性，所以关于服务治理有关的详细内容在这里就暂且不展开了。</p>
+<p>我们回到 SOA 的讨论上，合理的服务治理有利于服务的稳定运作和维护。而在大体了解了什么是服务治理之后其实不难发现，如果站在企业层面来实施 SOA 治理的话，其实是一件成本相当大的事情。因为现有的系统已经成型很难做出较大的改动。即 SOA 不适合互联网项目的原因除了比较重之外还不利于服务治理的展开。</p>
+<h2 id="微服务架构-MSA"><a href="#微服务架构-MSA" class="headerlink" title="微服务架构(MSA)"></a>微服务架构(MSA)</h2><h3 id="我理解的微服务"><a href="#我理解的微服务" class="headerlink" title="我理解的微服务"></a>我理解的微服务</h3><p>微服务并不是一种技术层面的东西，它更像是一种理念。意在设计出一个能够独立自主的服务。<br>个人认为一个微服务最起码需要满足以下几个基本要求</p>
+<ul>
+<li>业务职责单一：以业务能力为基本单位</li>
+<li>高内聚低耦合：做到能力集中，而尽量少依赖外部能力</li>
+<li>轻量级通信协议：使用简单和轻量的通信方式</li>
+<li>无状态：利于服务伸缩</li>
+<li>容器化：容器化则能提高部署效率及实现服务的自动伸缩</li>
+</ul>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/005.png"></p>
+<ul>
+<li>图片源自：<a target="_blank" rel="noopener" href="https://www.linkedin.com/pulse/event-driven-microservices-architecture-using-spring-cloud-bruksha">https://www.linkedin.com/pulse/event-driven-microservices-architecture-using-spring-cloud-bruksha</a></li>
+</ul>
+<h3 id="微服务带来的问题"><a href="#微服务带来的问题" class="headerlink" title="微服务带来的问题"></a>微服务带来的问题</h3><ul>
+<li>微服务边界划分</li>
+<li>服务治理</li>
+<li>可视化监控</li>
+<li>DevOps流程管理</li>
+</ul>
+<h3 id="微服务要多微？"><a href="#微服务要多微？" class="headerlink" title="微服务要多微？"></a>微服务要多微？</h3><p>个人认为将微服务中的“微”字理解为“合理”更加适当一些。其实只要能做到上面提到的<code>业务职责单一</code>、<code>高内聚低耦合</code>、<code>轻量级通信协议</code>、<code>轻量级通信协议</code>、<code>无状态</code>、<code>容器化</code>这几点，已经成功一大半，剩下服务治理和可视化监控的问题。</p>
+<p>此外，现在比较流行的微服务设计方法论莫过于DDD了，即领域驱动设计。DDD方法论由一系列设计元模式组成，它强调通过降低沟通成本来达成意见共识，并要求面向通用语言来建模及代码落地，以求做到设计即代码，也就是说<strong>业务变设计变，设计变代码变</strong>的效果。在DDD中存在限界上下文的概念，它通用语言的语意边界，即能够规限领域模型的活动范围。对于微服务边界而言，限界上下文是一个重要参考点，它可以是一个顶级包，可以是一个模块，可以是一个服务&#x2F;系统。这是因为DDD过程其实并涉及技术或资源相关的元素，它整个建模过程都是面向业务和领域知识的，所欲代码落地时需要进一步设计。譬如我们可以以限界上下文为基础，再根据团队的能力和资源的数量来划分微服务。</p>
+<p>DDD是一种非常棒的软件工程方法论，当你真正理解到DDD是什么的时候，你会发现它就是微服务该有的样子，但因为门槛有些高所以比较难落地。个人认为如果要落地则需要有开明的管理阶层和协作能力，以及一支精悍且稳定的开发团队才行，简而言之，越少人越容易落地。还有就是DDD本身是一个不断探索的过程，所以应该需要理解期间的成本才行。譬如如果你是一个开发者，你应该让老板买一本DDD的来看一下。。。</p>
+<h3 id="常见的服务边界划分方法"><a href="#常见的服务边界划分方法" class="headerlink" title="常见的服务边界划分方法"></a>常见的服务边界划分方法</h3><ul>
+<li>按业务能力划分</li>
+<li>按功能划分（不推荐）</li>
+<li>DDD（真微服务）</li>
+</ul>
+<h3 id="MSA-和-SOA-较为明显的区别"><a href="#MSA-和-SOA-较为明显的区别" class="headerlink" title="MSA 和 SOA 较为明显的区别"></a>MSA 和 SOA 较为明显的区别</h3><p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/015.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>《大型网站系统与Java中间件实践》</li>
+<li><a target="_blank" rel="noopener" href="https://developer.ibm.com/articles/cl-lightweight-integration-1/">The fate of the ESB</a></li>
+<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/35014242/what-is-the-difference-between-api-gateway-and-esb">What is the difference between API Gateway and ESB?</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/webservices/0811_magy_esb/">第 1 部分，IBM ESB 产品之间的比较</a></li>
+<li><a target="_blank" rel="noopener" href="https://chenglinpain.wordpress.com/2008/12/23/soa%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9%E5%92%8C%E4%BC%81%E4%B8%9A%E7%9A%84%E9%80%89%E6%8B%A9/">SOA的优缺点和企业的选择</a></li>
+<li><a target="_blank" rel="noopener" href="https://martinfowler.com/articles/microservices.html">Microservices</a></li>
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=Mzg5NDAwMjYyOA==&mid=2247483990&idx=1&sn=45f1edbd4451b2692384a231d095acf0&chksm=c02776fdf750ffeb688a1aa161bc01f7a88607b75e854be9094501d7e546b9fc2c9ba1caf118&mpshare=1&scene=23&srcid=1116vkUKPMplQOslmc5NPqVm&sharer_sharetime=1573910488563&sharer_shareid=8c59a8516a5dde55c3322bdf632d8ba4#rd">鲸技术：微服务之服务治理</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/webservices/ar-servgov/index.html">SOA 治理简介</a></li>
+<li><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000018626163">服务端高并发分布式架构演进之路</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

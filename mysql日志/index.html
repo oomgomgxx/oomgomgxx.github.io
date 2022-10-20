@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      MySQL日志 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Jun 17, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      MySQL日志
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年07月1日15:05:58 — 修改对InnoDB日志的理解</li>
+<li>2020年4月27日10:51:17 — 日志输出定向到 table 相关内容</li>
+</ul>
+<h2 id="MySQL中的日志"><a href="#MySQL中的日志" class="headerlink" title="MySQL中的日志"></a>MySQL中的日志</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><p><img src="/mysql%E6%97%A5%E5%BF%97/006.png"></p>
+<h3 id="二进制-归档-日志"><a href="#二进制-归档-日志" class="headerlink" title="二进制(归档)日志"></a>二进制(归档)日志</h3><h4 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h4><p>记录修改数据的操作</p>
+<h4 id="查看是否开启"><a href="#查看是否开启" class="headerlink" title="查看是否开启"></a>查看是否开启</h4><p>二进制日志默认是关闭的，需要手动开启</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 是否开启</span></span><br><span class="line"><span class="keyword">show</span> variables <span class="keyword">like</span> <span class="string">&#x27;%log_bin%&#x27;</span>;</span><br><span class="line"><span class="comment">-- 输出二进制日志文件的名字</span></span><br><span class="line"><span class="keyword">show</span> <span class="type">binary</span> logs;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/mysql%E6%97%A5%E5%BF%97/1.png"></p>
+<h4 id="开启日志"><a href="#开启日志" class="headerlink" title="开启日志"></a>开启日志</h4><p>官方文档：<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html">https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html</a> </p>
+<p>1）在 mysql 的 ini 文件中添加或修改配置（Mysql 5.7）</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">[mysqld]</span></span><br><span class="line"><span class="attr">server-id</span> = <span class="string">1</span></span><br><span class="line"><span class="attr">log-bin</span> = <span class="string">mysql-bin-log</span></span><br></pre></td></tr></table></figure>
+
+<p>2）重启 mysql 服务</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/2.png"></p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/3.png"></p>
+<p>3）然后可以看到在目录中会多了日志文件</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/4.png"></p>
+<p>其中 000001 这个后缀会随着 mysql 的重启而递增。</p>
+<h4 id="查看日志"><a href="#查看日志" class="headerlink" title="查看日志"></a>查看日志</h4><p>在此之前我在数据库中做了如下操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create database test;</span><br><span class="line">Query OK, 1 rows affected (0.01 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; use test;</span><br><span class="line">Query OK, 0 rows affected (0.01 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; create table book(id int primary key auto_increment, bname varchar(30) not null);</span><br><span class="line">Query OK, 0 rows affected (0.04 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into book(bname) values(&#x27;book1&#x27;),(&#x27;book2&#x27;);</span><br><span class="line">Query OK, 2 rows affected (0.01 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; delete from book;</span><br><span class="line">Query OK, 2 rows affected (0.02 秒)</span><br></pre></td></tr></table></figure>
+
+<p>进入 docker 容器使用 mysql 提供的 mysqlbinlog 来读取二进制日志中的内容</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it 容器名称 bin/sh</span><br></pre></td></tr></table></figure>
+
+<p>读取二进制文件内容</p>
+<blockquote>
+<p>其中 &#x2F;var&#x2F;lib&#x2F;mysql 是mysql的挂载点</p>
+<p>非 docker 容器 mysql 省略该步骤，直接在命令行中使用 mysqlbinlog 即可</p>
+</blockquote>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/5.png"></p>
+<p>二进制内容如下</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">/*!50530</span> <span class="string">SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;</span></span><br><span class="line"><span class="attr">/*!50003</span> <span class="string">SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;</span></span><br><span class="line"><span class="attr">DELIMITER</span> <span class="string">/*!*/;</span></span><br><span class="line"><span class="comment"># at 4</span></span><br><span class="line"><span class="comment">#190627 13:27:37 server id 1  end_log_pos 123 CRC32 0x369d3ff8 	Start: binlog v 4, server v 5.7.25-log created 190627 13:27:37</span></span><br><span class="line"><span class="comment"># Warning: this binlog is either in use or was not closed properly.</span></span><br><span class="line"><span class="attr">BINLOG</span> <span class="string">&#x27;</span></span><br><span class="line"><span class="attr">ScQUXQ8BAAAAdwAAAHsAAAABAAQANS43LjI1LWxvZwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</span></span><br><span class="line"><span class="attr">AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAXwAEGggAAAAICAgCAAAACgoKKioAEjQA</span></span><br><span class="line"><span class="attr">Afg/nTY</span>=<span class="string"></span></span><br><span class="line"><span class="attr">&#x27;/*!*/;</span></span><br><span class="line"><span class="comment"># at 123</span></span><br><span class="line"><span class="comment">#190627 13:27:37 server id 1  end_log_pos 154 CRC32 0x02688b4d 	Previous-GTIDs</span></span><br><span class="line"><span class="comment"># [empty]</span></span><br><span class="line"><span class="comment"># at 154</span></span><br><span class="line"><span class="comment">#190627 13:35:25 server id 1  end_log_pos 219 CRC32 0xf0c8f17a 	Anonymous_GTID	last_committed=0	sequence_number=1	rbr_only=no</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@SESSION.GTID_NEXT= &#x27;ANONYMOUS&#x27;/*!*/;</span></span><br><span class="line"><span class="comment"># at 219</span></span><br><span class="line"><span class="comment">#190627 13:35:25 server id 1  end_log_pos 313 CRC32 0xdcf0f957 	Query	thread_id=5	exec_time=0	error_code=0</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">TIMESTAMP=1561642525/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@session.pseudo_thread_id=5/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@session.sql_mode=1436549152/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;</span></span><br><span class="line"><span class="attr">/*!\C</span> <span class="string">utf8 *//*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@session.character_set_client=33,@@session.collation_connection=33,@@session.collation_server=8/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@session.lc_time_names=0/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@session.collation_database=DEFAULT/*!*/;</span></span><br><span class="line"><span class="attr">create</span> <span class="string">database test</span></span><br><span class="line"><span class="attr">/*!*/;</span></span><br><span class="line"><span class="comment"># at 313</span></span><br><span class="line"><span class="comment">#190627 13:36:25 server id 1  end_log_pos 378 CRC32 0x038e1709 	Anonymous_GTID	last_committed=1	sequence_number=2	rbr_only=no</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@SESSION.GTID_NEXT= &#x27;ANONYMOUS&#x27;/*!*/;</span></span><br><span class="line"><span class="comment"># at 378</span></span><br><span class="line"><span class="comment">#190627 13:36:25 server id 1  end_log_pos 532 CRC32 0x40de115b 	Query	thread_id=5	exec_time=0	error_code=0</span></span><br><span class="line"><span class="attr">use</span> <span class="string">`test`/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">TIMESTAMP=1561642585/*!*/;</span></span><br><span class="line"><span class="attr">create</span> <span class="string">table book(id int primary key auto_increment, bname varchar(30) not null)</span></span><br><span class="line"><span class="attr">/*!*/;</span></span><br><span class="line"><span class="comment"># at 532</span></span><br><span class="line"><span class="comment">#190627 13:37:21 server id 1  end_log_pos 597 CRC32 0xd8c55e1b 	Anonymous_GTID	last_committed=2	sequence_number=3	rbr_only=yes</span></span><br><span class="line"><span class="attr">/*!50718</span> <span class="string">SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@SESSION.GTID_NEXT= &#x27;ANONYMOUS&#x27;/*!*/;</span></span><br><span class="line"><span class="comment"># at 597</span></span><br><span class="line"><span class="comment">#190627 13:37:21 server id 1  end_log_pos 669 CRC32 0x715d874a 	Query	thread_id=5	exec_time=0	error_code=0</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">TIMESTAMP=1561642641/*!*/;</span></span><br><span class="line"><span class="attr">BEGIN</span></span><br><span class="line"><span class="attr">/*!*/;</span></span><br><span class="line"><span class="comment"># at 669</span></span><br><span class="line"><span class="comment">#190627 13:37:21 server id 1  end_log_pos 719 CRC32 0xbd1b94bd 	Table_map(创建了表): `test`.`book` mapped to number 103</span></span><br><span class="line"><span class="comment"># at 719</span></span><br><span class="line"><span class="comment">#190627 13:37:21 server id 1  end_log_pos 776 CRC32 0x4ce16b91 	Write_rows(写入了数据): table id 103 flags: STMT_END_F</span></span><br><span class="line"></span><br><span class="line"><span class="attr">BINLOG</span> <span class="string">&#x27;</span></span><br><span class="line"><span class="attr">kcYUXRMBAAAAMgAAAM8CAAAAAGcAAAAAAAEABHRlc3QABGJvb2sAAgMPAh4AAL2UG70</span>=<span class="string"></span></span><br><span class="line"><span class="attr">kcYUXR4BAAAAOQAAAAgDAAAAAGcAAAAAAAEAAgAC//wBAAAABWJvb2sx/AIAAAAFYm9vazKRa+FM</span></span><br><span class="line"><span class="attr">&#x27;/*!*/;</span></span><br><span class="line"><span class="comment"># at 776</span></span><br><span class="line"><span class="comment">#190627 13:37:21 server id 1  end_log_pos 807 CRC32 0xdf835904 	Xid = 15</span></span><br><span class="line"><span class="attr">COMMIT/*!*/;</span></span><br><span class="line"><span class="comment"># at 807</span></span><br><span class="line"><span class="comment">#190627 13:50:29 server id 1  end_log_pos 872 CRC32 0x8318128e 	Anonymous_GTID	last_committed=3	sequence_number=4	rbr_only=yes</span></span><br><span class="line"><span class="attr">/*!50718</span> <span class="string">SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@SESSION.GTID_NEXT= &#x27;ANONYMOUS&#x27;/*!*/;</span></span><br><span class="line"><span class="comment"># at 872</span></span><br><span class="line"><span class="comment">#190627 13:50:29 server id 1  end_log_pos 944 CRC32 0x65902211 	Query	thread_id=9	exec_time=0	error_code=0</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">TIMESTAMP=1561643429/*!*/;</span></span><br><span class="line"><span class="attr">BEGIN</span></span><br><span class="line"><span class="attr">/*!*/;</span></span><br><span class="line"><span class="comment"># at 944</span></span><br><span class="line"><span class="comment">#190627 13:50:29 server id 1  end_log_pos 994 CRC32 0x29ddc805 	Table_map: `test`.`book` mapped to number 103</span></span><br><span class="line"><span class="comment"># at 994</span></span><br><span class="line"><span class="comment">#190627 13:50:29 server id 1  end_log_pos 1051 CRC32 0xa331f579 	Delete_rows(删除了数据): table id 103 flags: STMT_END_F</span></span><br><span class="line"></span><br><span class="line"><span class="attr">BINLOG</span> <span class="string">&#x27;</span></span><br><span class="line"><span class="attr">pckUXRMBAAAAMgAAAOIDAAAAAGcAAAAAAAEABHRlc3QABGJvb2sAAgMPAh4AAAXI3Sk</span>=<span class="string"></span></span><br><span class="line"><span class="attr">pckUXSABAAAAOQAAABsEAAAAAGcAAAAAAAEAAgAC//wBAAAABWJvb2sx/AIAAAAFYm9vazJ59TGj</span></span><br><span class="line"><span class="attr">&#x27;/*!*/;</span></span><br><span class="line"><span class="comment"># at 1051</span></span><br><span class="line"><span class="comment">#190627 13:50:29 server id 1  end_log_pos 1082 CRC32 0x1ffda4cc 	Xid = 34</span></span><br><span class="line"><span class="attr">COMMIT/*!*/;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">@@SESSION.GTID_NEXT= &#x27;AUTOMATIC&#x27; /* added by mysqlbinlog */ /*!*/;</span></span><br><span class="line"><span class="attr">DELIMITER</span> <span class="string">;</span></span><br><span class="line"><span class="comment"># End of log file</span></span><br><span class="line"><span class="attr">/*!50003</span> <span class="string">SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;</span></span><br><span class="line"><span class="attr">/*!50530</span> <span class="string">SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="根据二进制日志恢复数据"><a href="#根据二进制日志恢复数据" class="headerlink" title="根据二进制日志恢复数据"></a>根据二进制日志恢复数据</h4><p>1）先删除表中的数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; delete from book;</span><br><span class="line">Query OK, 2 rows affected (0.02 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from book;</span><br><span class="line">空的数据集 (0.01 秒)</span><br></pre></td></tr></table></figure>
+
+<p>2）恢复 <code>delete from book;</code>前的数据</p>
+<p>在恢复之前我们需要到二进制日志文件中找到删除数据命令的时间点，如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">#190627 13:50:29 server id 1  end_log_pos 1051 CRC32 0xa331f579 	Delete_rows(删除了数据): table id 103 flags: STMT_END_F</span><br><span class="line"></span><br><span class="line">BINLOG &#x27;</span><br><span class="line">pckUXRMBAAAAMgAAAOIDAAAAAGcAAAAAAAEABHRlc3QABGJvb2sAAgMPAh4AAAXI3Sk=</span><br><span class="line">pckUXSABAAAAOQAAABsEAAAAAGcAAAAAAAEAAgAC//wBAAAABWJvb2sx/AIAAAAFYm9vazJ59TGj</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>可以看到时间点是：190627 13:50:29（2019-06-27 13:50:29）</p>
+<p>3）用同样的方法，找到要恢复数据的起点时间（如果不设置起点默认从 mysql 启动位置开始恢复）</p>
+<p>时间点是：190627 13:37:21（2019-06-27 13:37:21）</p>
+<p>4）使用 mysqlbinlog 命令恢复数据</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqlbinlog --start-datetime=<span class="string">&quot;2019-06-27 13:37:21&quot;</span> --stop-datetime=<span class="string">&quot;2019-06-27 13:50:29&quot;</span> mysql-bin-log.000001 mysql-bin-log.000002 | mysql -uroot -p123456</span><br></pre></td></tr></table></figure>
+
+<p><img src="/mysql%E6%97%A5%E5%BF%97/6.png"></p>
+<p>5）查看结果</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from book;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | bname |</span><br><span class="line">+----+-------+</span><br><span class="line">| 1  | book1 |</span><br><span class="line">| 2  | book2 |</span><br><span class="line">+----+-------+</span><br><span class="line">2 行于数据集 (0.02 秒)</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="通用查询日志"><a href="#通用查询日志" class="headerlink" title="通用查询日志"></a>通用查询日志</h3><h4 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h4><p>记录用户的所有操作，包括启动关闭服务器、查询、更新等信息</p>
+<h4 id="查看是否开启-1"><a href="#查看是否开启-1" class="headerlink" title="查看是否开启"></a>查看是否开启</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%general_log%&#x27;;</span><br><span class="line">+------------------+---------------------------------+</span><br><span class="line">| Variable_name    | Value                           |</span><br><span class="line">+------------------+---------------------------------+</span><br><span class="line">| general_log      | OFF                             |</span><br><span class="line">| general_log_file | /var/lib/mysql/8ddb8a0a85bb.log |</span><br><span class="line">+------------------+---------------------------------+</span><br><span class="line">2 行于数据集 (0.02 秒)</span><br></pre></td></tr></table></figure>
+
+<h4 id="开启日志-1"><a href="#开启日志-1" class="headerlink" title="开启日志"></a>开启日志</h4><p>1）在 ini 配置文件添加如下配置</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">[mysqld]</span></span><br><span class="line"><span class="comment"># General</span></span><br><span class="line"><span class="comment"># close 0, open 1, default 0</span></span><br><span class="line"><span class="attr">general-log</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">general_log_file</span>=<span class="string">&quot;general-log&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>2）重启服务</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/7.png"></p>
+<h4 id="观察日志"><a href="#观察日志" class="headerlink" title="观察日志"></a>观察日志</h4><p>在观察之前我做了如下操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; use test;</span><br><span class="line">Query OK, 0 rows affected (0.01 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from book;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | bname |</span><br><span class="line">+----+-------+</span><br><span class="line">| 1  | book1 |</span><br><span class="line">| 2  | book2 |</span><br><span class="line">+----+-------+</span><br><span class="line">2 行于数据集 (0.02 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; delete from book where id = 1;</span><br><span class="line">Query OK, 1 rows affected (0.01 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from book;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | bname |</span><br><span class="line">+----+-------+</span><br><span class="line">| 2  | book2 |</span><br><span class="line">+----+-------+</span><br><span class="line">1 行于数据集 (0.01 秒)</span><br></pre></td></tr></table></figure>
+
+<p>查看日志日志内容如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mysqld, Version: 5.7.25-log (MySQL Community Server (GPL)). started with:</span><br><span class="line">Tcp port: 0  Unix socket: (null)</span><br><span class="line">Time                 Id Command    Argument</span><br><span class="line">2019-06-27T14:22:34.444592Z	    2 Connect	root@172.17.0.1 on  using TCP/IP</span><br><span class="line">2019-06-27T14:22:34.541845Z	    2 Query	SET NAMES utf8</span><br><span class="line">2019-06-27T14:22:34.543328Z	    2 Query	show variables like &#x27;profiling&#x27;</span><br><span class="line">2019-06-27T14:22:34.547288Z	    2 Query	SHOW DATABASES</span><br><span class="line">2019-06-27T14:22:34.581636Z	    2 Query	select SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME from INFORMATION_SCHEMA.SCHEMATA</span><br><span class="line">2019-06-27T14:23:48.931701Z	    3 Connect	root@172.17.0.1 on  using TCP/IP</span><br><span class="line">2019-06-27T14:23:48.933825Z	    3 Query	SET NAMES utf8</span><br><span class="line">2019-06-27T14:23:58.266696Z	    3 Query	use test</span><br><span class="line">2019-06-27T14:24:04.615456Z	    3 Query	select * from book</span><br><span class="line">2019-06-27T14:24:24.029207Z	    3 Query	delete from book where id = 1</span><br><span class="line">2019-06-27T14:24:27.554610Z	    3 Query	select * from book</span><br></pre></td></tr></table></figure>
+
+<p>从上面可以看到，数据在什么时候做了些什么操作都是一目了然</p>
+<h3 id="慢查询日志"><a href="#慢查询日志" class="headerlink" title="慢查询日志"></a>慢查询日志</h3><h4 id="作用-2"><a href="#作用-2" class="headerlink" title="作用"></a>作用</h4><ul>
+<li><p>记录超过指定时间的 SQL 语句</p>
+</li>
+<li><p>可以利用慢查询日志定位<strong>执行时间长</strong>、<strong>效率低</strong> 的语句，从而可以做到有针对性地优化</p>
+</li>
+</ul>
+<h4 id="查看是否开启-2"><a href="#查看是否开启-2" class="headerlink" title="查看是否开启"></a>查看是否开启</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%query%&#x27;;</span><br><span class="line">+------------------------------+-------------------+</span><br><span class="line">| Variable_name                | Value             |</span><br><span class="line">+------------------------------+-------------------+</span><br><span class="line">| slow_query_log               | OFF               |</span><br><span class="line">+------------------------------+-------------------+</span><br><span class="line">13 行于数据集 (0.02 秒)</span><br></pre></td></tr></table></figure>
+
+<h4 id="开启日志-2"><a href="#开启日志-2" class="headerlink" title="开启日志"></a>开启日志</h4><h5 id="方式1：配置文件开启"><a href="#方式1：配置文件开启" class="headerlink" title="方式1：配置文件开启"></a>方式1：配置文件开启</h5><p>1）在 mysql 配置文件中添加如下配置</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># slow-query-log</span></span><br><span class="line"><span class="comment"># close 0, open 1, default 0</span></span><br><span class="line"><span class="attr">slow-query-log</span> = <span class="string">1</span></span><br><span class="line"><span class="attr">slow_query_log_file</span> = <span class="string">&quot;my_slow-query-log&quot;</span></span><br><span class="line"><span class="comment"># 超过 2s 的查询都会被记录</span></span><br><span class="line"><span class="attr">long_query_time</span> = <span class="string">2</span></span><br></pre></td></tr></table></figure>
+
+<p>2）重启服务</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/8.png"></p>
+<h5 id="方式2：设置全局变量开启"><a href="#方式2：设置全局变量开启" class="headerlink" title="方式2：设置全局变量开启"></a>方式2：设置全局变量开启</h5><p>1）查看是否开启了慢查询日志</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/001.png"></p>
+<p>2）开启慢查询日志</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/002.png"></p>
+<p> 3）将日志的输出定向为 Table 中，因为默认是输出到 file 的</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/003.png"></p>
+<p>拓展</p>
+<ul>
+<li>查看mysql中有哪些用于记录日志的 Table</li>
+</ul>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/004.png"></p>
+<h4 id="观察日志-1"><a href="#观察日志-1" class="headerlink" title="观察日志"></a>观察日志</h4><p>1）在此之前我使用存储过程往 book 表添加 250000 条数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">PROCEDURE</span> pro_insert_data(<span class="keyword">IN</span> num <span class="type">INT</span>)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">DECLARE</span> temp <span class="type">INT</span>;</span><br><span class="line">	<span class="keyword">SET</span> temp <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">	REPEAT</span><br><span class="line">		<span class="keyword">insert</span> <span class="keyword">into</span> book(bname) <span class="keyword">values</span>(CONCAT(<span class="string">&#x27;book&#x27;</span>,temp));</span><br><span class="line">		<span class="keyword">SET</span> temp <span class="operator">=</span> temp <span class="operator">+</span> <span class="number">1</span>;</span><br><span class="line">	UNTIL temp<span class="operator">&gt;</span>num <span class="keyword">END</span> REPEAT;</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; use test;</span><br><span class="line">Query OK, 0 rows affected (0.01 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; call pro_insert_data(250000);</span><br><span class="line">Lost connection to MySQL server during query</span><br><span class="line"></span><br><span class="line">mysql&gt; select count(1) from book;</span><br><span class="line">+----------+</span><br><span class="line">| count(1) |</span><br><span class="line">+----------+</span><br><span class="line">| 250001   |</span><br><span class="line">+----------+</span><br><span class="line">1 行于数据集 (0.05 秒)</span><br></pre></td></tr></table></figure>
+
+<p>可以看到已经成功插入了250000条数据</p>
+<p>2）执行更新操作</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">update</span> book <span class="keyword">set</span> bname <span class="operator">=</span> <span class="string">&#x27;asasf5461werw321sdfqwasd&#x27;</span>;</span><br><span class="line">Query OK, <span class="number">250001</span> <span class="keyword">rows</span> affected (<span class="number">3.55</span> 秒)</span><br></pre></td></tr></table></figure>
+
+<p>在上面我们将慢查询定义为了 2s，可以看到当前这个更新操作已经超过了2s</p>
+<p>3）查看慢查询日志</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">mysqld,</span> <span class="string">Version: 5.7.25-log (MySQL Community Server (GPL)). started with:</span></span><br><span class="line"><span class="attr">Tcp</span> <span class="string">port: 0  Unix socket: (null)</span></span><br><span class="line"><span class="attr">Time</span>                 <span class="string">Id Command    Argument</span></span><br><span class="line"><span class="comment"># Time: 2019-06-27T15:14:08.200753Z</span></span><br><span class="line"><span class="comment"># User@Host: root[root] @  [172.17.0.1]  Id:     4</span></span><br><span class="line"><span class="comment"># Query_time: 3.541587  Lock_time: 0.022101 Rows_sent: 0  Rows_examined: 250001</span></span><br><span class="line"><span class="attr">use</span> <span class="string">test;</span></span><br><span class="line"><span class="attr">SET</span> <span class="string">timestamp=1561648448;</span></span><br><span class="line"><span class="attr">update</span> <span class="string">book set bname = &#x27;asasf5461werw321sdfqwasd&#x27;;</span></span><br></pre></td></tr></table></figure>
+
+<p>可以看到 update 这条 sql 执行时长为：3.541587 秒，锁时为：0.022101 秒，该操作涉及到的记录数：250001 条。</p>
+<p>除此之外，还可以使用 mysqldumpslow 、pt-query-digest 脚本工具查询慢查询日志</p>
+<p>拓展：使用函数直接制造慢查询</p>
+<p><img src="/mysql%E6%97%A5%E5%BF%97/005.png"></p>
+<h3 id="错误日志"><a href="#错误日志" class="headerlink" title="错误日志"></a>错误日志</h3><p>用于记录 mysql 运行过程中的错误，默认是开启的。但可以通过配置文件指定日志的生成路径和名字</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">[mysqld]</span></span><br><span class="line"><span class="attr">log_error</span> = <span class="string">&quot;error_log&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="InnoDB的redo、redo"><a href="#InnoDB的redo、redo" class="headerlink" title="InnoDB的redo、redo"></a>InnoDB的redo、redo</h2><h3 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h3><p>redo log是InnoDB中事务日志的组成部分，用于记录数据页的修改情况。</p>
+<p>与 binlog 对比</p>
+<ul>
+<li>binlog 是 Server 层面的日志，用于记录修改数据的操作，在事务提交之前写入磁盘</li>
+<li>redo log 是 InnoDB 层面的日志，用于记录数据页的修改情况。其内容会在事务期间不断写入日志缓冲区中国年，并（默认）每隔 1s 刷新到磁盘上对应的日志文件中</li>
+<li>redo log 属于 binlog 的写前日志。即修改操作之前就会先记录，以防在写 binlog 前宕机恢复数据的场景。</li>
+</ul>
+<h3 id="undo-log段"><a href="#undo-log段" class="headerlink" title="undo log段"></a>undo log段</h3><ul>
+<li>undo log 段主要用来给事务回滚提供版本依据，以及实现 MVCC 的快照读操作</li>
+<li>功能和 redo log 相反，它会在记录被修改之前记录下其当前的版本状态</li>
+<li>undo log 没有对应的物理日志文件，它是数据库特定的一个内存段</li>
+</ul>
+<h3 id="查看redo和undo"><a href="#查看redo和undo" class="headerlink" title="查看redo和undo"></a>查看redo和undo</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show global variables like &#x27;%engine%&#x27;;</span><br><span class="line">+----------------------------------+--------+</span><br><span class="line">| Variable_name                    | Value  |</span><br><span class="line">+----------------------------------+--------+</span><br><span class="line">| default_storage_engine           | InnoDB |  默认引擎用的是InnoDB就会开启 redo 和 undo</span><br><span class="line">| default_tmp_storage_engine       | InnoDB |</span><br><span class="line">| disabled_storage_engines         |        |</span><br><span class="line">| internal_tmp_disk_storage_engine | InnoDB |</span><br><span class="line">+----------------------------------+--------+</span><br><span class="line">4 行于数据集 (0.01 秒)</span><br><span class="line"></span><br><span class="line">mysql&gt; show global variables like &#x27;%innodb_log%&#x27;;</span><br><span class="line">+-----------------------------+----------+</span><br><span class="line">| Variable_name               | Value    |</span><br><span class="line">+-----------------------------+----------+</span><br><span class="line">| innodb_log_buffer_size      | 16777216 | 缓冲区大少</span><br><span class="line">| innodb_log_checksums        | ON       |</span><br><span class="line">| innodb_log_compressed_pages | ON       |</span><br><span class="line">| innodb_log_file_size        | 50331648 | redolog和undolog文件大小</span><br><span class="line">| innodb_log_files_in_group   | 2        |</span><br><span class="line">| innodb_log_group_home_dir   | ./       | redolog和undolog所在位置：lb_logfile*的文件</span><br><span class="line">| innodb_log_write_ahead_size | 8192     |</span><br><span class="line">+-----------------------------+----------+</span><br><span class="line">7 行于数据集 (0.01 秒)</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/CAS%E7%90%86%E8%A7%A3/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

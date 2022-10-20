@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      使用Micronaut实现微服务 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Nov 07, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      使用Micronaut实现微服务
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="使用micronaut构建微服务"><a href="#使用micronaut构建微服务" class="headerlink" title="使用micronaut构建微服务"></a>使用micronaut构建微服务</h2><h3 id="场景说明"><a href="#场景说明" class="headerlink" title="场景说明"></a>场景说明</h3><blockquote>
+<p>场景：通过 ip:port&#x2F;api&#x2F;books 返回还有库存的书籍信息</p>
+<p>微服务：Gateway（网关服务：java实现）、Book（书籍服务：groovy实现）、Inventory（存货服务，kotlin实现）</p>
+<p>服务注册中心：Apache Consul</p>
+</blockquote>
+<p>整体架构如下</p>
+<p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/002.png"></p>
+<h3 id="Gateway服务编写（java）"><a href="#Gateway服务编写（java）" class="headerlink" title="Gateway服务编写（java）"></a>Gateway服务编写（java）</h3><h4 id="步骤1：使用mn工具生成项目"><a href="#步骤1：使用mn工具生成项目" class="headerlink" title="步骤1：使用mn工具生成项目"></a>步骤1：使用mn工具生成项目</h4><blockquote>
+<p>默认使用gradle项目管理工具，和java语言</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mn create-app example.micronaut.gateway</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="步骤2：目录"><a href="#步骤2：目录" class="headerlink" title="步骤2：目录"></a>步骤2：目录</h4><p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/001.png"></p>
+<h4 id="步骤3：Book-java"><a href="#步骤3：Book-java" class="headerlink" title="步骤3：Book.java"></a>步骤3：Book.java</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.beans;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Book</span> &#123;</span><br><span class="line">     <span class="keyword">private</span> String isbn; </span><br><span class="line">     <span class="keyword">private</span> String name; </span><br><span class="line">     <span class="keyword">private</span> Integer stock;</span><br><span class="line">     <span class="keyword">public</span> <span class="title function_">Book</span><span class="params">()</span> &#123;&#125;</span><br><span class="line">     <span class="keyword">public</span> <span class="title function_">Book</span><span class="params">(String isbn, String name)</span> &#123; </span><br><span class="line">         <span class="built_in">this</span>.isbn = isbn; </span><br><span class="line">         <span class="built_in">this</span>.name = name; </span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">public</span> String <span class="title function_">getIsbn</span><span class="params">()</span> &#123; <span class="keyword">return</span> isbn; &#125;</span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setIsbn</span><span class="params">(String isbn)</span> &#123; <span class="built_in">this</span>.isbn = isbn; &#125;</span><br><span class="line">     <span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span> &#123; <span class="keyword">return</span> name; &#125;</span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setName</span><span class="params">(String name)</span> &#123; <span class="built_in">this</span>.name = name; &#125;</span><br><span class="line">     <span class="keyword">public</span> Integer <span class="title function_">getStock</span><span class="params">()</span> &#123; <span class="keyword">return</span> stock; &#125;</span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setStock</span><span class="params">(Integer stock)</span> &#123; <span class="built_in">this</span>.stock = stock; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤4：BooksController-java"><a href="#步骤4：BooksController-java" class="headerlink" title="步骤4：BooksController.java"></a>步骤4：BooksController.java</h4><blockquote>
+<p>网关控制器</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.controller;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book;</span><br><span class="line"><span class="keyword">import</span> example.micronaut.client.BooksFetcher;</span><br><span class="line"><span class="keyword">import</span> example.micronaut.client.InventoryFetcher;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.annotation.Controller;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.annotation.Get;</span><br><span class="line"><span class="keyword">import</span> io.reactivex.Flowable;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Controller(&quot;/api&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BooksController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> BooksFetcher booksFetcher;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> InventoryFetcher inventoryFetcher;</span><br><span class="line">    <span class="comment">// 依赖注入实例</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">BooksController</span><span class="params">(BooksFetcher booksFetcher, InventoryFetcher inventoryFetcher)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.booksFetcher = booksFetcher;</span><br><span class="line">        <span class="built_in">this</span>.inventoryFetcher = inventoryFetcher;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Get(&quot;/books&quot;)</span></span><br><span class="line">    Flowable&lt;Book&gt; <span class="title function_">findAll</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 获取到所有的book</span></span><br><span class="line">        Flowable&lt;Book&gt; bookFlowable = booksFetcher.fetchBooks();</span><br><span class="line">        <span class="keyword">return</span> bookFlowable</span><br><span class="line">                .flatMapMaybe(b -&gt; inventoryFetcher.inventory(b.getIsbn())  <span class="comment">// 获取book的库存</span></span><br><span class="line">                        .filter(stock -&gt; stock &gt; <span class="number">0</span>) <span class="comment">// 筛选出库存大于0的book</span></span><br><span class="line">                        .map(stock -&gt; &#123; <span class="comment">// 将stock(库存)设置到Book属性中</span></span><br><span class="line">                            b.setStock(stock);</span><br><span class="line">                            <span class="keyword">return</span> b;</span><br><span class="line">                        &#125;)</span><br><span class="line">                );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤5：定义服务接口"><a href="#步骤5：定义服务接口" class="headerlink" title="步骤5：定义服务接口"></a>步骤5：定义服务接口</h4><p>BookFetcher.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.client;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book;</span><br><span class="line"><span class="keyword">import</span> io.reactivex.Flowable;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">BooksFetcher</span> &#123; </span><br><span class="line">    Flowable&lt;Book&gt; <span class="title function_">fetchBooks</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>InventoryFetcher.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.client;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.reactivex.Maybe;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">InventoryFetcher</span> &#123; </span><br><span class="line">    Maybe&lt;Integer&gt; <span class="title function_">inventory</span><span class="params">(String isbn)</span>; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤6：定义HttpClient"><a href="#步骤6：定义HttpClient" class="headerlink" title="步骤6：定义HttpClient"></a>步骤6：定义HttpClient</h4><blockquote>
+<p>类似于Spring Cloud OpenFeign</p>
+</blockquote>
+<p>BookClient.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.client.impl;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book;</span><br><span class="line"><span class="keyword">import</span> example.micronaut.client.BooksFetcher;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.annotation.Requires;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.env.Environment;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.annotation.Get;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.client.annotation.Client;</span><br><span class="line"><span class="keyword">import</span> io.reactivex.Flowable;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Client(&quot;books&quot;)</span> <span class="comment">/** 发现服务books */</span></span><br><span class="line"><span class="comment">//@Requires(notEnv = Environment.TEST)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">BooksClient</span> <span class="keyword">extends</span> <span class="title class_">BooksFetcher</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="meta">@Get(&quot;/api/books&quot;)</span> <span class="comment">/**调用服务端点*/</span></span><br><span class="line">    Flowable&lt;Book&gt; <span class="title function_">fetchBooks</span><span class="params">()</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>InventoryClient.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.client.impl;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.client.InventoryFetcher;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.annotation.Requires;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.env.Environment;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.annotation.Get;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.client.annotation.Client;</span><br><span class="line"><span class="keyword">import</span> io.reactivex.Maybe;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/** 发现服务inventory */</span></span><br><span class="line"><span class="meta">@Client(&quot;inventory&quot;)</span></span><br><span class="line"><span class="comment">//@Requires(notEnv = Environment.TEST)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">InventoryClient</span> <span class="keyword">extends</span> <span class="title class_">InventoryFetcher</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="meta">@Get(&quot;/api/inventory/&#123;isbn&#125;&quot;)</span>  <span class="comment">/**调用服务端点*/</span></span><br><span class="line">    Maybe&lt;Integer&gt; <span class="title function_">inventory</span><span class="params">(String isbn)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤7：启动类（自动生成）"><a href="#步骤7：启动类（自动生成）" class="headerlink" title="步骤7：启动类（自动生成）"></a>步骤7：启动类（自动生成）</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.micronaut.runtime.Micronaut;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Application</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        Micronaut.run(Application.class);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤8：application-yml"><a href="#步骤8：application-yml" class="headerlink" title="步骤8：application.yml"></a>步骤8：application.yml</h4><blockquote>
+<p>在micronaut中，application-test.yml为测试环境使用的配置</p>
+<p>本例子中application.yml和application-test.yml内容一样</p>
+</blockquote>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">micronaut:</span></span><br><span class="line">    <span class="attr">application:</span></span><br><span class="line">        <span class="attr">name:</span> <span class="string">gateway</span></span><br><span class="line">    <span class="attr">server:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8080</span></span><br><span class="line"><span class="attr">consul:</span></span><br><span class="line">    <span class="attr">client:</span></span><br><span class="line">        <span class="attr">registration:</span></span><br><span class="line">            <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">        <span class="attr">defaultZone:</span> <span class="string">&quot;$&#123;CONSUL_HOST:192.168.4.163&#125;:$&#123;CONSUL_PORT:8500&#125;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤9：单元测试类"><a href="#步骤9：单元测试类" class="headerlink" title="步骤9：单元测试类"></a>步骤9：单元测试类</h4><p>MockBooksClient.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.client;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.annotation.Requires;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.env.Environment;</span><br><span class="line"><span class="keyword">import</span> io.reactivex.Flowable;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.inject.Singleton;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Singleton</span></span><br><span class="line"><span class="meta">@Requires(env = Environment.TEST)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MockBooksClient</span> <span class="keyword">implements</span> <span class="title class_">BooksFetcher</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Flowable&lt;Book&gt; <span class="title function_">fetchBooks</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> Flowable.just(</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">Book</span>(<span class="string">&quot;1491950358&quot;</span>, <span class="string">&quot;Building Microservices&quot;</span>),</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">Book</span>(<span class="string">&quot;1680502395&quot;</span>, <span class="string">&quot;Release It!&quot;</span>),</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">Book</span>(<span class="string">&quot;0321601912&quot;</span>, <span class="string">&quot;Continuous Delivery:&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>MockInventoryClient.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.client;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.annotation.Requires;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.env.Environment;</span><br><span class="line"><span class="keyword">import</span> io.reactivex.Maybe;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.inject.Singleton;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Singleton</span></span><br><span class="line"><span class="meta">@Requires(env = Environment.TEST)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MockInventoryClient</span> <span class="keyword">implements</span> <span class="title class_">InventoryFetcher</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Maybe&lt;Integer&gt; <span class="title function_">inventory</span><span class="params">(String isbn)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (isbn.equals(<span class="string">&quot;1491950358&quot;</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> Maybe.just(<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (isbn.equals(<span class="string">&quot;1680502395&quot;</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> Maybe.just(<span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> Maybe.empty();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>BookControllerTest.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.controller;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.ApplicationContext;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.core.type.Argument;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.HttpRequest;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.client.HttpClient;</span><br><span class="line"><span class="keyword">import</span> io.micronaut.runtime.server.EmbeddedServer;</span><br><span class="line"><span class="keyword">import</span> org.junit.AfterClass;</span><br><span class="line"><span class="keyword">import</span> org.junit.BeforeClass;</span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="keyword">static</span> org.junit.Assert.assertEquals;</span><br><span class="line"><span class="keyword">import</span> <span class="keyword">static</span> org.junit.Assert.assertNotNull;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 单元测试类</span></span><br><span class="line"><span class="comment"> * 默认使用 application-test.yml文件测试（需要新建）</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BooksControllerTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> EmbeddedServer server; </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> HttpClient client;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@BeforeClass</span> </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">setupServer</span><span class="params">()</span> &#123;</span><br><span class="line">        server = ApplicationContext.run(EmbeddedServer.class); </span><br><span class="line">        client = server .getApplicationContext() .createBean(HttpClient.class, server.getURL());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@AfterClass</span> </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">stopServer</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (server != <span class="literal">null</span>) &#123; </span><br><span class="line">            server.stop();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (client != <span class="literal">null</span>) &#123; </span><br><span class="line">            client.stop();</span><br><span class="line">        &#125;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="meta">@Test</span> </span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">retrieveBooks</span><span class="params">()</span> &#123; </span><br><span class="line">         <span class="type">HttpRequest</span> <span class="variable">request</span> <span class="operator">=</span> HttpRequest.GET(<span class="string">&quot;/api/books&quot;</span>);         </span><br><span class="line">         List&lt;Book&gt; books = client.toBlocking().retrieve(request, Argument.of(List.class, Book.class));</span><br><span class="line">         assertNotNull(books); </span><br><span class="line">         assertEquals(<span class="number">1</span>, books.size());</span><br><span class="line">     &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤10：build-gradle"><a href="#步骤10：build-gradle" class="headerlink" title="步骤10：build.gradle"></a>步骤10：build.gradle</h4><blockquote>
+<p>配置依赖</p>
+</blockquote>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">    id <span class="string">&quot;io.spring.dependency-management&quot;</span> version <span class="string">&quot;1.0.6.RELEASE&quot;</span></span><br><span class="line">    id <span class="string">&quot;com.github.johnrengelman.shadow&quot;</span> version <span class="string">&quot;4.0.2&quot;</span></span><br><span class="line">    id <span class="string">&quot;net.ltgt.apt-eclipse&quot;</span> version <span class="string">&quot;0.18&quot;</span></span><br><span class="line">    id <span class="string">&quot;net.ltgt.apt-idea&quot;</span> version <span class="string">&quot;0.18&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">apply plugin:<span class="string">&quot;application&quot;</span></span><br><span class="line">apply plugin:<span class="string">&quot;java&quot;</span></span><br><span class="line"></span><br><span class="line">version <span class="string">&quot;0.1&quot;</span></span><br><span class="line"><span class="keyword">group</span> <span class="string">&quot;example.micronaut&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">repositories</span> &#123;</span><br><span class="line">    mavenLocal()</span><br><span class="line">    mavenCentral()</span><br><span class="line">    maven &#123; url <span class="string">&quot;https://jcenter.bintray.com&quot;</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencyManagement &#123;</span><br><span class="line">    imports &#123;</span><br><span class="line">        mavenBom <span class="string">&#x27;io.micronaut:micronaut-bom:1.0.4&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**  服务注册发现依赖：runtime &quot;io.micronaut:micronaut-discovery-client&quot; */</span></span><br><span class="line"><span class="keyword">dependencies</span> &#123;</span><br><span class="line">    annotationProcessor <span class="string">&quot;io.micronaut:micronaut-inject-java&quot;</span></span><br><span class="line">    annotationProcessor <span class="string">&quot;io.micronaut:micronaut-validation&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-inject&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-validation&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-runtime&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-http-client&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-http-server-netty&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-inject-java&quot;</span></span><br><span class="line">    <span class="keyword">runtime</span> <span class="string">&quot;ch.qos.logback:logback-classic:1.2.3&quot;</span></span><br><span class="line">    <span class="keyword">runtime</span> <span class="string">&quot;io.micronaut:micronaut-discovery-client&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;junit:junit:4.12&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-inject-java&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;org.hamcrest:hamcrest-all:1.3&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">shadowJar &#123;</span><br><span class="line">    mergeServiceFiles()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">run.jvmArgs(<span class="string">&#x27;-noverify&#x27;</span>, <span class="string">&#x27;-XX:TieredStopAtLevel=1&#x27;</span>)</span><br><span class="line"></span><br><span class="line">mainClassName = <span class="string">&quot;example.micronaut.Application&quot;</span></span><br><span class="line"></span><br><span class="line">tasks.withType(JavaCompile)&#123;</span><br><span class="line">    <span class="keyword">options</span>.encoding = <span class="string">&quot;UTF-8&quot;</span></span><br><span class="line">    <span class="keyword">options</span>.compilerArgs.add(<span class="string">&#x27;-parameters&#x27;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="Book服务编写（groovy）"><a href="#Book服务编写（groovy）" class="headerlink" title="Book服务编写（groovy）"></a>Book服务编写（groovy）</h3><h4 id="步骤1：使用mn生成项目"><a href="#步骤1：使用mn生成项目" class="headerlink" title="步骤1：使用mn生成项目"></a>步骤1：使用mn生成项目</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mn create-app example.micronaut.books --lang groovy</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤2：目录-1"><a href="#步骤2：目录-1" class="headerlink" title="步骤2：目录"></a>步骤2：目录</h4><p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/003.png"></p>
+<h4 id="步骤3：Book-groovy"><a href="#步骤3：Book-groovy" class="headerlink" title="步骤3：Book.groovy"></a>步骤3：Book.groovy</h4><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.beans</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> groovy.transform.CompileStatic</span><br><span class="line"><span class="keyword">import</span> groovy.transform.TupleConstructor</span><br><span class="line"></span><br><span class="line"><span class="meta">@CompileStatic</span></span><br><span class="line"><span class="meta">@TupleConstructor</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Book</span> &#123;</span><br><span class="line">    String isbn</span><br><span class="line">    String name</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤4：BooksController-groovy"><a href="#步骤4：BooksController-groovy" class="headerlink" title="步骤4：BooksController.groovy"></a>步骤4：BooksController.groovy</h4><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.controller</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book</span><br><span class="line"><span class="keyword">import</span> example.micronaut.repository.BooksRepository</span><br><span class="line"><span class="keyword">import</span> groovy.transform.CompileStatic</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.annotation.Controller</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.annotation.Get</span><br><span class="line"></span><br><span class="line"><span class="meta">@CompileStatic</span></span><br><span class="line"><span class="meta">@Controller</span>(<span class="string">&quot;/api&quot;</span>)</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BooksController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> BooksRepository booksRepository</span><br><span class="line">    BooksController(BooksRepository booksRepository) &#123;</span><br><span class="line">        <span class="variable language_">this</span>.booksRepository = booksRepository</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Get</span>(<span class="string">&quot;/books&quot;</span>)</span><br><span class="line">    List&lt;Book&gt; list() &#123;</span><br><span class="line">        booksRepository.findAll()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤5：DAO（模拟数据库操作）"><a href="#步骤5：DAO（模拟数据库操作）" class="headerlink" title="步骤5：DAO（模拟数据库操作）"></a>步骤5：DAO（模拟数据库操作）</h4><p>BooksRepository.groovy</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.repository</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">BooksRepository</span> &#123;</span><br><span class="line">    List&lt;Book&gt; findAll()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>BooksRepositoryImpl.groovy</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.repository</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book</span><br><span class="line"><span class="keyword">import</span> groovy.transform.CompileStatic</span><br><span class="line"><span class="keyword">import</span> javax.inject.Singleton</span><br><span class="line"></span><br><span class="line"><span class="meta">@CompileStatic</span></span><br><span class="line"><span class="meta">@Singleton</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BooksRepositoryImpl</span> <span class="keyword">implements</span> <span class="title class_">BooksRepository</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    List&lt;Book&gt; findAll() &#123;</span><br><span class="line">        [</span><br><span class="line">                <span class="keyword">new</span> Book(<span class="string">&quot;1491950358&quot;</span>, <span class="string">&quot;Building Microservices&quot;</span>),</span><br><span class="line">                <span class="keyword">new</span> Book(<span class="string">&quot;1680502395&quot;</span>, <span class="string">&quot;Release It!&quot;</span>),</span><br><span class="line">        ]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤6：启动类（自动生成）"><a href="#步骤6：启动类（自动生成）" class="headerlink" title="步骤6：启动类（自动生成）"></a>步骤6：启动类（自动生成）</h4><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.micronaut.runtime.Micronaut</span><br><span class="line"><span class="keyword">import</span> groovy.transform.CompileStatic</span><br><span class="line"></span><br><span class="line"><span class="meta">@CompileStatic</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Application</span> &#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="type">void</span> main(String[] args) &#123;</span><br><span class="line">        Micronaut.run(Application)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤7：application-yml"><a href="#步骤7：application-yml" class="headerlink" title="步骤7：application.yml"></a>步骤7：application.yml</h4><figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">micronaut:</span></span><br><span class="line">    <span class="attr">application:</span></span><br><span class="line">        <span class="attr">name:</span> <span class="string">books</span></span><br><span class="line">    <span class="attr">server:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8082</span></span><br><span class="line"><span class="attr">consul:</span></span><br><span class="line">    <span class="attr">client:</span></span><br><span class="line">        <span class="attr">registration:</span></span><br><span class="line">            <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">        <span class="attr">defaultZone:</span> <span class="string">&quot;$&#123;CONSUL_HOST:192.168.4.163&#125;:$&#123;CONSUL_PORT:8500&#125;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤8：单元测试类"><a href="#步骤8：单元测试类" class="headerlink" title="步骤8：单元测试类"></a>步骤8：单元测试类</h4><p>BooksControllerSpec.groovy</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.controller</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> example.micronaut.beans.Book</span><br><span class="line"><span class="keyword">import</span> io.micronaut.context.ApplicationContext</span><br><span class="line"><span class="keyword">import</span> io.micronaut.core.type.Argument</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.HttpRequest</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.client.RxHttpClient</span><br><span class="line"><span class="keyword">import</span> io.micronaut.runtime.server.EmbeddedServer</span><br><span class="line"><span class="keyword">import</span> spock.lang.AutoCleanup</span><br><span class="line"><span class="keyword">import</span> spock.lang.Shared</span><br><span class="line"><span class="keyword">import</span> spock.lang.Specification</span><br><span class="line"></span><br><span class="line"><span class="comment">/** 功能测试类 */</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BooksControllerSpec</span> <span class="keyword">extends</span> <span class="title class_">Specification</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** 容器 */</span></span><br><span class="line">    <span class="meta">@Shared</span></span><br><span class="line">    <span class="meta">@AutoCleanup</span></span><br><span class="line">    EmbeddedServer embeddedServer = ApplicationContext.run(EmbeddedServer)</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Shared</span></span><br><span class="line">    <span class="meta">@AutoCleanup</span> </span><br><span class="line">    RxHttpClient client = embeddedServer.applicationContext.createBean(RxHttpClient, embeddedServer.getURL())</span><br><span class="line"></span><br><span class="line">    <span class="type">void</span> <span class="string">&quot;test books retrieve&quot;</span>() &#123; </span><br><span class="line">        <span class="symbol">when:</span></span><br><span class="line">        HttpRequest request = HttpRequest.GET(<span class="string">&#x27;/api/books&#x27;</span>)</span><br><span class="line">        List&lt;Book&gt; books = client.toBlocking().retrieve(request, Argument.of(List, Book))</span><br><span class="line"></span><br><span class="line">        <span class="symbol">then:</span></span><br><span class="line">        books books.size() == <span class="number">2</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤9：build-gradle"><a href="#步骤9：build-gradle" class="headerlink" title="步骤9：build.gradle"></a>步骤9：build.gradle</h4><figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">    id <span class="string">&quot;io.spring.dependency-management&quot;</span> version <span class="string">&quot;1.0.6.RELEASE&quot;</span></span><br><span class="line">    id <span class="string">&quot;com.github.johnrengelman.shadow&quot;</span> version <span class="string">&quot;4.0.2&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">apply plugin:<span class="string">&quot;application&quot;</span></span><br><span class="line">apply plugin:<span class="string">&quot;groovy&quot;</span></span><br><span class="line"></span><br><span class="line">version <span class="string">&quot;0.1&quot;</span></span><br><span class="line"><span class="keyword">group</span> <span class="string">&quot;example.micronaut&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">repositories</span> &#123;</span><br><span class="line">    mavenLocal()</span><br><span class="line">    mavenCentral()</span><br><span class="line">    maven &#123; url <span class="string">&quot;https://jcenter.bintray.com&quot;</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencyManagement &#123;</span><br><span class="line">    imports &#123;</span><br><span class="line">        mavenBom <span class="string">&#x27;io.micronaut:micronaut-bom:1.0.4&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> runtime &quot;io.micronaut:micronaut-discovery-client&quot;</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">dependencies</span> &#123;</span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-runtime-groovy&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-validation&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-http-client&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-http-server-netty&quot;</span></span><br><span class="line">    compileOnly <span class="string">&quot;io.micronaut:micronaut-inject-groovy&quot;</span></span><br><span class="line">    <span class="keyword">runtime</span> <span class="string">&quot;ch.qos.logback:logback-classic:1.2.3&quot;</span></span><br><span class="line">    <span class="keyword">runtime</span> <span class="string">&quot;io.micronaut:micronaut-discovery-client&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-inject-groovy&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> (<span class="string">&quot;org.spockframework:spock-core&quot;</span>) &#123;</span><br><span class="line">        <span class="keyword">exclude</span> <span class="keyword">group</span>: <span class="string">&quot;org.codehaus.groovy&quot;</span>, module: <span class="string">&quot;groovy-all&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">shadowJar &#123;</span><br><span class="line">    mergeServiceFiles()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">run.jvmArgs(<span class="string">&#x27;-noverify&#x27;</span>, <span class="string">&#x27;-XX:TieredStopAtLevel=1&#x27;</span>)</span><br><span class="line"></span><br><span class="line">mainClassName = <span class="string">&quot;example.micronaut.Application&quot;</span></span><br><span class="line"></span><br><span class="line">tasks.withType(GroovyCompile) &#123;</span><br><span class="line">    groovyOptions.forkOptions.jvmArgs.add(<span class="string">&#x27;-Dgroovy.parameters=true&#x27;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Inventory服务编写（kotlin）"><a href="#Inventory服务编写（kotlin）" class="headerlink" title="Inventory服务编写（kotlin）"></a>Inventory服务编写（kotlin）</h3><h4 id="步骤1：使用mn生成项目-1"><a href="#步骤1：使用mn生成项目-1" class="headerlink" title="步骤1：使用mn生成项目"></a>步骤1：使用mn生成项目</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mn create-app example.micronaut.inventory --lang kotlin</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤2：目录-2"><a href="#步骤2：目录-2" class="headerlink" title="步骤2：目录"></a>步骤2：目录</h4><p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/004.png"></p>
+<h4 id="步骤3：Book-kt"><a href="#步骤3：Book-kt" class="headerlink" title="步骤3：Book.kt"></a>步骤3：Book.kt</h4><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.beans</span><br><span class="line"></span><br><span class="line"><span class="keyword">data</span> <span class="keyword">class</span> <span class="title class_">Book</span>(<span class="keyword">val</span> isbn: String, <span class="keyword">val</span> stock: <span class="built_in">Int</span>)</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤4：BooksController-kt"><a href="#步骤4：BooksController-kt" class="headerlink" title="步骤4：BooksController.kt"></a>步骤4：BooksController.kt</h4><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut.controller</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.HttpResponse</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.MediaType</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.<span class="keyword">annotation</span>.Controller</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.<span class="keyword">annotation</span>.Get</span><br><span class="line"><span class="keyword">import</span> io.micronaut.http.<span class="keyword">annotation</span>.Produces</span><br><span class="line"></span><br><span class="line"><span class="meta">@Controller(<span class="string">&quot;/api&quot;</span>)</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BooksController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Produces(MediaType.TEXT_PLAIN)</span></span><br><span class="line">    <span class="meta">@Get(<span class="string">&quot;/inventory/&#123;isbn&#125;&quot;</span>)</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">inventory</span><span class="params">(isbn: <span class="type">String</span>)</span></span>: HttpResponse&lt;<span class="built_in">Int</span>&gt; &#123;</span><br><span class="line">        <span class="comment">// 返回book的库存信息</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">when</span> (isbn) &#123;</span><br><span class="line">            <span class="string">&quot;1491950358&quot;</span> -&gt; HttpResponse.ok(<span class="number">2</span>)</span><br><span class="line">            <span class="string">&quot;1680502395&quot;</span> -&gt; HttpResponse.ok(<span class="number">0</span>) <span class="comment">/* 1680502395 库存为0 */</span></span><br><span class="line">            <span class="keyword">else</span> -&gt; HttpResponse.notFound()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤5：application（自动生成）"><a href="#步骤5：application（自动生成）" class="headerlink" title="步骤5：application（自动生成）"></a>步骤5：application（自动生成）</h4><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> example.micronaut</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.micronaut.runtime.Micronaut</span><br><span class="line"></span><br><span class="line"><span class="keyword">object</span> Application &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@JvmStatic</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">main</span><span class="params">(args: <span class="type">Array</span>&lt;<span class="type">String</span>&gt;)</span></span> &#123;</span><br><span class="line">        Micronaut.build()</span><br><span class="line">                .packages(<span class="string">&quot;example.micronaut&quot;</span>)</span><br><span class="line">                .mainClass(Application.javaClass)</span><br><span class="line">                .start()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤6：application-yml"><a href="#步骤6：application-yml" class="headerlink" title="步骤6：application.yml"></a>步骤6：application.yml</h4><figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">micronaut:</span></span><br><span class="line">    <span class="attr">application:</span></span><br><span class="line">        <span class="attr">name:</span> <span class="string">inventory</span></span><br><span class="line">    <span class="attr">server:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8081</span></span><br><span class="line"><span class="attr">consul:</span></span><br><span class="line">    <span class="attr">client:</span></span><br><span class="line">        <span class="attr">registration:</span></span><br><span class="line">            <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">        <span class="attr">defaultZone:</span> <span class="string">&quot;$&#123;CONSUL_HOST:192.168.4.163&#125;:$&#123;CONSUL_PORT:8500&#125;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="步骤7：build-gradle"><a href="#步骤7：build-gradle" class="headerlink" title="步骤7：build.gradle"></a>步骤7：build.gradle</h4><figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">    id <span class="string">&quot;io.spring.dependency-management&quot;</span> version <span class="string">&quot;1.0.6.RELEASE&quot;</span></span><br><span class="line">    id <span class="string">&quot;com.github.johnrengelman.shadow&quot;</span> version <span class="string">&quot;4.0.2&quot;</span></span><br><span class="line">    id <span class="string">&quot;org.jetbrains.kotlin.jvm&quot;</span> version <span class="string">&quot;1.2.61&quot;</span></span><br><span class="line">    id <span class="string">&quot;org.jetbrains.kotlin.kapt&quot;</span> version <span class="string">&quot;1.2.61&quot;</span></span><br><span class="line">    id <span class="string">&quot;org.jetbrains.kotlin.plugin.allopen&quot;</span> version <span class="string">&quot;1.2.61&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">apply plugin:<span class="string">&quot;application&quot;</span></span><br><span class="line"></span><br><span class="line">version <span class="string">&quot;0.1&quot;</span></span><br><span class="line"><span class="keyword">group</span> <span class="string">&quot;example.micronaut&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">repositories</span> &#123;</span><br><span class="line">    mavenLocal()</span><br><span class="line">    mavenCentral()</span><br><span class="line">    maven &#123; url <span class="string">&quot;https://jcenter.bintray.com&quot;</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencyManagement &#123;</span><br><span class="line">    imports &#123;</span><br><span class="line">        mavenBom <span class="string">&#x27;io.micronaut:micronaut-bom:1.0.4&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> runtime &quot;io.micronaut:micronaut-discovery-client&quot;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">dependencies</span> &#123;</span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;org.jetbrains.kotlin:kotlin-stdlib-jdk8:$&#123;kotlinVersion&#125;&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;org.jetbrains.kotlin:kotlin-reflect:$&#123;kotlinVersion&#125;&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-runtime&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-http-client&quot;</span></span><br><span class="line">    <span class="keyword">compile</span> <span class="string">&quot;io.micronaut:micronaut-http-server-netty&quot;</span></span><br><span class="line">    kapt <span class="string">&quot;io.micronaut:micronaut-inject-java&quot;</span></span><br><span class="line">    kapt <span class="string">&quot;io.micronaut:micronaut-validation&quot;</span></span><br><span class="line">    kaptTest <span class="string">&quot;io.micronaut:micronaut-inject-java&quot;</span></span><br><span class="line">    <span class="keyword">runtime</span> <span class="string">&quot;io.micronaut:micronaut-discovery-client&quot;</span></span><br><span class="line">    <span class="keyword">runtime</span> <span class="string">&quot;ch.qos.logback:logback-classic:1.2.3&quot;</span></span><br><span class="line">    <span class="keyword">runtime</span> <span class="string">&quot;com.fasterxml.jackson.module:jackson-module-kotlin:2.9.7&quot;</span></span><br><span class="line">    testCompile <span class="string">&quot;org.junit.jupiter:junit-jupiter-api:5.1.0&quot;</span></span><br><span class="line">    testCompile <span class="string">&quot;org.jetbrains.spek:spek-api:1.1.5&quot;</span></span><br><span class="line">    testRuntime <span class="string">&quot;org.junit.jupiter:junit-jupiter-engine:5.1.0&quot;</span></span><br><span class="line">    testRuntime <span class="string">&quot;org.jetbrains.spek:spek-junit-platform-engine:1.1.5&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">shadowJar &#123;</span><br><span class="line">    mergeServiceFiles()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">run.jvmArgs(<span class="string">&#x27;-noverify&#x27;</span>, <span class="string">&#x27;-XX:TieredStopAtLevel=1&#x27;</span>)</span><br><span class="line"></span><br><span class="line">mainClassName = <span class="string">&quot;example.micronaut.Application&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">test &#123;</span><br><span class="line">    useJUnitPlatform()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">allOpen &#123;</span><br><span class="line">	annotation(<span class="string">&quot;io.micronaut.aop.Around&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">compileKotlin &#123;</span><br><span class="line">	kotlinOptions &#123;</span><br><span class="line">	    jvmTarget = <span class="string">&#x27;1.8&#x27;</span> </span><br><span class="line">	    <span class="comment">//Will retain parameter names for Java reflection</span></span><br><span class="line">	    javaParameters = <span class="keyword">true</span> </span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">compileTestKotlin &#123;</span><br><span class="line">	kotlinOptions &#123;</span><br><span class="line">	    jvmTarget = <span class="string">&#x27;1.8&#x27;</span> </span><br><span class="line">	    javaParameters = <span class="keyword">true</span> </span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><h4 id="步骤1：启动consul"><a href="#步骤1：启动consul" class="headerlink" title="步骤1：启动consul"></a>步骤1：启动consul</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]# consul agent -server -bootstrap-expect=1 -data-dir=/tmp/consul-data -bind=192.168.4.163 -client=0.0.0.0 -ui</span><br></pre></td></tr></table></figure>
+
+<p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/005.png"></p>
+<h4 id="步骤2：启动微服务-启动无顺序"><a href="#步骤2：启动微服务-启动无顺序" class="headerlink" title="步骤2：启动微服务(启动无顺序)"></a>步骤2：启动微服务(启动无顺序)</h4><p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/006.png"></p>
+<p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/007.png"></p>
+<p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/008.png"></p>
+<p>启动成功如下</p>
+<p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/010.png"></p>
+<h4 id="步骤3：访问gateway获取还有库存的数据本书"><a href="#步骤3：访问gateway获取还有库存的数据本书" class="headerlink" title="步骤3：访问gateway获取还有库存的数据本书"></a>步骤3：访问gateway获取还有库存的数据本书</h4><p><img src="/./micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/009.png"></p>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/debezium-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84cdc%E5%AE%9E%E7%8E%B0/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      代码限流操作 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Aug 27, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      代码限流操作
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>限流是系统用于应对突发流量的一种有效手段，主要是避免突如其来的请求并发量拖垮系统。譬如某系统只能处理 100 个并发请求，所以一旦超过这个数量，系统的性能就可能会极速下跌，甚至可能会出现宕机的情况。当然，除了限流之外，我们还可以采用<code>负载均衡</code>、<code>请求排队（通过分布式消息队列对流量进行削峰，即延缓请求以免请求被丢弃)</code>等手段来降低服务器的并发负载。</p>
+<p>限流操作大致可以划分为两类：</p>
+<ul>
+<li>请求限流：连接数、请求数、接口访问频率</li>
+<li>资源限流：线程数、数据库连接数</li>
+</ul>
+<h2 id="信号量：Semaphore"><a href="#信号量：Semaphore" class="headerlink" title="信号量：Semaphore"></a>信号量：Semaphore</h2><h3 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h3><ul>
+<li>限制同一时刻最大的并发线程数量</li>
+</ul>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>Semaphore 类位于 JUC 包，其功能基于 AQS 实现的，即自旋 + CAS 操作。创建 Semaphore 时，其构造函数需要接收一个 int 型参数用来指定 permits（许可证）的数量（即同一时刻允许多少线程并发）。在业务方法执行期间，只有获取到许可的线程才可以继续往下执行，否则自旋等待。</p>
+<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/007.png"></p>
+<h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/002.png"></p>
+<p>可以观察到，当许可被用完，其他线程就没办法执行临界代码了，而是一直在尝试获取许可。</p>
+<h2 id="常见限流算法"><a href="#常见限流算法" class="headerlink" title="常见限流算法"></a>常见限流算法</h2><h3 id="Fixed-Window（固定窗口）"><a href="#Fixed-Window（固定窗口）" class="headerlink" title="Fixed Window（固定窗口）"></a>Fixed Window（固定窗口）</h3><p>固定窗口算法很容易理解，例如接口1分钟内只能处理100个请求，这里用变量counter来记录请求数，当counter到达100后当前这1分钟将不再接收请求（丢弃）。直到下一个1分钟counter自动回零再继续接收请求，当然峰值依然是100，如此类推。</p>
+<p>但该算法有个比较严重的临界问题。举个较为极端点的例子，如第一分钟的前58s都没有请求，到59s时突然来了100个请求（counter最大100）。但是59s过后意味着进入下一个一分钟，这时counter归零可以重新再接收100个请求。因此在59s到0s这个间隙期间最大的请求峰值是200而不是100。</p>
+<blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/003.png"></p>
+<h3 id="Slide-Window（滑动窗口）"><a href="#Slide-Window（滑动窗口）" class="headerlink" title="Slide Window（滑动窗口）"></a>Slide Window（滑动窗口）</h3><p>滑动窗口算法是固定窗口算法的改良版本。</p>
+<blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/004.png"></p>
+<p>如图所示，红色框表示滑动窗口。特点是可移动，且内部窗口（也叫桶）按照时间来分段。</p>
+<p>例如1分钟分为6段，每段都含有各自的counter。换句话说就是对固定窗口进行了拆分，通过这种方式来缩小固定窗口的缺陷。譬如接口峰值为60，使用固定窗口时临界点会出现120个请求，但使用滑动窗口则是20，风险大大降低。</p>
+<h3 id="Leaky-Bucket（漏桶）"><a href="#Leaky-Bucket（漏桶）" class="headerlink" title="Leaky Bucket（漏桶）"></a>Leaky Bucket（漏桶）</h3><p> 漏桶算法中的漏桶通常用一个FIFO队列来实现，如下图：</p>
+<blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/005.png"></p>
+<p>图中的水滴就好比喻请求，当请求数量大于漏桶（队列）容量时，就溢出（丢弃）。即通过漏桶的容量来限制速率。</p>
+<p>例如在Nginx的limit_req_zone模块中就使用了漏桶算法来实现请求限流。</p>
+<h3 id="Token-Bucket（令牌桶）"><a href="#Token-Bucket（令牌桶）" class="headerlink" title="Token Bucket（令牌桶）"></a>Token Bucket（令牌桶）</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/006.png"></p>
+<p>令牌桶的思想如下：</p>
+<ol>
+<li>存放token的桶固定容量为k。</li>
+<li>每秒往桶中放入x个token。如果在放入过程中token数等于k，则丢弃剩余的token。</li>
+<li>请求按照自己的需要到桶中申请指定数量的token。申请成功就进行请求处理，申请失败则进入等待。</li>
+</ol>
+<p>令牌桶的优点在于即限制了请求速率的同时亦允许突发增长的情况，这点体现在请求可以按自己实际需要来获取token数量。例如桶中放有10碗水（token），现在有2个人要用水，这两个人我们用A和B表示，那么令牌桶的思想就是这10碗水给A和B自由分配，即不固定获取水的碗数，如果桶不够水就等待令牌桶往桶里加水知道满足自己所需要的数量再获取。</p>
+<h3 id="漏桶-vs-令牌桶"><a href="#漏桶-vs-令牌桶" class="headerlink" title="漏桶 vs 令牌桶"></a>漏桶 vs 令牌桶</h3><table>
+<thead>
+<tr>
+<th>漏桶</th>
+<th>令牌桶</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>不依赖令牌</td>
+<td>依赖令牌</td>
+</tr>
+<tr>
+<td>桶满时丢弃多余请求</td>
+<td>桶满时丢弃令牌，请求获取不到令牌只需要等待</td>
+</tr>
+<tr>
+<td>固定速率，不允许突发</td>
+<td>可以按照请求所需来申请token来应付突发</td>
+</tr>
+</tbody></table>
+<h2 id="速率限制器：RateLimiter"><a href="#速率限制器：RateLimiter" class="headerlink" title="速率限制器：RateLimiter"></a>速率限制器：RateLimiter</h2><h3 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h3><ul>
+<li>限制操作的速率</li>
+</ul>
+<h3 id="Guava令牌桶算法实现"><a href="#Guava令牌桶算法实现" class="headerlink" title="Guava令牌桶算法实现"></a>Guava令牌桶算法实现</h3><p>在开源 Google Guava 库中就提供令牌桶算法实现，且提供两种不同的突发模式。分别是<code>SmoothBursty（平滑突发）</code>和<code>SmoothWarmingUp（平滑预热突发）</code>。后者可以通过预热让请求获取token的时间平稳，从而降低突发性。</p>
+<p>引入依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.google.guava<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>guava<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>28.0-jre<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>使用例子</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 平滑突发</span></span><br><span class="line">    <span class="comment">//RateLimiter rateLimiter = RateLimiter.create(10);</span></span><br><span class="line">    <span class="comment">// 平滑预热突发。预热2秒钟，有10个令牌</span></span><br><span class="line">    <span class="type">RateLimiter</span> <span class="variable">rateLimiter</span> <span class="operator">=</span> RateLimiter.create(<span class="number">10</span>, <span class="number">2</span>, TimeUnit.SECONDS);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="comment">// 有足够令牌返回0，否则等待</span></span><br><span class="line">        <span class="comment">// 阻塞过后获取到令牌返回等待令牌的那段艰苦时间</span></span><br><span class="line">        System.out.println(rateLimiter.acquire()); <span class="comment">// 返回等待时间</span></span><br><span class="line">        <span class="comment">//System.out.println(rateLimiter.acquire(3)); // 获取指定数量的令牌</span></span><br><span class="line">        <span class="comment">//System.out.println(rateLimiter.tryAcquire()); // 尝试获取1个令牌</span></span><br><span class="line">        <span class="comment">//System.out.println(rateLimiter.tryAcquire(2, TimeUnit.SECONDS)); //尝试获取1个令牌但只等待2秒</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="何时使用限流"><a href="#何时使用限流" class="headerlink" title="何时使用限流"></a>何时使用限流</h2><ul>
+<li>防止恶意高频调用</li>
+<li>兜底操作，以防高并发导致服务崩溃</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.net.t-labs.tu-berlin.de/teaching/computer_networking/06.06.htm">Scheduling and Policing Mechanisms</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E5%AE%B9%E9%94%99/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

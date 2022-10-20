@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      使用Step7+PLCsim+NetToPLCsim仿真PLC以太网通信 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Mar 06, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      使用Step7+PLCsim+NetToPLCsim仿真PLC以太网通信
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h2><p>最近在做一个污水处理厂的自动控制系统，个人负责开发实现一个OPCUA协议的SERVER来去操作Siemens PLC(可编程控制器)。</p>
+<p>起因是原本从甲方那借来的S7300型号的SiemensPLC真机被拿回去了。所以就没有了plc拿来对自己写好的代码进行验证和测试，就想着能不能模拟一台PLC出来代替真机做实验。</p>
+<p>因为先前并又没接触过自动化这方面的知识，网上对于PLC仿真以太网通讯的文章也甚少，所以有些举步维艰的感觉，但最后经过自己一段时间的摸索发现其实也并不是什么麻烦事。而且个人比较反感折腾配置环境相关的事情，所以以此文章将PLC仿真以太网通讯的过程记录下来，希望帮到有需要的人，而避免将时间浪费在不必要的事情上。</p>
+<h2 id="相关软件和测试项目"><a href="#相关软件和测试项目" class="headerlink" title="相关软件和测试项目"></a>相关软件和测试项目</h2><p>Step7：<a target="_blank" rel="noopener" href="http://www.laozhoucontrol.com/m/?post=19">http://www.laozhoucontrol.com/m/?post=19</a> &#x2F;<a target="_blank" rel="noopener" href="https://www.52pojie.cn/forum.php?mod=viewthread&amp;tid=764161">https://www.52pojie.cn/forum.php?mod=viewthread&amp;tid=764161</a></p>
+<p>NetToPLCsim：<a target="_blank" rel="noopener" href="https://dl.pconline.com.cn/download/2279152.html">https://dl.pconline.com.cn/download/2279152.html</a></p>
+<p>测试用plc项目：<a target="_blank" rel="noopener" href="https://github.com/tandi960505/plc">https://github.com/tandi960505/plc</a></p>
+<p>Snap7(或其它sdk)：<a target="_blank" rel="noopener" href="http://snap7.sourceforge.net/">http://snap7.sourceforge.net/</a></p>
+<p>注：</p>
+<ol>
+<li>Step7 安装可能比较麻烦，网站查阅一下资料即可</li>
+<li>如果 Snap7 官网不能访问，可以用我上传到 Github 的项目(<a target="_blank" rel="noopener" href="https://github.com/tandi960505/Moka7)%EF%BC%8C%E5%B0%86%E5%85%B6%E6%8B%89%E4%B8%8B%E8%BD%BD%E6%B5%8B%E8%AF%95%E6%88%96%E8%80%85%E4%BD%BF%E7%94%A8%E5%85%B6%E5%AE%83">https://github.com/tandi960505/Moka7)，将其拉下载测试或者使用其它</a> SDK 来操作 PLC 也可以</li>
+</ol>
+<h2 id="仿真PLC配置"><a href="#仿真PLC配置" class="headerlink" title="仿真PLC配置"></a>仿真PLC配置</h2><p>导入项目到step7</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/1.png"></p>
+<p>打开plcsim，这就是plc的仿真机</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/2.png"></p>
+<p>将当前项目下载到仿真机上</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/3.png"></p>
+<p>接下来以管理员身份打开NetToPLCsim进行配置，将仿真的plc地址和端口映射到当前主机上</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/4.png"></p>
+<p>点击ok后，再点击NetToPLCsim菜单栏上的tools</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/5.png"></p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/6.png"></p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/7.png"></p>
+<p>点击start server运行NetToPLCsim</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/8.png"></p>
+<p>至此仿真plc的以太网通讯就配置完成了，是不是很简单…</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>你可以像我一样，先再cmd中使用telnet来看看主机上的102端口是否已经开放</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/9.png"></p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/10.png"></p>
+<p>接下来使用程序来连接plc做测试操作，首先启动plc仿真机</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/11.png"></p>
+<p>启动仿真机后，下图可以观察到DB1.2这个地址下的值不断在递增</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/12.png"></p>
+<p>最后使用snap7来操作plc仿真机，看看是否已经可以接通可用</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/13.png"></p>
+<p>完.</p>
+<h2 id="拓展内容"><a href="#拓展内容" class="headerlink" title="拓展内容"></a>拓展内容</h2><p>附上一张 Siemens S7-300 PLC 真机照片</p>
+<p><img src="/%E4%BD%BF%E7%94%A8Step7+PLCsim+NetToPLCsim%E4%BB%BF%E7%9C%9FPLC%E4%BB%A5%E5%A4%AA%E7%BD%91%E9%80%9A%E4%BF%A1/14.png"></p>
+<p>plc是可扩展的，功能模块通过插拔式添加或者移除；在最左边这块就是以太网模块，即有了这个以太网模块plc就可以直接使用tcpip协议和上位机进行直接通讯；</p>
+<p>另外，如果plc的cpu类型带有PN&#x2F;PD，那么无需这个以太网模块可以直接使用tcpip协议和上位机进行直接通讯，其实就是相当于内置了一个网线端口；</p>
+<p>再是，型号比较新的西门子plc，如s7-1500是自带OPCUA-SERVER的</p>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

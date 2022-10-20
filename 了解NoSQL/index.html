@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      了解NoSQL 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Dec 22, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      了解NoSQL
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>如何才能用好NoSQL？对于理解什么是NoSQL我觉得很有必要。</p>
+<h2 id="什么是关系型数据库？"><a href="#什么是关系型数据库？" class="headerlink" title="什么是关系型数据库？"></a>什么是关系型数据库？</h2><p>所谓的关系型数据库其实就是使用<code>关系模型</code>来存储数据的数据库。目前关系模型数据库特指的是以<code>行</code>和<code>列</code>组成的<code>二维表存储结构</code>来存储数据且使用SQL来存取操作的系统。二维表存储结构的特点是将<code>数据存储为行</code>，而<code>列用于明确数据的类型</code>。当两个表之间有关系，我们就需要使用<code>连接查询</code>的方式来去主动为表建立关系来进行查询。</p>
+<h2 id="什么是NoSQL？"><a href="#什么是NoSQL？" class="headerlink" title="什么是NoSQL？"></a>什么是NoSQL？</h2><p>其实NoSQL一开始是指那些<code>非关系型</code>、<code>分布式</code>、<code>不提供ACID</code>的数据库设计模式。但后来的2009年<strong>亚特兰大</strong>举行的**”no:sql(east)”<strong>讨论会中以口号</strong>“select fun, profit from real_world where relational&#x3D;false;”**来对nosql数据库再次作出了定义，因此该次讨论会被誉为nosql的里程碑。从口号中可以得出，nosql主张的是<code>非关系型</code>，且强调<code>非结构化存储</code>的优点，致力于打破传统关系型数据存储的限制。</p>
+<p>还有就是，现在的NoSQL几乎都是针对分布式存储而设计的，所以NoSQL对<code>高可用</code>和<code>横向扩展</code>都有很好的支持，这是传统的关系型数据库不能比拟的。</p>
+<p>所以总上所述，NoSQL其实是一种泛指，指的是那些不用SQL来存取数据且数据存储是非关系型的数据存储系统。因此按照这种思路来去判断，诸如ElasticSearch和Solr这类索引引擎其实都属于NoSQL的范畴。</p>
+<blockquote>
+<p>常见的NoSQL产品大致有以下几种分类：</p>
+</blockquote>
+<p><img src="/%E4%BA%86%E8%A7%A3NoSQL/001.png"></p>
+<blockquote>
+<p>相对于关系型数据，NoSQL解决的问题</p>
+</blockquote>
+<p><img src="/%E4%BA%86%E8%A7%A3NoSQL/007.png"></p>
+<ul>
+<li><p>但需要注意的是，NoSQL对于事务（ACID）的支持并没有一般关系型数据库那么强。例如在 Redis 虽然支持事务，但只能够保证 隔离性（I） 和 一致性（C），而不能保证 原子性（A） 和 持久性（D）</p>
+</li>
+<li><p>Redis事务例子如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">redis 127.0.0.1:6379&gt; MULTI</span><br><span class="line">OK</span><br><span class="line">redis 127.0.0.1:6379&gt; SET book-name <span class="string">&quot;Mastering C++ in 21 days&quot;</span></span><br><span class="line">QUEUED</span><br><span class="line">redis 127.0.0.1:6379&gt; GET book-name</span><br><span class="line">QUEUED</span><br><span class="line">redis 127.0.0.1:6379&gt; SADD tag <span class="string">&quot;C++&quot;</span> <span class="string">&quot;Programming&quot;</span> <span class="string">&quot;Mastering Series&quot;</span></span><br><span class="line">QUEUED</span><br><span class="line">redis 127.0.0.1:6379&gt; SMEMBERS tag</span><br><span class="line">QUEUED</span><br><span class="line">redis 127.0.0.1:6379&gt; EXEC</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Redis使用 MULTI 和 EXEC 表示事务的开始和结束。Redis的事务机制其实只能将其看做一个批处理命令，而且在执行事务期间，即使某条命令发生错误也<code>不会回滚</code>，但不会影响后续命令的执行</p>
+</li>
+</ul>
+<h2 id="NoSQL数据库的选型"><a href="#NoSQL数据库的选型" class="headerlink" title="NoSQL数据库的选型"></a>NoSQL数据库的选型</h2><p>了解了当前市面上都有那些NoSQL类型之后，接下来就需要知道它们之间区别，亦只有这样，我在为系统作技术选型的时候才不会选错。</p>
+<h3 id="键值对存储"><a href="#键值对存储" class="headerlink" title="键值对存储"></a>键值对存储</h3><p>键值对存储是所有NoSQL种最简单和最常见的。其数据主要使用key-value的形式进行组织存储。</p>
+<p>存储的数据应该有以下特点：</p>
+<ul>
+<li>数据关系简单</li>
+<li>只需要用key进行查询和存储</li>
+<li>没什么事务要求</li>
+</ul>
+<p>所以从上面的数据特点来看，为什么Redis普遍用来做缓存就是这个原因。</p>
+<h3 id="文档存储"><a href="#文档存储" class="headerlink" title="文档存储"></a>文档存储</h3><p>首先文档存储是键值对存储的子类。其主要区别在于，数据对键值对存储来说是透明的，换句话来说键值对存储的数据库不会理会数据的内容，只要符合格式就可以存储，也不会对其做其他操作。而对于文档存储的数据库而言，数据库会从数据中提取需要的元数据来给存储引擎做对应的数据优化分析。</p>
+<p>这里说的文档，是指一种<code>半结构化数据</code>，如：json、xml。</p>
+<blockquote>
+<p>以下摘自知乎网友”门欣”对半结构化数据的理解</p>
+</blockquote>
+<p><img src="/%E4%BA%86%E8%A7%A3NoSQL/002.png"></p>
+<p>存储的数据应该有以下特点：</p>
+<ul>
+<li>数据格式可伸缩（需要存储结构不明确的数据），且伸缩前无需执行DDL语句</li>
+<li>兼容历史数据，不会因为数据格式伸缩后导致无法访问历史数据或需要修改历史数据的格式</li>
+<li>没什么事务要求</li>
+<li>无需复杂查询，如join这样的数据关系</li>
+</ul>
+<h3 id="列存储"><a href="#列存储" class="headerlink" title="列存储"></a>列存储</h3><p>列存储和传统的关系型存储方式类似。传统的关系型数据库属于行存储，即将各行放入连续的物理位置；而列存储就是将各列放入连续的物理位置。</p>
+<p><img src="/%E4%BA%86%E8%A7%A3NoSQL/003.png"></p>
+<p>说道这就很容易会有这样的疑问，就是<code>为什么列存储能高效应对海量数据？</code></p>
+<p>首先列存储高效是在 OLAP(联机分析处理) 的前提下说的，其余还包含原因：</p>
+<ul>
+<li>避免了无关列的扫描，且列数据类型相同对数据本身的压缩更简单和高效</li>
+<li>因为列都存储了同类数据，因此提高了查询的效率</li>
+</ul>
+<p>存储的数据应该有以下特点：</p>
+<ul>
+<li>海量数据且需求是OLAP(联机分析处理)，即不是用于日常CRUD的事务处理</li>
+<li>对实时性要求不高</li>
+<li>数据以查询为主</li>
+</ul>
+<p>推荐文章：</p>
+<ul>
+<li><p>处理海量数据：列式存储综述（存储篇）</p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/35622907">https://zhuanlan.zhihu.com/p/35622907</a></p>
+</li>
+<li><p>为什么列存储数据库读取速度会比传统的行数据库快？</p>
+<p><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/29380943">https://www.zhihu.com/question/29380943</a></p>
+</li>
+</ul>
+<h3 id="图形存储"><a href="#图形存储" class="headerlink" title="图形存储"></a>图形存储</h3><p>这里的”图”并不是”图片”，而是<code>图论</code>中的图。可以简单理解为由多个存在关系的节点构成的数据图形。</p>
+<p>举个通俗的例子</p>
+<p><img src="/%E4%BA%86%E8%A7%A3NoSQL/004.png"></p>
+<p>在社交网络种，人与人的关系可能是很复杂的，例如 A 认识 B，B认识C，C又认识D，那么这是需要想A推荐D进行相识，那么在传统的关系型数据库种实现起来就相当麻烦，而图行存储数据库就是用来解决这个间接数据关系的。</p>
+<p>存储的数据应该有以下特点：</p>
+<ul>
+<li>实现推荐引擎，如社交网络推荐</li>
+<li>关系性强的数据</li>
+</ul>
+<h3 id="对象存储"><a href="#对象存储" class="headerlink" title="对象存储"></a>对象存储</h3><p>对象存储，即将<code>数据对象</code>分割成二进制对象并将其复制到存储中，并提供接口的Restful API进行基本操作。</p>
+<p>这里的<code>对象</code>包含数字资产，包括图片、视频、音乐和文档等内容，是一种泛指。</p>
+<p>参考亚马逊S3的对象，指的是<code>对象数据</code>和<code>元数据</code>的组成，其中对象元数据指的是描述对象的key-value。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://aws.amazon.com/cn/s3/getting-started/">https://aws.amazon.com/cn/s3/getting-started/</a></p>
+</blockquote>
+<p><img src="/%E4%BA%86%E8%A7%A3NoSQL/005.png"></p>
+<p>推荐文章：</p>
+<ul>
+<li><p>块存储、文件存储、对象存储这三者的本质差别是什么？</p>
+<p><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/21536660">https://www.zhihu.com/question/21536660</a></p>
+</li>
+<li><p>面向不同需求的对象存储系统对比：Ceph与Swift</p>
+<p><a target="_blank" rel="noopener" href="http://stor.51cto.com/art/201811/587306.htm">http://stor.51cto.com/art/201811/587306.htm</a></p>
+</li>
+<li><p>分布式存储与数据库选型问答整理分享</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1040667">https://cloud.tencent.com/developer/article/1040667</a></p>
+</li>
+</ul>
+<h3 id="时序存储"><a href="#时序存储" class="headerlink" title="时序存储"></a>时序存储</h3><p>时间序列数据库顾名思义就是用来存储随着时间而产生或变化的数据。</p>
+<p>常见的是时序数据就是<code>数据指标</code>。</p>
+<p><img src="/%E4%BA%86%E8%A7%A3NoSQL/006.png"></p>
+<p>比如进入商场的人流如何随着时间变化？城市的交通如何变化？白天公共交通工具的使用情况如何变化？这些可以及时测量的数据都是时序数据的一个示例。你可以通过查询，绘制，分析这些数据来得知指标之间的相关性。</p>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/debezium-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84cdc%E5%AE%9E%E7%8E%B0/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/Redis%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

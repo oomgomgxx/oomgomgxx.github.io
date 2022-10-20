@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      微服务开发技术篇-微服务网关 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Aug 28, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      微服务开发技术篇-微服务网关
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="为什么需要网关"><a href="#为什么需要网关" class="headerlink" title="为什么需要网关"></a>为什么需要网关</h2><blockquote>
+<p>没有用网关之前</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/001.png"></p>
+<ul>
+<li>客户端需要维护众多服务的地址</li>
+<li>每个服务都需要对客户端请求做权限验证</li>
+<li>跨域请求处理变得复杂</li>
+<li>拦截请求责任落在服务上领到服务变得沉重</li>
+<li>对用户数据采集不方便</li>
+</ul>
+<blockquote>
+<p>引入服务网关后</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/002.png"></p>
+<ul>
+<li>易于监控</li>
+<li>易于认证</li>
+<li>解决了没有网关前的各种问题，网关就像面向客户端的Facede模式</li>
+</ul>
+<blockquote>
+<p>网关可以完成的功能</p>
+</blockquote>
+<ul>
+<li>请求路由</li>
+<li>API组合</li>
+<li>协议转换</li>
+<li>身份验证</li>
+<li>访问授权</li>
+<li>速率限制</li>
+<li>缓存</li>
+<li>指标收集</li>
+<li>请求日志</li>
+<li>浏览器CORS跨域响应处理</li>
+</ul>
+<blockquote>
+<p>注意事项</p>
+</blockquote>
+<ul>
+<li>因为 API 网关代理了后端的多个服务因此而变得职责模糊，这时可以使用<code>后端前置模式</code>，即不同的服务类型采用不用的 API 网关</li>
+<li>开发者在开发完后端服务之后必须更新 API 网关，否者客户端就会被逼等待</li>
+<li>如果使用 API 网关实现 API 组合功能，则建议使用反应式编程来实现并行请求以提高可用性，例如使用 RxJava、Project Reactor 等框架实现</li>
+<li>API 网关尽可能使用断路器来辅助服务的调用以提高本身的可靠性，以免发生调用等待则阻塞后续请求</li>
+<li>建议微服务在 API 网关中进行身份验证操作，再配合授权服务发放 token 的形式来完会话功能。在微服务中并不推荐使用共享存储方式来实现共享会话（例如Redis实现共享会话），因为这样会违反松耦合的原则</li>
+</ul>
+<h2 id="微服务网关和Nginx有什么区别？"><a href="#微服务网关和Nginx有什么区别？" class="headerlink" title="微服务网关和Nginx有什么区别？"></a>微服务网关和Nginx有什么区别？</h2><p>&amp;emsp;&amp;emsp;首先要说的是Nginx也可以作为微服务网关来使用，而且性能也非常不错，但需要借助Lua脚本来手动实现各种功能需求，因此增加了学习和开发的成本(当然，如果确实不嫌麻烦和喜欢定制的话其实也可以使用Node.js来手动实现一个微服务网关)。随着微服务的兴起其实诞生了不少既简单又好用的微服务网关，目前也有不少企业把Nginx和微服务网关结合来使用。</p>
+<blockquote>
+<p>企业开发常用的微服务 API 网关</p>
+</blockquote>
+<ul>
+<li>Netflix Zuul 1.x：SpringCloud集成，已停止更新</li>
+<li>Netflix Zuul 2.x ：无SpringCloud集成</li>
+<li><strong>Mashape Kong</strong> ：面向Cloud Native，基于Nginx_Lua模块开发 </li>
+<li><strong>SpringCloud Gateway</strong> ：Zuul的代替品， 基于Sprint Boot2、WebFlux、Project Reactor构建</li>
+<li>Linkerd ：纳入了CNCF，即面向Cloud Native</li>
+</ul>
+<p>目前而言个人较为推荐 Kong 和 SpringCloud Gateway。</p>
+<h2 id="SpringCloud-Gateway入门"><a href="#SpringCloud-Gateway入门" class="headerlink" title="SpringCloud Gateway入门"></a>SpringCloud Gateway入门</h2><h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><blockquote>
+<p>添加依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">spring-cloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">spring-cloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-cloud.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">type</span>&gt;</span>pom<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>import<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-gateway<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>配置</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">3333</span></span><br><span class="line"></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">helloworld-route</span> <span class="comment"># 路由唯一id，自定义唯一即可，建议使用服务名称</span></span><br><span class="line">        <span class="attr">predicates:</span> <span class="comment"># 谓语（触发路由的条件）</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Path=/springcloud-gateway</span></span><br><span class="line">          <span class="comment"># -Path= 表示当访问localhost:3333/springcloud-gateway 路由到  http://www.baidu.com/springcloud-gateway</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.baidu.com</span> <span class="comment"># 路由地址</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>直接启动SpringBoot即可</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaGatewayApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaGatewayApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>测试</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/003.gif"></p>
+<h3 id="基础概念和处理流程"><a href="#基础概念和处理流程" class="headerlink" title="基础概念和处理流程"></a>基础概念和处理流程</h3><ul>
+<li>Route：是 ID、URI、Predicates、Filters 的集合</li>
+<li>Predicate：根据配置来匹配HTTP请求，HTTP请求必须满足Predicate要求</li>
+<li>Filter：过滤请求，可以在发送请求之前或之后修改请求和响应</li>
+</ul>
+<blockquote>
+<p>Predicate</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/004.png"></p>
+<blockquote>
+<p>Filter</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/005.png"></p>
+<blockquote>
+<p>请求流程图</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/006.png"></p>
+<h3 id="Predicate-Factories"><a href="#Predicate-Factories" class="headerlink" title="Predicate Factories"></a>Predicate Factories</h3><blockquote>
+<p>predicates结合使用时属于&amp;&amp;操作</p>
+</blockquote>
+<h4 id="After"><a href="#After" class="headerlink" title="After"></a>After</h4><p>必须是某个时间点之后的请求，否则返回404</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">After=2033-08-20T06:06:06+08:00[Asia/Shanghai]</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Before"><a href="#Before" class="headerlink" title="Before"></a>Before</h4><p>必须是某个时间点之前的请求，否则返回404</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Before=2033-08-20T06:06:06+08:00[Asia/Shanghai]</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Between"><a href="#Between" class="headerlink" title="Between"></a>Between</h4><p>必须是某两个时间点之间的请求，否则返回404</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Between=2033-08-20T06:06:06+08:00[Asia/Shanghai],2033-08-20T06:06:06+08:00[Asia/Shanghai]</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Path"><a href="#Path" class="headerlink" title="Path"></a>Path</h4><p>必须带有指定URL后缀。例如：localhost:3333&#x2F;gateway</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Path=/gateway,</span> <span class="string">/test</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Cookie"><a href="#Cookie" class="headerlink" title="Cookie"></a>Cookie</h4><p>请求必须带有某个指定名称的cookie</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="comment"># 测试：curl http://localhost:3333 --cookie &quot;test=hello&quot;</span></span><br><span class="line">          <span class="comment"># 格式：cookie名称, 值的正则表达式</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Cookie=test,</span> <span class="string">he.*</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<p>编程式配置</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> RouteLocator <span class="title function_">routes</span><span class="params">(RouteLocatorBuilder builder)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="keyword">return</span> builder.routes().route(<span class="string">&quot;test&quot;</span>, r -&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> r.path(<span class="string">&quot;/&quot;</span>).and().cookie(<span class="string">&quot;name&quot;</span>, <span class="string">&quot;t.*&quot;</span>).uri(<span class="string">&quot;http://localhost:8080&quot;</span>);</span><br><span class="line">    &#125;).build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="Header"><a href="#Header" class="headerlink" title="Header"></a>Header</h4><p>请求必须带有某个指定名称的请求头</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="comment"># 测试：curl http://localhost:3333 -H &quot;Charset:utf-8&quot;</span></span><br><span class="line">          <span class="comment"># 格式：Header名称, 值的正则表达式</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Header=Charset,</span> <span class="string">utf.*</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Host"><a href="#Host" class="headerlink" title="Host"></a>Host</h4><p>请求头中的Host必须是指定值</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="comment"># 测试：curl http://localhost:3333 -H &quot;Host:www.test2.org&quot;</span></span><br><span class="line">          <span class="comment"># 测试：curl http://localhost:3333 -H &quot;Host:www.test3.org&quot;</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Host=**.test.org,**.test2.org</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">https://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h4><p>必须是指定的请求方法</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Method=GET</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Qurey"><a href="#Qurey" class="headerlink" title="Qurey"></a>Qurey</h4><p>请求必须带有指定的参数</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="comment"># 测试：curl http://localhost:3333?name=xxx</span></span><br><span class="line">          <span class="comment"># 格式：参数名称， 值得正则表达式</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Query=name,</span> <span class="string">h.*</span></span><br><span class="line">          <span class="comment">#- Query=name # 也可以单独配置名称</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="RemoteAddr"><a href="#RemoteAddr" class="headerlink" title="RemoteAddr"></a>RemoteAddr</h4><p>请求必须来自某个ip</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test_route</span></span><br><span class="line">        <span class="attr">predicates:</span></span><br><span class="line">          <span class="comment"># 测试: curl 192.168.31.70:3333, 192.168.31.70为当前网关主机</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">RemoteAddr=192.168.31.250/24</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">http://www.tandi.wiki</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Weight"><a href="#Weight" class="headerlink" title="Weight"></a>Weight</h4><p>权重优先</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="comment"># 测试：localhost:3333 跳转到 www.google.com</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">weight_high</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://www.baidu.com</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Weight=group1,</span> <span class="number">2</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">weight_low</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://www.google.com</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Weight=group1,</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="GatewayFilter-Factories"><a href="#GatewayFilter-Factories" class="headerlink" title="GatewayFilter Factories"></a>GatewayFilter Factories</h3><h4 id="AddRequestHeader"><a href="#AddRequestHeader" class="headerlink" title="AddRequestHeader"></a>AddRequestHeader</h4><p>添加请求头</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">AddRequestHeader=Charset,GBK,</span> <span class="string">Content-Type,text/html</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">AddRequestHeader=Content-Type,text/html</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="AddRequestParameter"><a href="#AddRequestParameter" class="headerlink" title="AddRequestParameter"></a>AddRequestParameter</h4><p>添加请求参数</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">AddRequestParameter=name,</span> <span class="string">td</span></span><br><span class="line"><span class="comment">#spring:</span></span><br><span class="line"><span class="comment">#  cloud:</span></span><br><span class="line"><span class="comment">#    gateway:</span></span><br><span class="line"><span class="comment">#      routes:</span></span><br><span class="line"><span class="comment">#      - id: add_request_parameter_route</span></span><br><span class="line"><span class="comment">#      	uri: http://localhost:8080</span></span><br><span class="line"><span class="comment">#        predicates:</span></span><br><span class="line"><span class="comment">#        - Host: &#123;segment&#125;.myhost.org</span></span><br><span class="line"><span class="comment">#        filters:</span></span><br><span class="line"><span class="comment">#        - AddRequestParameter=foo, bar-&#123;segment&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="AddResponseHeader"><a href="#AddResponseHeader" class="headerlink" title="AddResponseHeader"></a>AddResponseHeader</h4><p>添加响应头</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="comment"># 测试：curl localhost:3333 -v</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">AddResponseHeader=Charset,</span> <span class="string">GB2312</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="DedupeResponseHeader"><a href="#DedupeResponseHeader" class="headerlink" title="DedupeResponseHeader"></a>DedupeResponseHeader</h4><p>去除重复Header的值。例如gateway和service都设置了跨域就会导致有两个值</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">DedupeResponseHeader=Access-Control-Allow-Credentials</span> <span class="string">Access-Control-Allow-Origin</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Hystrix"><a href="#Hystrix" class="headerlink" title="Hystrix"></a>Hystrix</h4><blockquote>
+<p>引入Hystrix。需要添加Hystrix依赖。</p>
+<p>详细参考 <a target="_blank" rel="noopener" href="https://cloud.spring.io/spring-cloud-gateway/reference/html/#hystrix">https://cloud.spring.io/spring-cloud-gateway/reference/html/#hystrix</a> </p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">hystrix_route</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">https://example.org</span></span><br><span class="line">        <span class="attr">filters:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">Hystrix=myCommandName</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="CircuitBreaker"><a href="#CircuitBreaker" class="headerlink" title="CircuitBreaker"></a>CircuitBreaker</h4><blockquote>
+<p>将网关路由包装到断路器。需要添加Hystrix依赖 或 spring-cloud-starter-circuitbreaker-reactor-resilience4j</p>
+<p>详细参考： <a target="_blank" rel="noopener" href="https://cloud.spring.io/spring-cloud-gateway/reference/html/#spring-cloud-circuitbreaker-filter-factory">https://cloud.spring.io/spring-cloud-gateway/reference/html/#spring-cloud-circuitbreaker-filter-factory</a> </p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">circuitbreaker_route</span></span><br><span class="line">        <span class="attr">uri:</span> <span class="string">https://example.org</span></span><br><span class="line">        <span class="attr">filters:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">CircuitBreaker=myCircuitBreaker</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="PrefixPath"><a href="#PrefixPath" class="headerlink" title="PrefixPath"></a>PrefixPath</h4><p>给下游请求添加Path断言请求前缀</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          <span class="comment"># localhost:3333 转 http://localhost:8080/hello/</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">PrefixPath=/hello</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="SetPath"><a href="#SetPath" class="headerlink" title="SetPath"></a>SetPath</h4><p>设置下游请求路径</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/test/&#123;segment&#125;</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">SetPath=/&#123;segment&#125;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>客户端请求网关：curl localhost:3333&#x2F;test&#x2F;hello</li>
+<li>网关往下游请求：localhost:3333&#x2F;hello</li>
+</ul>
+<h4 id="RequestRateLimiter（目前需要借助Redis实现）"><a href="#RequestRateLimiter（目前需要借助Redis实现）" class="headerlink" title="RequestRateLimiter（目前需要借助Redis实现）"></a>RequestRateLimiter（目前需要借助Redis实现）</h4><blockquote>
+<p>详细参考： <a target="_blank" rel="noopener" href="https://cloud.spring.io/spring-cloud-gateway/reference/html/#requestratelimiter-gatewayfilter-factory">https://cloud.spring.io/spring-cloud-gateway/reference/html/#requestratelimiter-gatewayfilter-factory</a> </p>
+</blockquote>
+<ul>
+<li>Gateway限流需借助 KeyResolver 和 RateLimiter 实现</li>
+<li>KeyResolver：可插拔策略，用于设置限流关键字（key），例如ip</li>
+<li>RateLimiter ：限流算法实现</li>
+<li>目前两个接口只分别提供了 PrincipalNameKeyResolver、RedisRateLimiter 实现。官方文档中表示，在未来版本将有不同的KeyResolver和RateLimiter实现</li>
+</ul>
+<p>如果自定义，配置方法如下</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">RequestRateLimiter</span></span><br><span class="line">              <span class="attr">args:</span></span><br><span class="line">              	<span class="string">KeyResolver参数名称：#&#123;@myKeyResolver&#125;</span> <span class="comment"># KeyResolver的Bean名</span></span><br><span class="line">                <span class="string">RedisRateLimiter参数名称:</span> <span class="string">值</span></span><br></pre></td></tr></table></figure>
+
+<p>【例子】 - RedisRateLimiter 令牌桶算法限流例子。需要添加 spring-boot-starter-data-redis-reactive 依赖和Redis支持</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">RequestRateLimiter</span></span><br><span class="line">              <span class="attr">args:</span></span><br><span class="line">              	<span class="comment"># 解析器的 Bean 对象的名字</span></span><br><span class="line">              	<span class="attr">key-resolver:</span> <span class="string">&#x27;#&#123;@pathKeyResolver&#125;&#x27;</span></span><br><span class="line">              	<span class="comment"># 令牌桶每秒填充令牌数（请求速率）</span></span><br><span class="line">                <span class="attr">redis-rate-limiter.replenishRate:</span> <span class="number">10</span></span><br><span class="line">                <span class="comment"># 令牌桶容量数，即1秒钟允许的最大用户请求数</span></span><br><span class="line">                <span class="attr">redis-rate-limiter.burstCapacity:</span> <span class="number">20</span></span><br><span class="line"><span class="attr">redis:</span></span><br><span class="line">    <span class="attr">host:</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">6379</span></span><br></pre></td></tr></table></figure>
+
+<p>依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-redis-reactive<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KeyResolverConfiguration</span> &#123;</span><br><span class="line">   	<span class="comment">// 按照用户限流</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    KeyResolver <span class="title function_">userKeyResolver</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> exchange -&gt; Mono.just(exchange.getRequest().getQueryParams().getFirst(<span class="string">&quot;user&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>以上的意思是，用户每秒最大请求<code>速率</code>为10，允许最大请求数为20，但下一秒只有10个请求可用。</li>
+</ul>
+<h4 id="RedirectTo"><a href="#RedirectTo" class="headerlink" title="RedirectTo"></a>RedirectTo</h4><p>重定向</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          	<span class="comment"># 让用户重定向到百度</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">RedirectTo=302,</span> <span class="string">http://www.baidu.com</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="RemoveRequestHeader"><a href="#RemoveRequestHeader" class="headerlink" title="RemoveRequestHeader"></a>RemoveRequestHeader</h4><p>删除请求头</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          	<span class="comment"># 测试：curl localhost:3333 -H &quot;Charset:GBK&quot;</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">RemoveRequestHeader=Charset</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="RemoveResponseHeader"><a href="#RemoveResponseHeader" class="headerlink" title="RemoveResponseHeader"></a>RemoveResponseHeader</h4><p>移除响应头</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">RemoveResponseHeader=Charset</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="RemoveRequestParameter"><a href="#RemoveRequestParameter" class="headerlink" title="RemoveRequestParameter"></a>RemoveRequestParameter</h4><p>移除请求参数</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">RemoveRequestParameter=name</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="RewriteResponseHeader"><a href="#RewriteResponseHeader" class="headerlink" title="RewriteResponseHeader"></a>RewriteResponseHeader</h4><p>重写响应头</p>
+<ul>
+<li>服务端</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">response.setHeader(<span class="string">&quot;X-Response-Test&quot;</span>, <span class="string">&quot;name=td&amp;password=123456&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>网关配置</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">RewriteResponseHeader=X-Response-Test,</span> <span class="string">password=[^&amp;]+,</span> <span class="string">password=666</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>客户端收到结果</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\tandi&gt;curl localhost:3333 -H &quot;Charset:GBK&quot; -v</span><br><span class="line">*   Trying ::1:3333...</span><br><span class="line">* TCP_NODELAY set</span><br><span class="line">* Connected to localhost (::1) port 3333 (#0)</span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">GET / HTTP/1.1</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Host: localhost:3333</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">User-Agent: curl/7.66.0</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Accept: */*</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">Charset:GBK</span></span><br><span class="line"><span class="meta prompt_">&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">* Mark bundle as not supporting multiuse</span></span><br><span class="line">&lt; HTTP/1.1 200 OK</span><br><span class="line">&lt; myheader: test</span><br><span class="line">&lt; Content-Type: text/plain;charset=UTF-8</span><br><span class="line">&lt; Content-Length: 5</span><br><span class="line">&lt; Date: Wed, 27 Nov 2019 01:35:50 GMT</span><br><span class="line">&lt; X-Response-Test: name=td&amp;password=666</span><br></pre></td></tr></table></figure>
+
+<h4 id="SetRequestHeader"><a href="#SetRequestHeader" class="headerlink" title="SetRequestHeader"></a>SetRequestHeader</h4><p>设置请求头</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="comment"># 测试：curl localhost:3333 -H &quot;Charset:GBK&quot;</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">SetRequestHeader=X-Request-name,</span> <span class="string">td</span> <span class="comment"># 设置</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">SetRequestHeader=Charset,</span> <span class="string">UTF-8</span> <span class="comment"># 修改</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="SetResponseHeader"><a href="#SetResponseHeader" class="headerlink" title="SetResponseHeader"></a>SetResponseHeader</h4><p>设置响应头</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="comment"># 测试：curl localhost:3333 -H &quot;Charset:GBK&quot;</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">SetResponseHeader=X-Response-name,</span> <span class="string">zhangsan</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">SetResponseHeader=Charset,</span> <span class="string">ISO-8859-1</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="SetStatus"><a href="#SetStatus" class="headerlink" title="SetStatus"></a>SetStatus</h4><p>响应码</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">SetStatus=403</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="StripPrefix"><a href="#StripPrefix" class="headerlink" title="StripPrefix"></a>StripPrefix</h4><p>出处URI前N节</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/1/2/hello</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">StripPrefix=2</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>客户端请求：localhost：3333&#x2F;1&#x2F;2&#x2F;hello</li>
+<li>网关往下游发出请求：localhost:8080&#x2F;hello</li>
+</ul>
+<h4 id="Retry"><a href="#Retry" class="headerlink" title="Retry"></a>Retry</h4><p>失败重试</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">Retry</span></span><br><span class="line">            <span class="attr">args:</span></span><br><span class="line">              <span class="attr">retries:</span> <span class="number">3</span> <span class="comment"># 重试次数</span></span><br><span class="line">              <span class="attr">statuses:</span> <span class="string">BAD_GATEWAY</span> <span class="comment"># 应重试的HTTP状态代码</span></span><br><span class="line">              <span class="attr">backoff:</span> <span class="comment"># 补偿指数（一般补偿指的是重新操作）</span></span><br><span class="line">                <span class="attr">firstBackoff:</span> <span class="string">10ms</span></span><br><span class="line">                <span class="attr">maxBackoff:</span> <span class="string">50ms</span> <span class="comment"># 最大重试时间</span></span><br><span class="line">                <span class="attr">factor:</span> <span class="number">2</span> <span class="comment"># 迭代因子</span></span><br><span class="line">                <span class="comment"># 第一次重试在：firstBackoff * (factor ^ n) 之后执行，其中n为迭代次数retries</span></span><br><span class="line">                <span class="comment"># 即失败后80ms后进行重试，重试时间限制在maxBackoff</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="RequestSize"><a href="#RequestSize" class="headerlink" title="RequestSize"></a>RequestSize</h4><p>请求大小限制</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">routes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">id:</span> <span class="string">test</span></span><br><span class="line">          <span class="attr">uri:</span> <span class="string">http://localhost:8080</span></span><br><span class="line">          <span class="attr">predicates:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">Path=/</span></span><br><span class="line">          <span class="attr">filters:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">RequestSize</span></span><br><span class="line">            <span class="attr">args:</span></span><br><span class="line">              <span class="attr">maxSize:</span> <span class="number">5000000</span> <span class="comment"># 字节</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="ModifyRequestBody"><a href="#ModifyRequestBody" class="headerlink" title="ModifyRequestBody"></a>ModifyRequestBody</h4><p>修改请求体</p>
+<ul>
+<li>文档中提到该拦截器是bate版，后续版本可能会修改</li>
+<li>ModifyRequestBody拦截器不支持配置文件配置，只能通过Java配置</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaGatewayApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaGatewayApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> RouteLocator <span class="title function_">routes</span><span class="params">(RouteLocatorBuilder builder)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="keyword">return</span> builder.routes().route(<span class="string">&quot;modify_request_body&quot;</span>, r -&gt; &#123;</span><br><span class="line">            <span class="comment">// 拦截客户端 localhost:3333 请求</span></span><br><span class="line">            <span class="keyword">return</span> r.path(<span class="string">&quot;/&quot;</span>).filters(f -&gt; &#123;</span><br><span class="line">                <span class="comment">// String.class：输出类型</span></span><br><span class="line">                <span class="comment">// Hello.class：输出类型</span></span><br><span class="line">                <span class="comment">// MediaType.APPLICATION_JSON_VALUE：修改成新的Content-Type类型</span></span><br><span class="line">                <span class="keyword">return</span> f.modifyRequestBody(String.class, Hello.class, MediaType.APPLICATION_JSON_VALUE, (exchange, s) -&gt; &#123;</span><br><span class="line">                    <span class="keyword">return</span> Mono.just(<span class="keyword">new</span> <span class="title class_">Hello</span>(s.toUpperCase()));</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;).uri(<span class="string">&quot;http://localhost:8080&quot;</span>);</span><br><span class="line">        &#125;).build();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Hello</span> &#123;</span><br><span class="line">        String message;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Hello</span><span class="params">()</span> &#123; &#125;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Hello</span><span class="params">(String message)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.message = message;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">getMessage</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> message;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setMessage</span><span class="params">(String message)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.message = message;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="ModifyResponseBody"><a href="#ModifyResponseBody" class="headerlink" title="ModifyResponseBody"></a>ModifyResponseBody</h4><p>修改响应体</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaGatewayApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaGatewayApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> ObjectMapper objectMapper;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> RouteLocator <span class="title function_">routes</span><span class="params">(RouteLocatorBuilder builder)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="keyword">return</span> builder.routes().route(<span class="string">&quot;modify_response_body&quot;</span>, r -&gt; &#123;</span><br><span class="line">            <span class="comment">// 拦截客户端 localhost:3333 请求</span></span><br><span class="line">            <span class="keyword">return</span> r.path(<span class="string">&quot;/&quot;</span>).filters(f -&gt; &#123;</span><br><span class="line">                <span class="comment">// String.class：输出类型</span></span><br><span class="line">                <span class="comment">// Hello.class：输出类型</span></span><br><span class="line">                <span class="comment">// MediaType.APPLICATION_JSON_VALUE：修改成新的Content-Type类型</span></span><br><span class="line">                <span class="keyword">return</span> f.modifyResponseBody(String.class, String.class, MediaType.APPLICATION_JSON_VALUE, (exchange, s) -&gt; &#123;</span><br><span class="line">                    <span class="type">Hello</span> <span class="variable">h</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Hello</span>(s.toUpperCase(), <span class="number">200</span>);</span><br><span class="line">                    <span class="type">String</span> <span class="variable">json</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        json = objectMapper.writeValueAsString(h);</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (JsonProcessingException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">return</span> Mono.just(json);</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;).uri(<span class="string">&quot;http://localhost:8080&quot;</span>);</span><br><span class="line">        &#125;).build();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Hello</span> &#123;</span><br><span class="line">        String message;</span><br><span class="line">        <span class="type">int</span> status;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Hello</span><span class="params">()</span> &#123; &#125;</span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Hello</span><span class="params">(String message, <span class="type">int</span> status)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.message = message;</span><br><span class="line">            <span class="built_in">this</span>.status = status;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">getStatus</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> status;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setStatus</span><span class="params">(<span class="type">int</span> status)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.status = status;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> String <span class="title function_">getMessage</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> message;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setMessage</span><span class="params">(String message)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.message = message;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%BD%91%E5%85%B3/007.png"></p>
+<h4 id="Default-Filters（实现全局CORS）"><a href="#Default-Filters（实现全局CORS）" class="headerlink" title="Default Filters（实现全局CORS）"></a>Default Filters（实现全局CORS）</h4><p>默认过滤器。跨域参考：<a target="_blank" rel="noopener" href="https://github.com/spring-cloud/spring-cloud-gateway/pull/866/files/a4bb1f2e84b01b95d9b702ab1c0191f2bb317cc2#diff-ba643e8c24ec85979f9a588ad58c8514">Dedupe response header filter #866</a></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">default-filters:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">AddResponseHeader=Access-Control-Allow-Credentials,</span> <span class="literal">true</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">AddResponseHeader=Access-Control-Allow-Origin,</span> <span class="string">*</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Java-API-Routers-编程式配置-例子"><a href="#Java-API-Routers-编程式配置-例子" class="headerlink" title="Java API Routers (编程式配置)例子"></a>Java API Routers (编程式配置)例子</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> RouteLocator <span class="title function_">customRouteLocator</span><span class="params">(RouteLocatorBuilder builder, ThrottleGatewayFilterFactory throttle)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> builder.routes()</span><br><span class="line">            .route(r -&gt; r.host(<span class="string">&quot;**.abc.org&quot;</span>).and().path(<span class="string">&quot;/image/png&quot;</span>)</span><br><span class="line">                .filters(f -&gt;</span><br><span class="line">                        f.addResponseHeader(<span class="string">&quot;X-TestHeader&quot;</span>, <span class="string">&quot;foobar&quot;</span>))</span><br><span class="line">                .uri(<span class="string">&quot;http://httpbin.org:80&quot;</span>)</span><br><span class="line">            )</span><br><span class="line">            .route(r -&gt; r.path(<span class="string">&quot;/image/webp&quot;</span>)</span><br><span class="line">                .filters(f -&gt;</span><br><span class="line">                        f.addResponseHeader(<span class="string">&quot;X-AnotherHeader&quot;</span>, <span class="string">&quot;baz&quot;</span>))</span><br><span class="line">                .uri(<span class="string">&quot;http://httpbin.org:80&quot;</span>)</span><br><span class="line">                .metadata(<span class="string">&quot;key&quot;</span>, <span class="string">&quot;value&quot;</span>)</span><br><span class="line">            )</span><br><span class="line">            .route(r -&gt; r.order(-<span class="number">1</span>)</span><br><span class="line">                .host(<span class="string">&quot;**.throttle.org&quot;</span>).and().path(<span class="string">&quot;/get&quot;</span>)</span><br><span class="line">                .filters(f -&gt; f.filter(throttle.apply(<span class="number">1</span>,</span><br><span class="line">                        <span class="number">1</span>,</span><br><span class="line">                        <span class="number">10</span>,</span><br><span class="line">                        TimeUnit.SECONDS)))</span><br><span class="line">                .uri(<span class="string">&quot;http://httpbin.org:80&quot;</span>)</span><br><span class="line">                .metadata(<span class="string">&quot;key&quot;</span>, <span class="string">&quot;value&quot;</span>)</span><br><span class="line">            )</span><br><span class="line">            .build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="整合Hystrix和注册中心"><a href="#整合Hystrix和注册中心" class="headerlink" title="整合Hystrix和注册中心"></a>整合Hystrix和注册中心</h3><blockquote>
+<p>添加依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-client<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-hystrix<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-gateway<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>配置</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">    <span class="comment"># 全局跨域</span></span><br><span class="line">      <span class="attr">default-filters:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">AddResponseHeader=Access-Control-Allow-Credentials,</span> <span class="literal">true</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">AddResponseHeader=Access-Control-Allow-Origin,</span> <span class="string">*</span></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">serviceUrl:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:8761/eureka/</span> <span class="comment"># 默认</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>开启Hystrix和注册中心（Ribbon）</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="meta">@EnableEurekaClient</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaGatewayApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaGatewayApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> RouteLocator <span class="title function_">routeLocator</span><span class="params">(RouteLocatorBuilder builder)</span> &#123;</span><br><span class="line">        <span class="comment">// lb： 表示从注册中心获取服务</span></span><br><span class="line">        <span class="keyword">return</span> builder.routes()</span><br><span class="line">                .route(r -&gt;</span><br><span class="line">                        r.path(<span class="string">&quot;/gateway/**&quot;</span>).filters(</span><br><span class="line">                                <span class="comment">// stripPrefix(1) 会自动去掉 /gateway</span></span><br><span class="line">                                f -&gt; f.stripPrefix(<span class="number">1</span>).hystrix(config -&gt;</span><br><span class="line">                                        config.setName(<span class="string">&quot;gateway&quot;</span>)</span><br><span class="line">                                                .setFallbackUri(<span class="string">&quot;forward:/fallback&quot;</span>)))</span><br><span class="line">                                .uri(<span class="string">&quot;lb://msa-eureka-provider-user&quot;</span>))</span><br><span class="line">                .build();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping(&quot;/fallback&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> Mono&lt;String&gt; <span class="title function_">fallback</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> Mono.just(<span class="string">&quot;服务繁忙请稍后重试！&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>服务端服务</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping(&quot;/user&quot;)</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> UserService userService;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@DeleteMapping(&quot;/delete/&#123;id&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">deleteUserById</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">User</span>(-<span class="number">1L</span>, <span class="string">&quot;测试&quot;</span>, <span class="number">18</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 模拟超时</span></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/find/all&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">findAll</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">10</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>测试</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">~ curl -X DELETE localhost:3333/gateway/user/delete/1</span><br><span class="line">&#123;&quot;name&quot;:&quot;测试&quot;,&quot;age&quot;:18,&quot;id&quot;:-1&#125;</span><br><span class="line">~ curl localhost:3333/gateway/user/find/all</span><br><span class="line">服务繁忙请稍后重试！</span><br></pre></td></tr></table></figure>
+
+
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/Kong/kong">kong</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=jOawuL1Xnwo">Living on the Edge with Spring Cloud Gateway</a></li>
+<li><a target="_blank" rel="noopener" href="https://cloud.spring.io/spring-cloud-gateway/reference/html/">Spring Cloud Gateway</a></li>
+<li><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000017188296">Spring Cloud配置跨域访问的五种方案？你用的是哪一种呢？</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/29980092">CORS跨域原理浅析</a></li>
+<li><a target="_blank" rel="noopener" href="https://juejin.im/post/5d395cd0f265da1bae393f57">学习SpringCloud（5）路由网关 Gateway</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%99%90%E6%B5%81%E9%97%AE%E9%A2%98/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E6%8E%A5%E5%8F%A3%E5%B9%82%E7%AD%89%E6%80%A7%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E7%AC%94%E8%AE%B0/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

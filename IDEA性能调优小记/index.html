@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      IDEA性能调优小记 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    May 22, 2020
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      IDEA性能调优小记
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间将 IDEA 升级到了 2020 版本，而最近在使用方面可能是因为项目文件较多的缘故，发现经常出现卡顿的现象。而笔者的机器是15年购入的，虽然算起来也有段历史了（i5-5200U CPU、8G RAM），但感觉也不至于卡成这样，所以这次打算针对 IDEA 所使用的 JVM 进行一次调优，而调优的最终目标是舒缓运行过程中的卡顿感。</p>
+<p>个人认为性能调优其实是件非常矛盾的事情，因为调优的核心思想其实就是如何在资源有限资源的情况下让应用程序运行得更好。所以有时在网上看到一些对配置和调优目标只字不提就开始高谈阔论地教人调优的文章也是挺让人费解。</p>
+<p>对于 JVM 调优而言，个人的第1个建议是尽量放到最后才考虑，应该先通过程序来优化。如果要优化 JVM，特别是生产环境，应该每调一次完就测试一次，防止开倒车。第2个建议是条件允许的情况下可以通过升级 JDK 来达到优化的目的，因为升级 JDK 本身就是一种很大的优化。</p>
+<p>在进行 JVM 调优之前，我们还应该知道如何衡量一款 GC 的性能。常见的衡量指标有以下这些</p>
+<ul>
+<li>吞吐量：考虑的是 GC 回收时对应用程序本身处理能力的影响</li>
+<li>延时：考虑的是 GC 回收时造成应用程序暂停服务的问题</li>
+<li>资源消耗：考虑的是 GC 在内存和CPU等方面的消耗</li>
+</ul>
+<p>造成应用程序卡顿感的常见原因</p>
+<ol>
+<li>GC 回收带来的 STW</li>
+<li>资源分配不合理导致频繁 GC 或 CPU 使用过高</li>
+<li>代码存在缺陷导致 CPU 使用率过高</li>
+</ol>
+<h2 id="参数调优说明"><a href="#参数调优说明" class="headerlink" title="参数调优说明"></a>参数调优说明</h2><p>调优目标：舒缓 IDEA 启动及运行过程的卡顿感<br>环境配置：</p>
+<ul>
+<li>双核四线程CPU</li>
+<li>8G内存</li>
+<li>JRE 11 （可以使用 choose runtime 插件来查看及更改）</li>
+<li>CMS 垃圾回收器（IDEA默认）</li>
+</ul>
+<blockquote>
+<p>注：</p>
+<ul>
+<li>从 JDK9 开始默认 GC 从 Parallel 改为了 G1。G1 的优势是可以将较的内存划分为若干个 Region 区来细化管理，所以如果能够给堆分配较大的内存的话就更能够体现 G1 的优势（官方建议6G或以上）</li>
+<li>但个人在思考一个问题，就是为什么 IDEA 都基于 JRE 11 了，但却依然默认使用 CMS 。对于这个问题，笔者认为在内存较小的情况下 CMS 和 G1 其实在性能方面是差不了多少的，要不然这问题说不过去。因为 G1 一样有并发标记操作，而且导致 STW 的阶段操作比 CMS 多（但 G1 有优先回收策略，因此个人认为可以忽略这点），其次是 IDEA 提供商无法保证用户机器内存都足够充裕，所以默认最好最稳健的方案就是 CMS + Parallel 了，这也是正所谓的”合适由于行业领先”原则</li>
+<li>CMS 从 JDK 14 开始被移除，因此不管是学习还是使用，个人都更加推荐 G1 或 者更前卫的 ZGC，但 ZGC 在 JDK 15 才被正式使用，而且需要在 Linux 64位机器或Windows 10 1803 版本及以上版本系统才能使用，所以目前而言使用 G1 其实已经能够满足大部分需求</li>
+<li>ZGC 是一个单代堆管理、并发、极低停顿的垃圾回收器，且 GC 回收所需时间不会随着堆的增大而延长（只受到GC Roots数量影响），据介绍 ZGC 一次回收操作可控制在10毫秒内。除此之外，ZGC 堆内存最大允许为4T（据悉日后支持16T），但因为回收阶段基本上都是和应用程序并发执行，所以会一定程度降低应用程序的吞吐量。而 ZGC 之所以能够实现极低的停顿时间，是因为采用了<code>着色指针</code>和<code>读屏障</code>等机制来准确定位对象地址从而得到了更好的并发性</li>
+</ul>
+</blockquote>
+<p>优化过后的配置如下</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">-Xverify</span>:<span class="string">none</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">ParallelGCThreads=4</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">ConcGCThreads=2</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">MetaspaceSize=512m</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">MaxMetaspaceSize=1g</span></span><br><span class="line"><span class="attr">-Xms1g</span></span><br><span class="line"><span class="attr">-Xmx1g</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">+UseG1GC</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">G1HeapRegionSize=2m</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">+UseStringDeduplication</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">CICompilerCount=2</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">+UseAdaptiveSizePolicy</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">ReservedCodeCacheSize=256m</span></span><br><span class="line"><span class="attr">-XX</span>:<span class="string">InitialCodeCacheSize=256m</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>可以使用以下命令来查看当前版本的 JDK 支持那些 Flag<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">打印所有Flag</span></span><br><span class="line">java -XX:+PrintFlagsFinal --version</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">打印以-X开头的参数项</span></span><br><span class="line">java -X</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">例子：打印所有与大小关键字有关的Flag</span></span><br><span class="line">java -XX:+PrintFlagsFinal --version | grep &quot;Size\|size&quot;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>配置说明：</p>
+<p><del>-server</del></p>
+<ul>
+<li><del>使用 C2 编译器</del></li>
+<li><del>让热点代码（方法和循环）更高质量地被编译</del></li>
+<li><del>不指定将默认使用mixed模式执行编译</del></li>
+</ul>
+<p>-Xverify:none</p>
+<ul>
+<li>加载类时不进行字节码校验</li>
+<li>可以一定程度提升类的加载效率，特别是类较多的情况下</li>
+<li>注意：该配置在 JDK 13 被废弃</li>
+</ul>
+<p>-Xms1g</p>
+<ul>
+<li>启动时堆的初始化大小</li>
+<li>默认为主存的 1&#x2F;64 </li>
+<li>该值和 -Xmx 可以保持一致，这样可以一定程度低减少内存扩容时带来的性能开销</li>
+</ul>
+<p>-Xmx1g</p>
+<ul>
+<li>堆的最大值</li>
+<li>注意：<ul>
+<li>如果<code>不指定 Xmx 默认情况下 MaxHeapSize 只占系统内存的 1/4</code>，所以强烈建议设置，不论是何种应用</li>
+<li>Xmx并不是越大越好，因为如果内存过于充裕就会导致GC时间边长</li>
+</ul>
+</li>
+</ul>
+<p><del>-XX:+AlwaysPreTouch</del></p>
+<ul>
+<li><del>特别需要注意的是，Xms和Xmx只是用来规范Java堆大小的参数，但这些内存是还没有确切地分配下来的，而是等到真正需要访问到时才会向C堆申请（Java堆 -&gt; C堆 -&gt; 操作系统）。该参数的作用就是让JVM进程在初始化期间获取所有的内存，而不是需要时才向操作系统获取（通过提前访问内存页实现）</del></li>
+<li><del>该配置可以一定程度地提升程序运行期间的稳定性。虽然会带来一定的启动延时（其实很短暂），但依然建议在生产项目中开该这个配置项。而因为笔记本内存比较稀缺，所以就不推荐使用了</del></li>
+</ul>
+<p>-XX:MetaspaceSize 和 -XX:MaxMetaspaceSize</p>
+<ul>
+<li>指定元空间大小</li>
+<li>元空间是 Java 8 HostSpot虚拟机中方法区的新实现，用于代替之前的永久代方法区实现。之所以替换永久代的主要原因个人认为是因为 HostSpot 虚拟机为了方便管理而将永久代实现在了堆中（逻辑划分与堆进行隔离），然而这中设计不太符合普遍的 GC 标准，譬如不能直接适配收购回来的垃圾回收器实现，其次是因为永久代（ -XX:MaxPermSize ）存在默认的上限，用意出现 OOM，因此特别是类较多的情况下需要额外花心思来维护。而元空间位于直接内存，受直接内存限制，且默认没有上限值（上限就是物理内存大小）</li>
+<li>建议：如果是一般项目两个配置最好一致，原因同上</li>
+<li>注意：强烈建议设置 -XX:MetaspaceSize 参数，因为一旦 MetaspaceSize（默认 20 多兆）被填满就会触发 Full GC 。如果不设置则可能会出现在程序启动期间就连续执行多次 Full GC 的情况，所以设置该值可以有效地降低启动时 Full GC 的频率</li>
+</ul>
+<p><del>-Xmn512m</del></p>
+<ul>
+<li><del>新生代内存大小</del></li>
+<li><del>该内存要特别主要，虽然 Young GC 效率较高停顿较低（因为用的是标记复制算法）但频率也高。如果新生代设置得很大，还是会给 GC 线程带来回收压力的，而频繁地 Young GC 除了导致 CPU 使用率上升的同时还会加大停顿时间</del></li>
+<li><del>建议：</del><ul>
+<li><del>如果有较为充足的内存分配给新生代，个人建议这时可以适当地将幸存者区域内存增大，因为这样可以提升 标记-复制 算法 的内存使用率</del></li>
+<li>使用 G1 时<code>不推荐</code>对该选项进行配置，因为 G1 会通过<code>启发式推断</code>来动态调节内存以尽量达到用户期望的停顿要求（MaxGCPauseMillis，默认为 200 ms，这只得太小也没用，因为做不到）</li>
+</ul>
+</li>
+</ul>
+<p><del>-XX:+UseConcMarkSweepGC</del></p>
+<ul>
+<li><del>老年代使用 CMS，新生代使用 ParNew</del></li>
+</ul>
+<p>-XX:+UseG1GC</p>
+<ul>
+<li>启用 Garbage First 垃圾回收器</li>
+<li>因为 G1 的 GC 停顿时间更加可控。可以通过 <code>MaxGCPauseMillis</code> 设置 GC 停顿期望值，默认为 200 ms</li>
+</ul>
+<p>-XX:G1HeapRegionSize&#x3D;2m</p>
+<ul>
+<li>指定 G1 Region 区的大小。该配置项默认值为1m</li>
+<li>适当增加该值可以提高内存的使用率，但与此同时增大 Region 就意味着增加回收成本，所以应该根据实际的情况来设置。该配置纯粹是个经验值，譬如网上建议 Xmx 为 4G 时可以将该值设置为 4m</li>
+<li>注意：该值必须是 2 的 n 幂，而且范围在 1 MB 到 32 MB 之间。默认情况下该值为 1M，既 0 次幂</li>
+</ul>
+<p>-XX:ParallelGCThreads&#x3D;4</p>
+<ul>
+<li>STW 时的 GC 工作线程</li>
+<li>建议：<ul>
+<li>该值尽量少于 CPU 核心线程数，因为这样可以减少 CPU 资源竞争从而提高程序的吞吐量</li>
+<li>当然，如果 CPU 较强，或者对 GC 停顿有所要求，则可以适当提高该值。譬如当前双核四线程 CPU 可以设置5 或 6 条线程</li>
+</ul>
+</li>
+<li>该值默认为 CPU 核心线程数数量</li>
+</ul>
+<p>-XX:ConcGCThreads&#x3D;2</p>
+<ul>
+<li>并发标记线程数</li>
+<li>当前案例设置为 2</li>
+<li>默认值为 （ParallelGCThreads + 3）&#x2F;4</li>
+</ul>
+<p><del>-XX:CMSInitiatingOccupancyFraction&#x3D;75</del></p>
+<ul>
+<li><del>触发 CMS 并发标记的内存使用阈值。默认为92，表示老年代使用率92%时触发</del></li>
+<li><del>这里设置为 75 是我根据 HashMap 的扩容因子值来设置的，其实这是一个比较合理的折中值</del></li>
+<li><del>注意：</del><ul>
+<li><del>该值不建议设置过大。因为触发并发标记后如果预留空间不足以分配给其它对象实例的话就会出现<code>并发失败</code>的情况，这时会使用 Serial 进行串行 STW 执行回收</del></li>
+<li><del>该配置必须和 UseCMSInitiatingOccupancyOnly （默认为 false）一起使用才生效</del></li>
+</ul>
+</li>
+</ul>
+<p><del>-XX:-CMSClassUnloadingEnabled</del></p>
+<ul>
+<li><del>禁止 CMS 卸载类</del></li>
+<li><del>这里禁止卸载类是为了减少类加载带来的开销。然后，开启该配置的前提是元空间的内存足够充裕，否则容易引发 Full GC</del></li>
+<li><del>如果 JDK 是 1.7 之前的版本，开启 <code>-XX:+CMSClassUnloadingEnabled</code> 配置，让 CMS 回收垃圾时允许它卸载类，这样可以有效地降低永久代 OOM 的几率</del></li>
+</ul>
+<p>-XX:CICompilerCount&#x3D;2 </p>
+<ul>
+<li>JIT 编译热点代码时的工作线程数</li>
+<li>建议：数量不宜过多，因为在 IDEA 启动时会伴随大量的 JIT 编译和多次 Young GC，所以 CPU 很容易到达100%，这是 IDEA 启动卡顿的重要原因之一</li>
+</ul>
+<p><del>-XX:MaxTenuringThreshold&#x3D;10</del></p>
+<ul>
+<li><del>对象晋升老年代的岁数。默认值为15，既表示对象经历15次 GC 后依然没被回收就晋升到老年代</del></li>
+<li><del>注意：如果使用的是 CMS ，该值默认为 6 而不是 15。使用 CMS 时可以通过命令<code>jinfo -flag MaxTenuringThreshold 线程PID</code> 观察到。个人认为之所以 CMS 被设置为 6 而不是 15 是因为 CMS 有并发标记可以有效地回收老年代实例，从而降低 Full GC 的原因，所以就算提前晋升也关系不大。但作为使用者必须理解，不管是 15 还 6 ，这都是通过大量测试得出来的经验值，所以不要问为什么是 15 和 6 而不是其他这种傻不拉几的问题</del></li>
+</ul>
+<p>-XX:InitialCodeCacheSize&#x3D;256m，-XX:ReservedCodeCacheSize&#x3D;256m</p>
+<ul>
+<li>存放 JIT 编译内容的缓存大小</li>
+<li>注意：<ul>
+<li>该值在 64bit server 模式下默认大小为240m。如果热点代码编译内容达到该阈值，JIT 将不会继续编译。因此为了尽量提高执行效率，可以适当地增大该值</li>
+<li>这部分内存应该是位于方法区的，而又因为 JDK 1.8 后元空间位于直接内存，所以可以推断出 ReservedCodeCacheSize 受直接内存所控</li>
+</ul>
+</li>
+</ul>
+<p>-XX:+UseStringDeduplication</p>
+<ul>
+<li>开启字符串去重功能，以提高内存的使用率</li>
+<li>字符串去重操作会在 GC 期间进行，默认情况下只有经历 3 次 GC 还存活的字符串才会列为关注对象（可以-XX:StringDeduplicationAgeThreshold 设置该阈值）</li>
+<li>建议：<ul>
+<li>开启字符串去重功能会加大 GC 垃圾回收的工作量，既一定程度上延长 GC 停留时间，所以这是一个<code>时间换空间</code>的操作。个人认为如果内存不充裕且对 GC 停顿时间不太苛刻的话建议开启该功能</li>
+<li>如果有留意过 Spring 的 STS Eclipse 的话，它默认就开启了该配置项，因此即使你是不明所以，但跟着 Spring 走也准没错</li>
+</ul>
+</li>
+<li>注意：该功能在  Java8u20  版本才引入，而且只在 G1 上生效</li>
+</ul>
+<p>-XX:+UseAdaptiveSizePolicy</p>
+<ul>
+<li>可以在 Full GC 时打印自适应配置策略信息，以及告知在哪里引发了 Full GC</li>
+<li>该配置默认开启，这里单纯为了可读性而显式配置</li>
+</ul>
+<blockquote>
+<p>小结</p>
+</blockquote>
+<ul>
+<li>Full GC 是很难避免的，因为 Full GC 是一个有效地防止内存溢出的机制，换句话来说内存越小触发 Full GC 的几率就越大。其次随着应用程序运行时间拉长，期间可能会产生大量长期驻留在堆的对象，又或者程序本身存在缺陷导致内存泄露等原因都可能会导致频繁地 Full GC</li>
+<li>除此之外，如果在正式项目中调优，应该每调完一次就持续监控器状况，以确保没有倒优化</li>
+<li>如果项目应用堆内存较为紧张的话，可以考虑利用定期手动触发 Full GC 的方式来清理内存，以避免内存溢出 ，譬如可以在系统访问流量较低的时间段利用定时任务触发 System.gc() 。一个比较好的例子就是 Tomcat 中有个预防内存泄露的监听类 <code>JreMemoryLeakPreventionListener</code> 就是采用这种方式来检测内存泄露的（多次 Full GC 后内存使用量都不见降低时，由内存泄露引起的记录较大）。除此之外，如果使用的是 G1&#x2F;CMS 的话可以开启 <code> +XX:+ExplicitGCInvokesConcurrent</code>来优化并发 GC 效率。但反过来，如果你想禁止这种手动触发 Full GC 的操作，则可以开启 <code> -XX:+DisableExplicitGC</code> 配置，就可以避免诸如 Tomcat 监听类每小时触发一次 Full GC 的问题</li>
+<li>最后多说一句，有时候面试很喜欢问如何合理地设置线程数这类问题。这里简单的答一下，设置线程数其实并没有一个标准，虽然网上有人给出一些公式，但个人认为出于应用程序本身存在区别，所以这些公式并不是放之四海而皆准的，而最合理的做法就是通过不断地反复测试来得出结论</li>
+</ul>
+<h2 id="IDEA设置优化"><a href="#IDEA设置优化" class="headerlink" title="IDEA设置优化"></a>IDEA设置优化</h2><p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/003.png"></p>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/004.png"></p>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/005.png"></p>
+<p>除此之外，还可以在 IDEA 右下角点击右键开启内存监控器，可以实时观察堆的内存使用情况，也可以在内存占用较大时手动点击触发 Full GC</p>
+<p><img src="/IDEA%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98%E5%B0%8F%E8%AE%B0/001.png"></p>
+<p>注意：有些时候可能你会观察到这么一个现象，就是 IDEA 的内存使用量超过了 -xmx 所指定的范围。这是因为 -xmx 控制的只是 JVM 堆内存，而在任务管理器中所看到的是 JVM 进程所占用的全部内存，其中包含 <code>堆内存</code> 和 <code>堆外内存（栈内存（由系统分配管理，速度快且没有泄露问题）、元空间、直接内存、C库内存池）</code> 等。</p>
+<h2 id="知识拓展"><a href="#知识拓展" class="headerlink" title="知识拓展"></a>知识拓展</h2><blockquote>
+<p>拓展1 — C库内存池，也叫内存分配器</p>
+</blockquote>
+<ul>
+<li>内存池用于加速内存分配。一般而言应用程序会首先向应用内存池（譬如 JVM 堆）申请内存，如果不足分配则会向C库内存池申请（malloc），只有在 C库内存池 不足分配时才会到系统内核中申请，而系统内核调配资源相对来说是比较低效的</li>
+<li>常见的 C库内存池譬如有 Linux 下 JVM 使用的 （glibc）Ptmalloc2 、Google 的 TCMalloc、Redis 用的 Facebook JeMalloc 等等</li>
+<li>malloc 属于动态内存分配，它的实现分为 <code>brk</code> 和 <code>mmap</code> 两种。它们的区别在于 brk 用于分派较小的内存，同时缓存释放后不会马上归还给内核而是缓存起来以提高后续所需的分配操作，而 mmap 用于较大的内存分配时使用（按需向上取整到整数个页），特点是内存在释放后会马上归还， 所以每次 mmap 都会发生缺页中断（频繁发生会使内核管理负担增大 ） 。这里需要重要注意的是 malloc 并不是将内存马上分配给进程，分配给进程的只是虚拟内存，即真正分配是在进程访问虚拟内存发生缺页中断时分配的</li>
+<li>其中 Ptmalloc2 会为每条线程预分配 64M 的内存（用于线程需要时领取），其中又因为 JVM 的线程模型 与 Linux内核线程是单对单的关系，所以在多线程高并发场景下会出现进程所占内存突增的现象。这个问题可以添加环境变量 MALLOC_ARENA_MAX 来控制，亦可以通过环境变量 LD_PRELOAD 来挂载指定的 malloc</li>
+<li>因为 glibc 默认的 malloc  容易造成内碎片，影响内存回收，因此 Redis 用 JeMalloc 取而代之。除此之外，如果发生非堆上内存泄露，同时泄露点不在应用程序上时则可以考虑将 malloc 更改为 JeMalloc</li>
+</ul>
+<blockquote>
+<p>拓展2 — 查看进程的内存状态</p>
+</blockquote>
+<ol>
+<li>先用 <code>pidof</code> 或 <code>jps</code> 得到 PID 号</li>
+<li>再用 <code>pmap -x PID</code> 查看（需要安装psutil工具包，如MacOS：pip3 install psutil）</li>
+</ol>
+<blockquote>
+<p>拓展3 — Linux OOM-Killer （内存溢出杀手）</p>
+</blockquote>
+<ul>
+<li>Linux 系统的一种保护机制，在内存不足时用于关闭  <code>/proc/&lt;pid&gt;/oom_score</code> 值最大的进程 </li>
+<li>可通过命令 <code>grep &quot;Out of memory&quot; /var/log/messages</code> 查看有哪些进程被 Killer 关闭</li>
+<li>防止进程被关闭的方法是调整进程<code>oom_score_adj</code> 的值（范围在 -17 至 15 之间） ，该值越小被关闭的机会就越少，其中 -17 表示禁止杀死该进程。例如可通过命令 <code>sudo echo -17 &gt; /proc/进程PID/oom_score_adj</code> 设置</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/51056407">Memory Allocator</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/Dubbo-SPI%E6%9C%BA%E5%88%B6%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

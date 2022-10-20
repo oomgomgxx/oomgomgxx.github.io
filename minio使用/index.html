@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      认识Minio 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Sep 07, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      认识Minio
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h3 id="minio"><a href="#minio" class="headerlink" title="minio"></a>minio</h3><blockquote>
+<p>官方文档：<a target="_blank" rel="noopener" href="https://docs.minio.io/">https://docs.minio.io/</a></p>
+</blockquote>
+<h4 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h4><ul>
+<li>Minio是Apache License v2.0下发布的对象存储服务器</li>
+<li>兼容Amazon S3云存储服务</li>
+<li>适合存储非结构化数据，如照片，视频，日志文件，备份和容器&#x2F; VM镜像</li>
+</ul>
+<h4 id="下载安装（centos7）"><a href="#下载安装（centos7）" class="headerlink" title="下载安装（centos7）"></a>下载安装（centos7）</h4><blockquote>
+<ol>
+<li>手动下载ftp传入或wget下载</li>
+<li>将minio保存到&#x2F;bin下，并授权后，tab键就可以补全</li>
+</ol>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost bin]# wget https://dl.minio.io/server/minio/release/linux-ppc64le/minio</span><br><span class="line">[root@localhost bin]# chmod +x ./*</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="minio命令参数"><a href="#minio命令参数" class="headerlink" title="minio命令参数"></a>minio命令参数</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]# minio --help</span><br><span class="line">NAME:</span><br><span class="line">  minio - Cloud Storage Server.</span><br><span class="line"></span><br><span class="line">DESCRIPTION:</span><br><span class="line">  Minio is an Amazon S3 compatible object storage server. Use it to store photos, videos, VMs, containers, log files, or any blob of data as objects.</span><br><span class="line"></span><br><span class="line">USAGE:</span><br><span class="line">  minio [FLAGS] COMMAND [ARGS...]</span><br><span class="line"></span><br><span class="line">COMMANDS:</span><br><span class="line">  server   start object storage server</span><br><span class="line">  gateway  start object storage gateway</span><br><span class="line">  update   update minio to latest release</span><br><span class="line">  version  print version</span><br><span class="line">  </span><br><span class="line">FLAGS:</span><br><span class="line">  --config-dir value, -C value  [DEPRECATED] Path to legacy configuration directory. (default: &quot;/root/.minio&quot;)</span><br><span class="line">  --certs-dir value, -S value   Path to certs directory. (default: &quot;/root/.minio/certs&quot;)</span><br><span class="line">  --quiet                       Disable startup information.</span><br><span class="line">  --anonymous                   Hide sensitive information from logging.</span><br><span class="line">  --json                        Output server logs and startup information in json format.</span><br><span class="line">  --help, -h                    Show help.</span><br><span class="line">  </span><br><span class="line">VERSION:</span><br><span class="line">  2019-02-06T21:16:36Z</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="启动并访问"><a href="#启动并访问" class="headerlink" title="启动并访问"></a>启动并访问</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost /]# minio server /data</span><br><span class="line">Endpoint:  http://192.168.4.157:9000  http://172.17.0.1:9000  http://127.0.0.1:9000    </span><br><span class="line">AccessKey: NV2JLV2HFKMAQRJCNHK0 </span><br><span class="line">SecretKey: FY+YsoARfp6vIVeX8EoIIpBV+KB7XCjwyTbLWA8I </span><br><span class="line"></span><br><span class="line">Browser Access:</span><br><span class="line">   http://192.168.4.157:9000  http://172.17.0.1:9000  http://127.0.0.1:9000    </span><br><span class="line"></span><br><span class="line">Command-line Access: https://docs.minio.io/docs/minio-client-quickstart-guide</span><br><span class="line">   $ mc config host add myminio http://192.168.4.157:9000 NV2JLV2HFKMAQRJCNHK0 FY+YsoARfp6vIVeX8EoIIpBV+KB7XCjwyTbLWA8I</span><br><span class="line"></span><br><span class="line">Object API (Amazon S3 compatible):</span><br><span class="line">   Go:         https://docs.minio.io/docs/golang-client-quickstart-guide</span><br><span class="line">   Java:       https://docs.minio.io/docs/java-client-quickstart-guide</span><br><span class="line">   Python:     https://docs.minio.io/docs/python-client-quickstart-guide</span><br><span class="line">   JavaScript: https://docs.minio.io/docs/javascript-client-quickstart-guide</span><br><span class="line">   .NET:       https://docs.minio.io/docs/dotnet-client-quickstart-guide</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意启动数据内容包含了账号密码</p>
+<p>AccessKey: NV2JLV2HFKMAQRJCNHK0<br>SecretKey: FY+YsoARfp6vIVeX8EoIIpBV+KB7XCjwyTbLWA8I </p>
+</blockquote>
+<p>访问：<a target="_blank" rel="noopener" href="http://192.168.4.157:9000/">http://192.168.4.157:9000</a></p>
+<p><img src="/minio%E4%BD%BF%E7%94%A8/025.png"></p>
+<p><img src="/minio%E4%BD%BF%E7%94%A8/026.png"></p>
+<h4 id="Java-Client"><a href="#Java-Client" class="headerlink" title="Java Client"></a>Java Client</h4><h5 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;io.minio&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;minio&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;6.0.1&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h5 id="本地上传"><a href="#本地上传" class="headerlink" title="本地上传"></a>本地上传</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.td.utils;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.minio.MinioClient;</span><br><span class="line"><span class="keyword">import</span> io.minio.errors.MinioException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileUploader</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">MINIO_URL</span> <span class="operator">=</span> <span class="string">&quot;http://192.168.4.157:9000&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">ACCESS_KEY</span> <span class="operator">=</span> <span class="string">&quot;NV2JLV2HFKMAQRJCNHK0&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">SECRET_KEY</span> <span class="operator">=</span> <span class="string">&quot;FY+YsoARfp6vIVeX8EoIIpBV+KB7XCjwyTbLWA8I&quot;</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// Create a minioClient with the Minio Server name, Port, Access key and Secret key.</span></span><br><span class="line">            <span class="type">MinioClient</span> <span class="variable">minioClient</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MinioClient</span>(MINIO_URL, ACCESS_KEY, SECRET_KEY);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Check if the bucket already exists.</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">isExist</span> <span class="operator">=</span> minioClient.bucketExists(<span class="string">&quot;image&quot;</span>);</span><br><span class="line">            <span class="keyword">if</span>(isExist) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;Bucket already exists.&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// Make a new bucket called asiatrip to hold a zip file of photos.</span></span><br><span class="line">                minioClient.makeBucket(<span class="string">&quot;image&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Upload the zip file to the bucket with putObject</span></span><br><span class="line">            minioClient.putObject(<span class="string">&quot;image&quot;</span>,<span class="string">&quot;xxx01.jpg&quot;</span>, <span class="string">&quot;C:\\Users\\admin\\Pictures\\xxx01.jpg&quot;</span>);</span><br><span class="line">            System.out.println(<span class="string">&quot;上传成功&quot;</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span>(MinioException e) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;Error occurred: &quot;</span> + e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上传成功，如下</p>
+<p><img src="/minio%E4%BD%BF%E7%94%A8/027.png"></p>
+<h5 id="表单上传"><a href="#表单上传" class="headerlink" title="表单上传"></a>表单上传</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.td.controller;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.minio.MinioClient;</span><br><span class="line"><span class="keyword">import</span> io.minio.errors.InvalidEndpointException;</span><br><span class="line"><span class="keyword">import</span> io.minio.errors.InvalidPortException;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.GetMapping;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.PostMapping;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RequestParam;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RestController;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.multipart.MultipartFile;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileUploadController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">MINIO_URL</span> <span class="operator">=</span> <span class="string">&quot;http://192.168.4.161:9000&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">ACCESS_KEY</span> <span class="operator">=</span> <span class="string">&quot;E0VBO8SE41PKUF3GMG6M&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">SECRET_KEY</span> <span class="operator">=</span> <span class="string">&quot;ZYCEjSpGn3nK4hrCVEMblnXb1Q4nmPhOO8BiNDW0&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> MinioClient minioClient;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 连接minio服务器</span></span><br><span class="line">            minioClient = <span class="keyword">new</span> <span class="title class_">MinioClient</span>(MINIO_URL, ACCESS_KEY, SECRET_KEY);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidEndpointException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidPortException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">hi</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;ok&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/upload&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">upload</span><span class="params">(<span class="meta">@RequestParam(&quot;file&quot;)</span> MultipartFile multipartFile)</span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 测试,持久化到本地</span></span><br><span class="line"><span class="comment">//            File file = new File(&quot;C:\\Users\\admin\\Desktop&quot;,multipartFile.getOriginalFilename());</span></span><br><span class="line"><span class="comment">//            multipartFile.transferTo(file);</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">// 持久化到minio</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">isExist</span> <span class="operator">=</span> minioClient.bucketExists(<span class="string">&quot;image&quot;</span>);</span><br><span class="line">            <span class="keyword">if</span>(isExist) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;Bucket already exists.&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 创建一个桶（相当于一个分类）</span></span><br><span class="line">                minioClient.makeBucket(<span class="string">&quot;image&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            minioClient.putObject(<span class="string">&quot;image&quot;</span>, multipartFile.getOriginalFilename(), multipartFile.getInputStream(), multipartFile.getContentType());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;上传成功&quot;</span>;</span><br><span class="line">        &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;上传失败&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/minio%E4%BD%BF%E7%94%A8/028.png"></p>
+<p><img src="/minio%E4%BD%BF%E7%94%A8/029.png"></p>
+<h5 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.td.utils;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> io.minio.MinioClient;</span><br><span class="line"><span class="keyword">import</span> io.minio.errors.MinioException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.io.InputStream;</span><br><span class="line"><span class="keyword">import</span> java.nio.file.Files;</span><br><span class="line"><span class="keyword">import</span> java.nio.file.Paths;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FileUploader</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">MINIO_URL</span> <span class="operator">=</span> <span class="string">&quot;http://192.168.4.157:9000&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">ACCESS_KEY</span> <span class="operator">=</span> <span class="string">&quot;NV2JLV2HFKMAQRJCNHK0&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">SECRET_KEY</span> <span class="operator">=</span> <span class="string">&quot;FY+YsoARfp6vIVeX8EoIIpBV+KB7XCjwyTbLWA8I&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">FILE_NAME</span> <span class="operator">=</span> <span class="string">&quot;xxx01.jpg&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// Create a minioClient with the Minio Server name, Port, Access key and Secret key.</span></span><br><span class="line">            <span class="type">MinioClient</span> <span class="variable">minioClient</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MinioClient</span>(MINIO_URL, ACCESS_KEY, SECRET_KEY);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Check if the bucket already exists.</span></span><br><span class="line">            <span class="type">boolean</span> <span class="variable">isExist</span> <span class="operator">=</span> minioClient.bucketExists(<span class="string">&quot;image&quot;</span>);</span><br><span class="line">            <span class="keyword">if</span>(isExist) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;Bucket already exists.&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// Make a new bucket called asiatrip to hold a zip file of photos.</span></span><br><span class="line">                minioClient.makeBucket(<span class="string">&quot;image&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Upload the zip file to the bucket with putObject</span></span><br><span class="line">            minioClient.putObject(<span class="string">&quot;image&quot;</span>, <span class="string">&quot;xxx01&quot;</span>, <span class="string">&quot;C:\\Users\\admin\\Pictures\\&quot;</span> + FILE_NAME);</span><br><span class="line">            System.out.println(<span class="string">&quot;上传成功&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="type">InputStream</span> <span class="variable">in</span> <span class="operator">=</span> minioClient.getObject(<span class="string">&quot;image&quot;</span>, FILE_NAME);</span><br><span class="line">            Files.copy(in, Paths.get(<span class="string">&quot;C:\\Users\\admin\\Desktop&quot;</span>, FILE_NAME));</span><br><span class="line">            System.out.println(<span class="string">&quot;保存成功&quot;</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span>(MinioException e) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;Error occurred: &quot;</span> + e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%85%AC%E5%85%B1%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/micronaut%E5%85%A5%E9%97%A8/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

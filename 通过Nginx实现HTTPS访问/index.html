@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      申请免费DV-SSL证书并使用Nginx实现HTTPS访问 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Jun 23, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      申请免费DV-SSL证书并使用Nginx实现HTTPS访问
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="关于https"><a href="#关于https" class="headerlink" title="关于https"></a>关于https</h2><p>https其实不是什么神秘的东西，它只是在原来使用明文传输的http基础上加入了加解密的协议(SSL&#x2F;TLS)从而使得访问更加安全；</p>
+<p>可以简单理解：https &#x3D; http + ssl&#x2F;tls + 数字证书</p>
+<h2 id="关于DV-SSL类型的SSL证书"><a href="#关于DV-SSL类型的SSL证书" class="headerlink" title="关于DV-SSL类型的SSL证书"></a>关于DV-SSL类型的SSL证书</h2><p>ssl证书是有不同的种类的，详情可以阅读<strong>亚洲诚信</strong>中的文档：<a target="_blank" rel="noopener" href="https://www.trustasia.com/doc/ssl-certificates-typies#%E6%8C%89%E7%85%A7%E9%AA%8C%E8%AF%81%E7%B1%BB%E5%9E%8B">https://www.trustasia.com/doc/ssl-certificates-typies#%E6%8C%89%E7%85%A7%E9%AA%8C%E8%AF%81%E7%B1%BB%E5%9E%8B</a></p>
+<p>例如按照验证类型来分类证书类型的话就可以分为以下3种：</p>
+<ul>
+<li>域名验证ssl证书(DV-SSL)</li>
+<li>企业验证ssl证书(OV-SSL)</li>
+<li>增强验证ssl证书(EV-SSL)</li>
+</ul>
+<p>不同类容的证书分别适合不同类型的对象使用，而当前文章申请的是 DV-SSL 类型，既域名验证ssl证书，适合个人网站使用：</p>
+<ol>
+<li>申请 DV-SSL 类型证书时需要填写你个人网站的域名和加解密过程中使用到的私钥；</li>
+<li>机构颁发证书后，将证书存放到站点的服务器上用于支持https访问；</li>
+<li>配置好web服务器的https支持后就能进行https访问了；</li>
+</ol>
+<h2 id="腾讯云申请免费SSL证书"><a href="#腾讯云申请免费SSL证书" class="headerlink" title="腾讯云申请免费SSL证书"></a>腾讯云申请免费SSL证书</h2><blockquote>
+<p>免费使用1年</p>
+</blockquote>
+<p>申请地址：<a target="_blank" rel="noopener" href="https://link.jianshu.com/?t=https://console.qcloud.com/ssl">https://console.qcloud.com/ssl</a></p>
+<h2 id="上传证书并配置Nginx"><a href="#上传证书并配置Nginx" class="headerlink" title="上传证书并配置Nginx"></a>上传证书并配置Nginx</h2><ol>
+<li>申请完证书之后到证书的详情中将证书下载到本地，然后上传至nginx所在的服务器</li>
+</ol>
+<p><img src="/%E9%80%9A%E8%BF%87Nginx%E5%AE%9E%E7%8E%B0HTTPS%E8%AE%BF%E9%97%AE/1.png"></p>
+<ol start="2">
+<li>配置Nginx</li>
+</ol>
+<blockquote>
+<p>主要配置</p>
+</blockquote>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 将http导向https</span></span><br><span class="line"><span class="attr">server</span> <span class="string">&#123;</span></span><br><span class="line">    <span class="attr">listen</span> <span class="string">80;</span></span><br><span class="line">    <span class="attr">listen</span> <span class="string">[::]:80;</span></span><br><span class="line"><span class="comment">    # 填写申请证书的域名</span></span><br><span class="line">    <span class="attr">server_name</span> <span class="string">tandi.wiki www.tandi.wiki;</span></span><br><span class="line"><span class="comment">    #return 301 https://www.tandi.wiki$request_uri?;</span></span><br><span class="line">    <span class="attr">rewrite</span> <span class="string">^ https://www.tandi.wiki$request_uri?;</span></span><br><span class="line"><span class="attr">&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">server</span> <span class="string">&#123;</span></span><br><span class="line">    <span class="attr">listen</span>  <span class="string">443 ssl http2;</span></span><br><span class="line"><span class="comment">    # 填写申请证书的域名</span></span><br><span class="line">    <span class="attr">server_name</span>  <span class="string">tandi.wiki www.tandi.wiki;</span></span><br><span class="line">    <span class="attr">root</span>	<span class="string">站点的位置;</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    # ssl证书配置</span></span><br><span class="line">    <span class="attr">ssl</span> <span class="string">on; # 最新版本中无需显式指定该配置</span></span><br><span class="line">    <span class="attr">ssl_certificate</span> <span class="string">/usr/share/nginx/ssl/1_www.tandi.wiki_bundle.crt;</span></span><br><span class="line">    <span class="attr">ssl_certificate_key</span> <span class="string">/usr/share/nginx/ssl/2_www.tandi.wiki.key;</span></span><br><span class="line">    <span class="attr">ssl_session_timeout</span>       <span class="string">5m;</span></span><br><span class="line"><span class="attr">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>配置完后重启服务器或reload配置即可</p>
+<p><img src="/%E9%80%9A%E8%BF%87Nginx%E5%AE%9E%E7%8E%B0HTTPS%E8%AE%BF%E9%97%AE/2.png"></p>
+<h2 id="知识拓展"><a href="#知识拓展" class="headerlink" title="知识拓展"></a>知识拓展</h2><h3 id="TLS-1-2-握手过程（待修正）"><a href="#TLS-1-2-握手过程（待修正）" class="headerlink" title="TLS 1.2 握手过程（待修正）"></a>TLS 1.2 握手过程（待修正）</h3><p><img src="/%E9%80%9A%E8%BF%87Nginx%E5%AE%9E%E7%8E%B0HTTPS%E8%AE%BF%E9%97%AE/3.png"></p>
+<h3 id="常见加密算法"><a href="#常见加密算法" class="headerlink" title="常见加密算法"></a>常见加密算法</h3><ul>
+<li>单向加密：MD5、SHA1、SHA192、SHA256、SHA384</li>
+<li>对称加密：DES、3DES、AES、CRC-32</li>
+<li>非对称加密：RSA、DSA</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li>推荐书籍：《图解HTTP》</li>
+<li>推荐文章：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/52493697">https://www.zhihu.com/question/52493697</a></li>
+</ol>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/jmm/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/mysql%E7%B4%A2%E5%BC%95/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

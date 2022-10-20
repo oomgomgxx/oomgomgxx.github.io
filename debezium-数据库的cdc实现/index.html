@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      使用Debezium实现数据库的CDC功能 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Dec 17, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      使用Debezium实现数据库的CDC功能
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><ul>
+<li>debezium 是一个开源的分布式数据库事件流工具</li>
+<li>debezium 的功能类似于数据库的trigger，且比trigger功能强大</li>
+<li>可以用它来实现 cdc （change data capture）功能。例如监控 MySQL Binlog 的变化来捕获数据的改变再将其传输到另外一个存储单元</li>
+</ul>
+<h2 id="关于Debezium-Connector-for-MySQL"><a href="#关于Debezium-Connector-for-MySQL" class="headerlink" title="关于Debezium Connector for MySQL"></a>关于Debezium Connector for MySQL</h2><ul>
+<li><p>debezium连接器通过观察mysql二进制日志的变动来生成操作事件，每个表中发生的所有事件数据都会“流动”到kafka对应的topic上</p>
+</li>
+<li><p>连接器会在第一次连接mysql数据库的时候生成一个快照，完成后会从生成快照的那个点开始读取二进制日志，这样做的目的有两个：</p>
+<p>1）生成快照的原因：mysql配置（my.ini）存在过时清除设置，即可能会在某个时候二进制日志文件内容会被mysql清除</p>
+<p>2）从生成快照的那个点开始观察：从生成点读而不从生成后的点读原因是，预防在生成快照过程中数据库执行了修改操作</p>
+</li>
+<li><p>连接器若中途故障，那么下次重启，会在故障点开始读取二进制日志；生成快照故障则是重新生成</p>
+</li>
+</ul>
+<h2 id="下载Debezium和Confluent"><a href="#下载Debezium和Confluent" class="headerlink" title="下载Debezium和Confluent"></a>下载Debezium和Confluent</h2><blockquote>
+<p>Debezium：<a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/io/debezium/debezium-connector-mysql/">https://repo1.maven.org/maven2/io/debezium/debezium-connector-mysql/</a></p>
+<p>Confluent：<a target="_blank" rel="noopener" href="https://www.confluent.io/connector/debezium-mysql-cdc-connector/">https://www.confluent.io/connector/debezium-mysql-cdc-connector/</a></p>
+</blockquote>
+<p>简单说明：</p>
+<ul>
+<li>debezium-connector-mysql：提供mysql二进制日志文件变动监听服务</li>
+<li>debezium-mysql-cdc-connector：Confluent套件，提供CDC相应功能（自带kafka、zookeeper、avro等等功能），特别重要的RESTful server</li>
+</ul>
+<h3 id="配置方式1：使用Debezium-Confluent"><a href="#配置方式1：使用Debezium-Confluent" class="headerlink" title="配置方式1：使用Debezium + Confluent"></a>配置方式1：使用Debezium + Confluent</h3><blockquote>
+<p>注意：配置好JDK环境下进行</p>
+</blockquote>
+<p><strong>server.properties（kafka配置文件)：修改或配置</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 192.168.4.161为kafka所在主机ip</span></span><br><span class="line"><span class="attr">listeners</span>=<span class="string">PLAINTEXT://192.168.4.161:9092</span></span><br><span class="line"><span class="attr">advertised.listeners</span>=<span class="string">PLAINTEXT://192.168.4.161:9092</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>schema-registry.properties（confluent schema-registry组件配置文件)</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">listeners</span>=<span class="string">http://0.0.0.0:8081</span></span><br><span class="line"><span class="comment"># zookeeper</span></span><br><span class="line"><span class="attr">kafkastore.connection.url</span>=<span class="string">192.168.4.161:2181</span></span><br><span class="line"><span class="comment"># kafka</span></span><br><span class="line"><span class="attr">kafkastore.bootstrap.servers</span>=<span class="string">PLAINTEXT://192.168.4.161:9092</span></span><br></pre></td></tr></table></figure>
+
+
+<p>connect-avro-distributed.properties（confluent connect avro格式连接配置文件)**</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kafka</span></span><br><span class="line"><span class="attr">bootstrap.servers</span>=<span class="string">192.168.4.161:9092</span></span><br><span class="line"><span class="comment"># kafka connect 从 source读取数据是的加密格式，使用avro正反序列化，confluent提供</span></span><br><span class="line"><span class="attr">key.converter</span>=<span class="string">io.confluent.connect.avro.AvroConverter</span></span><br><span class="line"><span class="attr">key.converter.schema.registry.url</span>=<span class="string">http://192.168.4.161:8081</span></span><br><span class="line"><span class="attr">value.converter</span>=<span class="string">io.confluent.connect.avro.AvroConverter</span></span><br><span class="line"><span class="attr">value.converter.schema.registry.url</span>=<span class="string">http://192.168.4.161:8081</span></span><br><span class="line"><span class="comment"># 提供REST API服务</span></span><br><span class="line"><span class="attr">rest.host.name</span>=<span class="string">192.168.4.161</span></span><br><span class="line"><span class="attr">rest.port</span>=<span class="string">8083</span></span><br><span class="line"><span class="comment"># CDC需要到的依赖包</span></span><br><span class="line"><span class="comment"># share/java/* ：confluent提供</span></span><br><span class="line"><span class="comment"># /usr/local/debezium-connector-mysql/*：debezium插件提供</span></span><br><span class="line"><span class="attr">plugin.path</span>=<span class="string">share/java/*,/usr/local/debezium-connector-mysql/*</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>profile（linux环境变量）：注意插件变量名称一定要定义在CLASSPATH中，因为confluent提供的avro相关组件中的shell文件中使用到CLASSPATH</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># user settings</span><br><span class="line">JAVA_HOME=/usr/local/jdk1.8.0_201</span><br><span class="line">NODE_HOME=/usr/local/node-v10.15.0-linux-x64</span><br><span class="line">PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$NODE_HOME/bin:$PATH</span><br><span class="line">CLASSPATH=/usr/local/debezium-connector-mysql/*</span><br><span class="line">export CLASSPATH</span><br><span class="line">export JAVA_HOME PATH NODE_HOME </span><br></pre></td></tr></table></figure>
+
+
+<p><strong>启动测试</strong></p>
+<p><strong>步骤1：</strong>启动zookeeper（这里用的是独立的zookeeper，没有confluent自带的）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/zkServer.sh start ../confluent-5.1.0/etc/kafka/zookeeper.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤2：</strong>启动kafka-server</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-server-start etc/kafka/server.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤3：</strong>启动schema-registry server</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/schema-registry-start etc/schema-registry/schema-registry.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤4：</strong>启动kafka-connect</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/connect-distributed etc/schema-registry/connect-avro-distributed.properties</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤5.1：</strong>配置MySQL开启二进制日志并创建权限用户</p>
+<p>my.ini</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">server-id</span>         = <span class="string">42</span></span><br><span class="line"><span class="attr">log_bin</span>           = <span class="string">mysql-bin</span></span><br><span class="line"><span class="attr">binlog_format</span>     = <span class="string">row</span></span><br><span class="line"><span class="attr">binlog_row_image</span>  = <span class="string">full</span></span><br><span class="line"><span class="attr">expire_logs_days</span>  = <span class="string">10</span></span><br></pre></td></tr></table></figure>
+
+<p>DCL</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MYSQL 受权kafka用户</span><br><span class="line">//CREATE USER <span class="string">&#x27;tandi&#x27;</span>@<span class="string">&#x27;192.168.4.157&#x27;</span> IDENTIFIED BY <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line">//GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO //<span class="string">&#x27;tandi&#x27;</span>@<span class="string">&#x27;192.168.4.157&#x27;</span> IDENTIFIED BY <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line">mysql&gt; CREATE USER tandi IDENTIFIED BY <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line">mysql&gt; GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO tandi IDENTIFIED BY <span class="string">&#x27;123456&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤5.2：</strong>使用HTTP API让schema-registry server注册连接信息</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">POST请求 http://192.168.4.161:8083/connectors/</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">	<span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my-first-connector&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;config&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">	    <span class="attr">&quot;connector.class&quot;</span><span class="punctuation">:</span> <span class="string">&quot;io.debezium.connector.mysql.MySqlConnector&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.hostname&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.port&quot;</span><span class="punctuation">:</span> <span class="string">&quot;3306&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.user&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tandi&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123456&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.server.id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;11111&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.server.name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.serverTimezone&quot;</span><span class="punctuation">:</span> <span class="string">&quot;UTC&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.history.kafka.bootstrap.servers&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.161:9092&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.history.kafka.topic&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120.db1&quot;</span> <span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;include.schema.changes&quot;</span><span class="punctuation">:</span> <span class="string">&quot;true&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    </span><br><span class="line">        <span class="attr">&quot;transforms&quot;</span><span class="punctuation">:</span> <span class="string">&quot;unwrap,changetopic&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.unwrap.type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;io.debezium.transforms.UnwrapFromEnvelope&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.type&quot;</span><span class="punctuation">:</span><span class="string">&quot;org.apache.kafka.connect.transforms.RegexRouter&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.regex&quot;</span><span class="punctuation">:</span><span class="string">&quot;(.*)&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.replacement&quot;</span><span class="punctuation">:</span><span class="string">&quot;$1-smt&quot;</span></span><br><span class="line">	<span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/debezium-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84cdc%E5%AE%9E%E7%8E%B0/021.png"></p>
+<p><strong>步骤6：</strong>启动消费者（注意顺序，第一次启动必须是先启动connect才启动消费者，因为connect成功才会生产对应的topic）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/kafka-avro-console-consumer --bootstrap-server 192.168.4.161:9092 --topic 192.168.4.120.db1.t1-smt --from-beginning</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：如无意外，查看kafka topic会看到生成了一些以192.168.4.120开头的topic</p>
+</blockquote>
+<p><strong>步骤7：</strong>测试</p>
+<p><img src="/debezium-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84cdc%E5%AE%9E%E7%8E%B0/022.png"></p>
+<h3 id="配置方式2：仅使用Debezium"><a href="#配置方式2：仅使用Debezium" class="headerlink" title="配置方式2：仅使用Debezium"></a>配置方式2：仅使用Debezium</h3><blockquote>
+<p>注意：配置好JDK环境下进行</p>
+</blockquote>
+<p><strong>server.properties（kafka配置文件)：修改或配置</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">listeners</span> = <span class="string">PLAINTEXT://192.168.4.157:9092</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>connect-distributed.properties（kafka配置文件)</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 192.168.4.157 kafka服务器地址</span></span><br><span class="line"><span class="attr">bootstrap.servers</span>=<span class="string">192.168.4.157:9092</span></span><br><span class="line"><span class="comment"># 将schemas.enable设置为false，或者在restful请求是显示设置schemas.enable为false，否者转换器不生效</span></span><br><span class="line"><span class="attr">key.converter.schemas.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="attr">value.converter.schemas.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="comment"># 配置RESTful服务</span></span><br><span class="line"><span class="attr">rest.host.name</span>=<span class="string">192.168.4.157</span></span><br><span class="line"><span class="attr">rest.port</span>=<span class="string">8083</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>将插件路径配置到环境变量中（无需在kafka的plugin.path中配置）</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># user settings</span></span><br><span class="line"><span class="attr">JAVA_HOME</span>=<span class="string">/usr/local/jdk1.8.0_201</span></span><br><span class="line"><span class="attr">PATH</span>=<span class="string">$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$NODE_HOME/bin:$PATH</span></span><br><span class="line"><span class="attr">export</span> <span class="string">CLASSPATH=/usr/local/debezium-connector-mysql/*</span></span><br><span class="line"><span class="attr">export</span> <span class="string">JAVA_HOME PATH</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>配置MySQL并创建权限用户（my.ini）</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动二进制日志（注意配置后重启MySQL服务）</span></span><br><span class="line"><span class="attr">server-id</span>         = <span class="string">11111</span></span><br><span class="line"><span class="attr">log_bin</span>           = <span class="string">mysql-bin</span></span><br><span class="line"><span class="attr">binlog_format</span>     = <span class="string">row</span></span><br><span class="line"><span class="attr">binlog_row_image</span>  = <span class="string">full</span></span><br><span class="line"><span class="attr">expire_logs_days</span>  = <span class="string">10</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>在MySQL创建用户并授权（用于debezium读取mysql二进制文件）</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; CREATE USER tandi IDENTIFIED BY <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line">mysql&gt; GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO tandi IDENTIFIED BY <span class="string">&#x27;123456&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动测试</strong></p>
+<p>步骤1：启动zookeeper</p>
+<p>步骤2：启动kafka server</p>
+<p>步骤3：启动kafka connect（connect-distributed.sh）</p>
+<p>步骤4：通过restful请求配置connectors</p>
+<blockquote>
+<p>post <a target="_blank" rel="noopener" href="http://192.168.4.157:8083/connectors/">http://192.168.4.157:8083/connectors/</a></p>
+</blockquote>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">	<span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my-first-connector&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;config&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">	    <span class="attr">&quot;connector.class&quot;</span><span class="punctuation">:</span> <span class="string">&quot;io.debezium.connector.mysql.MySqlConnector&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.hostname&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.port&quot;</span><span class="punctuation">:</span> <span class="string">&quot;3306&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.user&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tandi&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123456&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.server.id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;11111&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.server.name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.serverTimezone&quot;</span><span class="punctuation">:</span> <span class="string">&quot;UTC&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    </span><br><span class="line">	    <span class="attr">&quot;database.history.kafka.bootstrap.servers&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.157:9092&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.history.kafka.topic&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120.db1&quot;</span> <span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;include.schema.changes&quot;</span><span class="punctuation">:</span> <span class="string">&quot;true&quot;</span><span class="punctuation">,</span></span><br><span class="line">	   </span><br><span class="line">        <span class="attr">&quot;transforms&quot;</span><span class="punctuation">:</span> <span class="string">&quot;unwrap,changetopic&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.unwrap.type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;io.debezium.transforms.UnwrapFromEnvelope&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.type&quot;</span><span class="punctuation">:</span><span class="string">&quot;org.apache.kafka.connect.transforms.RegexRouter&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.regex&quot;</span><span class="punctuation">:</span><span class="string">&quot;(.*)&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.replacement&quot;</span><span class="punctuation">:</span><span class="string">&quot;$1-smt&quot;</span></span><br><span class="line">	<span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/debezium-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84cdc%E5%AE%9E%E7%8E%B0/023.png"></p>
+<p>步骤5：测试是否成功监听到数据</p>
+<p><img src="/debezium-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84cdc%E5%AE%9E%E7%8E%B0/024.png"></p>
+<p><strong>拓展：</strong></p>
+<p>kafka-connect RESTfult方式配置基本使用。相关文档如下</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.confluent.io/current/connect/references/restapi.html">https://docs.confluent.io/current/connect/references/restapi.html</a></li>
+<li><a target="_blank" rel="noopener" href="http://kafka.apache.org/documentation.html#connect">http://kafka.apache.org/documentation.html#connect</a></li>
+</ul>
+<p>创建：</p>
+<p>post <a target="_blank" rel="noopener" href="http://192.168.4.157:8083/connectors/">http://192.168.4.157:8083/connectors/</a></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">	<span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;my-first-connector&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;config&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">	    <span class="attr">&quot;connector.class&quot;</span><span class="punctuation">:</span> <span class="string">&quot;io.debezium.connector.mysql.MySqlConnector&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.hostname&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.port&quot;</span><span class="punctuation">:</span> <span class="string">&quot;3306&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.user&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tandi&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.password&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123456&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.server.id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;11111&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.server.name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.serverTimezone&quot;</span><span class="punctuation">:</span> <span class="string">&quot;UTC&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    </span><br><span class="line">	    <span class="attr">&quot;database.history.kafka.bootstrap.servers&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.157:9092&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;database.history.kafka.topic&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.4.120.db1&quot;</span> <span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;include.schema.changes&quot;</span><span class="punctuation">:</span> <span class="string">&quot;true&quot;</span><span class="punctuation">,</span></span><br><span class="line">	   </span><br><span class="line">        <span class="attr">&quot;transforms&quot;</span><span class="punctuation">:</span> <span class="string">&quot;unwrap,changetopic&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.unwrap.type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;io.debezium.transforms.UnwrapFromEnvelope&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.type&quot;</span><span class="punctuation">:</span><span class="string">&quot;org.apache.kafka.connect.transforms.RegexRouter&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.regex&quot;</span><span class="punctuation">:</span><span class="string">&quot;(.*)&quot;</span><span class="punctuation">,</span></span><br><span class="line">	    <span class="attr">&quot;transforms.changetopic.replacement&quot;</span><span class="punctuation">:</span><span class="string">&quot;$1-smt&quot;</span></span><br><span class="line">	<span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>刪除：</p>
+<ul>
+<li>delete <a target="_blank" rel="noopener" href="http://192.168.4.157:8083/connectors/%E9%85%8D%E7%BD%AE%E5%90%8D%E7%A7%B0">http://192.168.4.157:8083/connectors/配置名称</a></li>
+</ul>
+<p>获取某配置的信息：</p>
+<ul>
+<li>get <a target="_blank" rel="noopener" href="http://192.168.4.157:8083/connectors/%E9%85%8D%E7%BD%AE%E5%90%8D%E7%A7%B0">http://192.168.4.157:8083/connectors/配置名称</a></li>
+</ul>
+<p>获取某配置的状态：</p>
+<ul>
+<li>get <a target="_blank" rel="noopener" href="http://192.168.4.157:8083/connectors/%E9%85%8D%E7%BD%AE%E5%90%8D%E7%A7%B0/status">http://192.168.4.157:8083/connectors/配置名称/status</a></li>
+</ul>
+<p>获取可用的插件信息（重要，可用于查看插件是否配置成功）：</p>
+<ul>
+<li>get <a target="_blank" rel="noopener" href="http://192.168.4.159:8083/connector-plugins">http://192.168.4.159:8083/connector-plugins</a></li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E4%BA%86%E8%A7%A3NoSQL/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      Nginx再入门 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Feb 26, 2017
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      Nginx再入门
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年12月19日14:13:43 — 重构文章</li>
+</ul>
+<h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><p>Nginx（ 发音：Engine  X）是一个基于多进程模型及事件驱动的轻量服务器。</p>
+<p>本文不会对 Nginx 的配置作过多的阐述，各模块的配置建议参考官方文档：<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/">https://nginx.org/en/docs/</a></p>
+<blockquote>
+<p>特性</p>
+</blockquote>
+<ul>
+<li>高并发<ul>
+<li>使用 Reactor 模型处理网络请求（在 Nginx 中叫 Run-Loop）</li>
+</ul>
+</li>
+<li>高性能<ul>
+<li>确保每一个连接消耗的内存最小化</li>
+</ul>
+</li>
+<li>高可靠<ul>
+<li>Master 进程可以在 Worker 进程出错后快速拉起新的 Worker 进程继续提供服务</li>
+</ul>
+</li>
+<li>可扩展性高<ul>
+<li>模块化设计，第三方模块丰富</li>
+</ul>
+</li>
+<li>热部署<ul>
+<li>支持不停机(信号)维护进程，以及更新配置项和日志文件</li>
+</ul>
+</li>
+<li>源码使用<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/BSD%E8%AE%B8%E5%8F%AF%E5%8D%8F%E8%AE%AE">BSD许可证</a>，给予使用者非常高的使用自由度</li>
+<li>提供HTTP&#x2F;TCP&#x2F;UDP等7层和四层(ngx_stream_core_module)负载均衡实现</li>
+</ul>
+<blockquote>
+<p>常见使用场景</p>
+</blockquote>
+<ul>
+<li>HTTP静态资源服务器<ul>
+<li>当前文件系统作为静态资源存储点提供服务</li>
+</ul>
+</li>
+<li>反向代理服务器（最常用）<ul>
+<li>基于多进程事件驱动性能强大</li>
+<li>提供静态资源缓存功能，能一定程度提高响应速度</li>
+<li>提供负载均衡能力，可合理地分摊上游服务器负载</li>
+</ul>
+</li>
+<li>网站请求动静分离</li>
+<li>微服务服务API网关<ul>
+<li>Nginx + Lua</li>
+</ul>
+</li>
+<li>流媒体服务器<ul>
+<li>可通过 nginx-rtmp 模块实现</li>
+</ul>
+</li>
+</ul>
+<h2 id="编译安装"><a href="#编译安装" class="headerlink" title="编译安装"></a>编译安装</h2><p>1）在官网选择需要的版本</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://nginx.org/en/download.html">https://nginx.org/en/download.html</a></li>
+</ul>
+<p>2）下载后解压</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">wget https://nginx.org/download/nginx-1.14.2.tar.gz</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">tar -zxvf nginx-1.14.2.tar.gz</span></span><br></pre></td></tr></table></figure>
+
+<p>3）生成编译文件 Makefile</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">cd</span> nginx-1.14.2</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">./configure --prefix=/opt/nginx</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>可以通过<code>./configure --help</code>查看配置参数</li>
+<li>–prefix 用于指定安装路径</li>
+<li>如果需要安装指定模块，可以参考 –with- 开头的参数；反之参考 –without- 开头的参数</li>
+<li>执行完<code>./configure</code>后会在当前目录生成一个<code>objs</code>文件夹，其中 ngx_modules.c 中包含将要安装的模块</li>
+</ul>
+<p>4）安装 Nginx 需要的依赖</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">yum install -y gcc gcc-c++ autoconf pcre pcre-devel make automake httpd-tools zlib zlib-devel openssl openssl-devel</span></span><br></pre></td></tr></table></figure>
+
+<p>5）根据 Makefile 编译和安装</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">make &amp;&amp; make install</span></span><br></pre></td></tr></table></figure>
+
+<p>6）将Nginx的命令添加到环境变量（可选操作）</p>
+<ul>
+<li>将 sbin 目录配置到 &#x2F;etc&#x2F;profile 中的 PATH 环境变量尾部</li>
+<li>修改完执行<code>source /etc/profile</code>刷新配置即可</li>
+</ul>
+<p>7）使用 vim 编辑 Nginx 配置文件时高亮显示（可选操作）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">pwd</span></span></span><br><span class="line">/root/nginx-1.14.2</span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">mkdir</span> ~/.vim</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">cp</span> -r contrib/vim/* ~/.vim</span></span><br></pre></td></tr></table></figure>
+
+<p>8）将 Nginx 添加到系统服务中，并设置开机启动（CentOS 8）</p>
+<ol>
+<li><p>添加服务文件 <code>vim /lib/systemd/system/nginx.service</code></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">[Unit]</span></span><br><span class="line"><span class="attr">Description</span>=<span class="string">nginx service</span></span><br><span class="line"><span class="attr">After</span>=<span class="string">network.target</span></span><br><span class="line"></span><br><span class="line"><span class="attr">[Service]</span></span><br><span class="line"><span class="attr">Type</span>=<span class="string">forking</span></span><br><span class="line"><span class="attr">ExecStart</span>=<span class="string">/opt/nginx/sbin/nginx</span></span><br><span class="line"><span class="attr">ExecReload</span>=<span class="string">/opt/nginx/sbin/nginx -s reload</span></span><br><span class="line"><span class="attr">ExecStop</span>=<span class="string">/opt/nginx/sbin/nginx -s stop</span></span><br><span class="line"><span class="attr">PrivateTmp</span>=<span class="string">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">[Install]</span></span><br><span class="line"><span class="attr">WantedBy</span>=<span class="string">multi-user.target</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动服务并设置开机启动</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">&gt;</span> <span class="string">systemctl start nginx.service</span></span><br><span class="line"><span class="attr">&gt;</span> <span class="string">systemctl enable nginx.service</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="命令使用"><a href="#命令使用" class="headerlink" title="命令使用"></a>命令使用</h2><blockquote>
+<p>nginx命令</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">nginx -h</span></span><br><span class="line">nginx [-?hvVtq] [-s signal] [-c filename] [-p prefix] [-g directives]</span><br><span class="line"></span><br><span class="line">-?,-h           : 打印帮助信息</span><br><span class="line">-v              : 打印显示版本信息</span><br><span class="line">-V              : 打印显示版本信息，以及 configure 配置项</span><br><span class="line">-t              : 测试配置文件</span><br><span class="line">-q              : 在检测配置文件期间屏蔽非错误信息</span><br><span class="line">-s signal       : 给Master进程发送信号：stop（停止）, quit（退出）, reopen（开启新日志）, reload（重新加载配置）</span><br><span class="line">-p prefix       : 指定nginx目录</span><br><span class="line">-c filename     : 指定配置文件</span><br><span class="line">-g directives   : 指定附加配置路径</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>kill命令</p>
+</blockquote>
+<p>在 Nginx 中除了可以使通过 nginx -s 给进程发送信号外，其实还可以通过命令 kill 发送</p>
+<p>1）kill 支持的操作信号：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">kill</span> -l</span></span><br><span class="line">HUP INT QUIT ILL TRAP ABRT BUS FPE KILL USR1 SEGV USR2 PIPE ALRM TERM STKFLT CHLD CONT STOP TSTP TTIN TTOU URG XCPU XFSZ VTALRM PROF WINCH POLL PWR SYS</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>注意以上信号都有与之对应的编号，从1开始往右递增。</li>
+</ul>
+<p>2）常用信号：</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>信号</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>HUP</td>
+<td>平滑启动&#x2F;重启信号。用新配置启动新进程，然后关闭旧进程</td>
+</tr>
+<tr>
+<td>2</td>
+<td>INT</td>
+<td>中断信号（ctrl+c）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>QUIT</td>
+<td>平滑退出信号</td>
+</tr>
+<tr>
+<td>9</td>
+<td>KILL</td>
+<td>强制关闭信号（程序无时间回收资源）</td>
+</tr>
+<tr>
+<td>15</td>
+<td>TERM</td>
+<td>（默认）终止信号，正常退出（程序有时间回收资源）</td>
+</tr>
+<tr>
+<td>18</td>
+<td>CONT</td>
+<td>从 STOP 恢复运行信号</td>
+</tr>
+<tr>
+<td>19</td>
+<td>STOP</td>
+<td>暂停信号</td>
+</tr>
+<tr>
+<td>10</td>
+<td>USR1</td>
+<td>开启新日志。常用来做日志切割</td>
+</tr>
+<tr>
+<td>12</td>
+<td>USR2</td>
+<td><code>平滑升级</code>。使用新版本启动进程，然后关闭旧版本进程</td>
+</tr>
+<tr>
+<td>28</td>
+<td>WINCH</td>
+<td>平滑地<code>关闭 Worker 进程</code>。常和 USR2 一同使用来实现平滑升级</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>案例：为正在运行的 Nginx 添加新模块</p>
+</blockquote>
+<p>1）下载第三方模块</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">git <span class="built_in">clone</span> https://github.com/replay/ngx_http_consistent_hash.git</span></span><br></pre></td></tr></table></figure>
+
+<p>2）进入源文件夹重新生成 Makefile</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">nginx -V <span class="comment"># 查看之前的配置项，做到在原来的基础上添加</span></span></span><br><span class="line">nginx version: nginx/1.14.2</span><br><span class="line">built by gcc 8.3.1 20191121 (Red Hat 8.3.1-5) (GCC) </span><br><span class="line">configure arguments: --prefix=/opt/nginx</span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">./configure --prefix=/opt/nginx --add-module=/root/ngx_http_consistent_hash</span></span><br></pre></td></tr></table></figure>
+
+<p>3）重新根据 Makefile 编译</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">make</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>注意无需执行<code>make install</code> 重新安装，否则现有的 Nginx 目录会被覆盖</li>
+</ul>
+<p>4）将 objs 中编译好的二进制 Nginx 命令拷贝到安装目录</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">先备份预防万一</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">mv</span> /opt/nginx/sbin/nginx /opt/nginx/sbin/nginx.bak</span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">cp</span> objs/nginx /opt/nginx/sbin</span></span><br></pre></td></tr></table></figure>
+
+<p>5）验证</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash">nginx -V</span></span><br><span class="line">nginx version: nginx/1.14.2</span><br><span class="line">built by gcc 8.3.1 20191121 (Red Hat 8.3.1-5) (GCC) </span><br><span class="line">configure arguments: --prefix=/opt/nginx --add-module=/root/ngx_http_consistent_hash # 可以看到新模块已经加入</span><br></pre></td></tr></table></figure>
+
+<p>6）因为修改了二进制文件而不是配置文件，因此需要通过平滑升级方式重启，而不是 nginx -t; nginx -s reload</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">kill</span> -USR2 14180 <span class="comment"># 平滑升级，这里会使用新的二进制文件启动Nginx</span></span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">kill</span> -WINCH 14180 <span class="comment"># 通知旧Master进程让其关闭Worker进程</span></span></span><br><span class="line"><span class="meta prompt_">&gt; </span><span class="language-bash"><span class="built_in">kill</span> -QUIT 14180 <span class="comment"># 平滑地关闭旧Master进程</span></span></span><br></pre></td></tr></table></figure>
+
+<h2 id="配置了解"><a href="#配置了解" class="headerlink" title="配置了解"></a>配置了解</h2><p>1）官方文档：<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/">https://nginx.org/en/docs/</a></p>
+<p>2）内置变量：<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/varindex.html">https://nginx.org/en/docs/varindex.html</a></p>
+<p>3）第三方模块：<a target="_blank" rel="noopener" href="https://www.nginx.com/resources/wiki/modules/">https://www.nginx.com/resources/wiki/modules/</a></p>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/003.png"></p>
+<blockquote>
+<p>默认配置样例</p>
+</blockquote>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/002.png"></p>
+<blockquote>
+<p>配置模块的基本作用</p>
+</blockquote>
+<p>全局块（对整个Nginx起作用）</p>
+<ul>
+<li>指定 Nginx 的管理用户及其组信息</li>
+<li>指定启动时拉起的 Worker 进程的数量</li>
+<li>进程 PID 号的存放位置</li>
+<li>日志存放路径和日志类型配置</li>
+<li>引入其它配置</li>
+</ul>
+<p>events块</p>
+<ul>
+<li>指定 Worker 进程同一时刻能够连接客户端的最大数量<ul>
+<li>最大连接数 &#x3D; worker_processes * worker_connections</li>
+<li>注意：worker_connections 不能超过文件系统所允许打开的最大文件数量。可以通过 <code>cat /proc/sys/fs/file-max</code> 查看</li>
+</ul>
+</li>
+<li>事件驱动模型选择</li>
+<li>是否允许同时接受多个网络连接</li>
+</ul>
+<p>http模块</p>
+<ul>
+<li>媒体类型</li>
+<li>代理配置</li>
+<li>缓存配置</li>
+<li>日志定义</li>
+<li>连接配置</li>
+<li>压缩配置</li>
+<li>零拷贝配置</li>
+</ul>
+<p>server块</p>
+<ul>
+<li>虚拟主机。可配置多个</li>
+<li>监听端口</li>
+<li>域名关联</li>
+<li>错误码页面配置</li>
+<li>安全通信配置</li>
+</ul>
+<p>location块</p>
+<ul>
+<li>虚拟主机资源。可配置多个</li>
+</ul>
+<h2 id="日志了解"><a href="#日志了解" class="headerlink" title="日志了解"></a>日志了解</h2><p>访问日志、错误日志</p>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/007.png"></p>
+<p>如果日志格式不满足需求，则可以通过 log_format、access_log 指令和配合<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/varindex.html">内置变量</a>修改。例子如下：</p>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/008.png"></p>
+<h2 id="常用负载均衡策略"><a href="#常用负载均衡策略" class="headerlink" title="常用负载均衡策略"></a>常用负载均衡策略</h2><p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/009.png"></p>
+<h2 id="架构及请求处理流程"><a href="#架构及请求处理流程" class="headerlink" title="架构及请求处理流程"></a>架构及请求处理流程</h2><blockquote>
+<p>架构图</p>
+</blockquote>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/001.png"></p>
+<p>Master进程职责</p>
+<ul>
+<li>配置文件加载和解释</li>
+<li>数据结构初始化</li>
+<li>模块配置和注册</li>
+<li>信号处理</li>
+<li>平滑升级</li>
+<li>创建 Worker 进程的共享内存</li>
+<li>维护 Worker 进程</li>
+</ul>
+<p>Worker进程职责</p>
+<ul>
+<li>使用基于复用IO的主从Reactor模式处理网络请求</li>
+<li>模块的使用</li>
+<li>缓存的维护<ul>
+<li>AIO</li>
+<li>zero-copy（sendfile）</li>
+<li>mmap</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>请求处理流程</p>
+</blockquote>
+<p><strong>整体处理流程</strong></p>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/004.png"></p>
+<p><strong>复用IO请求处理理解：</strong></p>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/005.png"></p>
+<p>注：可从 <a target="_blank" rel="noopener" href="https://nginx.org/en/docs/stream/stream_processing.html">https://nginx.org/en/docs/stream/stream_processing.html</a> 了解目前 Nginx 所支持对 TCP&#x2F;UDP 管理的模块</p>
+<p>指令处理顺序：</p>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/006.png"></p>
+<h2 id="监控Nginx"><a href="#监控Nginx" class="headerlink" title="监控Nginx"></a>监控Nginx</h2><blockquote>
+<p>使用 http_stub_status_module 进行基本状态监控</p>
+</blockquote>
+<p>1）添加模块</p>
+<p>2）配置 localtion </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">location /status &#123;</span><br><span class="line">	stub_status;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>3）平滑升级或重启服务</p>
+<p>4）访问资源</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&gt; curl localhost/status</span><br><span class="line">Active connections: 1 </span><br><span class="line">server accepts handled requests</span><br><span class="line"> 13 13 35 </span><br><span class="line">Reading: 0 Writing: 1 Waiting: 0 </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Active connections：当前活动的客户端连接数，包括Waiting连接数 </li>
+<li>accepts：已接受的客户端连接总数</li>
+<li>handled：已处理的连接总数。通常该值与 accepts 一致，除非达到了worker_connections资源限制</li>
+<li>requests：客户端请求总数</li>
+<li>Reading：正在向客户端进行读操作的连接数</li>
+<li>Writing：正在向客户端进行写操作的连接数</li>
+<li>Waiting：正在空闲等待客户端请求的连接数</li>
+</ul>
+<blockquote>
+<p>其他</p>
+</blockquote>
+<ul>
+<li>Grafana</li>
+<li>Zabbix</li>
+<li>Nginx-UI</li>
+</ul>
+<h2 id="使用keepalived提供高可用解决方案"><a href="#使用keepalived提供高可用解决方案" class="headerlink" title="使用keepalived提供高可用解决方案"></a>使用keepalived提供高可用解决方案</h2><blockquote>
+<p>VRRP简介</p>
+</blockquote>
+<p>&amp;emsp;&amp;emsp;虚拟路由器冗余协议（VRRP）可用于解决路由器单点故障问题。该协议会在指定网卡上创建一个虚拟IP地址，然后通过自动切其换网关来完成高可用实现。譬如虚拟IP开始会以Master作为网关来处理请求，而一旦Master宕机，则虚拟IP的网关将会被切换到热备节点上，以顶替Master节点的工作。</p>
+<p>&amp;emsp;&amp;emsp;Keepalived 提供了 VRRP 功能实现，因此 Keepalived 可以为任何服务提供高可用解决方案。换句话说如果服务本身没有高可用解决方案的话，就可以考虑使用 Keepalived 来实现。 </p>
+<blockquote>
+<p>在Nginx服务上安装整合Keepalived</p>
+</blockquote>
+<p>0）例子环境</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">192.168.0.210 nginx、keepalived1</span><br><span class="line">192.168.0.211 nginx、keepalived2</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/010.png"></p>
+<p>1）安装keepalived</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y keepalived</span><br></pre></td></tr></table></figure>
+
+<p>2）配置keepalived的vrrp</p>
+<p>vim &#x2F;etc&#x2F;keepalived&#x2F;keepalived.conf</p>
+<p>keepalived1配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">global_defs &#123;</span><br><span class="line">   router_id nginx_master # keepalived集群节点唯一键</span><br><span class="line">&#125;</span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state MASTER # 配置状态</span><br><span class="line">    interface enp0s3 # 绑定网卡，和Nginx一致即可</span><br><span class="line">    virtual_router_id 51</span><br><span class="line">    priority 100 # 提供服务的优先级别</span><br><span class="line">    advert_int 1</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line">	# 虚拟IP</span><br><span class="line">	# 注意：网段必须可以被外接访问</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">			192.168.0.222</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>keepalived2配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">global_defs &#123;</span><br><span class="line">   router_id nginx_backup</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state BACKUP</span><br><span class="line">    interface enp0s3</span><br><span class="line">    virtual_router_id 51</span><br><span class="line">    priority 50</span><br><span class="line">    advert_int 1</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.0.222</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>3）应用并启动Keepalived服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl enable keepalived.service</span><br><span class="line">systemctl start keepalived.service</span><br></pre></td></tr></table></figure>
+
+<p>4）测试步骤：启动两台Keepalived服务器上的Nginx，并设置测试标记</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">192.168.0.210 &gt; echo &quot;nginx 192.168.0.210&quot; &gt; /opt/nginx/html/index.html</span><br><span class="line">192.168.0.211 &gt; echo &quot;nginx 192.168.0.211&quot; &gt; /opt/nginx/html/index.html</span><br></pre></td></tr></table></figure>
+
+<p>5）测试步骤：在随便一台机器上使用虚拟IP访问，譬如：<a target="_blank" rel="noopener" href="http://192.168.0.222/">http://192.168.0.222/</a></p>
+<p>两台Keepalived正常服务时</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt; curl 192.168.0.222                                      </span><br><span class="line">nginx 192.168.0.210</span><br></pre></td></tr></table></figure>
+
+<p>关闭 192.168.0.210 上的Keepalived服务后</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt; systemctl stop keepalived.service</span><br><span class="line">&gt; curl 192.168.0.222</span><br><span class="line">nginx 192.168.0.211</span><br></pre></td></tr></table></figure>
+
+<p>重启 192.168.0.210 上的Keepalived服务后</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt; systemctl start keepalived.service</span><br><span class="line">&gt; curl 192.168.0.222</span><br><span class="line">nginx 192.168.0.210</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>为 Keepalived 实现故障检测功能</p>
+</blockquote>
+<p>需要注意的是 Keepalived 并不能自主检测服务是否还处于可用状态。譬如以当前案例为例，如果 Nginx 因为某些原因被停掉了，Keepalived 是无法感知的，因此它不会为虚拟IP切换网关，从而导致整个 Nginx 代理的上游服务不可用。</p>
+<p>为了解决上面的问题，我们可以为 Keepalived 提供一个服务的健康监测脚本（&#x2F;root&#x2F;nginx_health_check.sh）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/bash</span></span><br><span class="line">if [ `systemctl status nginx.service | grep &quot;running&quot; | wc -l` -ne 1 ]</span><br><span class="line">	then</span><br><span class="line">		echo &quot;Nginx服务已停止&quot;</span><br><span class="line">		systemctl stop keepalived.service</span><br><span class="line">else</span><br><span class="line">	echo &quot;Nginx正常提供服务&quot;</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+
+<p>将脚本文件配置到 Keepalived，在配置文件中追加以下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 脚本位置</span><br><span class="line">vrrp_script check_nginx &#123;</span><br><span class="line">    script &quot;/root/nginx_health_check.sh&quot;</span><br><span class="line">    interval 2 # 每两秒执行一次脚本</span><br><span class="line">&#125;</span><br><span class="line"># 应用脚本</span><br><span class="line">track_script &#123;</span><br><span class="line">	check_nginx</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>关于 Keepalived 脑裂问题</p>
+</blockquote>
+<p>因为 Keepalived 不在文章讨论范围，因此可以另行参考以下两边文章进行了解：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/wdirdo/article/details/103011816">keepalived脑裂</a></li>
+<li><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1027323">split-brain 脑裂问题（Keepalived）</a></li>
+</ul>
+<p>检测是否出现脑裂可以使用 ip 命令进行查看。正常情况下只有一个 Keepalived 服务器能够获取到虚拟IP，因此如果虚拟IP出现在多台 Keepalived 上就说明出现脑裂了。</p>
+<p><img src="/Nginx%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/011.png"></p>
+<h2 id="Nginx简单优化"><a href="#Nginx简单优化" class="headerlink" title="Nginx简单优化"></a>Nginx简单优化</h2><blockquote>
+<p>基础模块</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"># Nginx默认进程数=CPU数+1，1是主进程</span><br><span class="line">worker_processes auto;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">	# Nginx最大连接数（包含客户端、upstream的连接）</span><br><span class="line">	# 该值受限于操作系统，可用ulimit -n查看，以及修改/etc/security/limits.conf和/etc/pam.d/login实现增大数值</span><br><span class="line">	# 可参考：https://www.linuxidc.com/Linux/2018-08/153369.htm</span><br><span class="line">	worker_connections 65535;</span><br><span class="line">	# 表示Worker进程可以一次接收多条连接</span><br><span class="line">	multi_accept on;</span><br><span class="line">	# 启用epoll实现多路复用（Linux 2.6+）</span><br><span class="line">	use epoll;</span><br><span class="line">	# 指定工作线程数量和任务队列长度（Nginx 1.7.11）</span><br><span class="line">	# 定义用于多线程读取和发送文件而不阻塞工作进程的线程池</span><br><span class="line">	thread_pool defaultName threads=32 max_queue=65536; </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    keepalive_timeout 60s; # 全局连接保活时间</span><br><span class="line"></span><br><span class="line">    # 按需要添加内容压缩</span><br><span class="line">    gzip on;</span><br><span class="line">    gzip_http_version 1.1; # 最低版本为1.1</span><br><span class="line">    gzip_proxied any;</span><br><span class="line">    gzip_comp_level 2; # 压缩等级（1-9）,越低越小越耗时 </span><br><span class="line">    gzip_types text/plain text/css application/json application/javascirpt image/jpeg image/gif image/png; # 需要压缩的媒体类型</span><br><span class="line">    gzip_static on; # 如果有压缩好的直接使用</span><br><span class="line"></span><br><span class="line">    upstream backend &#123;</span><br><span class="line">      server 192.168.0.1;</span><br><span class="line">      keepalive 300; # 最多保活300个与上游服务器通新的连接</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    # 缓存空间</span><br><span class="line">    proxy_cache_path /tmp/cache level=1:2 keys_zone=cache_one:10m;</span><br><span class="line"></span><br><span class="line">    location ~ .*\.(html|gif|jpg|png|svg|css|js)$ &#123;</span><br><span class="line">      proxy_pass http://backend;</span><br><span class="line">      # proxy_redirect可以修改响应头的Location</span><br><span class="line">      # Location用于将页面重新定向至的地址。一般在响应码为3xx的响应中才会有意义。</span><br><span class="line">      proxy_redirect off;</span><br><span class="line">      proxy_cache cache_one; # 缓存内存块</span><br><span class="line">      # 上游服务器不同响应状态的资源的缓存时间</span><br><span class="line">      proxy_cache_valid 200 302 301 1d;</span><br><span class="line">      proxy_cache_valid 404 10m;</span><br><span class="line">      proxy_cache_valid any 1h;</span><br><span class="line">  	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Nginx 核心功能配置文档：<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/ngx_core_module.html">https://nginx.org/en/docs/ngx_core_module.html</a></li>
+<li>Nginx ngx_http_core_module 核心模块配置文档：<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/http/ngx_http_core_module.html">https://nginx.org/en/docs/http/ngx_http_core_module.html</a></li>
+<li>Nginx ngx_http_gzip_module 模块配置文档：<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/http/ngx_http_gzip_module.html">https://nginx.org/en/docs/http/ngx_http_gzip_module.html</a></li>
+</ul>
+<blockquote>
+<p>反向代理 - 动静分离</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">upstream static &#123;</span><br><span class="line">	server 192.168.0.1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">upstream dynamic &#123;</span><br><span class="line">	server 192.168.0.2;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">	listen 80;</span><br><span class="line">	server_name localhost;</span><br><span class="line">	</span><br><span class="line">	location ~ \.(php|jsp)$ &#123;</span><br><span class="line">		proxy_pass http://dynamic;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	location ~ .*\.(html|gif|jpg|png|svg|css|js)$ &#123;</span><br><span class="line">		proxy_pass http://static;</span><br><span class="line">		proxy_set_header Host $host:$server_port;</span><br><span class="line">		proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Nginx ngx_http_proxy_module 模块配置文档：<a target="_blank" rel="noopener" href="https://nginx.org/en/docs/http/ngx_http_proxy_module.html">https://nginx.org/en/docs/http/ngx_http_proxy_module.html</a></li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://programming.vip/docs/details-of-event-driven-process-of-nginx-based-on-epoll-model.html">Details of event driven process of nginx based on epoll model</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.nginx.com/blog/inside-nginx-how-we-designed-for-performance-scale/">Inside NGINX: How We Designed for Performance &amp; Scale</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.nginx.com/blog/thread-pools-boost-performance-9x/">Thread Pools in NGINX Boost Performance 9x!</a></li>
+<li>《Nginx高性能Web服务器详解》</li>
+</ul>
+
+  </div>
+  
+    
+        
+          <a id="newer" class="blog-nav" href="/%E5%88%9D%E5%A7%8Bzookeeper/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

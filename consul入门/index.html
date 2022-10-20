@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      Consul的基本使用 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Aug 03, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      Consul的基本使用
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h2><ul>
+<li>Consul 是 HashiCorp 公司推出的开源工具，用于实现分布式系统的服务发现与配置</li>
+<li>Consul 提供 服务注册与发现、分布一致性协议实现、健康检查、Key&#x2F;Value存储、多数据中心等功能，而无需要依赖其它工具（比如ZooKeeper等），使用起来也较为简单</li>
+<li>Consul 使用Golang开发，具有天然的可移植性。其中安装包仅包含一个可执行文件，方便部署之余且和Docker能够无缝配合</li>
+</ul>
+<h2 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h2><blockquote>
+<p>官网：<a target="_blank" rel="noopener" href="https://www.consul.io/">https://www.consul.io/</a></p>
+</blockquote>
+<p>consul是一个命令工具，上传linux或直接用wget下载，解压后将其mv到&#x2F;bin目录即可</p>
+<p><img src="/consul%E5%85%A5%E9%97%A8/002.png"></p>
+<h2 id="命令参数"><a href="#命令参数" class="headerlink" title="命令参数"></a>命令参数</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">-advertise        通知展现地址用来改变我们给集群中的其他节点展现的地址，一般情况下-bind地址就是展现地址</span><br><span class="line">-bootstrap        用来控制一个server是否在bootstrap模式，在一个datacenter中只能有一个server处于bootstrap模式，当一个server处于bootstrap模式时，可以自己选举为raft leader。</span><br><span class="line">-bootstrap-expect 在数据中心中期望提供的server节点数目，当该值提供的时候，consul一直等到达到指定sever数目的时候才会引导整个集群，该标记不能和bootstrap公用</span><br><span class="line">-bind             该地址用来在集群内部的通讯，集群内的所有节点到地址都必须是可达的，默认是0.0.0.0</span><br><span class="line">-client           consul绑定的地址，这个地址提供HTTP、DNS、RPC等服务，默认是127.0.0.1</span><br><span class="line">-config-file      明确的指定要加载哪个配置文件</span><br><span class="line">-config-dir       配置文件目录，里面所有以.json结尾的文件都会被加载</span><br><span class="line">-data-dir         提供一个目录用来存放agent的状态，所有的agent允许都需要该目录，该目录必须是稳定的，系统重启后都继续存在</span><br><span class="line">-dc               该标记控制agent允许的datacenter的名称，默认是dc1</span><br><span class="line">-encrypt          指定secret key，使consul在通讯时进行加密，key可以通过consul keygen生成，同一个集群中的节点必须使用相同的key</span><br><span class="line">-join             加入一个已经启动的agent的ip地址，可以多次指定多个agent的地址。如果consul不能加入任何指定的地址中，则agent会启动失败，默认agent启动时不会加入任何节点。</span><br><span class="line">-retry-join       和join类似，但是允许你在第一次失败后进行尝试。</span><br><span class="line">-retry-interval   两次join之间的时间间隔，默认是30s</span><br><span class="line">-retry-max        尝试重复join的次数，默认是0，也就是无限次尝试</span><br><span class="line">-log-level        consul agent启动后显示的日志信息级别。默认是info，可选：trace、debug、info、warn、err。</span><br><span class="line">-node             节点在集群中的名称，在一个集群中必须是唯一的，默认是该节点的主机名</span><br><span class="line">-protocol         consul使用的协议版本</span><br><span class="line">-rejoin           使consul忽略先前的离开，在再次启动后仍旧尝试加入集群中。</span><br><span class="line">-server           定义agent运行在server模式，每个集群至少有一个server，建议每个集群的server不要超过5个</span><br><span class="line">-syslog           开启系统日志功能，只在linux/osx上生效</span><br><span class="line">-ui-dir           提供存放web ui资源的路径，该目录必须是可读的</span><br><span class="line">-pid-file         提供一个路径来存放pid文件，可以使用该文件进行SIGINT/SIGHUP(关闭/更新)agent</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="服务端口"><a href="#服务端口" class="headerlink" title="服务端口"></a>服务端口</h2><table>
+<thead>
+<tr>
+<th>端口</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>8300</td>
+<td>Used for RPC Server</td>
+</tr>
+<tr>
+<td>8301</td>
+<td>LAN GOSSIP（局域网传播）</td>
+</tr>
+<tr>
+<td>8302</td>
+<td>WAN GOSSIP（广域网传播）</td>
+</tr>
+<tr>
+<td>8500</td>
+<td>Used for HTTP Server</td>
+</tr>
+<tr>
+<td>8600</td>
+<td>Used for DNS Server</td>
+</tr>
+<tr>
+<td>8502</td>
+<td>Used for gRPC Server</td>
+</tr>
+</tbody></table>
+<h2 id="基础架构"><a href="#基础架构" class="headerlink" title="基础架构"></a>基础架构</h2><p><img src="/consul%E5%85%A5%E9%97%A8/001.png"></p>
+<ul>
+<li>Consul 支持多数据中心（官网建议使用1个）</li>
+<li>Consul Cluster 由多个 Consul Agent 实例组成</li>
+<li>其中 Agent 分为： Client模式 和 Server模式。Server模式主要负责对外提供服务。Client模式是一个轻量级的进程，主要用于注册服务、运行健康检查、转发请求等</li>
+<li>Agent Client 与 Agent Server 通信使用 Gossip协议 和 RPC协议</li>
+<li>Agent Server 之间通信使用 Raft算法 和 RPC协议</li>
+<li>其中 Agent Server 又分为：Leader 和 Follower 两种角色。Leader主要负责 处理请求 和 同步数据</li>
+<li>集群的 Agent Server 通过Raft算法来实现Leader选举，所以 Agent Server 数量应该是 2n+1（官方推荐每个集群至少有1个 Agent Server 且不要超过5个）</li>
+<li>在Consul的Raft算法实现中，Follower 会将所有请求转发给 Leader 处理，通过这样的方式来提高一致性</li>
+</ul>
+<h2 id="Agent的启动和停止"><a href="#Agent的启动和停止" class="headerlink" title="Agent的启动和停止"></a>Agent的启动和停止</h2><blockquote>
+<p>启动agent</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul agent -dev -node agent-01 -client 192.168.31.250</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>-dev：开发模式启动。可以省略数据 bind 和 data_dir 配置</li>
+<li>-node：节点名称。默认为所在机器名称</li>
+<li>-client：HTTP、DNS、RPC等服务的通信地址。默认为127.0.0.1</li>
+</ul>
+<blockquote>
+<p>命令方式 - 查看集群成员</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul members -http-addr=192.168.31.250:8500</span><br><span class="line">Node      Address         Status  Type    Build  Protocol  DC   Segment</span><br><span class="line">agent-01  127.0.0.1:8301  alive   server  1.6.2  2         dc1  &lt;all&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>-http-addr：对应agent启动时设置的 -client 值。默认为127.0.0.1:8500</li>
+</ul>
+<blockquote>
+<p>REST方式 - 查看集群成员</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl 192.168.31.250:8500/v1/catalog/nodes</span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        &quot;ID&quot;: &quot;dbdb33c2-8498-683e-bf4c-cfcb33bec3f7&quot;,</span><br><span class="line">        &quot;Node&quot;: &quot;agent-01&quot;,</span><br><span class="line">        &quot;Address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">        &quot;Datacenter&quot;: &quot;dc1&quot;,</span><br><span class="line">        &quot;TaggedAddresses&quot;: &#123;</span><br><span class="line">            &quot;lan&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">            &quot;wan&quot;: &quot;127.0.0.1&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;Meta&quot;: &#123;</span><br><span class="line">            &quot;consul-network-segment&quot;: &quot;&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;CreateIndex&quot;: 9,</span><br><span class="line">        &quot;ModifyIndex&quot;: 10</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>停止agent</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul leave -http-addr=192.168.31.250:8500</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>启动一个生产环境的Agent</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  apps consul agent -server -data-dir /tmp/consul -node=consul-01 -bind=192.168.31.250 -config-dir /etc/consul.d</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>-data-dir：保存Agent运行过程产生的数据</li>
+<li>-node：节点名称</li>
+<li>-bind：绑定的机器，即监听那台机器的服务</li>
+<li>-config-dir：配置文件夹</li>
+</ul>
+<h2 id="注册和查询服务"><a href="#注册和查询服务" class="headerlink" title="注册和查询服务"></a>注册和查询服务</h2><blockquote>
+<p>步骤1：手动注册一个服务</p>
+</blockquote>
+<p>需要手动创建文件和写入内容，文件名称一般和服务名称一样</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ mkdir /etc/consul.d</span><br><span class="line">➜  ~ echo &#x27;&#123;&quot;service&quot;: &#123;&quot;name&quot;: &quot;web&quot;, &quot;tags&quot;: [&quot;rails&quot;], &quot;port&quot;: 80&#125;&#125;&#x27; &gt; /etc/consul.d/web.json</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>步骤2：启动agent并指定配置文件</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜ consul agent -dev -node=agent-01 -config-dir=/etc/consul.d</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>步骤3：REST方式查询服务。可以追加 ?passing 表明只查询健康的服务</p>
+</blockquote>
+<p>查看指定服务</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl http://localhost:8500/v1/catalog/service/web</span><br><span class="line">[</span><br><span class="line">    &#123;</span><br><span class="line">        &quot;ID&quot;: &quot;5486cbfa-c081-32c9-7e8d-8ad06855093f&quot;,</span><br><span class="line">        &quot;Node&quot;: &quot;agent-01&quot;,</span><br><span class="line">        &quot;Address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">        &quot;Datacenter&quot;: &quot;dc1&quot;,</span><br><span class="line">        &quot;TaggedAddresses&quot;: &#123;</span><br><span class="line">            &quot;lan&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">            &quot;wan&quot;: &quot;127.0.0.1&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;NodeMeta&quot;: &#123;</span><br><span class="line">            &quot;consul-network-segment&quot;: &quot;&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;ServiceKind&quot;: &quot;&quot;,</span><br><span class="line">        &quot;ServiceID&quot;: &quot;web&quot;,</span><br><span class="line">        &quot;ServiceName&quot;: &quot;web&quot;,</span><br><span class="line">        &quot;ServiceTags&quot;: [</span><br><span class="line">            &quot;rails&quot;</span><br><span class="line">        ],</span><br><span class="line">        &quot;ServiceAddress&quot;: &quot;&quot;,</span><br><span class="line">        &quot;ServiceWeights&quot;: &#123;</span><br><span class="line">            &quot;Passing&quot;: 1,</span><br><span class="line">            &quot;Warning&quot;: 1</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;ServiceMeta&quot;: &#123;&#125;,</span><br><span class="line">        &quot;ServicePort&quot;: 80,</span><br><span class="line">        &quot;ServiceEnableTagOverride&quot;: false,</span><br><span class="line">        &quot;ServiceProxy&quot;: &#123;</span><br><span class="line">            &quot;MeshGateway&quot;: &#123;&#125;,</span><br><span class="line">            &quot;Expose&quot;: &#123;&#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        &quot;ServiceConnect&quot;: &#123;&#125;,</span><br><span class="line">        &quot;CreateIndex&quot;: 10,</span><br><span class="line">        &quot;ModifyIndex&quot;: 10</span><br><span class="line">    &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>查看所有服务</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl http://localhost:8500/v1/catalog/services</span><br><span class="line">&#123;</span><br><span class="line">    &quot;consul&quot;: [],</span><br><span class="line">    &quot;my-service-name&quot;: [</span><br><span class="line">        &quot;release=1&quot;,</span><br><span class="line">        &quot;mytag=tandi&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;web&quot;: [</span><br><span class="line">        &quot;rails&quot;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>使用REST方式注册服务</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl -X PUT -H &quot;Content-type:application/json&quot; -d &#x27;&#123;&quot;ID&quot;:&quot;my-service-id&quot;,&quot;Name&quot;:&quot;my-service-name&quot;,&quot;Tags&quot;:[&quot;release=1&quot;,&quot;mytag=tandi&quot;],&quot;Address&quot;:&quot;192.168.4.120&quot;,&quot;Port&quot;:8888,&quot;Meta&quot;:&#123;&quot;my_version&quot;:&quot;4.0&quot;&#125;,&quot;EnableTagOverride&quot;:false,&quot;Check&quot;:&#123;&quot;DeregisterCriticalServiceAfter&quot;:&quot;90m&quot;,&quot;HTTP&quot;:&quot;http://www.tandi.wiki/&quot;,&quot;Interval&quot;:&quot;10s&quot;&#125;&#125;&#x27; http://127.0.0.1:8500/v1/agent/service/register</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="搭建集群"><a href="#搭建集群" class="headerlink" title="搭建集群"></a>搭建集群</h2><blockquote>
+<p>环境说明：两台CentOS7虚拟机，简称cent01，cent02；其中cent02复制cent01（虚拟机复制要小心，特别要注意软件的配置文件和数据）</p>
+</blockquote>
+<p>SSH连接如下：</p>
+<p><img src="/consul%E5%85%A5%E9%97%A8/018.png"></p>
+<p><strong>步骤1：创建一个Server节点（cent01）</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul agent -server -bootstrap-expect 1  -data-dir /tmp/consul -node=server-node -bind=192.168.4.157  -config-dir /etc/consul.d</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤2：创建一个Client节点（cent02）</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul agent -data-dir /tmp/consul -node=client-node01 -bind=192.168.4.159 -config-dir /etc/consul.d</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤3：将client-node01节点加入到集群（cent02）</strong></p>
+<blockquote>
+<p>注意：在consul中，节点想要加入到集群中，只需要知道集群中的随便一个服务节点即可</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul join 192.168.4.157</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤4：查看consul集群信息</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ consul members</span><br><span class="line">Node(节点名称)  Address(节点位置)    Status  Type    Build  Protocol  DC   Segment</span><br><span class="line">server-node    192.168.4.157:8301  alive   server  1.4.2  2         dc1  &lt;all&gt;</span><br><span class="line">client-node01  192.168.4.159:8301  alive   client  1.4.2  2         dc1  &lt;default&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>集群中可能出现的问题</strong></p>
+<ul>
+<li><p>无法加入集群，因为nodeId冲突</p>
+<ul>
+<li>虚拟机复制的时候报&#x2F;tmp&#x2F;consul也复制了，最大可能是在虚拟机复制之前，使用过&#x2F;tmp&#x2F;consul，并产生了nodeid保存到了目录，解决方法将其清除重启consul agent</li>
+</ul>
+</li>
+<li><p>桥接模式，两台虚拟机之间ping不同</p>
+<ul>
+<li>确认网络可用，即虚拟机能联网，主机能ssh操作虚拟机</li>
+<li>关闭主机和虚拟机的防火墙</li>
+</ul>
+</li>
+</ul>
+<h2 id="启用WEB-UI"><a href="#启用WEB-UI" class="headerlink" title="启用WEB-UI"></a>启用WEB-UI</h2><blockquote>
+<p>本机访问指定 -ui 即可。非本机访问需要指定 -client 0.0.0.0 -ui</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">➜  consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul -bind 192.168.31.250 -config-dir /etc/consul.d  -client </span><br><span class="line">0.0.0.0 -ui</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>访问：<a target="_blank" rel="noopener" href="http://localhost:8500/">http://localhost:8500</a></p>
+</blockquote>
+<p><img src="/consul%E5%85%A5%E9%97%A8/003.png"></p>
+<h2 id="键值对存取"><a href="#键值对存取" class="headerlink" title="键值对存取"></a>键值对存取</h2><blockquote>
+<p>保存 key - value</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">在kv（根）目录创建</span></span><br><span class="line">➜  ~ curl -X PUT -d &#x27;值&#x27; http://localhost:8500/v1/kv/键</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">在指定目录下创建</span></span><br><span class="line">➜  ~ curl -X PUT -d &#x27;值&#x27; http://localhost:8500/v1/kv/目录名称/键</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>查看 key - value</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查询kv（根）目录下所有key-value</span></span><br><span class="line">➜  ~ curl http://localhost:8500/v1/kv/\?recurse</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">查询指定key</span></span><br><span class="line">➜  ~ curl http://localhost:8500/v1/kv/键</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更新 key - value</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl -X PUT -d &#x27;值&#x27; http://localhost:8500/v1/kv/键</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>删除 key - value</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  ~ curl -X DELETE http://localhost:8500/v1/kv/键</span><br></pre></td></tr></table></figure>
+
+
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://learn.hashicorp.com/consul">HashiCorp Consul</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/docker%E5%BA%94%E7%94%A8%E5%AE%B9%E5%99%A8%E5%BC%95%E6%93%8E/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

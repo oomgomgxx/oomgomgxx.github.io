@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      MySQL索引闲记 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Jun 26, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      MySQL索引闲记
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2019年7月1日11:01:51 — 丰富索引数据结构概念，删减多余内容</li>
+</ul>
+<h2 id="什么是索引？"><a href="#什么是索引？" class="headerlink" title="什么是索引？"></a>什么是索引？</h2><blockquote>
+<p>简介</p>
+</blockquote>
+<ol>
+<li>索引是一种用来快速定位主体（数据）且独立于主体的数据结构</li>
+<li>不同的索引类型实现方式不同，即使是相同类型的索引在不同的数据库中也可能不同</li>
+</ol>
+<blockquote>
+<p>什么时候需要索引？</p>
+</blockquote>
+<p>表数据量增大，搜索时间被延长时</p>
+<blockquote>
+<p>什么字段适合做索引？</p>
+</blockquote>
+<ol>
+<li>频繁被作为查询、表连接、分组、排序等条件的字段</li>
+<li>离散程度高的字段</li>
+</ol>
+<blockquote>
+<p>什么字段不适合做索引？</p>
+</blockquote>
+<ol>
+<li>频繁被修改的字段</li>
+<li>值较大的字段</li>
+<li>离散度低的字段</li>
+</ol>
+<blockquote>
+<p>索引是不是越多越好？</p>
+</blockquote>
+<p>答案是否定的。原因是索引是独立的数据结构，需要花费额外的时间和磁盘空间来维护</p>
+<h2 id="索引类型"><a href="#索引类型" class="headerlink" title="索引类型"></a>索引类型</h2><p><img src="/mysql%E7%B4%A2%E5%BC%95/8.png"></p>
+<h2 id="常见索引数据结构"><a href="#常见索引数据结构" class="headerlink" title="常见索引数据结构"></a>常见索引数据结构</h2><h3 id="散列表"><a href="#散列表" class="headerlink" title="散列表"></a>散列表</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/3.png"></p>
+<ul>
+<li>散列表数据结构通常由<strong>数组</strong>和<strong>链表</strong>组成。散列表中的元素会根据关键字段的哈希值来计算出自己在数组中的存储位置</li>
+<li>散列表最理想的查询时间复杂度是O(1)</li>
+<li>如果字段的离散度非常高的话（如身份证号码），那么用散列表作为索引结构来做等值查询优势最为明显。</li>
+<li>使用散列表作为索引数据结构时会存在以下问题：<ul>
+<li>散列表并不支持联合索引的最佳左前缀原则。因为计算数组下标时会将多个列一同进行哈希运算，无法确分前后</li>
+<li>因为采用哈希算法确立数组下标的原因，导致散列表存储时会乱序，所以它并是不支持<strong>区间</strong>或<strong>排序</strong>等查询操作</li>
+<li>散列表最适合的是做简单的等值查询操作</li>
+</ul>
+</li>
+</ul>
+<h3 id="有序数组"><a href="#有序数组" class="headerlink" title="有序数组"></a>有序数组</h3><blockquote>
+<p>图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/4.png"></p>
+<ul>
+<li>有序数组的特点是内存连续，所以在<strong>随机访问查询</strong>和<strong>区间查询</strong>上效率是非常高</li>
+<li>有序数组因为下标时连续的，所以在增加删除操作时，附近的元素需要集合挪动下标，这时效率相对较低</li>
+<li>有序数组适用<strong>读多写少</strong>、<strong>常进行区间查询</strong>的场景</li>
+</ul>
+<h3 id="二叉查找树、平衡二叉查找树、红黑树的区别"><a href="#二叉查找树、平衡二叉查找树、红黑树的区别" class="headerlink" title="二叉查找树、平衡二叉查找树、红黑树的区别"></a>二叉查找树、平衡二叉查找树、红黑树的区别</h3><blockquote>
+<p> 图片源自网络</p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/5.png"></p>
+<ul>
+<li>二叉查找树的特点是左边节点小于右边节点，因此除了能保持顺序之外，还天然支持二分查找，所以个人认为二叉查找树其实是有序数组和散列表的折中</li>
+<li>虽然二叉查找树从综合性角度来看并不差，但它存在一定的问题。譬如在极端的情况下会退化成链表，即从O（logn）变成O（n）</li>
+<li>针对二叉查找树的退化问题，我们可以用平衡二叉查找树来解决。所谓平衡二叉树指的是左右子树的树高不能超过1的二叉查找树</li>
+<li>平衡二叉查找树虽然能够解决退化成链表的问题，但随着数量量增多，它所花费在处理平衡上的开销就越大，而且树高没有得到控制，这时优势就会下降，甚至可能对 CPU 造成负担</li>
+<li>红黑树是二叉查找树和平衡二叉查找树的折中，它也是一颗平衡树，只不过它只要求黑色节点平衡</li>
+</ul>
+<h3 id="B-树"><a href="#B-树" class="headerlink" title="B+树"></a>B+树</h3><blockquote>
+<p>图片源自网络 </p>
+</blockquote>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/7.png"></p>
+<ul>
+<li>B+树的B是balance的意思，即B+Tree也是平衡树，且是棵多叉树。B+树一般树高维持在 3~4 左右，即一次查找只需 3~4 次 IO 即可</li>
+<li>B+树的特点是普通节点不记录数据，而是由叶子节点记录，即所谓的聚簇索引，而且B+树的叶子节点从左往右呈有序递增，且每个叶子节点都包含左右两边叶子节点的引用，所以天然支持<strong>区间</strong>和<strong>排序</strong>等操作</li>
+<li>B+树的思想是希望普通节点尽可能记录多一些子节点的信息，从而减少 IO 的次数，因为一个节点其实相当于一个内存页（16K），而一个内存页就相当于一次 IO 查询</li>
+</ul>
+<blockquote>
+<p>拓展</p>
+</blockquote>
+<p>1）为什么 MongoDB 使用 B树而不是 B+树？</p>
+<p><img src="/mysql%E7%B4%A2%E5%BC%95/9.png"></p>
+<ul>
+<li>其实 MongoDB 使用的 WiredTriger 和 InnoDB 一样使用的是 B+树</li>
+<li>可参考 WiredTriger 手册<ul>
+<li><a target="_blank" rel="noopener" href="http://source.wiredtiger.com/3.2.1/tune_page_size_and_comp.html">http://source.wiredtiger.com/3.2.1/tune_page_size_and_comp.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://mongoing.com/archives/2540">https://mongoing.com/archives/2540</a></li>
+</ul>
+</li>
+</ul>
+<p>2）什么是聚簇索引？</p>
+<ul>
+<li>聚簇索引是一种数据的存储方式，而并非一种索引结构。指的是数据顺序和索引顺序一样。譬如 InnoDB 中的主键就是一个聚簇索引</li>
+</ul>
+<h2 id="索引和约束"><a href="#索引和约束" class="headerlink" title="索引和约束"></a>索引和约束</h2><ul>
+<li><p>使用 primary key 时，除了会创建<strong>主键索引</strong>外，还会添加<strong>unique</strong>和<strong>not null</strong>两种约束</p>
+</li>
+<li><p>使用 foreign key 时，会添加<strong>外键约束</strong>和创建一个<strong>普通索引</strong></p>
+</li>
+<li><p>使用 unique key 时，会添加<strong>唯一约束</strong>和创建一个<strong>普通索引</strong></p>
+</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> address(</span><br><span class="line">	a_id <span class="type">INT</span> <span class="keyword">PRIMARY</span> KEY auto_increment,</span><br><span class="line">	a_addr <span class="type">VARCHAR</span>(<span class="number">100</span>)</span><br><span class="line">)ENGINE<span class="operator">=</span>INNODB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person(</span><br><span class="line">	p_id <span class="type">int</span> <span class="keyword">PRIMARY</span> KEY auto_increment, <span class="comment">-- 主键（默认约束 unique 和 not null）</span></span><br><span class="line">	p_id_card <span class="type">VARCHAR</span>(<span class="number">18</span>) <span class="keyword">UNIQUE</span>, <span class="comment">-- 方法1: 添加唯一约束且创建唯一索引</span></span><br><span class="line">	p_name <span class="type">VARCHAR</span>(<span class="number">10</span>), </span><br><span class="line">	p_addr <span class="type">VARCHAR</span>(<span class="number">100</span>) <span class="keyword">UNIQUE</span>,</span><br><span class="line">	p_age <span class="type">INT</span>,</span><br><span class="line">	<span class="keyword">UNIQUE</span> KEY uindex_age (p_age), <span class="comment">-- 方法2: 添加唯一约束且创建唯一索引</span></span><br><span class="line">	<span class="comment">-- CONSTRAINT uindex_age UNIQUE KEY (p_age), -- 方法3: 添加唯一约束且创建唯一索引</span></span><br><span class="line">	<span class="keyword">CONSTRAINT</span> fk_addr_address_a_addr <span class="keyword">FOREIGN</span> KEY(p_addr) <span class="keyword">references</span> test.address(a_addr)  <span class="comment">-- 添加外键约束且创建一个普通索引</span></span><br><span class="line">)ENGINE<span class="operator">=</span>INNODB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8</span><br></pre></td></tr></table></figure>
+
+<p>外键是一个跨表约束机制，是一种保证数据库完整性的手段。其值可以为null，也可以重复，但要求出现的值不能超出所关联的字段值的范围。例如 student.tid（子表） 外键引用了 teacher.id（父表），现在假设 teacher.id 有 （1，2，3），那么就表示 student.tid 的值时 （1，2，3）以外的值</p>
+<h2 id="什么是覆盖索引？"><a href="#什么是覆盖索引？" class="headerlink" title="什么是覆盖索引？"></a>什么是覆盖索引？</h2><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<ul>
+<li>覆盖索引和聚簇索引一样都不是索引的类型，引准确点它其实是一种现象，即更具索引去查询数据时，从索引中得到了想要的数据</li>
+<li>覆盖索引的效率是非常高的，因为它并不需要真正去查找数据</li>
+<li>在日常开发中我们应该尽量少用”select *”操作，有以下两个原因：<ul>
+<li>通常的查询操作并不会需要所有字段，所以”select *”会返回冗余数据，导致 SQL 变慢和增加网络传输开销</li>
+<li>需要的字段越多，覆盖索引出现的几率就越低</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>如何提高覆盖索引的出现率？</p>
+</blockquote>
+<ul>
+<li>少用”select *”</li>
+<li>将频经常一起出现且作为查询条件的字段设置为组合索引</li>
+</ul>
+<h2 id="什么是回表查询？"><a href="#什么是回表查询？" class="headerlink" title="什么是回表查询？"></a>什么是回表查询？</h2><p>回表查询指的是使用了二级（辅助）索引来去检索，但没有出现覆盖索引的情况。</p>
+<p>出现回表的主要原因是因为二级索引的叶子节点保存的是主键的值。</p>
+<p>回表查询经过：</p>
+<ol>
+<li>根据二级索引检索，得到主键值</li>
+<li>再根据主键值查询得到记录，而这一步就叫回表查询</li>
+</ol>
+<h2 id="什么情况下索引会失效"><a href="#什么情况下索引会失效" class="headerlink" title="什么情况下索引会失效"></a>什么情况下索引会失效</h2><ul>
+<li>索引值类型为<strong>字符型</strong>时，<strong>使用其值进行运算</strong>或<strong>不使用引号包裹</strong>等情况都会导致索引失效</li>
+<li>索引值类型为<strong>字符型</strong>或为<strong>组合索引</strong>时，使用了 <strong>!&#x3D;</strong> 或 <strong>&lt;&gt;</strong> 操作就会导致索引失效</li>
+<li>在索引列上使用了<strong>函数</strong>或进行了<strong>运算</strong>，就会导致索引失效<ul>
+<li>注意这里不是指值，而是索引列。譬如 left(‘empId’, 5) &#x3D; 100</li>
+</ul>
+</li>
+<li>使用了左模糊匹配会导致索引失效</li>
+<li>使用<strong>组合索引</strong>时，会导致其索引失效的情况<ul>
+<li>没有遵循最佳左前缀</li>
+<li>使用 <strong>!&#x3D;</strong> 和 <strong>&lt;&gt;</strong> 操作</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://mongoing.com/archives/2540">MongoDB Wiredtiger存储引擎实现原理</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E9%80%9A%E8%BF%87Nginx%E5%AE%9E%E7%8E%B0HTTPS%E8%AE%BF%E9%97%AE/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

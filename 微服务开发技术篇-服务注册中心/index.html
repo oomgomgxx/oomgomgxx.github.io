@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      微服务开发技术篇-服务注册中心 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Aug 17, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      微服务开发技术篇-服务注册中心
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="为什么需要服务注册中心"><a href="#为什么需要服务注册中心" class="headerlink" title="为什么需要服务注册中心"></a>为什么需要服务注册中心</h2><blockquote>
+<p>点对点消费</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/001.png"></p>
+<p>上面这种通信方式的缺点是，当服务提节点数量或状态发生变化时，服务消费者无法感知，并且需要手动修改配置，不利于维护</p>
+<blockquote>
+<p>使用反向代理改良</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/002.png"></p>
+<p>引入反向代理服务来代理上游服务器集群。这时服务消费者只需和反向代理服务打交道即可，大大降低了服务地址的维护成本。</p>
+<p>但这种方法依然存在一定的问题：</p>
+<ul>
+<li>反向代理服务存在单点问题，需要往外引入注入Keepalived这样的服务提高其可用性，增加了架构的复杂度</li>
+<li>反向代理服务依然无法感知上游服务提供者节点状态的变化，开发者仍然需要手动维护服务提供者配置</li>
+</ul>
+<blockquote>
+<p>使用服务注册&#x2F;发现中心</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/003.png"></p>
+<ol>
+<li><strong>服务提供者</strong>启动时将自己暴露的服务列表注册到服务注册中心</li>
+<li><strong>服务消费者</strong>启动时到服务注册中心拉取自己所关注的服务提供者列表</li>
+</ol>
+<p>服务注册&#x2F;发现中心不仅解决了服务提供者节点变动时需要手动修改配置的问题，还能够实现动态服务注册和服务状态感知</p>
+<blockquote>
+<p>目前业界常用的服务注册中心</p>
+</blockquote>
+<ul>
+<li>ZooKeeper</li>
+<li>Netflix Eureka</li>
+<li>Consul</li>
+<li>Etcd</li>
+</ul>
+<h2 id="Netflix-Eureka"><a href="#Netflix-Eureka" class="headerlink" title="Netflix Eureka"></a>Netflix Eureka</h2><h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><ul>
+<li>Eureka是Netflix旗下开源的服务注册&#x2F;发现中心</li>
+<li>GitHub首页已明确表明Eureka 2.x已经停止开源工作（Eureka 1.x依然在维护，可以提交Issues）</li>
+<li>从CAP定理角度来看，Eureka是一个AP（可用性优先）系统</li>
+</ul>
+<h3 id="快速入门"><a href="#快速入门" class="headerlink" title="快速入门"></a>快速入门</h3><h4 id="Eureka服务端"><a href="#Eureka服务端" class="headerlink" title="Eureka服务端"></a>Eureka服务端</h4><blockquote>
+<p>添加依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">springcloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">springcloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- spring cloud版本控制 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;springcloud.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">type</span>&gt;</span>pom<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>import<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- SpringnCloud Netflix Eureka Server --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-server<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- SpringBoot Actuator --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-actuator<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span>    </span><br><span class="line">    </span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>配置</p>
+</blockquote>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># actuator端点配置</span></span><br><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">&#x27;*&#x27;</span></span><br><span class="line"><span class="comment"># 服务端口</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">8761</span></span><br><span class="line"><span class="comment"># 应用名称</span></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">msa-eureka-server</span></span><br><span class="line"><span class="comment"># Eureka Server  </span></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">registerWithEureka:</span> <span class="literal">false</span> <span class="comment"># 不注册服务</span></span><br><span class="line">    <span class="attr">fetch-registry:</span> <span class="literal">false</span> <span class="comment"># 不获取服务列表</span></span><br><span class="line">    <span class="attr">region:</span> <span class="string">us-east-1</span> <span class="comment"># 默认region</span></span><br><span class="line">    <span class="attr">serviceUrl:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:8761/eureka/</span> <span class="comment"># 默认zone地址，用于注册和发现</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>启用 Eureka Server</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableEurekaServer</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaEurekaApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaEurekaApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p> 访问：<a target="_blank" rel="noopener" href="http://localhost:8761/">http://localhost:8761</a></p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/004.png"></p>
+<h4 id="Eureka客户端"><a href="#Eureka客户端" class="headerlink" title="Eureka客户端"></a>Eureka客户端</h4><blockquote>
+<p>添加依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">spring-cloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">spring-cloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-cloud.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">type</span>&gt;</span>pom<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>import<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 通用接口 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>wiki.td<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>msa-interface<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.0-SNAPSHOT<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- SpringnCloud Netflix Eureka Client --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-client<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- SpringBoot Actuator --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-actuator<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    </span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="服务提供者"><a href="#服务提供者" class="headerlink" title="服务提供者"></a>服务提供者</h5><blockquote>
+<p>配置</p>
+</blockquote>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">&#x27;*&#x27;</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">8080</span></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">serviceUrl:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:8761/eureka/</span> <span class="comment"># 默认</span></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">msa-eureka-provider-user</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>要暴露的服务</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping(&quot;/user&quot;)</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> UserService userService;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@DeleteMapping(&quot;/delete/&#123;id&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">deleteUserById</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> userService.deleteById(id);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/find/all&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;User&gt; <span class="title function_">findAll</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> userService.findAll();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PostMapping(&quot;/add&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">addUser</span><span class="params">(User user)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> userService.addUser(user);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>启用服务提供者</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableEurekaClient</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaEurekaProviderUserApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">    SpringApplication.run(MsaEurekaProviderUserApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>成功注册的话可以在服务注册中心看到如下内容</p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/005.png"></p>
+<h5 id="服务消费者"><a href="#服务消费者" class="headerlink" title="服务消费者"></a>服务消费者</h5><blockquote>
+<p>配置</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">&#x27;*&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">8081</span></span><br><span class="line"></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">serviceUrl:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:8761/eureka/</span> <span class="comment"># 默认</span></span><br><span class="line">    <span class="attr">register-with-eureka:</span> <span class="literal">false</span> <span class="comment"># 不注册服务</span></span><br><span class="line"></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">msa-eureka-comsumer-01</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>调用注册中心的服务</p>
+</blockquote>
+<p>创建 RestTemplate</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RestConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> RestTemplateBuilder builder;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 客户端负载均衡（开启服务发现）</span></span><br><span class="line">    <span class="meta">@LoadBalanced</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> RestTemplate <span class="title function_">restTemplate</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> builder.build();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用服务</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MessageRepository</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 要调用的服务</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">SERVEICE_NAME</span> <span class="operator">=</span><span class="string">&quot;MSA-EUREKA-PROVIDER-USER&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// HTTP请求工具</span></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> RestTemplate restTemplate;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 服务发现客户端</span></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> DiscoveryClient discoveryClient;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// delete请求</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">deleteUserById</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlPrefix</span> <span class="operator">=</span> <span class="string">&quot;http://&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlSuffix</span> <span class="operator">=</span> <span class="string">&quot;/user/delete/&#123;id&#125;&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// restTemplate.delete(url, id); // 无返回值</span></span><br><span class="line">        ResponseEntity&lt;User&gt; exchange = restTemplate.exchange(url, HttpMethod.DELETE, <span class="literal">null</span>, User.class, id);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> exchange.getBody();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// get请求</span></span><br><span class="line">    <span class="keyword">public</span> List <span class="title function_">selectAllUser</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlPrefix</span> <span class="operator">=</span> <span class="string">&quot;http://&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlSuffix</span> <span class="operator">=</span> <span class="string">&quot;/user/find/all&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line"></span><br><span class="line">        List&lt;ServiceInstance&gt; instances = discoveryClient.getInstances(SERVEICE_NAME);</span><br><span class="line">        List&lt;String&gt; services = discoveryClient.getServices();</span><br><span class="line">        <span class="type">String</span> <span class="variable">description</span> <span class="operator">=</span> discoveryClient.description();</span><br><span class="line">        log.info(<span class="string">&quot;服务名称：&#123;&#125;&quot;</span>, services);</span><br><span class="line">        log.info(<span class="string">&quot;服务提供者：&#123;&#125;&quot;</span>, instances);</span><br><span class="line">        log.info(<span class="string">&quot;服务描述：&#123;&#125;&quot;</span>, description);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> restTemplate.getForObject(url, List.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">// post请求</span></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">addUser</span><span class="params">(User user)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="type">String</span> <span class="variable">urlPrefix</span> <span class="operator">=</span> <span class="string">&quot;http://&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlSuffix</span> <span class="operator">=</span> <span class="string">&quot;/user/add&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 请求头</span></span><br><span class="line">        <span class="type">HttpHeaders</span> <span class="variable">headers</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HttpHeaders</span>();</span><br><span class="line">        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 请求体</span></span><br><span class="line">        MultiValueMap&lt;String, Object&gt; map= <span class="keyword">new</span> <span class="title class_">LinkedMultiValueMap</span>&lt;&gt;();</span><br><span class="line">        map.add(<span class="string">&quot;id&quot;</span>, user.getId());</span><br><span class="line">        map.add(<span class="string">&quot;name&quot;</span>, user.getName());</span><br><span class="line">        map.add(<span class="string">&quot;age&quot;</span>, user.getAge());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 请求内容</span></span><br><span class="line">        HttpEntity&lt;MultiValueMap&lt;String, Object&gt;&gt; request = <span class="keyword">new</span> <span class="title class_">HttpEntity</span>&lt;&gt;(map, headers);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> restTemplate.postForEntity(url, request, User.class).getBody();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>启用 Eureka Client</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableEurekaClient</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaEurekaComsumer01Application</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaEurekaComsumer01Application.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Eureka-Server支持的端点操作"><a href="#Eureka-Server支持的端点操作" class="headerlink" title="Eureka Server支持的端点操作"></a>Eureka Server支持的端点操作</h3><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>HTTP请求</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>注册新的应用实例</td>
+<td>POST &#x2F;eureka&#x2F;apps&#x2F;<strong>appID</strong></td>
+<td>提交内容格式：JSON&#x2F;XML</td>
+</tr>
+<tr>
+<td>注销某个应用实例</td>
+<td>DELETE &#x2F;eureka&#x2F;apps&#x2F;<strong>appID</strong>&#x2F;<strong>instanceID</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>发送应用实例心跳</td>
+<td>PUT &#x2F;eureka&#x2F;apps&#x2F;<strong>appID</strong>&#x2F;<strong>instanceID</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>查询所有实例</td>
+<td>GET &#x2F;eureka&#x2F;apps</td>
+<td></td>
+</tr>
+<tr>
+<td>查询appID的所有实例</td>
+<td>GET &#x2F;eureka&#x2F;<strong>apps</strong>&#x2F;<strong>appID</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>查询特定的appID&#x2F;instanceID</td>
+<td>GET &#x2F;eureka&#x2F;apps&#x2F;<strong>appID</strong>&#x2F;<strong>instanceID</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>查询特定的instanceID</td>
+<td>GET &#x2F;eureka&#x2F;instances&#x2F;<strong>instanceID</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>停止某个服务实例</td>
+<td>PUT &#x2F;eureka&#x2F;apps&#x2F;<strong>appID</strong>&#x2F;<strong>instanceID</strong>&#x2F;status？value &#x3D; OUT_OF_SERVICE</td>
+<td></td>
+</tr>
+<tr>
+<td>恢复某个服务实例</td>
+<td>DELETE &#x2F;eureka&#x2F;apps&#x2F;<strong>appID</strong>&#x2F;<strong>instanceID</strong>&#x2F;status?value&#x3D;UP</td>
+<td></td>
+</tr>
+<tr>
+<td>更新元数据</td>
+<td>PUT &#x2F;eureka&#x2F;apps&#x2F;<strong>appID</strong>&#x2F;<strong>instanceID</strong>&#x2F;metadata?<strong>key</strong>&#x3D;<strong>value</strong></td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="特性和源码浅析"><a href="#特性和源码浅析" class="headerlink" title="特性和源码浅析"></a>特性和源码浅析</h3><h4 id="基础架构"><a href="#基础架构" class="headerlink" title="基础架构"></a>基础架构</h4><blockquote>
+<p>Netflix Eureka集群图（源自<a target="_blank" rel="noopener" href="https://github.com/Netflix/eureka%EF%BC%89">https://github.com/Netflix/eureka）</a></p>
+</blockquote>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/006.png"></p>
+<p>上图是 Eureka 1.x 在 Netflix 内部中的部署架构。在 Eureka 架构中有两个较为重要的概念，分别是：<code>Region</code>、<code>Zone</code>。</p>
+<p>Region 可以理解为 Eureka 所在的区域，而 Zone 可以理解为 Eureka 所在机房。</p>
+<p>一个 Region 可以包含多个Zone，而且每个 Region 中至少含有一个Eureka Server。Zone与Zone、Region与Region之间形成高可用集群。</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/007.png"></p>
+<p>默认情况下 Eureka 使用的 Region 名为 <code>us-east-1</code>，而 Zone 为<code>http://localhost:8761/eureka/</code></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">  	<span class="comment"># 以下为默认配置，所以可以省略</span></span><br><span class="line">    <span class="attr">serviceUrl:</span></span><br><span class="line">      <span class="attr">defaultZone:</span> <span class="string">http://localhost:8761/eureka/</span></span><br><span class="line">    <span class="attr">region:</span> <span class="string">us-east-1</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>EurekaClientConfigBean 源码</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="type">String</span> <span class="variable">region</span> <span class="operator">=</span> <span class="string">&quot;us-east-1&quot;</span>;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">DEFAULT_ZONE</span> <span class="operator">=</span> <span class="string">&quot;defaultZone&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> String[] getAvailabilityZones(String region) &#123;</span><br><span class="line">    <span class="comment">// 如果没有配置就用默认的</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">value</span> <span class="operator">=</span> <span class="built_in">this</span>.availabilityZones.get(region);</span><br><span class="line">    <span class="keyword">if</span> (value == <span class="literal">null</span>) &#123;</span><br><span class="line">        value = DEFAULT_ZONE;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> value.split(<span class="string">&quot;,&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="服务注册和发现时机"><a href="#服务注册和发现时机" class="headerlink" title="服务注册和发现时机"></a>服务注册和发现时机</h4><ul>
+<li><p>Eureka Client将服务注册到 Eureka Server 后会<code>每隔30秒就发送心跳包给Eureka Server以示对当前服务进行续约</code>。而如果Eureka Server在<code>90s（默认）</code>内都没有收到某个服务提供者的续约心跳包的话，就会从可用服务列表中下线该服务。但前提是没有出现网络分区（譬如短时间内丢失大量客户端连接），因为一旦出现网络分区Eureka Server就会开启保护机制，保护机制一旦开启 Eureka Server 就会暂缓下线服务直到大部分服务可用后恢复</p>
+</li>
+<li><p>Eureka Client 从 Eureka Server 中获取到服务列表后会对其进行缓存，然后再<code>每隔30s（默认）重新抓取一次服务列表</code>。这样做的原因主要是防止 Eureka Server 宕机导致 Eureka Client 无法获取到服务列表，所以通过缓存服务列表来以防 Eureka Server 宕机后无法发现服务的情况发生。</p>
+</li>
+</ul>
+<blockquote>
+<p>EurekaClientConfigBean 源码</p>
+</blockquote>
+<p>Eureka Client 会使用 Ribbon 对抓取到的服务列表进行负载均衡调用，而在这之前 Eureka Client 需要先确立自己应该从哪个 Eureka Server 中抓取服务列表。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> List&lt;String&gt; <span class="title function_">getEurekaServerServiceUrls</span><span class="params">(String myZone)</span> &#123;</span><br><span class="line">    <span class="comment">// 先从自己所在的 Zone 中获取 Eureka Server</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">serviceUrls</span> <span class="operator">=</span> <span class="built_in">this</span>.serviceUrl.get(myZone);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果自己的所在 Zone 中没有 Eureka Server ，则到默认的 Zone 中查找</span></span><br><span class="line">    <span class="keyword">if</span> (serviceUrls == <span class="literal">null</span> || serviceUrls.isEmpty()) &#123;</span><br><span class="line">        serviceUrls = <span class="built_in">this</span>.serviceUrl.get(DEFAULT_ZONE);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!StringUtils.isEmpty(serviceUrls)) &#123;</span><br><span class="line">        <span class="keyword">final</span> String[] serviceUrlsSplit = StringUtils</span><br><span class="line">            .commaDelimitedListToStringArray(serviceUrls);</span><br><span class="line">        List&lt;String&gt; eurekaServiceUrls = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;(serviceUrlsSplit.length);</span><br><span class="line">        <span class="keyword">for</span> (String eurekaServiceUrl : serviceUrlsSplit) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!endsWithSlash(eurekaServiceUrl)) &#123;</span><br><span class="line">                eurekaServiceUrl += <span class="string">&quot;/&quot;</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            eurekaServiceUrls.add(eurekaServiceUrl.trim());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> eurekaServiceUrls;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="自我保护机制"><a href="#自我保护机制" class="headerlink" title="自我保护机制"></a>自我保护机制</h4><p>上面已经提到 Eureka Server 实现了一种自我保护机制，该机制是专门用来应对网络分区的</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83/009.png"></p>
+<blockquote>
+<p>Eureka中服务状态有以下几种</p>
+<ul>
+<li><p>UP：正常提供服务</p>
+</li>
+<li><p>DOWN：服务已下线</p>
+</li>
+<li><p>OUT_OF_SERVICE：已停止服务</p>
+</li>
+<li><p>UNKNOWN：未知</p>
+</li>
+</ul>
+</blockquote>
+<h4 id="服务注册过程"><a href="#服务注册过程" class="headerlink" title="服务注册过程"></a>服务注册过程</h4><p>DiscoveryClient 源码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">boolean</span> <span class="title function_">register</span><span class="params">()</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">    EurekaHttpResponse&lt;Void&gt; httpResponse;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 注册服务</span></span><br><span class="line">        httpResponse = eurekaTransport.registrationClient.register(instanceInfo);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;&#125;</span><br><span class="line">    <span class="keyword">return</span> httpResponse.getStatusCode() == Status.NO_CONTENT.getStatusCode();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>进入 eurekaTransport.registrationClient.register(instanceInfo);</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> EurekaHttpResponse&lt;Void&gt; <span class="title function_">register</span><span class="params">(<span class="keyword">final</span> InstanceInfo info)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> execute(<span class="keyword">new</span> <span class="title class_">RequestExecutor</span>&lt;Void&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> EurekaHttpResponse&lt;Void&gt; <span class="title function_">execute</span><span class="params">(EurekaHttpClient delegate)</span> &#123;</span><br><span class="line">         	<span class="comment">// 注意，默认情况下Eureka Client会使用Jersey来和Eureka Server通信</span></span><br><span class="line">            <span class="comment">// 可以将其依赖排除，改用RestTemplate</span></span><br><span class="line">            <span class="keyword">return</span> delegate.register(info);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> RequestType <span class="title function_">getRequestType</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> RequestType.Register;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>点进 delegate.register(info)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 拼接想服务注册中心注册服务的请求</span></span><br><span class="line"><span class="comment">// 通过Eureka Server提供的Restful端点实现</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> EurekaHttpResponse&lt;Void&gt; <span class="title function_">register</span><span class="params">(InstanceInfo info)</span> &#123;</span><br><span class="line">    <span class="comment">// 请求URL</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">urlPath</span> <span class="operator">=</span> serviceUrl + <span class="string">&quot;apps/&quot;</span> + info.getAppName();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 请求头</span></span><br><span class="line">    <span class="type">HttpHeaders</span> <span class="variable">headers</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HttpHeaders</span>();</span><br><span class="line">    headers.add(HttpHeaders.ACCEPT_ENCODING, <span class="string">&quot;gzip&quot;</span>);</span><br><span class="line">    headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 发出请求</span></span><br><span class="line">    ResponseEntity&lt;Void&gt; response = restTemplate.exchange(urlPath, HttpMethod.POST,</span><br><span class="line">                                                          <span class="keyword">new</span> <span class="title class_">HttpEntity</span>&lt;&gt;(info, headers), Void.class);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> anEurekaHttpResponse(response.getStatusCodeValue())</span><br><span class="line">        .headers(headersOf(response)).build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="获取服务列表和续约服务的定时任务"><a href="#获取服务列表和续约服务的定时任务" class="headerlink" title="获取服务列表和续约服务的定时任务"></a>获取服务列表和续约服务的定时任务</h4><p>DiscoveryClient</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">initScheduledTasks</span><span class="params">()</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 获取服务列表的定时任务</span></span><br><span class="line">    <span class="keyword">if</span> (clientConfig.shouldFetchRegistry()) &#123;</span><br><span class="line">        <span class="comment">// registry cache refresh timer</span></span><br><span class="line">        <span class="comment">// 重新抓取的时间间隔默认为30s（在EurekaClientConfigBean中定义）</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">registryFetchIntervalSeconds</span> <span class="operator">=</span> clientConfig.getRegistryFetchIntervalSeconds();</span><br><span class="line">        <span class="type">int</span> <span class="variable">expBackOffBound</span> <span class="operator">=</span> clientConfig.getCacheRefreshExecutorExponentialBackOffBound();</span><br><span class="line">        </span><br><span class="line">        scheduler.schedule(</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">TimedSupervisorTask</span>(</span><br><span class="line">                <span class="string">&quot;cacheRefresh&quot;</span>,</span><br><span class="line">                scheduler,</span><br><span class="line">                cacheRefreshExecutor,</span><br><span class="line">                registryFetchIntervalSeconds,</span><br><span class="line">                TimeUnit.SECONDS,</span><br><span class="line">                expBackOffBound,</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">CacheRefreshThread</span>()</span><br><span class="line">            ),</span><br><span class="line">            registryFetchIntervalSeconds, TimeUnit.SECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 续约服务的定时任务</span></span><br><span class="line">    <span class="keyword">if</span> (clientConfig.shouldRegisterWithEureka()) &#123;</span><br><span class="line">        <span class="comment">// 时间间隔默认为30s（LeaseInfo中定义）</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">renewalIntervalInSecs</span> <span class="operator">=</span> instanceInfo.getLeaseInfo().getRenewalIntervalInSecs();</span><br><span class="line">        <span class="type">int</span> <span class="variable">expBackOffBound</span> <span class="operator">=</span> clientConfig.getHeartbeatExecutorExponentialBackOffBound();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Heartbeat timer</span></span><br><span class="line">        scheduler.schedule(</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">TimedSupervisorTask</span>(</span><br><span class="line">                <span class="string">&quot;heartbeat&quot;</span>,</span><br><span class="line">                scheduler,</span><br><span class="line">                heartbeatExecutor,</span><br><span class="line">                renewalIntervalInSecs,</span><br><span class="line">                TimeUnit.SECONDS,</span><br><span class="line">                expBackOffBound,</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">HeartbeatThread</span>()</span><br><span class="line">            ),</span><br><span class="line">            renewalIntervalInSecs, TimeUnit.SECONDS);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="常用配置"><a href="#常用配置" class="headerlink" title="常用配置"></a>常用配置</h3><blockquote>
+<p>具体配置操作可以参考 EurekaClientConfigBean 类</p>
+</blockquote>
+<ul>
+<li>关闭自我保护功能</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">server:</span></span><br><span class="line">    <span class="attr">enable-self-preservation:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>屏蔽网卡</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">inetutils:</span></span><br><span class="line">      <span class="attr">ignored-interfaces:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">docker0</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">veth.*</span></span><br><span class="line"></span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">instance:</span></span><br><span class="line">    <span class="attr">prefer-ip-address:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>配置和获取服务元数据</li>
+</ul>
+<p>添加元数据配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">msa-eureka-provider-user</span></span><br><span class="line">    </span><br><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">instance:</span></span><br><span class="line">    <span class="attr">metadata-map:</span></span><br><span class="line">      <span class="attr">metadata01:</span> <span class="string">test1</span></span><br><span class="line">      <span class="attr">metadata02:</span> <span class="string">test2</span></span><br></pre></td></tr></table></figure>
+
+<p>编写查询接口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping(&quot;/user&quot;)</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;spring.application.name&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String appID;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> DiscoveryClient discoveryClient;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/service-instances&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;ServiceInstance&gt; <span class="title function_">getServiceInstances</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> discoveryClient.getInstances(appID);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>查询元数据</p>
+<img src="微服务开发技术篇-服务注册中心/010.png" style="zoom: 67%;" />
+
+<ul>
+<li>服务在注册中心存活的时间</li>
+</ul>
+<p>默认90s，当Server在90s内没有收到续约心跳包就会下线服务</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">instance:</span></span><br><span class="line">    <span class="attr">lease-expiration-duration-in-seconds:</span> <span class="number">90</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>服务提供者续约时间间隔</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">instance:</span></span><br><span class="line">	<span class="attr">lease-renewal-interval-in-seconds:</span> <span class="number">30</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>读取 Eureka Server 信息的超时时间</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span></span><br><span class="line">    <span class="attr">eureka-server-read-timeout-seconds:</span> <span class="number">8</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>连接 Eureka Server 的超时时间</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">eureka:</span></span><br><span class="line">  <span class="attr">client:</span>    </span><br><span class="line">    <span class="attr">eureka-server-connect-timeout-seconds:</span> <span class="number">5</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Consul案例"><a href="#Consul案例" class="headerlink" title="Consul案例"></a>Consul案例</h2><h3 id="服务提供者-1"><a href="#服务提供者-1" class="headerlink" title="服务提供者"></a>服务提供者</h3><p>依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">spring-cloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">spring-cloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-cloud.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">type</span>&gt;</span>pom<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>import<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- Spring Cloud Consul --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-consul-discovery<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- SpringBoot Actuator --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-actuator<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">&#x27;*&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">8080</span></span><br><span class="line"></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">msa-consul-provider-user</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">consul:</span></span><br><span class="line">      <span class="attr">host:</span> <span class="number">192.168</span><span class="number">.31</span><span class="number">.250</span> <span class="comment"># 注册中心ip</span></span><br><span class="line">      <span class="attr">port:</span> <span class="number">8500</span></span><br><span class="line">      <span class="attr">discovery:</span></span><br><span class="line">        <span class="attr">hostname:</span> <span class="number">192.168</span><span class="number">.31</span><span class="number">.70</span> <span class="comment"># 服务所在ip</span></span><br><span class="line">        <span class="attr">tags:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">tag1</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">tag2</span></span><br><span class="line">        <span class="comment"># service-name会覆盖 application name</span></span><br><span class="line">        <span class="comment"># service-name: service-name-01</span></span><br></pre></td></tr></table></figure>
+
+<p>启用 SpringCloud Consul Discovery</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableDiscoveryClient</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaConsulProviderUserApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaConsulProviderUserApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="服务消费者-1"><a href="#服务消费者-1" class="headerlink" title="服务消费者"></a>服务消费者</h3><p>依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">spring-cloud.version</span>&gt;</span>Greenwich.SR2<span class="tag">&lt;/<span class="name">spring-cloud.version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-cloud.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">type</span>&gt;</span>pom<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>import<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- Spring Cloud Consul --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-consul-discovery<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- SpringBoot Actuator --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-actuator<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>消费服务</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MessageRepositor</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">SERVEICE_NAME</span> <span class="operator">=</span><span class="string">&quot;msa-consul-provider-user&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> RestTemplate restTemplate;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> DiscoveryClient discoveryClient;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">deleteUserById</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlPrefix</span> <span class="operator">=</span> <span class="string">&quot;http://&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlSuffix</span> <span class="operator">=</span> <span class="string">&quot;/user/delete/&#123;id&#125;&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// restTemplate.delete(url, id); // 无返回值</span></span><br><span class="line">        ResponseEntity&lt;User&gt; exchange = restTemplate.exchange(url, HttpMethod.DELETE, <span class="literal">null</span>, User.class, id);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> exchange.getBody();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> List <span class="title function_">selectAllUser</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlPrefix</span> <span class="operator">=</span> <span class="string">&quot;http://&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlSuffix</span> <span class="operator">=</span> <span class="string">&quot;/user/find/all&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line"></span><br><span class="line">        List&lt;ServiceInstance&gt; instances = discoveryClient.getInstances(SERVEICE_NAME);</span><br><span class="line">        List&lt;String&gt; services = discoveryClient.getServices();</span><br><span class="line">        <span class="type">String</span> <span class="variable">description</span> <span class="operator">=</span> discoveryClient.description();</span><br><span class="line">        log.info(<span class="string">&quot;服务名称：&#123;&#125;&quot;</span>, services);</span><br><span class="line">        log.info(<span class="string">&quot;服务提供者：&#123;&#125;&quot;</span>, instances);</span><br><span class="line">        log.info(<span class="string">&quot;服务描述：&#123;&#125;&quot;</span>, description);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> restTemplate.getForObject(url, List.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> User <span class="title function_">addUser</span><span class="params">(User user)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="type">String</span> <span class="variable">urlPrefix</span> <span class="operator">=</span> <span class="string">&quot;http://&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">urlSuffix</span> <span class="operator">=</span> <span class="string">&quot;/user/add&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> urlPrefix + SERVEICE_NAME + urlSuffix;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 请求头</span></span><br><span class="line">        <span class="type">HttpHeaders</span> <span class="variable">headers</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HttpHeaders</span>();</span><br><span class="line">        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 请求体</span></span><br><span class="line">        MultiValueMap&lt;String, Object&gt; map= <span class="keyword">new</span> <span class="title class_">LinkedMultiValueMap</span>&lt;&gt;();</span><br><span class="line">        map.add(<span class="string">&quot;id&quot;</span>, user.getId());</span><br><span class="line">        map.add(<span class="string">&quot;name&quot;</span>, user.getName());</span><br><span class="line">        map.add(<span class="string">&quot;age&quot;</span>, user.getAge());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 请求内容</span></span><br><span class="line">        HttpEntity&lt;MultiValueMap&lt;String, Object&gt;&gt; request = <span class="keyword">new</span> <span class="title class_">HttpEntity</span>&lt;&gt;(map, headers);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> restTemplate.postForEntity(url, request, User.class).getBody();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>启用 SpringCloud Consul Discovery</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableDiscoveryClient</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MsaConsulComsumer01Application</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(MsaConsulComsumer01Application.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="客户端服务注册发现源码浅析"><a href="#客户端服务注册发现源码浅析" class="headerlink" title="客户端服务注册发现源码浅析"></a>客户端服务注册发现源码浅析</h3><p>依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-consul-discovery<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>ConsulDiscoveryClientConfiguration</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 加载配置文件中的服务信息</span></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="meta">@ConditionalOnMissingBean</span></span><br><span class="line"><span class="keyword">public</span> ConsulDiscoveryProperties <span class="title function_">consulDiscoveryProperties</span><span class="params">(InetUtils inetUtils)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ConsulDiscoveryProperties</span>(inetUtils);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建一个用于操作Consul的对象</span></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="meta">@ConditionalOnMissingBean</span></span><br><span class="line"><span class="keyword">public</span> ConsulDiscoveryClient <span class="title function_">consulDiscoveryClient</span><span class="params">(</span></span><br><span class="line"><span class="params">    ConsulDiscoveryProperties discoveryProperties)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ConsulDiscoveryClient</span>(<span class="built_in">this</span>.consulClient, discoveryProperties);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ConsulDiscoveryClient</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConsulDiscoveryClient</span> <span class="keyword">implements</span> <span class="title class_">DiscoveryClient</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Log</span> <span class="variable">log</span> <span class="operator">=</span> LogFactory.getLog(ConsulDiscoveryClient.class);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 用于和Consul通信的Client</span></span><br><span class="line">    <span class="comment">// ConsulClient是一个接口，实现位于AgentConsulClient</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> ConsulClient client;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> ConsulDiscoveryProperties properties;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">ConsulDiscoveryClient</span><span class="params">(ConsulClient client,</span></span><br><span class="line"><span class="params">			ConsulDiscoveryProperties properties)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.client = client;</span><br><span class="line">		<span class="built_in">this</span>.properties = properties;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>AgentConsulClient</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 服务注册</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> Response&lt;Void&gt; <span class="title function_">agentServiceRegister</span><span class="params">(NewService newService, String token)</span> &#123;</span><br><span class="line">    <span class="type">UrlParameters</span> <span class="variable">tokenParam</span> <span class="operator">=</span> token != <span class="literal">null</span> ? <span class="keyword">new</span> <span class="title class_">SingleUrlParameters</span>(<span class="string">&quot;token&quot;</span>, token) : <span class="literal">null</span>;</span><br><span class="line">    <span class="comment">// 使用Goolgl Gson序列化服务注册信息</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">json</span> <span class="operator">=</span> GsonFactory.getGson().toJson(newService);</span><br><span class="line">    <span class="comment">// 服务注册（默认使用HttpClient进行HTTP通信）</span></span><br><span class="line">    <span class="comment">// 可以看到这里和Eureka Server类似，是通过Consul提供的Restful接口注册服务</span></span><br><span class="line">    <span class="type">RawResponse</span> <span class="variable">rawResponse</span> <span class="operator">=</span> rawClient.makePutRequest(<span class="string">&quot;/v1/agent/service/register&quot;</span>, json, tokenParam);</span><br><span class="line">    <span class="comment">// 返回注册结果</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Response</span>&lt;Void&gt;(<span class="literal">null</span>, rawResponse);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取服务列表</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> Response&lt;Map&lt;String, Service&gt;&gt; <span class="title function_">getAgentServices</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 获取注册在Consul上的所有服务</span></span><br><span class="line">    <span class="type">RawResponse</span> <span class="variable">rawResponse</span> <span class="operator">=</span> rawClient.makeGetRequest(<span class="string">&quot;/v1/agent/services&quot;</span>);</span><br><span class="line">    <span class="comment">// 封装到Map中</span></span><br><span class="line">    Map&lt;String, Service&gt; agentServices = GsonFactory.getGson()</span><br><span class="line">        .fromJson(rawResponse.getContent(),</span><br><span class="line">                  <span class="keyword">new</span> <span class="title class_">TypeToken</span>&lt;Map&lt;String, Service&gt;&gt;() &#123;&#125;.getType());</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Response</span>&lt;Map&lt;String, Service&gt;&gt;(agentServices, rawResponse);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>《Spring Cloud 微服务实战》</li>
+<li>《Spring Cloud与Docker 微服务架构实战》</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/Netflix/eureka/wiki">Netflix &#x2F; Eureka</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/y_1BCrbLONU61s1gbGsU">详解 Eureka 缓存机制</a></li>
+<li><a target="_blank" rel="noopener" href="https://cloud.spring.io/spring-cloud-static/spring-cloud-consul/2.2.0.RC2/reference/html/">Spring Cloud Consul</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%AF%87-%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

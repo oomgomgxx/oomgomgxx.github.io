@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      Python爬虫笔记-爬取花瓣网图片 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    May 07, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      Python爬虫笔记-爬取花瓣网图片
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="如何区分网站是静态网站还是动态网站"><a href="#如何区分网站是静态网站还是动态网站" class="headerlink" title="如何区分网站是静态网站还是动态网站"></a>如何区分网站是静态网站还是动态网站</h2><ol>
+<li>拿爬取图片为例，静态网站会把图片直接写入img标签的src中，这个可以通过浏览器右键查看源码观察到；相对静态网站而言，动态网站上的图片是动态加载的，也就是说，它的图片一开始可能只有一小部分（甚至没有）嵌在页面上，随后的图片根据你的浏览程度来给你动态地加载进页面；例如你进行下拉滚动条、点击查看更多等等这些操作来进行异步的内容加载，这就是动态网站（<strong>以图片爬虫的角度</strong>）；</li>
+<li><strong>强调的是一下</strong>，并不是说将图片直接写入img标签src中就是静态网站，上面的例子只是以图片爬取举的例子，针对的是图片爬虫时如何区分图片是静态加载还是动态加载；实质静态网站指的是那种交互操作（页面操作）无需服务器处理的网站，可以用单机游戏来理解这个概念；而动态网站上的交互，如注册这个操作，是会经过服务器来进行数据处理的，这就是动态网站</li>
+<li>目前来说，现在大多数热门的网站都是动态网站；静态网站如我当前这个博客就是静态网站（忽略评论功能）</li>
+</ol>
+<h2 id="分析花瓣网图片加载"><a href="#分析花瓣网图片加载" class="headerlink" title="分析花瓣网图片加载"></a>分析花瓣网图片加载</h2><p>对于 Python 爬虫而言<code>分析需要爬取的数据是一个至关重要的步骤</code>。比如按本例子是爬取的是花瓣网的图片，而花瓣网是一个动态展示图片的网站，即图片的连接并不是直接编写在 img 的 src 里的，所以这时你就需要知道花瓣网是怎样动态加载图片并展示到页面上的。</p>
+<p>首先花瓣网取用下拉时异步加载图片来展示，即一开始打开网页的时候并不是将图片都展示出来，而是当你下拉浏览器滚动条的时候才一部分一部分地加载并展示。</p>
+<blockquote>
+<p>验证操作：</p>
+<ol>
+<li>打开浏览器的开发者模式（f12）</li>
+<li>点击network ,再选中XHR（异步请求）</li>
+<li>下拉浏览器并观察</li>
+</ol>
+</blockquote>
+<p>比如我在花瓣网搜索蝙蝠侠的图片</p>
+<p><img src="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E5%8A%A8%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E5%8F%96%E8%8A%B1%E7%93%A3%E7%BD%91%E5%9B%BE%E7%89%87/001.png"></p>
+<p>接下来点击查看异步请求的详细内容，如下</p>
+<p><img src="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E5%8A%A8%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E5%8F%96%E8%8A%B1%E7%93%A3%E7%BD%91%E5%9B%BE%E7%89%87/002.png"></p>
+<p>【重】得到一个异步请求url：<a target="_blank" rel="noopener" href="https://huaban.com/search/?q=%E8%9D%99%E8%9D%A0%E4%BE%A0&amp;type=pins&amp;jtsbscty&amp;page=4&amp;per_page=20&amp;wfl=1">https://huaban.com/search/?q=%E8%9D%99%E8%9D%A0%E4%BE%A0&amp;type=pins&amp;jtsbscty&amp;page=4&amp;per_page=20&amp;wfl=1</a></p>
+<p>这是非常重要的一步，因为这就是 Python 爬取图片时的请求的 url。接着将这个 url 直接帖到浏览器url栏中回车观察它返回的内容，如下</p>
+<p><img src="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E5%8A%A8%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E5%8F%96%E8%8A%B1%E7%93%A3%E7%BD%91%E5%9B%BE%E7%89%87/003.png"></p>
+<p>可以看出这个请求返回的是一个网页，即html。接着再通过右键查看其网页源码，如下</p>
+<p><img src="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E5%8A%A8%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E5%8F%96%E8%8A%B1%E7%93%A3%E7%BD%91%E5%9B%BE%E7%89%87/004.png"></p>
+<p>这就是异步请求返回的实际内容；</p>
+<p>再细心观察一下，在源码中有个叫 app.page[“pins”] 的信息，而后面紧接着的就是我们梦寐以求的图片信息，到目前为止已经找到了需要爬取的内容了。接下来需要分析图片的地址。这又怎么理解？就是通过请求url<code>https://huaban.com/search/?q=%E8%9D%99%E8%9D%A0%E4%BE%A0&amp;type=pins&amp;jtsbscty&amp;page=4&amp;per_page=20&amp;wfl=1</code>得到的信息，再从这些信息中提取到关键的图片信息，然后拼接出真正的图片地址</p>
+<h2 id="分析花瓣网图片下载链接"><a href="#分析花瓣网图片下载链接" class="headerlink" title="分析花瓣网图片下载链接"></a>分析花瓣网图片下载链接</h2><p>在花瓣网随便点击一张图片，然后右键复制图片地址（chrome浏览器），得到一条这样的链接</p>
+<blockquote>
+<p>第1张图片的图片地址</p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="https://hbimg.b0.upaiyun.com/fcdcbd4a742a2f78e0ac3ba0e1e9be5f09e94f6517b10-5rZ92O_fw658">https://hbimg.b0.upaiyun.com/fcdcbd4a742a2f78e0ac3ba0e1e9be5f09e94f6517b10-5rZ92O_fw658</a></p>
+<p>重复一次上面的步骤，再随便获取多一张图片的地址来做样本分析</p>
+<blockquote>
+<p>第2张图片的图片地址</p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="https://hbimg.b0.upaiyun.com/dc4d65c69be68059abd119436f01333c99fd7a3d7dd2-rxbYD0_fw658">https://hbimg.b0.upaiyun.com/dc4d65c69be68059abd119436f01333c99fd7a3d7dd2-rxbYD0_fw658</a></p>
+<p>观察上面两个url，分析得出以下公共部分</p>
+<p><a target="_blank" rel="noopener" href="https://hbimg.b0.upaiyun.com/">https://hbimg.b0.upaiyun.com/</a>  +  未知部分 + _fw658</p>
+<p>那么这个<code>未知部分</code>到底是什么呢？你可以对比上面两个链接中的<code>未知部分</code>其实是不相同的，所以这是可以大胆猜测这就是用来区分图片的标识。那为了验证这一点，我将第1张图片的<code>未知部分:fcdcbd4a742a2f78e0ac3ba0e1e9be5f09e94f6517b10-5rZ92O</code>抽取了出来，再到 <a target="_blank" rel="noopener" href="https://huaban.com/search/?q=%E8%9D%99%E8%9D%A0%E4%BE%A0&amp;type=pins&amp;jtsbscty&amp;page=4&amp;per_page=20&amp;wfl=1">https://huaban.com/search/?q=%E8%9D%99%E8%9D%A0%E4%BE%A0&amp;type=pins&amp;jtsbscty&amp;page=4&amp;per_page=20&amp;wfl=1</a> 的源码（右键查看源码）中检索一下，如下</p>
+<p><img src="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E5%8A%A8%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E5%8F%96%E8%8A%B1%E7%93%A3%E7%BD%91%E5%9B%BE%E7%89%87/005.png"></p>
+<p>从上图可以看出我们的猜测是没有错的，这个<code>未知部分</code>实际就是图片格式化数据的 key 字段的值。</p>
+<blockquote>
+<p>以下 json 串截取自上图 app.page[“pins”] ，这其实是一张图片的格式化数据信息，用于直观地参考一下</p>
+</blockquote>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">	<span class="attr">&quot;pin_id&quot;</span><span class="punctuation">:</span> <span class="number">1642213390</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;user_id&quot;</span><span class="punctuation">:</span> <span class="number">15953905</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;board_id&quot;</span><span class="punctuation">:</span> <span class="number">28500695</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;file_id&quot;</span><span class="punctuation">:</span> <span class="number">192178188</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;file&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">		<span class="attr">&quot;bucket&quot;</span><span class="punctuation">:</span> <span class="string">&quot;hbimg&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;key&quot;</span><span class="punctuation">:</span> <span class="string">&quot;fcdcbd4a742a2f78e0ac3ba0e1e9be5f09e94f6517b10-5rZ92O&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;image/jpeg&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;height&quot;</span><span class="punctuation">:</span> <span class="number">1000</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;width&quot;</span><span class="punctuation">:</span> <span class="number">701</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;frames&quot;</span><span class="punctuation">:</span> <span class="number">1</span></span><br><span class="line">	<span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;media_type&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;source&quot;</span><span class="punctuation">:</span> <span class="string">&quot;movie.douban.com&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;link&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://movie.douban.com/photos/photo/2520464127/#title-anchor&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;raw_text&quot;</span><span class="punctuation">:</span> <span class="string">&quot;忍者蝙蝠侠&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;text_meta&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">		<span class="attr">&quot;tags&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span></span><br><span class="line">	<span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;via&quot;</span><span class="punctuation">:</span> <span class="number">7</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;via_user_id&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;original&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">null</span></span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;created_at&quot;</span><span class="punctuation">:</span> <span class="number">1525941787</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;like_count&quot;</span><span class="punctuation">:</span> <span class="number">11</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;comment_count&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;repin_count&quot;</span><span class="punctuation">:</span> <span class="number">175</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;is_private&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;extra&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">null</span></span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;orig_source&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">null</span></span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;tags&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;user&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">		<span class="attr">&quot;user_id&quot;</span><span class="punctuation">:</span> <span class="number">15953905</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;username&quot;</span><span class="punctuation">:</span> <span class="string">&quot;天天蝎&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;urlname&quot;</span><span class="punctuation">:</span> <span class="string">&quot;zlsavqbwp3&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;created_at&quot;</span><span class="punctuation">:</span> <span class="number">1413880168</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;avatar&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">			<span class="attr">&quot;id&quot;</span><span class="punctuation">:</span> <span class="number">61285497</span><span class="punctuation">,</span></span><br><span class="line">			<span class="attr">&quot;farm&quot;</span><span class="punctuation">:</span> <span class="string">&quot;farm1&quot;</span><span class="punctuation">,</span></span><br><span class="line">			<span class="attr">&quot;bucket&quot;</span><span class="punctuation">:</span> <span class="string">&quot;hbimg&quot;</span><span class="punctuation">,</span></span><br><span class="line">			<span class="attr">&quot;key&quot;</span><span class="punctuation">:</span> <span class="string">&quot;36109024664771846f77206e63902ce52721793e1437-397g8F&quot;</span><span class="punctuation">,</span></span><br><span class="line">			<span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;image/jpeg&quot;</span><span class="punctuation">,</span></span><br><span class="line">			<span class="attr">&quot;width&quot;</span><span class="punctuation">:</span> <span class="number">100</span><span class="punctuation">,</span></span><br><span class="line">			<span class="attr">&quot;height&quot;</span><span class="punctuation">:</span> <span class="number">100</span><span class="punctuation">,</span></span><br><span class="line">			<span class="attr">&quot;frames&quot;</span><span class="punctuation">:</span> <span class="number">1</span></span><br><span class="line">		<span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;extra&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">null</span></span></span><br><span class="line">	<span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;board&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">		<span class="attr">&quot;board_id&quot;</span><span class="punctuation">:</span> <span class="number">28500695</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;user_id&quot;</span><span class="punctuation">:</span> <span class="number">15953905</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;电影海报&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;description&quot;</span><span class="punctuation">:</span> <span class="string">&quot;电影，电影海报，平面&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;category_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;design&quot;</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;seq&quot;</span><span class="punctuation">:</span> <span class="number">8</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;pin_count&quot;</span><span class="punctuation">:</span> <span class="number">1984</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;follow_count&quot;</span><span class="punctuation">:</span> <span class="number">83</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;like_count&quot;</span><span class="punctuation">:</span> <span class="number">3</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;created_at&quot;</span><span class="punctuation">:</span> <span class="number">1457573839</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;updated_at&quot;</span><span class="punctuation">:</span> <span class="number">1553137563</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;deleting&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;is_private&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">		<span class="attr">&quot;extra&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">null</span></span></span><br><span class="line">	<span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;liked&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>最后我们得出图片地址格式为：<a target="_blank" rel="noopener" href="https://hbimg.b0.upaiyun.com/">https://hbimg.b0.upaiyun.com/</a>  +  <code>图片json[&#39;file&#39;\][&#39;key&#39;\]</code> + _fw658 </p>
+<h2 id="编写爬取图片的代码"><a href="#编写爬取图片的代码" class="headerlink" title="编写爬取图片的代码"></a>编写爬取图片的代码</h2><blockquote>
+<p>因为代码量比较少，所以就不进行封装了，一个文件搞定，看起来更加直观</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="comment"># 图片保存文件</span></span><br><span class="line">dirName = <span class="string">&#x27;C:/Users/admin/Desktop/py_save&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建文件夹</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">mkdir</span>(<span class="params">path</span>):</span><br><span class="line">    path = path.strip()</span><br><span class="line">    isExists = os.path.exists(path)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> isExists:</span><br><span class="line">        os.makedirs(path)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;文件夹创建成功&#x27;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(path, <span class="string">&#x27;文件夹已经存在了，不再创建&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建文件夹</span></span><br><span class="line">mkdir(dirName)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 保存图片</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">saveImg</span>(<span class="params">requests, url, dirName, fileName</span>):</span><br><span class="line">    img = requests.get(url)</span><br><span class="line">    file_name = dirName + <span class="string">&#x27;/&#x27;</span> + fileName + <span class="string">&#x27;.png&#x27;</span></span><br><span class="line">    f = <span class="built_in">open</span>(file_name, <span class="string">&#x27;ab&#x27;</span>)</span><br><span class="line">    f.write(img.content)</span><br><span class="line">    <span class="built_in">print</span>(file_name, <span class="string">&#x27;文件保存成功！&#x27;</span>)</span><br><span class="line">    f.close()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> _thread</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"></span><br><span class="line"><span class="comment"># 通过正则表达式截取到图片信息部分，即app.page[&quot;pins&quot;]的内容</span></span><br><span class="line">re_compile = re.<span class="built_in">compile</span>(<span class="string">&#x27;app\.page\[&quot;pins&quot;\].*&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 图片地址拼接用</span></span><br><span class="line"><span class="comment"># https://hbimg.b0.upaiyun.com/  +  图片json[&#x27;file&#x27;\][&#x27;key&#x27;\] + _fw658</span></span><br><span class="line">urlPrefix = <span class="string">&#x27;https://hbimg.b0.upaiyun.com/&#x27;</span></span><br><span class="line">urlSuffix = <span class="string">&#x27;_fw658&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 这里我们只爬取10页蝙蝠侠的图片</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">10</span>):</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 拼接异步请求url来访问花瓣网来获取图片信息</span></span><br><span class="line">    page = <span class="built_in">str</span>(i)</span><br><span class="line">    post_param = &#123;<span class="string">&quot;page&quot;</span>: page, <span class="string">&quot;per_page&quot;</span>: <span class="string">&quot;20&quot;</span>, <span class="string">&quot;wfl&quot;</span>:<span class="string">&#x27;1&#x27;</span>&#125;</span><br><span class="line">    url = <span class="string">&#x27;https://huaban.com/search/?q=蝙蝠侠&#x27;</span></span><br><span class="line">    response = requests.get(url, params=post_param)</span><br><span class="line">    text = response.text</span><br><span class="line"></span><br><span class="line">    datas = re_compile.findall(text)[<span class="number">0</span>]</span><br><span class="line">    split_ = datas.split(<span class="string">&#x27;= &#x27;</span>)[<span class="number">1</span>][:-<span class="number">1</span>]</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        loads = json.loads(split_)</span><br><span class="line">    <span class="keyword">except</span> json.decoder.JSONDecodeError <span class="keyword">as</span> e:</span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> imgMsg <span class="keyword">in</span> loads:</span><br><span class="line">        imgName = <span class="built_in">str</span>(imgMsg[<span class="string">&#x27;pin_id&#x27;</span>])</span><br><span class="line">        imgkey = imgMsg[<span class="string">&#x27;file&#x27;</span>][<span class="string">&#x27;key&#x27;</span>]</span><br><span class="line">        imgUrl = urlPrefix + imgkey + urlSuffix</span><br><span class="line">        <span class="comment"># 使用多线程改善效率</span></span><br><span class="line">        _thread.start_new_thread(saveImg, (requests, imgUrl, dirName, imgName,))</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">time.sleep(<span class="number">10</span>)</span><br></pre></td></tr></table></figure>
+
+<p>好了！！！ 是不是很简单呢</p>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%8F%AF%E7%BB%A7%E6%89%BF%E7%9A%84ThreadLocal-InheritableThreadLocal/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/HashMap%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

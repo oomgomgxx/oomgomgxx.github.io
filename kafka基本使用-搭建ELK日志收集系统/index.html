@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      搭建ELK日志收集系统 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Oct 15, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      搭建ELK日志收集系统
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h2><p>kafka：<a target="_blank" rel="noopener" href="http://kafka.apache.org/downloads">http://kafka.apache.org/downloads</a> </p>
+<p>zookeeper：<a target="_blank" rel="noopener" href="https://www.apache.org/dyn/closer.cgi/zookeeper/%EF%BC%88%E4%B8%8D%E7%94%A8kafka%E5%86%85%E7%BD%AE%E7%9A%84zookeeper%EF%BC%89">https://www.apache.org/dyn/closer.cgi/zookeeper/（不用kafka内置的zookeeper）</a></p>
+<p>jdk：<a target="_blank" rel="noopener" href="https://www.oracle.com/technetwork/java/javase/downloads/index.html">https://www.oracle.com/technetwork/java/javase/downloads/index.html</a></p>
+<h2 id="命令行操作"><a href="#命令行操作" class="headerlink" title="命令行操作"></a>命令行操作</h2><p><strong>步骤1：配置jdk环境变量</strong></p>
+<p>1）vim &#x2F;etc&#x2F;profile</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">在unset...前添加一下内容</span><br><span class="line"># user settings</span><br><span class="line">JAVA_HOME=/usr/local/jdk1.8.0_201</span><br><span class="line">PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH</span><br><span class="line">export JAVA_HOME PATH</span><br></pre></td></tr></table></figure>
+
+<p>2）source &#x2F;etc&#x2F;profile 刷新配置</p>
+<p><strong>步骤2：将zookeeper配置文件zoo_sample.cfg改名为zoo.cfg</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mv zoo_sample.cfg zoo.cfg</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>步骤3：启动zookeeper（使用kafka提供的配置文件）</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost bin]# ./zkServer.sh start /usr/local/kafka_2.11-2.1.0/config/zookeeper.properties</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>步骤4：启动kafka服务</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost bin]# ./kafka-server-start.sh ../config/server.properties</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>步骤5：创建topic</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost bin]# ./kafka-topics.sh --create --zookeeper 192.168.4.157:2181 --replication-factor 1 --partitions 1 --topic test</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>步骤6：查看topic是否创建成功</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost bin]# ./kafka-topics.sh --zookeeper 192.168.4.157:2181 --list</span><br><span class="line">test</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>步骤7：kafka producer生产消息</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost bin]# ./kafka-console-producer.sh --broker-list 192.168.4.157:9092 --topic test</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>步骤8：kafka consumer消费消息</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost bin]# ./kafka-console-consumer.sh --bootstrap-server 192.168.4.157:9092 --topic test --from-beginning</span><br></pre></td></tr></table></figure>
+
+<p>–from-beginning ：表示监听 test这个topic上的所有历史消息（即新消息和旧消息都获取-&gt; kafka消息持久化）</p>
+<h2 id="代码操作"><a href="#代码操作" class="headerlink" title="代码操作"></a>代码操作</h2><p><strong>步骤1：关闭防火墙和修改配置文件</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop firewall</span><br><span class="line">systemctl disable firewall</span><br><span class="line"></span><br><span class="line">vim /usr/local/kafka/config/server.properties</span><br></pre></td></tr></table></figure>
+
+<p><img src="/./kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/013.png"></p>
+<p><strong>步骤2：配置pom.xml</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://maven.apache.org/POM/4.0.0&quot;</span> <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">         <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">modelVersion</span>&gt;</span>4.0.0<span class="tag">&lt;/<span class="name">modelVersion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.2.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">relativePath</span>/&gt;</span> <span class="comment">&lt;!-- lookup parent from repository --&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.td<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>kafkahw<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>0.0.1-SNAPSHOT<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">name</span>&gt;</span>kafkahw<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">description</span>&gt;</span>hello world<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.kafka<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-kafka<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-test<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤3：配置springboot属性文件</strong></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">8888</span></span><br><span class="line">  <span class="attr">servlet:</span></span><br><span class="line">    <span class="attr">context-path:</span> <span class="string">/kafkahw</span></span><br><span class="line"></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">kafka:</span></span><br><span class="line">    <span class="attr">bootstrap-servers:</span> <span class="number">192.168</span><span class="number">.1</span><span class="number">.101</span><span class="string">:9092</span></span><br><span class="line">    <span class="attr">producer:</span></span><br><span class="line">      <span class="attr">key-serializer:</span> <span class="string">org.apache.kafka.common.serialization.StringSerializer</span></span><br><span class="line">      <span class="attr">value-serializer:</span> <span class="string">org.apache.kafka.common.serialization.StringSerializer</span></span><br><span class="line">    <span class="attr">consumer:</span></span><br><span class="line">      <span class="attr">group-id:</span> <span class="string">consumer-group</span></span><br><span class="line">      <span class="attr">key-deserializer:</span> <span class="string">org.apache.kafka.common.serialization.StringDeserializer</span></span><br><span class="line">      <span class="attr">value-deserializer:</span> <span class="string">org.apache.kafka.common.serialization.StringDeserializer</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤4：代码</strong></p>
+<p>生产者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.td.resouce;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.Autowired;</span><br><span class="line"><span class="keyword">import</span> org.springframework.kafka.core.KafkaTemplate;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.GetMapping;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.PathVariable;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RestController;</span><br><span class="line"></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KafkaResource</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> KafkaTemplate&lt;String, String&gt; kafkaTemplate;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(value=&#123;&quot;/&quot;,&quot;/login&quot;&#125;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">login</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;ok&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/send/&#123;topic&#125;/&#123;content&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">send</span><span class="params">(<span class="meta">@PathVariable(&quot;topic&quot;)</span> String topic,</span></span><br><span class="line"><span class="params">                       <span class="meta">@PathVariable(&quot;content&quot;)</span> String content)</span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;准备发送消息...&quot;</span>);</span><br><span class="line">            kafkaTemplate.send(topic, content);</span><br><span class="line">            System.out.println(<span class="string">&quot;准备发送完成...&quot;</span>);</span><br><span class="line">        &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;send fail&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;send success&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>消费者</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.td.consumer;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.kafka.annotation.KafkaListener;</span><br><span class="line"><span class="keyword">import</span> org.springframework.stereotype.Component;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KafkaConsumer</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@KafkaListener(topics = &quot;test&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">consumer</span><span class="params">(String content)</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;监听到：&quot;</span> + content);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>启动类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.td;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.SpringApplication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">KafkahwApplication</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(KafkahwApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="安装前端监控"><a href="#安装前端监控" class="headerlink" title="安装前端监控"></a>安装前端监控</h2><p><strong>步骤1：下载kafka-monitor</strong></p>
+<blockquote>
+<p>github：<a target="_blank" rel="noopener" href="https://github.com/quantifind/KafkaOffsetMonitor">https://github.com/quantifind/KafkaOffsetMonitor</a></p>
+<p>百度云盘：链接：<a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1c1Snar2">https://pan.baidu.com/s/1c1Snar2</a> 密码：ncjp</p>
+<p>下载完，直接复制进去运行即可</p>
+</blockquote>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/012.png"></p>
+<p><strong>步骤2：启动</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -cp KafkaOffsetMonitor-assembly-0.2.0.jar com.quantifind.kafka.offsetapp.OffsetGetterWeb --zk 192.168.1.101:2181 --port 8089 --refresh 10.seconds --retain 1.days</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>步骤3：浏览</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.1.101:8089</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Kafka-Connect-Elasticsearch-Connector（方法1）"><a href="#Kafka-Connect-Elasticsearch-Connector（方法1）" class="headerlink" title="Kafka Connect Elasticsearch Connector（方法1）"></a>Kafka Connect Elasticsearch Connector（方法1）</h2><blockquote>
+<p>提醒：虚拟机复制的话切记要情况elasticsearch中的data目录数据</p>
+<p>ElasticSearch直接消费kafka消息</p>
+</blockquote>
+<blockquote>
+<p>以下以CDC为例</p>
+</blockquote>
+<p><strong>步骤1：下载连接器</strong></p>
+<p>kafka connect ElasticSearch：<a target="_blank" rel="noopener" href="https://www.confluent.io/connector/kafka-connect-elasticsearch/">https://www.confluent.io/connector/kafka-connect-elasticsearch/</a></p>
+<p>Debezium：<a target="_blank" rel="noopener" href="https://repo1.maven.org/maven2/io/debezium/debezium-connector-mysql/">https://repo1.maven.org/maven2/io/debezium/debezium-connector-mysql/</a></p>
+<p><strong>步骤2：安装并配置</strong></p>
+<p>profile（将Debezium插件依赖包配置到classpath上，必须）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">user settings</span></span><br><span class="line">JAVA_HOME=/usr/local/jdk1.8.0_201</span><br><span class="line">PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$NODE_HOME/bin:$PATH</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">debezium 插件依赖</span></span><br><span class="line">export CLASSPATH=/usr/local/debezium-connector-mysql/*</span><br><span class="line">export JAVA_HOME PATH</span><br></pre></td></tr></table></figure>
+
+<p>server.properties（kafka server配置）</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">listeners</span>=<span class="string">PLAINTEXT://192.168.4.159:9092</span></span><br></pre></td></tr></table></figure>
+
+<p>connect-distributed.properties（kafka连接器配置）</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">bootstrap.servers</span>=<span class="string">192.168.4.159:9092</span></span><br><span class="line"><span class="attr">key.converter.schemas.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="attr">value.converter.schemas.enable</span>=<span class="string">false</span></span><br><span class="line"><span class="comment"># 启用rest配置schema</span></span><br><span class="line"><span class="attr">rest.host.name</span>=<span class="string">192.168.4.159</span></span><br><span class="line"><span class="attr">rest.port</span>=<span class="string">8083</span></span><br><span class="line"><span class="comment"># kafka connect elasticsearch插件</span></span><br><span class="line"><span class="attr">plugin.path</span>=<span class="string">/usr/local/confluentinc-kafka-connect-elasticsearch-5.1.0</span></span><br></pre></td></tr></table></figure>
+
+<p>elasticsearch.yml</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">network.host:</span> <span class="number">192.168</span><span class="number">.4</span><span class="number">.159</span></span><br><span class="line"><span class="attr">http.port:</span> <span class="number">9200</span></span><br><span class="line"><span class="comment"># 允许跨域访问es（es插件）</span></span><br><span class="line"><span class="attr">http.cors.enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">http.cors.allow-origin:</span> <span class="string">&quot;*&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤3：启动</strong></p>
+<ol>
+<li>启动zookeeper</li>
+<li>启动kafka server</li>
+<li>启动elasticsearch（注意：es必须使用非root启动）</li>
+<li>启动kafka connect</li>
+</ol>
+<p><strong>步骤4：测试</strong></p>
+<ul>
+<li>配置source</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">POST http://192.168.4.159:8083/connectors/</span><br><span class="line">&#123;</span><br><span class="line">	&quot;name&quot;: &quot;my-first-connector&quot;,</span><br><span class="line">	&quot;config&quot;: &#123;</span><br><span class="line">	    &quot;connector.class&quot;: &quot;io.debezium.connector.mysql.MySqlConnector&quot;,</span><br><span class="line">	    &quot;database.hostname&quot;: &quot;192.168.4.120&quot;,</span><br><span class="line">	    &quot;database.port&quot;: &quot;3306&quot;,</span><br><span class="line">	    &quot;database.user&quot;: &quot;tandi&quot;,</span><br><span class="line">	    &quot;database.password&quot;: &quot;123456&quot;,</span><br><span class="line">	    &quot;database.server.id&quot;: &quot;11111&quot;,</span><br><span class="line">	    &quot;database.server.name&quot;: &quot;192.168.4.120&quot;,</span><br><span class="line">	    &quot;database.serverTimezone&quot;: &quot;UTC&quot;,</span><br><span class="line">	    </span><br><span class="line">	    &quot;database.history.kafka.bootstrap.servers&quot;: &quot;192.168.4.159:9092&quot;,</span><br><span class="line">	    &quot;database.history.kafka.topic&quot;: &quot;192.168.4.120.db1&quot; ,</span><br><span class="line">	    &quot;include.schema.changes&quot;: &quot;true&quot;,</span><br><span class="line">	   </span><br><span class="line">        &quot;transforms&quot;: &quot;unwrap,changetopic&quot;,</span><br><span class="line">	    &quot;transforms.unwrap.type&quot;: &quot;io.debezium.transforms.UnwrapFromEnvelope&quot;,</span><br><span class="line">	    &quot;transforms.changetopic.type&quot;:&quot;org.apache.kafka.connect.transforms.RegexRouter&quot;,</span><br><span class="line">	    &quot;transforms.changetopic.regex&quot;:&quot;(.*)&quot;,</span><br><span class="line">	    &quot;transforms.changetopic.replacement&quot;:&quot;$1-smt&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/030.png"></p>
+<ul>
+<li>配置sink</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">POST http://192.168.4.159:8083/connectors/</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  &quot;name&quot;: &quot;elasticsearch-sink&quot;,</span><br><span class="line">  &quot;config&quot;: &#123;</span><br><span class="line">    &quot;connector.class&quot;: &quot;io.confluent.connect.elasticsearch.ElasticsearchSinkConnector&quot;,</span><br><span class="line">    &quot;tasks.max&quot;: &quot;1&quot;,</span><br><span class="line">    &quot;topics&quot;: &quot;192.168.4.120.db1.t1-smt,192.168.4.120-smt&quot;,</span><br><span class="line">    &quot;key.ignore&quot;: &quot;true&quot;,</span><br><span class="line">    &quot;schema.ignore&quot;: &quot;true&quot;,</span><br><span class="line">    &quot;connection.url&quot;: &quot;http://192.168.4.159:9200&quot;,</span><br><span class="line">    &quot;type.name&quot;: &quot;kafka-connect&quot;,</span><br><span class="line">    &quot;name&quot;: &quot;elasticsearch-sink&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/031.png"></p>
+<ul>
+<li>向数据库添加数据</li>
+</ul>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/032.png"></p>
+<ul>
+<li>查看ElasticSearch</li>
+</ul>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/033.png"></p>
+<h2 id="Logstash整合kafka并数据到ElasticSearch（方法2）"><a href="#Logstash整合kafka并数据到ElasticSearch（方法2）" class="headerlink" title="Logstash整合kafka并数据到ElasticSearch（方法2）"></a>Logstash整合kafka并数据到ElasticSearch（方法2）</h2><blockquote>
+<p>提醒：虚拟机复制的话切记要情况elasticsearch中的data目录数据</p>
+<p>Logstash消费kafka消息到ElasticSearch</p>
+</blockquote>
+<p><strong>步骤1：下载并上传Logstash到linux</strong></p>
+<blockquote>
+<p>logstash：<a target="_blank" rel="noopener" href="https://www.elastic.co/cn/products/logstash">https://www.elastic.co/cn/products/logstash</a></p>
+</blockquote>
+<p>上传解压如下</p>
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/014.png"></p>
+<p><strong>步骤2：创建并配置Logstash启动文件</strong></p>
+<p>LogstashKafka.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost config]# touch logstash-kafka.conf</span><br><span class="line">[root@localhost config]# vim logstash-kafka.conf</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>配置文件说明：从input获取数据输出到output</p>
+</blockquote>
+<p>从kafka读取 - &gt; 从kafka中获取数据消费输出到控制台</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">output&#123;  </span><br><span class="line">	input&#123;</span><br><span class="line">	  kafka&#123;</span><br><span class="line">		bootstrap_servers =&gt; [&quot;192.168.4.157:9092&quot;]</span><br><span class="line">		 # 建议和生产消息的线程组区别，同一个组不能消费同一个分区</span><br><span class="line">		group_id =&gt; &quot;consumer-logs-group&quot;</span><br><span class="line">		auto_offset_reset =&gt; &quot;earliest&quot;</span><br><span class="line">		consumer_threads =&gt; 5</span><br><span class="line">		decorate_events =&gt; true</span><br><span class="line">		topics =&gt; [&quot;logs&quot;,&quot;test&quot;]</span><br><span class="line">	  &#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">    stdout&#123;</span><br><span class="line">        codec =&gt; rubydebug</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">	elasticsearch &#123;</span><br><span class="line">		hosts =&gt; [&quot;192.168.4.157:9200&quot;]</span><br><span class="line">		user =&gt; &quot;tandi&quot;</span><br><span class="line">		password =&gt; &quot;tandi&quot;</span><br><span class="line">		index =&gt; &quot;%&#123;service&#125;-%&#123;+YYYY-MM-dd&#125;&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>向kafka输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">input&#123;</span><br><span class="line">    stdin&#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">output&#123;</span><br><span class="line">    kafka&#123;</span><br><span class="line">        topic_id =&gt; &quot;logs&quot;</span><br><span class="line">        bootstrap_servers =&gt; &quot;192.168.4.157:9092&quot; </span><br><span class="line">        batch_size =&gt; 5</span><br><span class="line">    </span><br><span class="line">    stdout&#123;</span><br><span class="line">        codec =&gt; rubydebug</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/kafka%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8-%E6%90%AD%E5%BB%BAELK%E6%97%A5%E5%BF%97%E6%94%B6%E9%9B%86%E7%B3%BB%E7%BB%9F/015.png"></p>
+<p><strong>步骤3：测试从kafka中消费数据</strong></p>
+<p>1）启动zookeeper</p>
+<p>2）启动kafka</p>
+<p>3）启动logstash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost logstash-6.5.4]# bin/logstash -f config/logstash-kafka-input-td.conf </span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Kibana整合ElasticSearch"><a href="#Kibana整合ElasticSearch" class="headerlink" title="Kibana整合ElasticSearch"></a>Kibana整合ElasticSearch</h2><blockquote>
+<p>切记：kibana和ElasticSearch必须版本号要一直，否者很麻烦</p>
+</blockquote>
+<p><strong>步骤1：下载kibana</strong></p>
+<p><strong>步骤2：配置kibana</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">server.port: 5601 # kibana端口</span><br><span class="line">server.host: &quot;192.168.4.157&quot; # 本机端口</span><br><span class="line">elasticsearch.url: &quot;http://192.168.4.157:9200&quot; # elasticsearch url</span><br><span class="line">kibana.index: &quot;.kibana&quot;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/micronaut%E5%85%A5%E9%97%A8/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/micronaut%E5%AE%9E%E7%8E%B0%E5%BE%AE%E6%9C%8D%E5%8A%A1/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

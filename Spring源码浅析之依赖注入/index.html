@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      Spring源码浅析之依赖注入 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Mar 24, 2020
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      Spring源码浅析之依赖注入
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年05月14日02:17:55 — 增加循环依赖源码浅析案例</li>
+</ul>
+<h2 id="关于控制反转和依赖注入"><a href="#关于控制反转和依赖注入" class="headerlink" title="关于控制反转和依赖注入"></a>关于控制反转和依赖注入</h2><blockquote>
+<p>什么是控制反转和依赖注入？</p>
+</blockquote>
+<p>下图内容片段摘自网上的某篇文章</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/001.png"></p>
+<p>谈注入方式之前，我们先聊聊关于<code>控制反转（IOC）</code>和<code>依赖注入（DI）</code>的话题。主要是因为在网上看到很多人说两者是同一个东西，而我个人并不这样理解。因为 IoC 和 DI 其实并不是同级别的概念，譬如 IoC 其实是包含 DI 的，且不仅仅有 DI。很多人聊控制反转都拿 Spring 容器来举例，而其实用到控制反转思想的地方不仅如此。例如生活中的<code>排队叫号(观察者模式)</code>、著名的<code>好莱坞原则</code>都是控制反转的体现。而在 Spring 中，控制反转主要体现在<code>上下文管理</code>上，开发者不仅可以将 Bean 的维护工作交给容器，还能使用容器来进行<code>资源管理</code>、<code>依赖查找</code>、<code>依赖注入</code>、<code>事件传播</code>等操作，所以“依赖注入其实是IOC的另一种说法”这种说法是不正确的。通俗点说应该是依赖注入其实是控制反转的一种体现。</p>
+<p>多说一句，依赖注入功能其实是依赖查找功能的超集，因为依赖注入时会伴随着依赖查找。而且需注意的是<code>依赖注入时的依赖查找</code>和<code>主动依赖查找</code>并不相同。具体表现在<code>主动依赖</code>查找只会查找有 BeanDefinition 的 Bean，而<code>依赖注入时的依赖查找</code>还可以查找到 Spring 容器内部创建的 bean (譬如BeanFactory)。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 手动依赖查找</span></span><br><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 会抛出 NoSuchBeanDefinitionException </span></span><br><span class="line">    applicationContext.getBean(BeanFactory.class);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 依赖注入时的依赖查找（依赖查找 + 注入依赖）</span></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> BeanFactory beanFactory; <span class="comment">// 可以获取到 BeanFactory 实例</span></span><br></pre></td></tr></table></figure>
+
+<p><code>手动依赖查找</code>之所以会抛出 NoSuchBeanDefinitionException 是因为 BeanFactory 是内部创建的 Bean，没有对应的 BeanDefinition，而手动依赖查找是根据 BeanDefinition 来找的。</p>
+<p>除了 BeanFactory 之外，ResourceLoader、ApplicationContext、Environment、ApplicationEventPublisher 等都是内置 Bean（参考AbstractApplicationContext#prepareBeanFactory）。</p>
+<blockquote>
+<p>依赖注入和依赖查找的基本流程</p>
+</blockquote>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/002.png"></p>
+<h2 id="Spring支持的几种依赖注入方式"><a href="#Spring支持的几种依赖注入方式" class="headerlink" title="Spring支持的几种依赖注入方式"></a>Spring支持的几种依赖注入方式</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>目前Spring支持4种依赖注入的方式，我们可以将其按类型进行划分，分别是<code>构造器注入</code>、<code>字段注入</code>、<code>方法注入(包含Setter方法)</code>、<code>接口方法回调注入</code>等。</p>
+<p>在网上可以看到一些人将<code>方法注入</code>和<code>Setter注入</code>分开其实是不正确的，这点可以在 @Autowired 注解处理器的中得到答案。</p>
+<p>如下图，@Autowired 注解的处理只区分 Field 和 Method 两种类型，而且并不会区分普通 Method 还是 Setter。</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/003.png"></p>
+<p>除了上面提到的按类型对依赖注入方式进行划分之外，也可以按照<code>注入时机</code>来划分：</p>
+<ul>
+<li><p>构造器注入：依赖会在Bean实例创建时被注入</p>
+<ul>
+<li>官方推荐注入方式，优点如下：</li>
+<li>1）在创建Bean实例时其依赖就全部要准备好，可以有效地防止 NullPointerException，同时也减少了判空代码</li>
+<li>2）使用final修饰依赖，可使其保证不变形，使得Singleton实例在多线程下更加安全</li>
+</ul>
+</li>
+<li><p>方法注入和字段注入：依赖会在Bean实例创建后的依赖填充阶段被注入（populateBean）</p>
+</li>
+<li><p>接口方法回调注入：依赖会 populateBean 后接着的初始化阶段被注入（initializeBean）</p>
+</li>
+</ul>
+<h3 id="注入方式详解"><a href="#注入方式详解" class="headerlink" title="注入方式详解"></a>注入方式详解</h3><h4 id="构造器注入"><a href="#构造器注入" class="headerlink" title="构造器注入"></a>构造器注入</h4><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>指通过<code>带参构造器</code>或<code>@Bean注解方法</code>产生实例并进行依赖注入。因为构造器注入是 Spring 默认的依赖注入方式，因此在使用构造器注入时并不需要添加额外的注解配置</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestConfig</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> PersonRepo personRepo;</span><br><span class="line">    <span class="comment">// 当Bean有且仅有一个构造器时，Spring将默认通过该构造器进行实例化和依赖注入。</span></span><br><span class="line">  	<span class="comment">// 而如果有多个构造器，但又想用构造器注入，则可以在期望的构造器上添加上@Autowired即可。</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TestConfig</span><span class="params">(PersonRepo personRepo)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.personRepo = <span class="built_in">this</span>.getPersonRepo();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>值得注意的是，如果采用@Bean注解方法来实现构造器注入，则需要记住的规则是<code>内部注解优先于标注在方法上的注解或在方法内部相同属性的定义</code>。例子如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@ComponentScan(&quot;spring&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JavaConfig</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@Value(&quot;HanMeiMei&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> Person <span class="title function_">person</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Person</span>(name); <span class="comment">// 结果是LiLei，而不是HanMeiMei</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@NoArgsConstructor</span></span><br><span class="line"><span class="meta">@AllArgsConstructor</span></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">    <span class="meta">@Value(&quot;LiLei&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<blockquote>
+<p>源码浅析</p>
+</blockquote>
+<p>在上面已经提到过，构造器注入会在实例化Bean时进行依赖注入。要了解这一点其实很简单，我们可以在Bean生命周期的依赖填充阶段上进行观察。即如果在执行依赖填充之前就已经有了依赖，就说明依赖是在创建实例时被注入的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> PersonRepo personRepo;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> TransactionTemplate transactionTemplate;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TestConfig</span><span class="params">(PersonRepo personRepo, TransactionTemplate transactionTemplate)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.personRepo = personRepo;</span><br><span class="line">        <span class="built_in">this</span>.transactionTemplate = transactionTemplate;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/004.png"></p>
+<h4 id="方法注入和字段注入"><a href="#方法注入和字段注入" class="headerlink" title="方法注入和字段注入"></a>方法注入和字段注入</h4><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>方法注入和字段注入的时机是一样的，都是在Bean实例化后的依赖填充阶段中进行，而两者的区别仅是操作上有些许不同而已。但不管是方法注入还是字段注入，它们都是通过注解来实现的（不像构造器注入时Spring默认的），其常见的相关注解又 @Autowired、@Value、@Inject、@Resource等。但注解本身只是一种描述代码的元数据，所以每一个注解的背后都应该有与之对应的注解处理器，而InstantiationAwareBeanPostProcessor这个BeanPostProcessor就是注解处理器的基础，在Spring中比其它BeanPostProcessor有更高的优先级别。</p>
+<p>InstantiationAwareBeanPostProcessor常见的之类有以下这几个：</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/005.png"></p>
+<blockquote>
+<p>源码浅析</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestConfig</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> PersonRepo personRepo;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> TransactionTemplate transactionTemplate;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先要证明在依赖填充操作之前，依赖是还没有被注入的</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/006.png"></p>
+<p>执行属性填充之后，Bean状态如下</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/007.png"></p>
+<h4 id="接口方法回调注入"><a href="#接口方法回调注入" class="headerlink" title="接口方法回调注入"></a>接口方法回调注入</h4><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>接口方法回调注入主要依赖Spring提供的Aware接口（模板模式），通过实现Aware接口可以实现在Bean实例化后被回调。常用的Aware接口有以下这几个：</p>
+<ul>
+<li>ApplicationContextAware：可用于获取内置Bean实例ApplicationContext</li>
+<li>BeanFactoryAware：可用于获取内置Bean实例BeanFactory</li>
+<li>ApplicationEventPublisherAware：可用于获取内置Bean实例ApplicationEventPublisher</li>
+<li>ResourceLoaderAware：可用于获取内置Bean实例ResourceLoader</li>
+</ul>
+<blockquote>
+<p>源码浅析</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestConfig</span> <span class="keyword">implements</span> <span class="title class_">ApplicationContextAware</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> PersonRepo personRepo;</span><br><span class="line">    <span class="keyword">private</span> TransactionTemplate transactionTemplate;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setApplicationContext</span><span class="params">(ApplicationContext applicationContext)</span> <span class="keyword">throws</span> BeansException &#123;</span><br><span class="line">        <span class="comment">// 手动依赖查找后进行注入</span></span><br><span class="line">      	<span class="built_in">this</span>.personRepo = applicationContext.getBean(PersonRepo.class);</span><br><span class="line">        <span class="built_in">this</span>.transactionTemplate = applicationContext.getBean(TransactionTemplate.class);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先证明接口方法在被回调之前是没有被注入依赖的</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/008.png"></p>
+<p>执行完回调方法后Bean状态如下</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/009.png"></p>
+<h3 id="如何选择依赖注入方式？"><a href="#如何选择依赖注入方式？" class="headerlink" title="如何选择依赖注入方式？"></a>如何选择依赖注入方式？</h3><ul>
+<li>经过上面的简单分析，我们已经得知到几种依赖注入方式的主要区别在于注入时机</li>
+<li>构造器注入<ol>
+<li>官方推荐</li>
+<li>注入依赖的时机最早，能够确保其依赖在Bean实例化时就被全部注入，可有效避免空指针和减少判空逻辑，代码更健壮</li>
+<li>如果依赖在注入后不打算改变（推荐使用final修饰），且依赖数量不多的情况下（如果依赖多，请考虑是否指责过大），推荐使用构造器注入</li>
+<li>缺点是无法实现循环引用。因为构造器注入的要求是Bean在实例化时就准备好其依赖，但如果依赖又需要当前Bean的话（即发生了循环依赖），这时理论上就会发生死循环，但Spring在这点上提供了检测机制，即当发现循环依赖时通过抛异常来避免死循环。所以，如果确实有必要用到循环依赖的话，这可以使用其它的注入方式来解决，因为其余的注入方式Spring会通过提前暴露来解决循环依赖（这点后续会继续分析）。</li>
+</ol>
+</li>
+<li>方法注入和字段注入<ol>
+<li>注入依赖的时机时在Bean实例化之后的依赖填充阶段</li>
+<li>但依赖数量较多是，或依赖注入后可能会变动，此时可以考虑使用这种注入方式</li>
+<li>优点是能够解决循环依赖问题</li>
+</ol>
+</li>
+<li>接口方法回调注入<ul>
+<li>注入依赖的时机在实例化以及填充后进行，注入时机是几种方式中最晚的</li>
+<li>需要手动进行依赖查找并注入依赖，因此具有一定的局限性，所以在平常开发中并不推荐使用这种方法来注入依赖</li>
+</ul>
+</li>
+</ul>
+<h2 id="为什么构造器无法解决循环依赖"><a href="#为什么构造器无法解决循环依赖" class="headerlink" title="为什么构造器无法解决循环依赖"></a>为什么构造器无法解决循环依赖</h2><h3 id="什么是循环依赖？"><a href="#什么是循环依赖？" class="headerlink" title="什么是循环依赖？"></a>什么是循环依赖？</h3><p>循环依赖指的是<code>A-&gt;B-&gt;A</code>的依赖关系。因为A实例化时需要依赖B，因此B会被实例化，但B在实例化时又发现需要依赖A，但这时A在等待B完整实例化，所以这时就会出现死循环而导致栈溢出。</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/010.png"></p>
+<p>在上面已经提到过，对于<code>构造器注入</code>而言是无法解决循环依赖的，但如果真的发生了，Spring并不会出现栈溢出，而是会抛出BeanCurrentlyInCreationException来通知开发者生了循环依赖。</p>
+<p>需要知道，在Spring中其实只有<code>构造器注入</code>发生循环依赖才会抛BeanCurrentlyInCreationException，这是因为通过构造器注入的依赖被认为是<code>急需性</code>的，而对于<code>字段注入</code>、<code>方法注入</code> 、<code>接口回调注入</code>而言Spring就做了内部处理来解决。</p>
+<p>Spring对于<code>非构造器注入</code>引发的循环依赖问题的解决方案是，在Bean A<code>实例化后（在依赖填充前）</code>先提前暴露一个ObjectFactory到DefaultSingletonBeanRegistry.singletonFactories中，而这个ObjectFactory的getObject()方法封装了获取当前Bean A的逻辑（既如果这时马上调用ObjectFactory#getObject()就可以获得当前这个还没完成依赖注入的Bean A实例）。如果在这时发生了循环依赖，既Bean A在依赖填充阶段要去实例化Bean B，这时Bean B亦会暴露一个ObjectFactory，随机Bean B因为又依赖了Bean A。这时Bean B就会进行依赖查找，从DefaultSingletonBeanRegistry.singletonFactories中得到一个Bean A的ObjectFactory。因此，即使这时Bean A还没有完全初始化，但也解决了循环依赖问题。</p>
+<h3 id="构造器注入的循环依赖检测机制"><a href="#构造器注入的循环依赖检测机制" class="headerlink" title="构造器注入的循环依赖检测机制"></a>构造器注入的循环依赖检测机制</h3><p>案例代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JavaConfig</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Person <span class="title function_">person</span><span class="params">(Student student)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Person</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Student <span class="title function_">student</span><span class="params">(Person person)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Student</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因为使用的是<code>@Bean标注方法</code>的形式添加进入容器，所以其方法会被视为一个FactoryMethod（工厂方法模式）。既这时Person和Student会使用FactoryMethod方案进行实例化。除此之外，各自都在构造时通过参数列表传入依赖，所以会采用默认的注入方式（构造器注入）来注入依赖。</p>
+<p>首先，在容器启动时，Person因为默认是Singleton域的缘故，而且定义在Student之上，所以会率先被实例化</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/011.png"></p>
+<p>接着会通过FactoryMethod方式进行实例化</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/012.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/013.png"></p>
+<p>进入方法后，会执行是否需要采用构造器注入的判断逻辑</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/014.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/015.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/016.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/017.png"></p>
+<p>获取依赖过程如下</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/018.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/019.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/020.png"></p>
+<p>进入beanFactory.getBean(Student)进行依赖查找后，就会从Person创建转为对Student创建，因此实例化Person时发现依赖了Student</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/021.png"></p>
+<p>因为当前案例使用的是<code>构造器注入</code>方式，所以并不会走右上图的if的逻辑（即直接返回null）。所以不管是Person还是Student，其实都不可能获取到对方的引用。</p>
+<p>下图为Spring对构造器注入而引发生循环依赖的检查机制。</p>
+<p>场景是Person实例化时，发现依赖了Student，然后进行Student实例化</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/022.png"></p>
+<h3 id="非构造器提前暴露引用过程"><a href="#非构造器提前暴露引用过程" class="headerlink" title="非构造器提前暴露引用过程"></a>非构造器提前暴露引用过程</h3><p>案例代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JavaConfig</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Person <span class="title function_">person</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Person</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Student <span class="title function_">student</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Student</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> Student sutdent;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Student</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> Person person;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>相较于构造器注入案例代码只是删掉了参数列表，而改用通过@Autowired标注在字段上来进行依赖注入。因此Bean实例方式依然会使用 FactoryMethod方案，但因为参数列表为0，所以会使用字段方式进行依赖注入而不是构造器注入。</p>
+<p>启动Spring容器执行代码，观察Person Bean的创建过程：</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/023.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/024.png"></p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/025.png"></p>
+<p>创建完Bean后就会对其进行提前暴露</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/026.png"></p>
+<p>那么这时如果因为循环依赖而导致Student需要被实例化，那么Student就可以在以下操作中获取到提前暴露出来的Person Bean引用</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/027.png"></p>
+<h3 id="Prototype原型域实例无法解决循环依赖"><a href="#Prototype原型域实例无法解决循环依赖" class="headerlink" title="Prototype原型域实例无法解决循环依赖"></a>Prototype原型域实例无法解决循环依赖</h3><p>上面已经提到过，提前暴露的条件之一就是必须是Singleton域的Bean。</p>
+<p>个人理解这样做的原因可能是因为Prototype类型的Bean每次都返回新的实例的缘故，所以并没有提前暴露的必要兴（因为暴露了也不会被使用到），其次如果不阻断循环依赖的话就会一直创建对象而最终导致OOM的发生。</p>
+<p><img src="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8B%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5/028.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.baeldung.com/spring-5-functional-beans">Spring 5 Functional Bean Registration</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.baeldung.com/circular-dependencies-in-spring">Circular Dependencies in Spring</a></li>
+<li><a target="_blank" rel="noopener" href="https://spring.io/blog/2007/07/11/setter-injection-versus-constructor-injection-and-the-use-of-required">Setter injection versus constructor injection and the use of @Required</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/Java%E4%B8%AD%E4%B8%8D%E5%8F%AA%E6%9C%89%E5%80%BC%E4%BC%A0%E9%80%92/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

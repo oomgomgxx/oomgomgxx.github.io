@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      CAS理解 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    May 23, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      CAS理解
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h2><ul>
+<li>CAS(Compare And Swap)是比对和交换的意思，现在所谓的无锁编程解决同步问题就是通过CAS来完成的。</li>
+<li>从代码行为的角度来看，CAS其实就是一个乐观锁。</li>
+<li>在CAS的加持下编程人员无需显式地处理资源的同步问题，因为CAS操作本质是一个CPU原子指令（Atomic::cmpxchg），所以CAS操作解决同步问题实质上是利用CPU来实现的。</li>
+<li>在Java中有个名为 sun.misc.Unsafe 的类提供以上说到的 CAS 操作。该类上的方法几乎全都被 native 所修饰，因此可以得知 Unsafe 大量使用的本地方法来实现其自身的功能。</li>
+</ul>
+<h2 id="用代码来理解CAS的过程"><a href="#用代码来理解CAS的过程" class="headerlink" title="用代码来理解CAS的过程"></a>用代码来理解CAS的过程</h2><blockquote>
+<p>在上面已经提到过 CAS 其实是一个CPU指令，所以以下代码仅用来理解操作流程而并非是一个安全的同步操作解决方案。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CAS</span> &#123;</span><br><span class="line">	<span class="comment">// 内存值</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> value;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">CAS</span><span class="params">(<span class="type">int</span> value)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.value = <span class="number">10</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">get</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 比较交换</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> e 标记值（实质叫期望值，但不好理解，我觉得，其实就是更新之前获取的value值，即乐观锁中的version）</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> n 期望结果，即将value值改为该值</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">compareAndSwap</span><span class="params">(<span class="type">int</span> e, <span class="type">int</span> n)</span> &#123;</span><br><span class="line">        <span class="keyword">for</span>(;;)&#123; <span class="comment">// 自旋</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">v</span> <span class="operator">=</span> get();</span><br><span class="line">            <span class="keyword">if</span> (v == e) &#123;</span><br><span class="line">                <span class="built_in">this</span>.value = n;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;            </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">value</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">        <span class="type">CAS</span> <span class="variable">cas</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CAS</span>(value);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 在修改前获取到的version(当前内存值)</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">e</span> <span class="operator">=</span> cas.get();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 期望结果</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 进行比较交换</span></span><br><span class="line">        cas.compareAndSwap(e, n);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>好了，以上就是CAS的操作。可以看到 CAS 通过对比内存中的 value 值 和 事先查出来的 value 来判断是否可以进行更改操作。</p>
+<h2 id="JUC包下的同步类"><a href="#JUC包下的同步类" class="headerlink" title="JUC包下的同步类"></a>JUC包下的同步类</h2><blockquote>
+<p>以 AtomicInteger源码为例子</p>
+</blockquote>
+<p>AtomicInteger中的CAS操作：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="type">boolean</span> <span class="title function_">compareAndSet</span><span class="params">(<span class="type">int</span> expect, <span class="type">int</span> update)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> unsafe.compareAndSwapInt(<span class="built_in">this</span>, valueOffset, expect, update);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到在 compareAndSet 方法中实质调用的是 unsafe 这个类。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// setup to use Unsafe.compareAndSwapInt for updates</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Unsafe</span> <span class="variable">unsafe</span> <span class="operator">=</span> Unsafe.getUnsafe();</span><br></pre></td></tr></table></figure>
+
+<p>已经很明确，Java中的 CAS 操作就是用 Unsafe 类来实现的，而 Unsafe 在上面已经提到过，它里面的方法基本上都被 native 所修饰，即均为本地方法（C&#x2F;C++实现），如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// var1：对象本身</span></span><br><span class="line"><span class="comment">// var2: 值所在的指针</span></span><br><span class="line"><span class="comment">// var4: version值</span></span><br><span class="line"><span class="comment">// var5: 希望执行后得到的结果值</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="type">boolean</span> <span class="title function_">compareAndSwapInt</span><span class="params">(Object var1, <span class="type">long</span> var2, <span class="type">int</span> var4, <span class="type">int</span> var5)</span>;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="关于-Unsafe-类"><a href="#关于-Unsafe-类" class="headerlink" title="关于 Unsafe 类"></a>关于 Unsafe 类</h2><p>&amp;emsp;&amp;emsp;Unsafe 位于 sun.misc 包下，我们可以从它的源码注释中了解到它。得知该类主要是负责完成一些较为低级别和非安全的操作，譬如它可以直接操作系统资源。</p>
+<p>&amp;emsp;&amp;emsp;正常情况下 Unsafe 类是不能被用户程序直接使用的，它会在运行时抛出 java.lang.SecurityException: Unsafe 异常。其原因可以在类注释中找到答案，在 Unsafe 类注释中表明，Unsafe 的使用是受到限制的，它要求显式调用 Unsafe 的类必须是受到信任的。那么什么情况下是类是受信任的呢？以下为获取 Unsafe 实例的源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@CallerSensitive</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Unsafe <span class="title function_">getUnsafe</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 返回当前调用该方法的Class实例</span></span><br><span class="line">    <span class="type">Class</span> <span class="variable">var0</span> <span class="operator">=</span> Reflection.getCallerClass();</span><br><span class="line">    <span class="comment">// 判断其类加载器是否持有系统域权限，如果没有则直接抛出异常</span></span><br><span class="line">    <span class="keyword">if</span> (!VM.isSystemDomainLoader(var0.getClassLoader())) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SecurityException</span>(<span class="string">&quot;Unsafe&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> theUnsafe;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那么如何使用 Unsafe 类呢？从上面源码中我们得知，在获取 Unsafe 实例时是需要判断其类加载器权限的，所以可以将类分配给 BootstrapClassLoader 来加载，因为 BootstrapClassLoader 是双亲委派模型中最顶层的类加载器，有着最高权限。当然这样实属有些不切实际，因此还有另一种方式，就是使用反射来直接调用 Unsafe 的 theUnsafe 字段来绕开权限校验。代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> Unsafe.class.getDeclaredField(<span class="string">&quot;theUnsafe&quot;</span>);</span><br><span class="line">field.setAccessible(<span class="literal">true</span>);</span><br><span class="line"><span class="type">Unsafe</span> <span class="variable">unsafe</span> <span class="operator">=</span> (Unsafe)field.get(<span class="literal">null</span>);</span><br></pre></td></tr></table></figure>
+
+
+<blockquote>
+<p>Unsafe 常用方法</p>
+</blockquote>
+<p><img src="/CAS%E7%90%86%E8%A7%A3/001.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年4月15日21:30:51 — 丰富有关 Unsafe 类的内容</li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/JVM%E8%B0%83%E4%BC%98%E7%AC%94%E8%AE%B0/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/mysql%E6%97%A5%E5%BF%97/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

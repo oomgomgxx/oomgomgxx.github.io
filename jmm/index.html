@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      Java内存模型(JMM) 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Jun 23, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      Java内存模型(JMM)
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年04月1日09:46:02 — 内容修辑</li>
+</ul>
+<h2 id="什么是JMM？"><a href="#什么是JMM？" class="headerlink" title="什么是JMM？"></a>什么是JMM？</h2><ul>
+<li>JMM 全称为 Java Memory Model，即 Java 内存模型</li>
+<li>JMM 是理解 Java 线程并发的大前提</li>
+<li>JMM 和 JVM 运行时内存模型是两码事不要混淆</li>
+<li>JMM 是仿CPU与内存模型所创建的，JMM出现的目的是为了屏蔽硬件和操作系统的差异，为了更好地支持跨平台</li>
+</ul>
+<h2 id="了解技术最好的方法是知道它为什么存在"><a href="#了解技术最好的方法是知道它为什么存在" class="headerlink" title="了解技术最好的方法是知道它为什么存在"></a>了解技术最好的方法是知道它为什么存在</h2><blockquote>
+<p>了解</p>
+</blockquote>
+<p>大家都知道 CPU 是计算机的核心组件，用于实时处理数据以改变计算机状态，而内存（RAM）则用于存储计算机运行时所产生或所需要用到的数据。但因为 CPU 和 RAM 的运算速度不在同一个级别，所以为了解决这一问题科学家们就在 CPU 内部加入了高速缓存（Cache、寄存器）组件以解决两者速度上的差距。也就是说 CPU 在处理数据前需要先将 RAM 中的数据加载到高速缓存中再进行运算，等到计算结束又会将高速缓存的内容回写回 RAM 中，这就是 CPU 和 RAM 的关系。</p>
+<p>随着科技的发展和<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%91%A9%E5%B0%94%E5%AE%9A%E5%BE%8B">摩尔定律</a>的推进，CPU 的核数也随之而增加，但与此同时又带来了新的问题。譬如多个核同时操作同一个数据资源，且同时向 RAM 回写数据时，到底以那个回写结果为准？而如果不能解决这个问题的话，那么在数据回写时就会很容易出现因数据覆盖而导致状态丢失的问题出现。因此，后来科学家们通过引入<code>缓存一致性协议(MESI/MOSI/MSI/MOESI等等)</code>来解决了这一问题，即 CPU 和 RAM 交互时必须需要遵循一定的规则以确保数据的一致性。譬如 MESI 协议中将 CPU （高速缓存）的<code>缓存行</code>划分为以下 4 种类型：</p>
+<ul>
+<li>已修改（Modified）：表示缓存行只在当前核心有效，而如果需要保证其可见先则必须将其回写到 RAM 中，即将缓存行从 Modified 变为 Shared</li>
+<li>独占（Exclusive）：表示缓存行和 RAM 中的状态处于一致</li>
+<li>共享（Shared）：表示缓存行和 RAM 中的状态处于一致（没有被修改），且数据在多个核心中被应用</li>
+<li>无效（Invalid）：缓存失效。可能是因为其他核心将 Modified 状态的缓存行成功回写到 RAM 中后导致 bus 触发缓存失效通知</li>
+</ul>
+<blockquote>
+<p>拓展</p>
+</blockquote>
+<p>1）指令重排序</p>
+<ul>
+<li>为了充分地发挥 CPU 性能，CPU 通常会对输入的代码指令进行乱序执行（譬如两条不相干的指令其实是可以并行执行的，又或者某条指令导致阻塞而先越过该操作继续执行其他指令），而处理完后又会将输出结果重组以保证其输出顺序。因此需要明白 CPU 只保证代码的输出顺序而不保证其执行顺序，而这点也在 JVM 的即时编译器中被效仿。</li>
+</ul>
+<p>2）CPU 内部基本结构</p>
+<p><img src="/JMM/003.png"></p>
+<p>3）CPU 高速缓存层次结构</p>
+<p><img src="/JMM/004.png"></p>
+<p>4）CPU缓存的伪共享问题</p>
+<ol>
+<li><p>CPU读取主存的单位是缓存行</p>
+</li>
+<li><p>缓存行的大小有 32、64、128，而常见的 Intel&#x2F;AMD 处理器的缓存大小通常为 64 字节</p>
+</li>
+<li><p>同一时刻不存在多条（不同核的）线程同时访问存有相同变量的缓存行的情况。这是因为缓存一致性协议的缘故，当一条线程修改（L1&#x2F;L2）缓存行后，其余核心相同变量所在的缓存行就会被无效（Invalid），而这就是缓存的CPU伪共享问题</p>
+</li>
+<li><p>解决 CPU 缓存的伪共享问题可以提高缓存的并发性能，而该问题可以通过填充缓存行来解决。以 64 bit缓存行为例：</p>
+<p>手动填充：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">A</span> &#123; <span class="comment">// 64bit系统+指针压缩优化=对象头大小为12byte</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">long</span> <span class="variable">a</span> <span class="operator">=</span> <span class="number">100L</span>; <span class="comment">// 对象有用变量</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">long</span> b,c,d,e,f; <span class="comment">// 对象无用变量，专门用于填充</span></span><br><span class="line">    <span class="comment">// 到目前位置该对象的总大小为：12+8+40=60</span></span><br><span class="line">    <span class="comment">// 注意，但因为JVM本身会对对象进行字节填充对齐（默认为8的倍数），所以这里60个字节到最后会被填充成64个字节</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明式填充</p>
+<ul>
+<li>允许普通模块使用（存在字段时才生效）：-XX:-RestrictContended</li>
+<li>条件对齐大小：-XX:ContendedPaddingWidth，默认填充单位为 128 个字节</li>
+</ul>
+<pre><code class="java">@Contended
+class A &#123; // 12个字节
+    private long a = 100L; // 8个字节
+    // 到目前位置该对象的总大小为：12+8=20
+    // 但因为使用了@Contended所以会增加128个字节
+    // 即20+128=148，但148不是8的倍数，因此会再对齐为152，即当前实例最终大小为152个字节
+&#125;
+</code></pre>
+</li>
+</ol>
+<h2 id="CPU与内存模型和JMM对比"><a href="#CPU与内存模型和JMM对比" class="headerlink" title="CPU与内存模型和JMM对比"></a>CPU与内存模型和JMM对比</h2><blockquote>
+<p>CPU与内存模型</p>
+</blockquote>
+<p><img src="/JMM/002.png"></p>
+<blockquote>
+<p>JMM</p>
+</blockquote>
+<p><img src="/JMM/001.png"></p>
+<p>不难看出 JMM 大致与 CPU 和内存模型一致，其对应关系如下：</p>
+<ul>
+<li><p>Java线程 - 处理器</p>
+</li>
+<li><p>工作内存 - 高速缓存</p>
+</li>
+<li><p>内存操作指令 - 缓存一致性协议</p>
+</li>
+</ul>
+<h2 id="JMM中工作内存和主内存是如何交互的？"><a href="#JMM中工作内存和主内存是如何交互的？" class="headerlink" title="JMM中工作内存和主内存是如何交互的？"></a>JMM中工作内存和主内存是如何交互的？</h2><ul>
+<li><p>高速缓存为了解决数据一致性问题需要按照缓存一致性协议来操作数据，而在 JMM 中也提供了相关的协议规则</p>
+</li>
+<li><p>JMM 定义的 8 种原子操作指令</p>
+<ul>
+<li><strong>lock</strong>：将【主存】变量标记为线程独占</li>
+<li><strong>unlock</strong>：解除【主存】变量的线程独占状态</li>
+<li><strong>read</strong>：从【主存】中读取变量到【工作内存】</li>
+<li><strong>load</strong>：将从【主存】 read 得到的值应用到【工作内存】的副本中</li>
+<li><strong>use</strong>：将【工作内存】中的副本值传递给指令执行引擎</li>
+<li><strong>assign</strong>：将指令执行引擎的结果值赋给【工作内存】中的副本</li>
+<li><strong>store</strong>：将【工作内存】的副本值保存到【主内存】</li>
+<li><strong>write</strong>：将从【工作内存】中 store 回来的值应用到【主存】变量中</li>
+</ul>
+</li>
+<li><p>针对上面 8 种原子操作指令 JMM 又附加了额外的规定</p>
+<ul>
+<li>read和load、store和write 都必须按顺序执行，但可不连续</li>
+<li>不允许 read和load、store和write 单独出现。譬如执行了 store 后必须有 write 的出现</li>
+<li>不允许 assign 之后不执行 store和write。即变量值必须回写到主存</li>
+<li>不允许在没有 assign 的情况下将变量值回写到主存。即回写到主存的必须是“脏”数据</li>
+<li>变量必须在主存诞生</li>
+<li>线程对主存变量进行 lock 操作后以及在读取之前必须先将工作内存与之对应的变量副本失效。即进入 synchronized 块前会向将相关的变量失败，以确保从主存中获取变量的最新状态</li>
+<li>线程对主存变量进行 unlock 操作之前，必须先将工作内存的副本的值回写到主存。即退出 synchronized 块前必须将工作内存相关变量刷回主存以保证一致性</li>
+<li>不允许对没有被 lock 的变量进行 unlock 操作，亦不允许 unlock 其他线程的 lock 变量</li>
+</ul>
+</li>
+</ul>
+<h2 id="可见性、原子性、有序性"><a href="#可见性、原子性、有序性" class="headerlink" title="可见性、原子性、有序性"></a>可见性、原子性、有序性</h2><p>可见性</p>
+<ul>
+<li><p>可见性指的是线程对变量的修改操作对于其他线程而言是可见的</p>
+</li>
+<li><p>而想要做到变量的可见性，就必须做到在线程修改完变量后马上将其工作内存中的变量副本回刷到主存中，而且在回写成功后其他线程的工作空间中的变量副本也必须马上失效</p>
+</li>
+<li><p>在 Java 中提供可见性实现的分别有 final、volatile、synchronized</p>
+</li>
+</ul>
+<p>原子性</p>
+<ul>
+<li>原子性指的是将多条代码指令的执行视为不可分割的整体</li>
+<li>在 Java 中提供原子性实现的分别有 synchronized、CAS、CopyOnWrite</li>
+</ul>
+<p>有序性</p>
+<ul>
+<li>有序性指的是程序指令在执行期间会按照语义顺序来执行</li>
+<li>但上面已经提到 CPU 处理器和 JIT 编译器会为了提高执行性能而对代码指令进行指令重排序优化而只能保证结果的顺序，因此从严格意义上来讲程序本身在执行期间是不能保证按照语义顺序来执行的。但是，如果是单线程程序，因为本身没有并发操作的缘故，我们也可以将它“视”为语义顺序执行。而多线程因为存在并发同步的交织操作，所以无法保证其有序性</li>
+<li>在 Java 中提供有序性实现的分别有<ul>
+<li>synchronized：能够保证原子性，即同一时刻只有一条线程指向该代码块，因此可以视为严格的语义顺序执行</li>
+<li>volatile：禁止对变量相关的指令进行重排序优化</li>
+</ul>
+</li>
+</ul>
+<h2 id="volatile的特殊规则"><a href="#volatile的特殊规则" class="headerlink" title="volatile的特殊规则"></a>volatile的特殊规则</h2><p>volatile所修饰的变量有以下2个特点</p>
+<ol>
+<li><p>变量修改对所有线程是可见的（可见性）。线程修改变量后会马上回刷到主存，且在读取变量前会先将工作空间的副本实现以读取主存最新状态的变量值</p>
+</li>
+<li><p>禁止 JNI 编译器和 CPU 处理器对变量相关指令进行重排序优化</p>
+</li>
+</ol>
+<p>volatile 并不能保证原子性</p>
+<ul>
+<li>譬如 a++ 这个操作，本质是 3 个指令操作<ol>
+<li>先读取 a 的值</li>
+<li>进行 a+1 操作</li>
+<li>将结果赋值给a</li>
+</ol>
+</li>
+<li>所以就算 a 被 volatile 修饰保证了可见性，但因为是多项操作，即不能担保在1和2、2和3期间 a 不会被其他线程所修改，因此如果想要实现其原子性，则必须使用同步操作。譬如使用 Atomic 类进行累加、synchronized进行互斥、CAS 等操作实现</li>
+</ul>
+<p>如何禁止变量的指令重排序？</p>
+<ul>
+<li>volatile 禁止指令重排序是通过<code>同步屏障指令</code>实现的，即常听到的内存屏障</li>
+<li>内存屏障可以禁止 CPU 处理器对指令进行重排序，可以做到让指令按照严格顺序执行的效果</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%BF%AB%E5%8F%96%E4%B8%80%E8%87%B4%E6%80%A7">缓存一致性</a></li>
+<li><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%90%8C%E6%AD%A5%E5%B1%8F%E9%9A%9C">同步屏障</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.roguewave.com/threadspotter/2011.2/manual_html_linux/manual_html/ch03s02.html">Cache Lines and Cache Size</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%9F%BA%E4%BA%8EOauth2%E5%BC%80%E6%94%BE%E6%8E%88%E6%9D%83%E5%8D%8F%E8%AE%AE%E5%AE%9E%E7%8E%B0%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%94%E7%94%A8%E6%8E%88%E6%9D%83-%E6%8E%88%E6%9D%83%E7%A0%81%E6%A8%A1%E5%BC%8F%E6%A1%88%E4%BE%8B/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E9%80%9A%E8%BF%87Nginx%E5%AE%9E%E7%8E%B0HTTPS%E8%AE%BF%E9%97%AE/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

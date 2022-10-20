@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      MySQL优化入门 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Jun 20, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      MySQL优化入门
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><ul>
+<li><p>关于优化个人认为是一个比较复杂的环节，不能一概而论</p>
+</li>
+<li><p>数据库优化需要结合实际的使用场景，一步一个脚印地针对出现的问题来解决</p>
+</li>
+<li><p>优化手段有很多，如最基本的<code>SQL优化</code>、<code>表结构优化</code>、<code>数据库服务器软硬件优化</code>等等，如果站在应用层面还可以通过 <code>缓存</code> 、<code>流量削峰</code> 、 <code>请求限流</code> 、<code>资源限流</code>等方案减轻其数据库的访问压力</p>
+</li>
+</ul>
+<h2 id="常用存储引擎区别"><a href="#常用存储引擎区别" class="headerlink" title="常用存储引擎区别"></a>常用存储引擎区别</h2><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/2.png"></p>
+<h2 id="常用数据库优化手段"><a href="#常用数据库优化手段" class="headerlink" title="常用数据库优化手段"></a>常用数据库优化手段</h2><blockquote>
+<p>简介</p>
+</blockquote>
+<ul>
+<li><p>SQL优化</p>
+<ul>
+<li>添加索引</li>
+<li>进行执行计划分析优化</li>
+<li>必要时使用存储过程</li>
+</ul>
+</li>
+<li><p>加入缓存层降低数据库访问压力</p>
+</li>
+<li><p>表优化</p>
+<ul>
+<li>水平拆分</li>
+<li>垂直（纵向）拆分</li>
+<li>分区</li>
+</ul>
+</li>
+<li><p>数据库优化</p>
+<ul>
+<li>水平拆分</li>
+<li>垂直（纵向）拆分</li>
+<li>主从复制</li>
+<li>数据库集群</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>那么什么情况下分表，什么情况下分库呢？</p>
+</blockquote>
+<p>个人理解一般是数据量大考虑分表，负载高就考虑分库。但能不拆就不拆，且能少拆就少拆，因为拆得越多越细会大大提高后期维护成本，所以分库分表其实是没有办法中的办法。</p>
+<h2 id="执行计划"><a href="#执行计划" class="headerlink" title="执行计划"></a>执行计划</h2><h3 id="是什么？"><a href="#是什么？" class="headerlink" title="是什么？"></a>是什么？</h3><p>&amp;emsp;&amp;emsp;执行计划指的是数据层对 SQL 语句的执行方案。例如在连接查询中到底是先执行左表还是先执行右表呢？这都是执行计划的一部分即<strong>执行计划 &#x3D; 执行引擎的处理方法</strong> </p>
+<h3 id="如何看执行计划"><a href="#如何看执行计划" class="headerlink" title="如何看执行计划"></a>如何看执行计划</h3><p>使用 desc 或者 explain 关键字</p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/1.png"></p>
+<p>或添加 \G 以列键值对展示方式</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">desc</span> <span class="keyword">select</span> <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">from</span> book \G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> 行 <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">id           : <span class="number">1</span></span><br><span class="line">select_type  : SIMPLE</span><br><span class="line"><span class="keyword">table</span>        : book</span><br><span class="line">partitions   : <span class="keyword">NULL</span></span><br><span class="line">type         : index</span><br><span class="line">possible_keys: <span class="keyword">NULL</span></span><br><span class="line">key          : <span class="keyword">PRIMARY</span></span><br><span class="line">key_len      : <span class="number">4</span></span><br><span class="line"><span class="keyword">ref</span>          : <span class="keyword">NULL</span></span><br><span class="line"><span class="keyword">rows</span>         : <span class="number">251513</span></span><br><span class="line">filtered     : <span class="number">100.00</span></span><br><span class="line">Extra        : <span class="keyword">Using</span> index</span><br><span class="line"><span class="number">1</span> 行于数据集 (<span class="number">0.02</span> 秒)</span><br></pre></td></tr></table></figure>
+
+<p>explain适用于以下语句：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/explain.html">EXPLAIN</a> works with <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/select.html">SELECT</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/delete.html">DELETE</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/insert.html">INSERT</a>, <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/replace.html">REPLACE</a>, and <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/update.html">UPDATE</a> statements.</li>
+</ul>
+<h3 id="了解执行计划"><a href="#了解执行计划" class="headerlink" title="了解执行计划"></a>了解执行计划</h3><blockquote>
+<p>参考</p>
+</blockquote>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/optimization.html">https://dev.mysql.com/doc/refman/8.0/en/optimization.html</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://yq.aliyun.com/articles/688754">https://yq.aliyun.com/articles/688754</a></p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html">https://dev.mysql.com/doc/refman/8.0/en/explain-output.html</a></p>
+</li>
+</ul>
+<blockquote>
+<p>字段意思</p>
+</blockquote>
+<ul>
+<li><p>id：查询id</p>
+<ul>
+<li>id相同时，由上而下执行</li>
+<li>id不同时，大的先执行</li>
+</ul>
+</li>
+<li><p>select_type：SQL 的查询类型</p>
+</li>
+<li><p>simple：简单查询。不包含如子查询、union等操作</p>
+</li>
+<li><p>primary：子查询的外层查询</p>
+<ul>
+<li>subquery：子查询的内层查询</li>
+<li>union：并集查询</li>
+</ul>
+</li>
+<li><p>derived：子查询中的衍生查询（表示使用了临时表）。例如使用了 in 或 union&#x2F;union all</p>
+</li>
+<li><p>partitions：所匹配到的分区，如果为null表示当前查询为非分区查询</p>
+</li>
+<li><p>table：表名</p>
+</li>
+<li><p>type：常见<strong>索引操作</strong>类型</p>
+<ul>
+<li>system：系统表主查询</li>
+<li>const：使用了 unique 或 primary key 作为查询条件，且只返回了一个结果</li>
+<li>eq_ref：查询的内容是唯一的</li>
+<li><strong>ref：</strong>通过索引查询后没有进行额外的筛选操作</li>
+<li><strong>range：</strong>进行了区间查找</li>
+<li>index：扫描了所有索引</li>
+<li>all：进行了全表扫描</li>
+<li>效率：system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; all。一般优化到 ref、range 就不错了</li>
+</ul>
+</li>
+<li><p>possible_keys：当前查询中可能使用到的索引（预测值，不准确）</p>
+</li>
+<li><p>key：实际使用的索引</p>
+</li>
+<li><p>key_len：索引长度</p>
+<ul>
+<li>可用该值来判断组合索引是否全用上</li>
+<li>计算方式：<ul>
+<li>在 MySQL 中，5.X 开始 varchar 中的值表示字符而不是字节</li>
+<li>例如假设一张 utf8 （一个字符3个字节）的表中 msg char（20）是索引，那么 key_len 就为 3x20&#x3D;60，又因为 msg 可以为 null（规定用1个字节表示），所以从长度为 60+1&#x3D;61</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>rows：查询所扫描的记录数。该值越少越好</p>
+</li>
+<li><p>filtered：在 rows 中被过略掉的数据的百分比值。该值越大越好</p>
+</li>
+<li><p>extra：查询的额外信息</p>
+<ul>
+<li>use index：进行了覆盖索引查询。没有进行回表操作，性能最好</li>
+<li>use index condition：存储引擎对查询的数据进行了优化（索引条件下推，即在存储引擎中筛选了部分数据，通常发生在联合索索引字段上）</li>
+<li>using where：条件查询。如果此时使用了索引，表示存在回表操作</li>
+<li>using temporary：使用了临时表<ul>
+<li>通常是因为使用了索引作为条件进行查询，但没有使用相同索引条件作为分组查询条件所导致的</li>
+<li>以下常见操作默认会使用临时表<ul>
+<li>group by（如果与 order by 一起使用，则尽量保证用相同的列作为条件）</li>
+<li>distinct</li>
+<li>union</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>using join buffer：引擎使用了连接缓存</li>
+<li>using filesort：进行了文件排序（额外排序）<ul>
+<li>通常伴随 order by 出现。原因是使用了索引进行条件查询，但没有使用相同索引条件作为排序条件所导致的</li>
+<li>还有一种特殊情况就是跨列使用组合索引导致的。譬如 where a1.. and a2 order by a4 操作，其中组合索引 （a1,a2,a3,ab），而在这次查询中因为 a2 到 a4 跨了列而导致 a4 失效，但 a4 又了作为了排序条件，所以 a4 相当于不属于当前使用到的组合索引，因为就需要额外的 using filesort 操作（因为索引本身有序，但搜索引擎觉得 a4 是无序的）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>ref：当前表所参照的字段。例如在关联查询中该值为 null，则可能没有使用到索引</p>
+<ul>
+<li>const：表示索引（key）依赖的是一个常量</li>
+<li>fucn：表索引（key）依赖的是一个函数返回的值</li>
+</ul>
+</li>
+</ul>
+<h2 id="水平拆分和垂直拆分"><a href="#水平拆分和垂直拆分" class="headerlink" title="水平拆分和垂直拆分"></a>水平拆分和垂直拆分</h2><h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/7.png"></p>
+<p>出了以上之外，有些数据库还支持表分区的，譬如MySQL。即通过物理拆分将数据存储到不同的物理分区，并利用分区查找提高其检索效率。</p>
+<h3 id="例子-表的水平拆分"><a href="#例子-表的水平拆分" class="headerlink" title="例子 - 表的水平拆分"></a>例子 - 表的水平拆分</h3><h4 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 用户表</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">	u_id <span class="type">int</span> <span class="keyword">primary</span> key auto_increment,</span><br><span class="line">	u_name <span class="type">varchar</span>(<span class="number">10</span>)</span><br><span class="line">) <span class="keyword">DEFAULT</span> charset <span class="operator">=</span> utf8 ; </span><br><span class="line"><span class="comment">-- 插入用户数据</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(u_name) <span class="keyword">values</span>(<span class="string">&#x27;张三&#x27;</span>),(<span class="string">&#x27;李四&#x27;</span>),(<span class="string">&#x27;王五&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 用户订单表</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> uorder(</span><br><span class="line">	o_id <span class="type">int</span> <span class="keyword">primary</span> key auto_increment,</span><br><span class="line">	u_id <span class="type">int</span>,</span><br><span class="line">	o_desc <span class="type">varchar</span>(<span class="number">100</span>)</span><br><span class="line">) <span class="keyword">DEFAULT</span> charset <span class="operator">=</span> utf8 ; </span><br><span class="line"></span><br><span class="line"><span class="comment">-- 批量插入模拟用订单数据</span></span><br><span class="line"><span class="comment">-- userid 用户id</span></span><br><span class="line"><span class="comment">-- produce 订单产品</span></span><br><span class="line"><span class="comment">-- num 插入数量</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">PROCEDURE</span> pro_insert_data(<span class="keyword">IN</span> userid <span class="type">INT</span>,<span class="keyword">IN</span> produce <span class="type">VARCHAR</span>(<span class="number">10</span>), <span class="keyword">IN</span> num <span class="type">INT</span>)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">DECLARE</span> temp <span class="type">INT</span>;</span><br><span class="line">	<span class="keyword">SET</span> temp <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">	REPEAT</span><br><span class="line">		<span class="keyword">insert</span> <span class="keyword">into</span> uorder(u_id, o_desc) <span class="keyword">values</span>(userid, CONCAT(produce,temp));</span><br><span class="line">		<span class="keyword">SET</span> temp <span class="operator">=</span> temp <span class="operator">+</span> <span class="number">1</span>;</span><br><span class="line">	UNTIL temp<span class="operator">&gt;</span>num <span class="keyword">END</span> REPEAT;</span><br><span class="line"><span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 插入订单数据</span></span><br><span class="line"><span class="keyword">call</span> pro_insert_data(<span class="number">1</span>, <span class="string">&#x27;manhua&#x27;</span>, <span class="number">20</span>);</span><br><span class="line"><span class="keyword">call</span> pro_insert_data(<span class="number">2</span>, <span class="string">&#x27;wanju&#x27;</span>, <span class="number">30</span>);</span><br><span class="line"><span class="keyword">call</span> pro_insert_data(<span class="number">3</span>, <span class="string">&#x27;fushi&#x27;</span>, <span class="number">30</span>);</span><br></pre></td></tr></table></figure>
+
+<h4 id="拆分工作"><a href="#拆分工作" class="headerlink" title="拆分工作"></a>拆分工作</h4><p>1）现在打算对 uorder 进行拆分</p>
+<ul>
+<li>因为这张表的关联字段是 u_id，所以需要使用 u_id 作为分拆策略字段</li>
+<li>因为 uorder 表中共有80条记录，所以现在打算将 uorder 拆分成 2 个，即 uorder0、uorder1，其中每张表各存 40 条记录</li>
+<li>分区定位策略为 <strong>hash（u_id）%2</strong> 或 <strong>hash（u_id）&amp;2-1</strong></li>
+</ul>
+<p>2）按照策略将数据转移（可使用程序操作）到分拆表中</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 拆分0表</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> uorder0(</span><br><span class="line">	o_id <span class="type">int</span> <span class="keyword">primary</span> key auto_increment,</span><br><span class="line">	u_id <span class="type">int</span>,</span><br><span class="line">	o_desc <span class="type">varchar</span>(<span class="number">100</span>)</span><br><span class="line">) <span class="keyword">DEFAULT</span> charset <span class="operator">=</span> utf8 ; </span><br><span class="line"></span><br><span class="line"><span class="comment">-- 拆分1表</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> uorder1(</span><br><span class="line">	o_id <span class="type">int</span> <span class="keyword">primary</span> key auto_increment,</span><br><span class="line">	u_id <span class="type">int</span>,</span><br><span class="line">	o_desc <span class="type">varchar</span>(<span class="number">100</span>)</span><br><span class="line">) <span class="keyword">DEFAULT</span> charset <span class="operator">=</span> utf8 ; </span><br></pre></td></tr></table></figure>
+
+<h4 id="使用程序测试查询"><a href="#使用程序测试查询" class="headerlink" title="使用程序测试查询"></a>使用程序测试查询</h4><p>实体</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Entity</span></span><br><span class="line"><span class="meta">@Table(name = &quot;uorder0&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Order0</span> &#123;</span><br><span class="line">    <span class="meta">@Id</span></span><br><span class="line">    <span class="keyword">private</span> Integer oId;</span><br><span class="line">    <span class="meta">@Column(name=&quot;u_id&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> Integer uId;</span><br><span class="line">    <span class="meta">@Column(name=&quot;o_desc&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String oDesc;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Entity</span></span><br><span class="line"><span class="meta">@Table(name = &quot;uorder1&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Order1</span> &#123;</span><br><span class="line">    <span class="meta">@Id</span></span><br><span class="line">    <span class="keyword">private</span> Integer oId;</span><br><span class="line">    <span class="meta">@Column(name=&quot;u_id&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> Integer uId;</span><br><span class="line">    <span class="meta">@Column(name=&quot;o_desc&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String oDesc;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>dao层</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">OrderRepository0</span> <span class="keyword">extends</span> <span class="title class_">JpaRepository</span>&lt;Order0, Integer&gt; &#123;</span><br><span class="line">    List&lt;Order0&gt; <span class="title function_">findByUId</span><span class="params">(<span class="type">int</span> userId)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">OrderRepository1</span> <span class="keyword">extends</span> <span class="title class_">JpaRepository</span>&lt;Order1, Integer&gt; &#123;</span><br><span class="line">    List&lt;Order1&gt; <span class="title function_">findByUId</span><span class="params">(<span class="type">int</span> userId)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>service层</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderService</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> OrderRepository0 repository0;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> OrderRepository1 repository1;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> List&lt;Order0&gt; <span class="title function_">findByUId0</span><span class="params">(<span class="type">int</span> userId)</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> repository0.findByUId(userId);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> List&lt;Order1&gt; <span class="title function_">findByUId1</span><span class="params">(<span class="type">int</span> userId)</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> repository1.findByUId(userId);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>单元测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RunWith(SpringRunner.class)</span></span><br><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DbtestApplicationTests</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> OrderService service;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">      	<span class="comment">// 模拟查找出user的id</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">userId</span> <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line">      	<span class="comment">// 进行取模策略计算</span></span><br><span class="line">      	<span class="type">int</span> <span class="variable">userIdMod</span> <span class="operator">=</span> userId.hashCode() % <span class="number">2</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (userIdMod == <span class="number">0</span>) &#123;</span><br><span class="line">            service.findByUId0(userId).forEach( item -&gt; System.out.println(item));</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (userIdMod == <span class="number">1</span>) &#123;</span><br><span class="line">            service.findByUId1(userId).forEach( item -&gt; System.out.println(item));</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(<span class="string">&quot;处理失败&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>输出</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">Order0(oId=<span class="number">1</span>, uId=<span class="number">2</span>, oDesc=wanju1)</span><br><span class="line">Order0(oId=<span class="number">2</span>, uId=<span class="number">2</span>, oDesc=wanju2)</span><br><span class="line">Order0(oId=<span class="number">3</span>, uId=<span class="number">2</span>, oDesc=wanju3)</span><br><span class="line">Order0(oId=<span class="number">4</span>, uId=<span class="number">2</span>, oDesc=wanju4)</span><br><span class="line">Order0(oId=<span class="number">5</span>, uId=<span class="number">2</span>, oDesc=wanju5)</span><br><span class="line">Order0(oId=<span class="number">6</span>, uId=<span class="number">2</span>, oDesc=wanju6)</span><br><span class="line">Order0(oId=<span class="number">7</span>, uId=<span class="number">2</span>, oDesc=wanju7)</span><br><span class="line">Order0(oId=<span class="number">8</span>, uId=<span class="number">2</span>, oDesc=wanju8)</span><br><span class="line">Order0(oId=<span class="number">9</span>, uId=<span class="number">2</span>, oDesc=wanju9)</span><br><span class="line">Order0(oId=<span class="number">10</span>, uId=<span class="number">2</span>, oDesc=wanju10)</span><br><span class="line">Order0(oId=<span class="number">11</span>, uId=<span class="number">2</span>, oDesc=wanju11)</span><br><span class="line">Order0(oId=<span class="number">12</span>, uId=<span class="number">2</span>, oDesc=wanju12)</span><br><span class="line">Order0(oId=<span class="number">13</span>, uId=<span class="number">2</span>, oDesc=wanju13)</span><br><span class="line">Order0(oId=<span class="number">14</span>, uId=<span class="number">2</span>, oDesc=wanju14)</span><br><span class="line">Order0(oId=<span class="number">15</span>, uId=<span class="number">2</span>, oDesc=wanju15)</span><br><span class="line">Order0(oId=<span class="number">16</span>, uId=<span class="number">2</span>, oDesc=wanju16)</span><br><span class="line">Order0(oId=<span class="number">17</span>, uId=<span class="number">2</span>, oDesc=wanju17)</span><br><span class="line">Order0(oId=<span class="number">18</span>, uId=<span class="number">2</span>, oDesc=wanju18)</span><br><span class="line">Order0(oId=<span class="number">19</span>, uId=<span class="number">2</span>, oDesc=wanju19)</span><br><span class="line">Order0(oId=<span class="number">20</span>, uId=<span class="number">2</span>, oDesc=wanju20)</span><br><span class="line">Order0(oId=<span class="number">21</span>, uId=<span class="number">2</span>, oDesc=wanju21)</span><br><span class="line">Order0(oId=<span class="number">22</span>, uId=<span class="number">2</span>, oDesc=wanju22)</span><br><span class="line">Order0(oId=<span class="number">23</span>, uId=<span class="number">2</span>, oDesc=wanju23)</span><br><span class="line">Order0(oId=<span class="number">24</span>, uId=<span class="number">2</span>, oDesc=wanju24)</span><br><span class="line">Order0(oId=<span class="number">25</span>, uId=<span class="number">2</span>, oDesc=wanju25)</span><br><span class="line">Order0(oId=<span class="number">26</span>, uId=<span class="number">2</span>, oDesc=wanju26)</span><br><span class="line">Order0(oId=<span class="number">27</span>, uId=<span class="number">2</span>, oDesc=wanju27)</span><br><span class="line">Order0(oId=<span class="number">28</span>, uId=<span class="number">2</span>, oDesc=wanju28)</span><br><span class="line">Order0(oId=<span class="number">29</span>, uId=<span class="number">2</span>, oDesc=wanju29)</span><br><span class="line">Order0(oId=<span class="number">30</span>, uId=<span class="number">2</span>, oDesc=wanju30)</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="例子-表分区"><a href="#例子-表分区" class="headerlink" title="例子 - 表分区"></a>例子 - 表分区</h3><h4 id="range分区（常用）"><a href="#range分区（常用）" class="headerlink" title="range分区（常用）"></a>range分区（常用）</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person (</span><br><span class="line">    p_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span>,</span><br><span class="line">    p_name <span class="type">varchar</span>(<span class="number">30</span>),</span><br><span class="line">		store_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">by</span> <span class="keyword">RANGE</span> (store_id) (</span><br><span class="line">	<span class="keyword">PARTITION</span> p0 <span class="keyword">VALUES</span> less than (<span class="number">1000</span>),</span><br><span class="line">	<span class="keyword">PARTITION</span> p1 <span class="keyword">VALUES</span> less than (<span class="number">5000</span>),</span><br><span class="line">	<span class="keyword">PARTITION</span> p2 <span class="keyword">VALUES</span> less than (<span class="number">10000</span>),</span><br><span class="line">	<span class="keyword">PARTITION</span> p3 <span class="keyword">VALUES</span> less than MAXVALUE</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">5</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">2</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">5555</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">3</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">9999</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">4</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">11111</span>);</span><br></pre></td></tr></table></figure>
+
+<p>查看分区信息</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="keyword">WHERE</span> TABLE_NAME <span class="operator">=</span> <span class="string">&#x27;person&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">p0	1</span><br><span class="line">p1	0</span><br><span class="line">p2	2</span><br><span class="line">p3	1</span><br></pre></td></tr></table></figure>
+
+<p>增加分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> person <span class="keyword">ADD</span> <span class="keyword">PARTITION</span> (<span class="keyword">PARTITION</span> p5 <span class="keyword">VALUES</span> LESS THAN (<span class="number">20000</span>)) ;</span><br></pre></td></tr></table></figure>
+
+<p>删除分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> person <span class="keyword">DROP</span> <span class="keyword">PARTITION</span> p5 ;</span><br></pre></td></tr></table></figure>
+
+<p>查看详细情况</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="keyword">WHERE</span> TABLE_NAME <span class="operator">=</span> <span class="string">&#x27;person&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="list分区"><a href="#list分区" class="headerlink" title="list分区"></a>list分区</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person (</span><br><span class="line">    p_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span>,</span><br><span class="line">    p_name <span class="type">varchar</span>(<span class="number">30</span>),</span><br><span class="line">	store_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">by</span> list (store_id) (</span><br><span class="line">	<span class="keyword">PARTITION</span> p0 <span class="keyword">VALUES</span> <span class="keyword">in</span> (<span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span>),</span><br><span class="line">	<span class="keyword">PARTITION</span> p1 <span class="keyword">VALUES</span> <span class="keyword">in</span> (<span class="number">2</span>,<span class="number">4</span>,<span class="number">6</span>,<span class="number">8</span>,<span class="number">10</span>)</span><br><span class="line">) ;</span><br></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">2</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">2</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">4</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">3</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">3</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">4</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">5</span>);</span><br></pre></td></tr></table></figure>
+
+<p>查看数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="keyword">WHERE</span> TABLE_NAME <span class="operator">=</span> <span class="string">&#x27;person&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">p0	2</span><br><span class="line">p1	2</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="hash分区"><a href="#hash分区" class="headerlink" title="hash分区"></a>hash分区</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person (</span><br><span class="line">    p_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span>,</span><br><span class="line">    p_name <span class="type">varchar</span>(<span class="number">30</span>),</span><br><span class="line">	store_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">by</span> HASH (store_id)</span><br><span class="line">PARTITIONS <span class="number">4</span> ;</span><br></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">2</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">2</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">4</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">3</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">3</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">4</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">5</span>);</span><br></pre></td></tr></table></figure>
+
+<p>查看数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="keyword">WHERE</span> TABLE_NAME <span class="operator">=</span> <span class="string">&#x27;person&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">p0	1</span><br><span class="line">p1	1</span><br><span class="line">p2	1</span><br><span class="line">p3	1</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="ksy分区"><a href="#ksy分区" class="headerlink" title="ksy分区"></a>ksy分区</h4><p>定义分区</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person (</span><br><span class="line">    p_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span>,</span><br><span class="line">    p_name <span class="type">varchar</span>(<span class="number">30</span>),</span><br><span class="line">	store_id <span class="type">int</span> <span class="keyword">not</span> <span class="keyword">null</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">by</span> LINEAR KEY (store_id)</span><br><span class="line">PARTITIONS <span class="number">2</span> ; </span><br></pre></td></tr></table></figure>
+
+<p>插入数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">2</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">2</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">4</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">3</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">3</span>);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(p_id, p_name, store_id) <span class="keyword">values</span>(<span class="number">4</span>, <span class="string">&#x27;test&#x27;</span>, <span class="number">5</span>);</span><br></pre></td></tr></table></figure>
+
+<p>查看数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> PARTITION_NAME,TABLE_ROWS <span class="keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS <span class="keyword">WHERE</span> TABLE_NAME <span class="operator">=</span> <span class="string">&#x27;person&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">p0	2</span><br><span class="line">p1	2</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="MySQL复制"><a href="#MySQL复制" class="headerlink" title="MySQL复制"></a>MySQL复制</h2><h3 id="是什么"><a href="#是什么" class="headerlink" title="是什么"></a>是什么</h3><ul>
+<li><p>将一个数据库（主库）上的数据冗余到到另一个数据库（从库）中</p>
+</li>
+<li><p>默认情况下复制操作是异步进行的</p>
+</li>
+<li><p>可根据配置实现有选择性地复制具体的库或表</p>
+</li>
+</ul>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/6.png"></p>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>以一主一从为例</p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/3.png"></p>
+<ol>
+<li>首先从库会创建一条<strong>IO线程</strong>去读取主库的 binlog</li>
+<li>主库在发现从库连接后，会创建一条<strong>复制处理线程</strong>来处理从库的复制请求<ul>
+<li>首先会向本地 binlog 提交从库的信息</li>
+<li>告知从库已经准备好复制工作</li>
+</ul>
+</li>
+<li>从库读取 binlog 并将内容写入中继日志中（复制延迟主要在这里）</li>
+<li>从库启动<strong>SQL线程</strong>将中继日志的内容入读库中</li>
+</ol>
+<h3 id="主从复制配置"><a href="#主从复制配置" class="headerlink" title="主从复制配置"></a>主从复制配置</h3><h4 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h4><ol>
+<li>在主库中开启 binlog</li>
+<li>在主库中创建一个专门用来做复制的用户账号</li>
+<li>设置从库的唯一id（server_id）</li>
+<li>在 slave 中远程备份 master</li>
+<li>在 slave 中恢复 master 备份的数据</li>
+<li>使用<code>show master status</code>查看主库状态</li>
+<li>在 slave 中执行 <code>change master to</code> 命令指向主库</li>
+</ol>
+<h4 id="配置案例"><a href="#配置案例" class="headerlink" title="配置案例"></a>配置案例</h4><p>为了方便，当前例子会在 Docker 容器中进行，使用的是 mysql5.7 镜像</p>
+<p>1）启动 MySQL 容器</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 主库</span></span><br><span class="line">docker run --name mysql57-master --expose 3306 -p 3307:3306 --privileged=<span class="literal">true</span> -v /Users/tandi/DockerMount/mysql57-master/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-master/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从库</span></span><br><span class="line">docker run --name mysql57-slave --expose 3306 -p 3308:3306 --privileged=<span class="literal">true</span> -v /Users/tandi/DockerMount/mysql57-slave/my.cnf:/etc/mysql/my.cnf -v /Users/tandi/DockerMount/mysql57-slave/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d 98455b9624a9</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/4.png"></p>
+<p><img src="/%E5%85%B3%E4%BA%8EMySQL%E4%BC%98%E5%8C%96/5.png"></p>
+<p>2）开启 master 的二进制日志记录</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">[mysqld]</span></span><br><span class="line"><span class="attr">server-id</span> = <span class="string">1</span></span><br><span class="line"><span class="attr">log-bin</span> = <span class="string">mysql-bin-log</span></span><br></pre></td></tr></table></figure>
+
+<p>3）在 master 库中创建复制用户</p>
+<p>进入容器：docker exec -it mysql57-master &#x2F;bin&#x2F;bash</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; grant replication slave on *.* to <span class="string">&#x27;binlog_user&#x27;</span>@<span class="string">&#x27;%&#x27;</span> identified by <span class="string">&#x27;123456&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>4）在master创建测试用数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> database masterdb;</span><br><span class="line">use masterdb;</span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> person(pid <span class="type">int</span>, pname <span class="type">varchar</span>(<span class="number">10</span>)) <span class="keyword">default</span> charset<span class="operator">=</span>utf8;</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> person(pid,pname) <span class="keyword">values</span>(<span class="number">1</span>,<span class="string">&#x27;张三&#x27;</span>),(<span class="number">2</span>,<span class="string">&#x27;李四&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>5）设置 slave 的 server_id</p>
+<p>不能与主库相同</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">[mysqld]</span></span><br><span class="line"><span class="attr">server-id</span> = <span class="string">2</span></span><br><span class="line"><span class="attr">log-bin</span> = <span class="string">mysql-bin-log</span></span><br></pre></td></tr></table></figure>
+
+<p>6）在slave中远程备份master并恢复到本地</p>
+<p>查看 master 容器ip：docker inspect mysql57-master | grep IPAddress</p>
+<p>进入 salve 容器：docker exec -it mysql57-slave &#x2F;bin&#x2F;bash</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 备份master的数据到本地</span></span><br><span class="line">mysqldump -h 172.17.0.2 -u root -p123456 --default-character-set=utf8 masterdb &gt; dump.sql</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建对应的数据库schema</span></span><br><span class="line">mysql -uroot -p123456</span><br><span class="line">mysql&gt; create database masterdb;</span><br><span class="line">mysql&gt; <span class="built_in">exit</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 根据备份文件将数据还原到数据库（从）</span></span><br><span class="line">mysql -u root -p123456 masterdb &lt; dump.sql</span><br></pre></td></tr></table></figure>
+
+<p>7）查看master的状态</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show master status;</span><br><span class="line">+----------------------+----------+--------------+------------------+-------------------+</span><br><span class="line">| File                 | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |</span><br><span class="line">+----------------------+----------+--------------+------------------+-------------------+</span><br><span class="line">| mysql-bin-log.000003 | 2664     |              |                  |                   |</span><br><span class="line">+----------------------+----------+--------------+------------------+-------------------+</span><br></pre></td></tr></table></figure>
+
+<p>8）配置slave</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 配置从属关系</span></span><br><span class="line">mysql&gt; change master to master_host=<span class="string">&#x27;172.17.0.2&#x27;</span>, master_user=<span class="string">&#x27;binlog_user&#x27;</span>, master_password=<span class="string">&#x27;123456&#x27;</span>, master_log_file=<span class="string">&#x27;mysql-bin-log.000003&#x27;</span>, master_log_pos=2664;</span><br><span class="line"><span class="comment"># 意思是复制mysql-bin-log.000003，从2664开始复制</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动从属关系</span></span><br><span class="line">mysql&gt; start slave;</span><br></pre></td></tr></table></figure>
+
+<p>9）查看slave的状态看是否配置成功</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show slave status\G</span><br><span class="line">*************************** 1. 行 ***************************</span><br><span class="line">Slave_IO_State               : Waiting for master to send event</span><br><span class="line">Master_Host                  : 172.17.0.2 </span><br><span class="line">Master_User                  : binlog_user</span><br><span class="line">Master_Port                  : 3306</span><br><span class="line">Connect_Retry                : 60</span><br><span class="line">Master_Log_File              : mysql-bin-log.000003</span><br><span class="line">Read_Master_Log_Pos          : 1881</span><br><span class="line">Relay_Log_File               : 5742231876e9-relay-bin.000002</span><br><span class="line">Relay_Log_Pos                : 606</span><br><span class="line">Relay_Master_Log_File        : mysql-bin-log.000003</span><br><span class="line">Slave_IO_Running             : Yes</span><br><span class="line">Slave_SQL_Running            : Yes</span><br></pre></td></tr></table></figure>
+
+<h4 id="测试主从复制"><a href="#测试主从复制" class="headerlink" title="测试主从复制"></a>测试主从复制</h4><p>1）在 master 中创建一个数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> use masterdb;</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> person(pid, pname) <span class="keyword">values</span>(<span class="number">100</span>, <span class="string">&#x27;测试用户&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>2）到 slave 中查看是否有复制到数据</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> use masterdb;</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> person <span class="keyword">where</span> pid <span class="operator">=</span> <span class="number">100</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">------+--------------+</span></span><br><span class="line"><span class="operator">|</span> pid  <span class="operator">|</span> pname        <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------+--------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">100</span>  <span class="operator">|</span> 测试用户 			<span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------+--------------+</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h4><ul>
+<li>应该先备份 master 数据，如果不进行备份就只能同步到在<code>start slave</code>开始的数据，而不能同步到之前的操作</li>
+<li>从节点在恢复 master 数据之前，应该使用相同的 schema 来创建库和表结构，否则可能会导致同步失败</li>
+<li>同步失败解决参考：<a target="_blank" rel="noopener" href="https://blog.csdn.net/xiaoxinla/article/details/7679578">https://blog.csdn.net/xiaoxinla/article/details/7679578</a></li>
+</ul>
+<h3 id="使用MyCat实现读写分离"><a href="#使用MyCat实现读写分离" class="headerlink" title="使用MyCat实现读写分离"></a>使用MyCat实现读写分离</h3><h4 id="基本概念-1"><a href="#基本概念-1" class="headerlink" title="基本概念"></a>基本概念</h4><p>通过 MyCat 来代理 master 和 slave 两个数据节点。这对于程序而言是无感知的，程序只需要正常执行 sql 操作即可，因为数据库中间件可以屏蔽数据库层的复杂性。</p>
+<h4 id="下载安装"><a href="#下载安装" class="headerlink" title="下载安装"></a>下载安装</h4><p>官网：<a target="_blank" rel="noopener" href="http://www.mycat.io/">http://www.mycat.io/</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget http://dl.mycat.io/1.6.7.1/Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz</span><br><span class="line">tar -zxvf Mycat-server-1.6.7.1-release-20190213150257-mac.tar.gz</span><br></pre></td></tr></table></figure>
+
+<h4 id="模拟环境说明"><a href="#模拟环境说明" class="headerlink" title="模拟环境说明"></a>模拟环境说明</h4><table>
+<thead>
+<tr>
+<th>服务器</th>
+<th>本地机器 ip:port</th>
+<th>docker ip:port</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mysql-master</td>
+<td>127.0.0.1:3307</td>
+<td>172.17.0.2:3306</td>
+</tr>
+<tr>
+<td>mysql-slave</td>
+<td>127.0.0.1:3308</td>
+<td>172.17.0.3:3306</td>
+</tr>
+<tr>
+<td>mycat</td>
+<td>127.0.0.1:8066</td>
+<td></td>
+</tr>
+</tbody></table>
+<h4 id="配置MyCat的读写分离策略"><a href="#配置MyCat的读写分离策略" class="headerlink" title="配置MyCat的读写分离策略"></a>配置MyCat的读写分离策略</h4><p>server.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">mycat</span>:server <span class="keyword">SYSTEM</span> <span class="string">&quot;server.dtd&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">mycat:server</span> <span class="attr">xmlns:mycat</span>=<span class="string">&quot;http://io.mycat/&quot;</span>&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- mycat配置 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">system</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;nonePasswordLogin&quot;</span>&gt;</span>0<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;useHandshakeV10&quot;</span>&gt;</span>1<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;useSqlStat&quot;</span>&gt;</span>0<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;useGlobleTableCheck&quot;</span>&gt;</span>0<span class="tag">&lt;/<span class="name">property</span>&gt;</span> </span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;sequnceHandlerType&quot;</span>&gt;</span>2<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;subqueryRelationshipCheck&quot;</span>&gt;</span>false<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;processorBufferPoolType&quot;</span>&gt;</span>0<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;handleDistributedTransactions&quot;</span>&gt;</span>0<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;useOffHeapForMerge&quot;</span>&gt;</span>1<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;memoryPageSize&quot;</span>&gt;</span>64k<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;spillsFileBufferSize&quot;</span>&gt;</span>1k<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;useStreamOutput&quot;</span>&gt;</span>0<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;systemReserveMemorySize&quot;</span>&gt;</span>384m<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;useZKSwitch&quot;</span>&gt;</span>false<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;strictTxIsolation&quot;</span>&gt;</span>false<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;useZKSwitch&quot;</span>&gt;</span>true<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="comment">&lt;!-- mycat端口 --&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;serverPort&quot;</span>&gt;</span>8066<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">system</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- mycat用户配置 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">user</span> <span class="attr">name</span>=<span class="string">&quot;mroot&quot;</span> <span class="attr">defaultAccount</span>=<span class="string">&quot;true&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>&gt;</span>123456<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;schemas&quot;</span>&gt;</span>mycat_masterdb<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">user</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">user</span> <span class="attr">name</span>=<span class="string">&quot;muser&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>&gt;</span>123456<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;schemas&quot;</span>&gt;</span>mycat_masterdb<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;readOnly&quot;</span>&gt;</span>true<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">user</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">mycat:server</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>schema.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span>?&gt;</span></span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">mycat</span>:schema <span class="keyword">SYSTEM</span> <span class="string">&quot;schema.dtd&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">mycat:schema</span> <span class="attr">xmlns:mycat</span>=<span class="string">&quot;http://io.mycat/&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- mycat schemas --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">schema</span> <span class="attr">name</span>=<span class="string">&quot;mycat_masterdb&quot;</span> <span class="attr">checkSQLschema</span>=<span class="string">&quot;false&quot;</span> <span class="attr">sqlMaxLimit</span>=<span class="string">&quot;100&quot;</span> <span class="attr">dataNode</span>=<span class="string">&quot;dn1&quot;</span> &gt;</span><span class="tag">&lt;/<span class="name">schema</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- mycat datanodes --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">dataNode</span> <span class="attr">name</span>=<span class="string">&quot;dn1&quot;</span> <span class="attr">dataHost</span>=<span class="string">&quot;localhost1&quot;</span> <span class="attr">database</span>=<span class="string">&quot;masterdb&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">&lt;!-- 数据库节点配置 --&gt;</span></span><br><span class="line">	<span class="comment">&lt;!--</span></span><br><span class="line"><span class="comment">		balance:</span></span><br><span class="line"><span class="comment">			0：不用读写分离</span></span><br><span class="line"><span class="comment">			1：读操作发送到当前writeHost下的readHost和备用writHost</span></span><br><span class="line"><span class="comment">			2：writeHost和readHost共同分摊读操作</span></span><br><span class="line"><span class="comment">			3：所有读操作都发送给writeHost下的readHost，比较合适与一主多从</span></span><br><span class="line"><span class="comment">	--&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">dataHost</span> <span class="attr">name</span>=<span class="string">&quot;localhost1&quot;</span> <span class="attr">maxCon</span>=<span class="string">&quot;1000&quot;</span> <span class="attr">minCon</span>=<span class="string">&quot;3&quot;</span> <span class="attr">balance</span>=<span class="string">&quot;1&quot;</span> <span class="attr">writeType</span>=<span class="string">&quot;0&quot;</span> <span class="attr">dbType</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbDriver</span>=<span class="string">&quot;native&quot;</span> <span class="attr">switchType</span>=<span class="string">&quot;2&quot;</span>  <span class="attr">slaveThreshold</span>=<span class="string">&quot;100&quot;</span>&gt;</span></span><br><span class="line">		</span><br><span class="line">		<span class="comment">&lt;!-- 心跳测试 --&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">heartbeat</span>&gt;</span>show slave status<span class="tag">&lt;/<span class="name">heartbeat</span>&gt;</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">&lt;!-- 写库（master） --&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">writeHost</span> <span class="attr">host</span>=<span class="string">&quot;mysql57-master&quot;</span> <span class="attr">url</span>=<span class="string">&quot;localhost:3307&quot;</span> <span class="attr">user</span>=<span class="string">&quot;root&quot;</span> <span class="attr">password</span>=<span class="string">&quot;123456&quot;</span> &gt;</span></span><br><span class="line">			<span class="comment">&lt;!-- 读库（slave） --&gt;</span></span><br><span class="line">			<span class="tag">&lt;<span class="name">readHost</span> <span class="attr">host</span>=<span class="string">&quot;mysql57-slave&quot;</span> <span class="attr">url</span>=<span class="string">&quot;localhost:3308&quot;</span> <span class="attr">user</span>=<span class="string">&quot;root&quot;</span> <span class="attr">password</span>=<span class="string">&quot;123456&quot;</span> /&gt;</span></span><br><span class="line">		<span class="tag">&lt;/<span class="name">writeHost</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">dataHost</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">mycat:schema</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="启动MyCat"><a href="#启动MyCat" class="headerlink" title="启动MyCat"></a>启动MyCat</h4><blockquote>
+<p>.&#x2F;bin&#x2F;mycat stop 停止</p>
+<p>.&#x2F;bin&#x2F;mycat restart 重启</p>
+<p>.&#x2F;bin&#x2F;mycat console 打印日志</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/mycat start</span><br></pre></td></tr></table></figure>
+
+<h4 id="代码测试"><a href="#代码测试" class="headerlink" title="代码测试"></a>代码测试</h4><p><strong>JpaTrasactionConfig</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableJpaRepositories(basePackages = &quot;com.td.dbtest.jpa&quot;, enableDefaultTransactions = false)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JpaTransactionConfig</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Jpa默认的事务管理对读操作添加了readOnly=true事务</span></span><br><span class="line"><span class="comment">     * 而MyCat只要是处于事务的sql都会走write库，所以需要修改参数 enableDefaultTransactions = false</span></span><br><span class="line"><span class="comment">     * 除此之外，还可以在sql前添加 /*balance*\/ 来解决</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>service</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PersonService</span> &#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> PersonRepository repository;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Transactional(propagation = Propagation.NOT_SUPPORTED)</span></span><br><span class="line">    <span class="keyword">public</span> List&lt;Person&gt; <span class="title function_">findAll</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> repository.findAll();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Transactional</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">save</span><span class="params">(Person person)</span> &#123;</span><br><span class="line">        repository.save(person);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>配置</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring.datasource.driver-class-name</span>=<span class="string">com.mysql.jdbc.Driver</span></span><br><span class="line"><span class="attr">spring.datasource.url</span>=<span class="string">jdbc:mysql://localhost:8066/mycat_masterdb?useSSL=false</span></span><br><span class="line"><span class="attr">spring.datasource.username</span>=<span class="string">mroot</span></span><br><span class="line"><span class="attr">spring.datasource.password</span>=<span class="string">123456</span></span><br><span class="line"><span class="attr">spring.jpa.hibernate.ddl-auto</span>=<span class="string">update</span></span><br><span class="line"><span class="attr">spring.jpa.show-sql</span>=<span class="string">true</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>测试</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RunWith(SpringRunner.class)</span></span><br><span class="line"><span class="meta">@SpringBootTest</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DbtestApplicationTests</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> PersonService service;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">findTest</span><span class="params">()</span> &#123;</span><br><span class="line">        service.findAll().forEach( item -&gt; System.out.println(item) );</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">saveTest</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>();</span><br><span class="line">        person.setPId(<span class="number">10001</span>);</span><br><span class="line">        person.setPName(<span class="string">&quot;batman&quot;</span>);</span><br><span class="line">        service.save(person);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="拓展"><a href="#拓展" class="headerlink" title="拓展"></a>拓展</h2><ul>
+<li>默认情况下 MySQL 的最大 max_connections 为 100，所以可以在配置文件中添加 max_connections&#x3D;600 来提高其并发连接数</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/mysql%E6%97%A5%E5%BF%97/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%9F%BA%E4%BA%8EOauth2%E5%BC%80%E6%94%BE%E6%8E%88%E6%9D%83%E5%8D%8F%E8%AE%AE%E5%AE%9E%E7%8E%B0%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%94%E7%94%A8%E6%8E%88%E6%9D%83-%E6%8E%88%E6%9D%83%E7%A0%81%E6%A8%A1%E5%BC%8F%E6%A1%88%E4%BE%8B/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

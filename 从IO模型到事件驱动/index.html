@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      从IO模型到事件驱动 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Oct 12, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      从IO模型到事件驱动
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><h2 id="闲聊"><a href="#闲聊" class="headerlink" title="闲聊"></a>闲聊</h2><p>前段时间阅读了部分 Netty 4 的源码，但当时并没有趁热打铁地将理解过程记录下来，以至于现在忘得七七八八。起初阅读 Netty 源码的原因是想知道它为什么高效，因为在 <code>Spring Web Flux</code> 和 <code>Spring Cloud Gateway</code> 中都看到了它的身影。虽然自己以前在公司项目中使用过 Netty 来实现功能，但是我个人很清楚，会用和懂其实是两种截然不同的境界。通常会用技术的人很多但真正懂技术的人却是少数，所以学习技术应该尽量做到知其然而知其所以然，亦只有这样才能在众多同行中增大自己的核心竞争力。</p>
+<p>除此之外，个人对学习技术也有一定的看法。譬如我认为技术都是万变不离其宗的，所以学习技术应该要抓住根本。例如 Java 生态中开源技术繁多，所以我们不太可能将它们每一个都弄得透彻，但它们的根本是相同的，即都是 <code>JavaSE</code>、<code>设计模式</code>、<code>数据结构</code>的堆砌。所以接下来本文并不是要聊 Netty，而是 Netty 的本质，即<code>IO模型</code>和<code>事件驱动</code>。</p>
+<p>在类 Unix 系统中 IO 模型分别有<code>阻塞IO</code>、<code>非阻塞IO</code>、<code>复用IO</code>、<code>信号驱动IO</code>、<code>异步IO</code> 5 种，它们各有各的特点，没有好坏之分。而谈到事件驱动的话，如果没有记错第一次接触到这个词是很久以前我学习 Node.js 时看到的，因为 Node.js 的三大特性之一就是事件驱动。当时其实很好奇，主要是想知道事件是如何产生及何时被回调函数处理的，但这个疑问一直等到看了 Netty 源码后才变得明朗。例如在 Netty 中采用的是 Reactor 模式实现的事件驱动处理（Node.js、Readis、Nginx、Memcache 等也是），而除了 Reactor 之外还可以通过 Proactor 来实现，两者的区别在于前者是 <code>复用IO</code> 后者是 <code>异步IO</code>，但目前 Linux 对异步 IO 模型支持较差，所以 Java 的 AIO 其实也是采用复用 IO 来实现的。</p>
+<h2 id="IO的5种模型"><a href="#IO的5种模型" class="headerlink" title="IO的5种模型"></a>IO的5种模型</h2><p>有关Linux的系统调用，可参考 syscalls.h</p>
+<h3 id="同步阻塞IO"><a href="#同步阻塞IO" class="headerlink" title="同步阻塞IO"></a>同步阻塞IO</h3><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/001.png"></p>
+<p>2）特点</p>
+<ul>
+<li>IO 操作全程阻塞</li>
+<li>在低并发 IO 密集型场景，阻塞可有效减少不必要的用户态内核态切换，所以能够一定程度地提高人物线程的处理效率</li>
+<li>过程中用户程序只需进行一次系统调用</li>
+<li>为了解决用户程序处理阻塞问题，需要为每个套接字分配独立的一条处理线程</li>
+<li>不适合高并发场景，例如如下：<ul>
+<li>阻塞会导致吞吐量下降</li>
+<li>多线程会导致大量 CPU 上下文切换从而导致线程处理能力下降，效率不佳</li>
+</ul>
+</li>
+</ul>
+<p>3）阻塞IO例子：Java BIO</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainTest</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">port</span> <span class="operator">=</span> <span class="number">8888</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="comment">// 多线程实现伪异步，解决同步处理阻塞问题</span></span><br><span class="line">    <span class="type">ExecutorService</span> <span class="variable">service</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">10</span>);</span><br><span class="line">    <span class="type">ServerSocket</span> <span class="variable">serverSocket</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServerSocket</span>(port);</span><br><span class="line">    System.out.println(<span class="string">&quot;服务端开启监听端口：&quot;</span> + port);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">      <span class="comment">// 接收客户端连接</span></span><br><span class="line">      <span class="type">Socket</span> <span class="variable">socket</span> <span class="operator">=</span> serverSocket.accept();</span><br><span class="line">      <span class="comment">// 处理客户端请求</span></span><br><span class="line">      service.submit(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">InputStreamReader</span>(socket.getInputStream()));</span><br><span class="line">          String content;</span><br><span class="line">          <span class="keyword">while</span> ((content = reader.readLine()) != <span class="literal">null</span>) &#123;</span><br><span class="line">            System.out.println(socket.getInetAddress().getHostAddress() + <span class="string">&quot;-客户端：&quot;</span> + content);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">          e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="同步非阻塞IO"><a href="#同步非阻塞IO" class="headerlink" title="同步非阻塞IO"></a>同步非阻塞IO</h3><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/002.png"></p>
+<p>2）特点</p>
+<ul>
+<li>IO操作无需阻塞</li>
+<li>用户程序需要主动轮询来判断是否有就绪文件描述符</li>
+<li>过程中用户程序需要 n 次系统调用</li>
+<li>不适合高并发场景，例如如下：<ul>
+<li>用户程序需要主动轮询，高并发场景会导致 CPU 使用率极速上升而导致程序卡顿</li>
+<li>因为无法逃避主动轮询，所以和阻塞IO一样需要为每个套接字分配独立的一条处理线程</li>
+</ul>
+</li>
+<li>虽然 IO 操作无需阻塞，但优势并不明显，个人认为甚至有些鸡肋，所以很少见会有程序直接使用非阻塞 IO 模型</li>
+</ul>
+<h3 id="复用IO"><a href="#复用IO" class="headerlink" title="复用IO"></a>复用IO</h3><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/003.png"></p>
+<p>2）特点</p>
+<ul>
+<li>可以将复用 IO 理解为非阻塞 IO 的升级版</li>
+<li>复用 IO 相当于将非阻塞 IO 的主动轮询操作迁移到了内核中进行，这样大大减少了系统调用带来的消耗</li>
+<li>IO 操作一般情况下只会在 Selector 多路复用器上发生短暂的阻塞</li>
+<li>过程中用户程序需要 2 次系统调用</li>
+<li>多路复用器可以用 select&#x2F;poll&#x2F;epoll&#x2F;kqueue 等方案实现，而在 Linux 中 epoll 效率最佳，所以一般只要提到复用 IO 的话基本上都是采用 epoll 实现的</li>
+<li>适合高并发场景，理由如下：<ul>
+<li>IO 操作阻塞短暂</li>
+<li>一条线程可以同时处理多个用户请求（负责注册感兴趣事件），大大降低了 CPU 资源竞争消耗</li>
+</ul>
+</li>
+</ul>
+<p>3）复用 IO 例子：Java NIO</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainTest</span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="comment">// 多线程，模拟单Reactor多线程事件驱动模型</span></span><br><span class="line">    <span class="type">ExecutorService</span> <span class="variable">service</span> <span class="operator">=</span> Executors.newFixedThreadPool(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">    <span class="type">ServerSocketChannel</span> <span class="variable">server</span> <span class="operator">=</span> ServerSocketChannel.open();</span><br><span class="line">    server.socket().bind(<span class="keyword">new</span> <span class="title class_">InetSocketAddress</span>(<span class="number">8888</span>));</span><br><span class="line">    server.configureBlocking(<span class="literal">false</span>); <span class="comment">// 非阻塞模式</span></span><br><span class="line">    <span class="type">Selector</span> <span class="variable">selector</span> <span class="operator">=</span> Selector.open(); <span class="comment">// 监听器（epoll）</span></span><br><span class="line">    server.register(selector, SelectionKey.OP_ACCEPT); <span class="comment">// 注册感兴趣事件</span></span><br><span class="line">    System.out.println(<span class="string">&quot;服务端开启监听端口：&quot;</span> + server.socket().getLocalPort());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line"></span><br><span class="line">      selector.select(<span class="number">1000</span>); <span class="comment">// timeout - epoll_wait</span></span><br><span class="line">      Iterator&lt;SelectionKey&gt; iterator = selector.selectedKeys().iterator(); <span class="comment">// 就绪事件</span></span><br><span class="line"></span><br><span class="line">      <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">        <span class="type">SelectionKey</span> <span class="variable">key</span> <span class="operator">=</span> iterator.next();</span><br><span class="line">        iterator.remove(); <span class="comment">// 表示及时处理</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!key.isValid()) <span class="keyword">return</span>; <span class="comment">// 无效事件</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 连接事件</span></span><br><span class="line">        <span class="keyword">if</span> (key.isAcceptable()) &#123;</span><br><span class="line">          <span class="type">ServerSocketChannel</span> <span class="variable">channel</span> <span class="operator">=</span> (ServerSocketChannel)key.channel();</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">SocketChannel</span> <span class="variable">socket</span> <span class="operator">=</span> channel.accept();</span><br><span class="line">            socket.configureBlocking(<span class="literal">false</span>);</span><br><span class="line">            socket.register(selector, SelectionKey.OP_READ);</span><br><span class="line">          &#125; <span class="keyword">catch</span> (Exception e) &#123;&#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 读事件</span></span><br><span class="line">        <span class="keyword">if</span> (key.isReadable()) &#123;</span><br><span class="line">          service.submit(() -&gt; &#123; <span class="comment">// 异步操作</span></span><br><span class="line">            <span class="type">SocketChannel</span> <span class="variable">socket</span> <span class="operator">=</span> (SocketChannel)key.channel();</span><br><span class="line">            <span class="type">ByteBuffer</span> <span class="variable">buffer</span> <span class="operator">=</span> ByteBuffer.allocate(<span class="number">1024</span>);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> socket.read(buffer); <span class="comment">// 系统调用</span></span><br><span class="line">              <span class="keyword">if</span> (len &gt; <span class="number">0</span>) &#123; <span class="comment">// 只处理大于0的情况（不处理异常 和 EOF）</span></span><br><span class="line">                buffer.flip(); <span class="comment">// 将指针归0</span></span><br><span class="line">                <span class="type">byte</span>[] buff = <span class="keyword">new</span> <span class="title class_">byte</span>[buffer.remaining()];</span><br><span class="line">                buffer.get(buff); <span class="comment">// 将内容保存到buff</span></span><br><span class="line">                System.out.println(socket.getLocalAddress() + <span class="string">&quot;-客户端：&quot;</span> +</span><br><span class="line">                                   <span class="keyword">new</span> <span class="title class_">String</span>(buff).replace(<span class="string">&quot;\r\n&quot;</span>, <span class="string">&quot;&quot;</span>));</span><br><span class="line">              &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;&#125;</span><br><span class="line">          &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Selector 多路复用器实现（内核版本：linux-5.4.81）</p>
+<p>1）select 函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 文件位置：/usr/include/bits/typesizes.h</span></span><br><span class="line"><span class="comment">// 之所以默认为1024（以进程为单位）是因为内核开发者认为已经足够了，虽然你可以增大该值，但增大该值也不会提高处理性能，因为select会随着文件描述符数增多则性能下降，其时间复杂度为O(n)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> __FD_SETSIZE            1024</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 文件位置：/usr/include/sys/select.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="type">long</span> <span class="type">int</span> __fd_mask; <span class="comment">// </span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];</span><br><span class="line">    __fd_mask __fds_bits[__FD_SETSIZE / __NFDBITS];</span><br><span class="line">&#125; fd_set;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 文件位置：fs/select.c</span></span><br><span class="line"><span class="comment">// 过程：由内核先轮询感兴趣的事件集，有就绪文件描述符、超时、收到信号就返回</span></span><br><span class="line"><span class="comment">// 参数1：当前监听的最大文件描述符</span></span><br><span class="line"><span class="comment">// 参数2：感兴趣的可读文件描述符集合（数组）</span></span><br><span class="line"><span class="comment">// 参数3：感兴趣的可写文件描述符集合（数组）</span></span><br><span class="line"><span class="comment">// 参数4：感兴趣的异常文件描述符集合（数组）</span></span><br><span class="line"><span class="comment">// 参数5：等待超时时间</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">kern_select</span><span class="params">(<span class="type">int</span> n, fd_set __user *inp, fd_set __user *outp,</span></span><br><span class="line"><span class="params">		       fd_set __user *<span class="built_in">exp</span>, <span class="keyword">struct</span> timeval __user *tvp)</span> &#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">    <span class="type">int</span> ret;</span><br><span class="line">	<span class="comment">// 返回就绪文件描述符数量</span></span><br><span class="line">    <span class="comment">// core_sys_select -&gt; do_select</span></span><br><span class="line">	ret = core_sys_select(n, inp, outp, <span class="built_in">exp</span>, to);</span><br><span class="line">    <span class="comment">// 存在就绪文件描述符时返回大于0的值，超时返回0，异常返回-1</span></span><br><span class="line">	<span class="keyword">return</span> poll_select_finish(&amp;end_time, tvp, PT_TIMEVAL, ret);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>无状态，因为 fd_set 只有一个字段用来记录关注和就绪的事件，所以每次调用都会导致 fd_set 初始化，即相当于每次调用 select 都需要将感兴趣的文件描述符内容重新拷贝到内核</li>
+<li>正常情况下，只要<strong>有就绪的文件描述</strong>符或 <strong>select 超时</strong>就会<strong>返回就绪文件描述符数量</strong>，但返回后需要再轮询集合找出具体的文件描述符，所以随着文件描述符（连接数）增多而效率会降低</li>
+<li>因为随着文件描述符（连接数）增多而会导致效率下降，所以通常单条进程 select 时的最大感兴趣文件描述符数量会受到限制，一般为 2014（FD_SETSIZE），可以执行 <code>ulimit -n</code> 查看。所以 select 在并发能力上是存在局限性的</li>
+</ul>
+<p>2）poll 函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 位置：poll.h</span></span><br><span class="line"><span class="comment">// 特别注意，poll其实和select差不多，但它用单向链表解决了文件描述符数量上的限制</span></span><br><span class="line"><span class="comment">// 且感兴趣文件描述符集合和就绪描述符集合由两个不同的变量存储，而select只用一个fd_set（long数组）</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">pollfd</span> &#123;</span></span><br><span class="line">	<span class="type">int</span> fd; <span class="comment">// 文件描述符</span></span><br><span class="line">	<span class="type">short</span> events; <span class="comment">// 感兴趣文件描述符集合</span></span><br><span class="line">	<span class="type">short</span> revents; <span class="comment">// 就绪描述符集合</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 单向链表</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">poll_list</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">poll_list</span> *<span class="title">next</span>;</span></span><br><span class="line">	<span class="type">int</span> len;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">pollfd</span> <span class="title">entries</span>[0];</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 文件位置：fs/select.c</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">do_poll</span><span class="params">(<span class="keyword">struct</span> poll_list *<span class="built_in">list</span>, <span class="keyword">struct</span> poll_wqueues *wait,</span></span><br><span class="line"><span class="params">		   <span class="keyword">struct</span> timespec64 *end_time)</span> &#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	<span class="keyword">for</span> (;;) &#123;</span><br><span class="line">		<span class="comment">//...</span></span><br><span class="line">		<span class="keyword">for</span> (walk = <span class="built_in">list</span>; walk != <span class="literal">NULL</span>; walk = walk-&gt;next) &#123;</span><br><span class="line">			<span class="comment">//...</span></span><br><span class="line">			<span class="keyword">for</span> (; pfd != pfd_end; pfd++) &#123;</span><br><span class="line">				<span class="keyword">if</span> (do_pollfd(pfd, pt, &amp;can_busy_loop,busy_flag)) &#123;</span><br><span class="line">					count++;</span><br><span class="line">					<span class="comment">//...</span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">//...</span></span><br><span class="line">		<span class="keyword">if</span> (count || timed_out)</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		<span class="comment">//...</span></span><br><span class="line">	&#125;</span><br><span class="line">    <span class="comment">// 存在就绪文件描述符时返回大于0的值，超时返回0，异常返回-1</span></span><br><span class="line">	<span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>和 select 相比，仍然是无状态，因为在每次系统调用时还是需要将所有感兴趣的文件描述符重新拷贝到内核，但 poll 还是相对于 select 有所优化的， 譬如使用链表代替了数组来解决单进程文件描述符数量限制问题，以及将感兴趣和就绪集合分开从而避免了不必要的初始化操作</li>
+<li>返回的依然是就绪文件描述符的数量，所以还是需要重新轮询集合得到具体的文件描述符，即时间复杂度和 select 一样是 O(n)</li>
+</ul>
+<p>3）epoll 函数</p>
+<p>epoll 和 select、poll 不一样，它其实有三个函数：epoll_create、epoll_ctl、epoll_wait，而且 epoll 内部是基于事件驱动的。</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/006.png"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 文件位置: fs/eventpoll.c</span></span><br><span class="line"><span class="comment">// 文件描述符结构</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">eventpoll</span> &#123;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// epoll操作的等待队列</span></span><br><span class="line">	<span class="type">wait_queue_head_t</span> wq;</span><br><span class="line">	<span class="type">wait_queue_head_t</span> poll_wait;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 就绪的文件描述符</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">rdllist</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 红黑树（根节点）数据结构</span></span><br><span class="line">	<span class="comment">// 用于有状态的缓存感兴趣的文件描述符</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rb_root_cached</span> <span class="title">rbr</span>;</span></span><br><span class="line">    </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">mutex</span> <span class="title">mtx</span>;</span></span><br><span class="line">	<span class="type">rwlock_t</span> lock;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">epitem</span> *<span class="title">ovflist</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">wakeup_source</span> *<span class="title">ws</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">user_struct</span> *<span class="title">user</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">file</span> *<span class="title">file</span>;</span></span><br><span class="line">	u64 gen;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> CONFIG_NET_RX_BUSY_POLL</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">int</span> napi_id;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// epoll_create操作</span></span><br><span class="line"><span class="comment">// 初始化内存数据结构</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">do_epoll_create</span><span class="params">(<span class="type">int</span> flags)</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="type">int</span> error, fd;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">eventpoll</span> *<span class="title">ep</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">file</span> *<span class="title">file</span>;</span></span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 在内存中创建eventpoll数据结构</span></span><br><span class="line">	error = ep_alloc(&amp;ep);</span><br><span class="line">	<span class="keyword">if</span> (error &lt; <span class="number">0</span>)</span><br><span class="line">		<span class="keyword">return</span> error;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	<span class="keyword">return</span> error;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// epoll_ctl操作</span></span><br><span class="line"><span class="comment">// 用于对epoll内存数据结构进行，新增节点、修改节点、更新节点</span></span><br><span class="line">SYSCALL_DEFINE4(epoll_ctl, <span class="type">int</span>, epfd, <span class="type">int</span>, op, <span class="type">int</span>, fd,</span><br><span class="line">		<span class="keyword">struct</span> epoll_event __user *, event) &#123;</span><br><span class="line">	<span class="type">int</span> error;</span><br><span class="line">	<span class="type">int</span> full_check = <span class="number">0</span>;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">fd</span> <span class="title">f</span>, <span class="title">tf</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">eventpoll</span> *<span class="title">ep</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">epitem</span> *<span class="title">epi</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> <span class="title">epds</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">eventpoll</span> *<span class="title">tep</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">	error = -EFAULT;</span><br><span class="line">	<span class="comment">// 将用户空间感兴趣的epoll时间拷贝到内核态中</span></span><br><span class="line">	<span class="keyword">if</span> (ep_op_has_event(op) &amp;&amp;</span><br><span class="line">	    copy_from_user(&amp;epds, event, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> epoll_event)))</span><br><span class="line">		<span class="keyword">goto</span> error_return;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 增、删、改</span></span><br><span class="line">	error = -EINVAL;</span><br><span class="line">	<span class="keyword">switch</span> (op) &#123;</span><br><span class="line">	<span class="keyword">case</span> EPOLL_CTL_ADD:</span><br><span class="line">		<span class="keyword">if</span> (!epi) &#123;</span><br><span class="line">			epds.events |= EPOLLERR | EPOLLHUP;</span><br><span class="line">			error = ep_insert(ep, &amp;epds, tf.file, fd, full_check);</span><br><span class="line">		&#125; <span class="keyword">else</span></span><br><span class="line">			error = -EEXIST;</span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	<span class="keyword">case</span> EPOLL_CTL_DEL:</span><br><span class="line">		<span class="keyword">if</span> (epi)</span><br><span class="line">			error = ep_remove(ep, epi);</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">			error = -ENOENT;</span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	<span class="keyword">case</span> EPOLL_CTL_MOD:</span><br><span class="line">		<span class="keyword">if</span> (epi) &#123;</span><br><span class="line">			<span class="keyword">if</span> (!(epi-&gt;event.events &amp; EPOLLEXCLUSIVE)) &#123;</span><br><span class="line">				epds.events |= EPOLLERR | EPOLLHUP;</span><br><span class="line">				error = ep_modify(ep, epi, &amp;epds);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; <span class="keyword">else</span></span><br><span class="line">			error = -ENOENT;</span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	<span class="keyword">return</span> error;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// epoll_wait操作</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">ep_poll</span><span class="params">(<span class="keyword">struct</span> eventpoll *ep, <span class="keyword">struct</span> epoll_event __user *events,</span></span><br><span class="line"><span class="params">		   <span class="type">int</span> maxevents, <span class="type">long</span> timeout)</span> &#123;</span><br><span class="line">	<span class="type">int</span> res = <span class="number">0</span>, eavail, timed_out = <span class="number">0</span>;</span><br><span class="line">	u64 slack = <span class="number">0</span>;</span><br><span class="line">	<span class="type">wait_queue_entry_t</span> wait;</span><br><span class="line">	<span class="type">ktime_t</span> expires, *to = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (timeout &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">timespec64</span> <span class="title">end_time</span> =</span> ep_set_mstimeout(timeout);</span><br><span class="line">		slack = select_estimate_accuracy(&amp;end_time);</span><br><span class="line">		to = &amp;expires;</span><br><span class="line">		*to = timespec64_to_ktime(end_time);</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 已经超时，直接返回</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (timeout == <span class="number">0</span>) &#123;</span><br><span class="line">		timed_out = <span class="number">1</span>;</span><br><span class="line">		write_lock_irq(&amp;ep-&gt;lock);</span><br><span class="line">		eavail = ep_events_available(ep);</span><br><span class="line">		write_unlock_irq(&amp;ep-&gt;lock);</span><br><span class="line">		<span class="comment">// 发布事件</span></span><br><span class="line">		<span class="keyword">goto</span> send_events;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">fetch_events:</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 判断是否有就绪的事件</span></span><br><span class="line">	<span class="comment">// 注意，这里并不需要真正去轮询双向链表（rdllist），而只需要判断链头标记即可</span></span><br><span class="line">	<span class="keyword">if</span> (!ep_events_available(ep))</span><br><span class="line">		ep_busy_loop(ep, timed_out); </span><br><span class="line"></span><br><span class="line">	<span class="comment">// 如果存在可用的就绪事件，则发布事件</span></span><br><span class="line">	eavail = ep_events_available(ep);</span><br><span class="line">	<span class="keyword">if</span> (eavail)</span><br><span class="line">		<span class="keyword">goto</span> send_events;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 进入队列等待直至超时</span></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="comment">// 进入等待队列</span></span><br><span class="line">        init_wait(&amp;wait);</span><br><span class="line">        write_lock_irq(&amp;ep-&gt;lock);</span><br><span class="line">        __add_wait_queue_exclusive(&amp;ep-&gt;wq, &amp;wait);</span><br><span class="line">        write_unlock_irq(&amp;ep-&gt;lock);</span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">        <span class="comment">// 等待出来再查看一下有没有就绪事件</span></span><br><span class="line">        eavail = ep_events_available(ep);</span><br><span class="line">        <span class="keyword">if</span> (eavail)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">    &#125; <span class="keyword">while</span> (<span class="number">0</span>);</span><br><span class="line">    </span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 判断就绪双向链表是否为空</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">int</span> <span class="title function_">ep_events_available</span><span class="params">(<span class="keyword">struct</span> eventpoll *ep)</span>&#123;</span><br><span class="line">	<span class="keyword">return</span> !list_empty_careful(&amp;ep-&gt;rdllist) ||</span><br><span class="line">		READ_ONCE(ep-&gt;ovflist) != EP_UNACTIVE_PTR;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 发布epoll事件</span></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> <span class="title function_">send_events</span><span class="params">(<span class="keyword">struct</span> ldc_channel *lp, <span class="type">unsigned</span> <span class="type">int</span> event_mask)</span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (event_mask &amp; LDC_EVENT_RESET)</span><br><span class="line">		lp-&gt;cfg.event(lp-&gt;event_arg, LDC_EVENT_RESET);</span><br><span class="line">	<span class="keyword">if</span> (event_mask &amp; LDC_EVENT_UP)</span><br><span class="line">		lp-&gt;cfg.event(lp-&gt;event_arg, LDC_EVENT_UP);</span><br><span class="line">	<span class="keyword">if</span> (event_mask &amp; LDC_EVENT_DATA_READY) <span class="comment">// 存在就绪数据</span></span><br><span class="line">		lp-&gt;cfg.event(lp-&gt;event_arg, LDC_EVENT_DATA_READY);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>无最大文件描述符数量限制</li>
+<li>存在状态，内部维护着<strong>一颗红黑树</strong>和<strong>双向链表</strong>，所以用户线程无需多次拷贝感兴趣的文件描述符</li>
+<li>epoll 将用户程序感兴趣的文件描述符注册在红黑树上，当有就绪的文件描述符时内核会通过事件驱动方式将其添加到双向链表（rdllist）中，即当执行 epoll_wait 时就只需要从 rdllist 中获取就绪文件描述符即可，而无需遍历整个红黑树</li>
+<li>epoll 整个过程是通过事件驱动的方式来完成的，即当有就绪的文件描述符时内核会自动回调 ep_poll_callback 方法将就绪的文件描述符添加到双向链表（rdllist）中并唤醒等待的内核线程，所以避免了繁重的轮询操作，大大降低了系统的开销</li>
+<li>epoll 的时间复杂度为 O(1)，从上面的源码可以得出结论就是 epoll 不会随着并发连接数的增多而降低效率，因为它是基事件驱动的，而且没有轮询操作</li>
+</ul>
+<p>4）关于 select、poll、epoll、kqueue 性能对比</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/009.png"></p>
+<h3 id="信号驱动IO"><a href="#信号驱动IO" class="headerlink" title="信号驱动IO"></a>信号驱动IO</h3><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/007.png"></p>
+<p>2）特点</p>
+<ul>
+<li>读取数据时需要先往注册一个信号处理器，当存在就绪 fd 时内核就会发出信号来通知处理</li>
+<li>过程中用户程序需要 2 次系统调用</li>
+<li>读取数据时是非阻塞的，且无需主动轮询，因此一定程度地降低 CPU 资源消耗</li>
+<li>注意，该模型一般只在 UDP 协议场景下应用，例如监听数据报到来或是异常通知等一些简单需要。而在 TCP 协议场景基本没人用，原因有以下两个：<ul>
+<li>响应信号过于太频率，因此对处理能力要求较高</li>
+<li>响应信号不能表示出具体的事件（Linux支持的信号有限），所以并发信号时无法辨识事件</li>
+</ul>
+</li>
+</ul>
+<h3 id="异步IO"><a href="#异步IO" class="headerlink" title="异步IO"></a>异步IO</h3><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/008.png"></p>
+<p>2）特点</p>
+<ul>
+<li>IO 操作无需阻塞，亦无需主动轮询</li>
+<li>过程中用户程序只需发起一次系统调用</li>
+<li>适合高并发高吞吐量场景</li>
+<li>注意：<ul>
+<li>异步 IO 是需要系统内核支持的。例如 Windows 上的 IOCP（Input&#x2F;Output Completion Port）才是真正的异步 IO，而目前 Linux 上暂时还不能真正实现的异步 IO，所以在 Java 的 AIO 中实质用的是 epoll （可参考 LinuxAsynchronousChannelProvider 类）</li>
+<li>与此同时我们也不能忽视 Linux 在 AIO 方面作出的努力。譬如在 Linux 5.1 这个内核版本中就发布了一套全新的异步操作API <code>io_uring</code>，所以 Linux 完善异步 IO 我们就拭目而待吧</li>
+</ul>
+</li>
+</ul>
+<p>3）异步 IO 例子：Java AIO</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainTest</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">port</span> <span class="operator">=</span> <span class="number">8888</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 多线程处理</span></span><br><span class="line">    <span class="type">AsynchronousChannelGroup</span> <span class="variable">channelGroup</span> <span class="operator">=</span> AsynchronousChannelGroup.withFixedThreadPool(<span class="number">10</span>, Executors.defaultThreadFactory());</span><br><span class="line">    <span class="type">AsynchronousServerSocketChannel</span> <span class="variable">server</span> <span class="operator">=</span> AsynchronousServerSocketChannel.open(channelGroup);</span><br><span class="line">    server.bind(<span class="keyword">new</span> <span class="title class_">InetSocketAddress</span>(port));</span><br><span class="line">    System.out.println(<span class="string">&quot;服务端开启监听端口：&quot;</span> + port);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 注册连接事件回调处理</span></span><br><span class="line">    server.accept(server, <span class="keyword">new</span> <span class="title class_">CompletionHandler</span>&lt;AsynchronousSocketChannel, AsynchronousServerSocketChannel&gt;() &#123;</span><br><span class="line"></span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">completed</span><span class="params">(AsynchronousSocketChannel result, AsynchronousServerSocketChannel attachment)</span> &#123;</span><br><span class="line">        <span class="comment">// 继续在当前 ServerSocket 上注册连接事件回调处理 -----</span></span><br><span class="line">        attachment.accept(attachment, <span class="built_in">this</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 处理当前连接 -----</span></span><br><span class="line">        <span class="type">AsynchronousSocketChannel</span> <span class="variable">socket</span> <span class="operator">=</span> result;</span><br><span class="line">        <span class="type">ByteBuffer</span> <span class="variable">buffer</span> <span class="operator">=</span> ByteBuffer.allocate(<span class="number">1024</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 注册读事件回调处理</span></span><br><span class="line">        socket.read(buffer, buffer, <span class="keyword">new</span> <span class="title class_">CompletionHandler</span>&lt;Integer, ByteBuffer&gt;() &#123;</span><br><span class="line">          <span class="meta">@Override</span></span><br><span class="line">          <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">completed</span><span class="params">(Integer result, ByteBuffer attachment)</span> &#123; <span class="comment">// 正常处理</span></span><br><span class="line">            <span class="comment">// 继续在当前socket上注册读事件回调处理  -----</span></span><br><span class="line">            socket.read(attachment, attachment, <span class="built_in">this</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (result &lt; <span class="number">0</span>) <span class="keyword">return</span>; <span class="comment">// 只处理大于0的情况（不处理异常 和 EOF）</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">// 处理当前读事件 -----</span></span><br><span class="line">            <span class="type">byte</span>[] buff = <span class="keyword">new</span> <span class="title class_">byte</span>[result];</span><br><span class="line">            attachment.flip(); <span class="comment">// 将指针归0</span></span><br><span class="line">            attachment.get(buff);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="type">String</span> <span class="variable">str</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">String</span>(buff);</span><br><span class="line">              <span class="keyword">if</span> (!Pattern.compile(<span class="string">&quot;\r\n&quot;</span>).matcher(str).find()) <span class="comment">// 不处理\r\n</span></span><br><span class="line">                System.out.println(socket.getLocalAddress() + <span class="string">&quot;-客户端：&quot;</span> + str);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;&#125;</span><br><span class="line"></span><br><span class="line">            attachment.clear(); <span class="comment">// 清空 buffer 以复用</span></span><br><span class="line">          &#125;</span><br><span class="line"></span><br><span class="line">          <span class="meta">@Override</span></span><br><span class="line">          <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">failed</span><span class="params">(Throwable exc, ByteBuffer attachment)</span> &#123; <span class="comment">// 异常处理</span></span><br><span class="line">            exc.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">failed</span><span class="params">(Throwable exc, AsynchronousServerSocketChannel attachment)</span> &#123; <span class="comment">// 异常处理</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          attachment.close();</span><br><span class="line">          exc.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    LockSupport.park(); <span class="comment">// 因为是异步操作，所以要阻塞主线程</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="事件驱动"><a href="#事件驱动" class="headerlink" title="事件驱动"></a>事件驱动</h2><h3 id="Reactor"><a href="#Reactor" class="headerlink" title="Reactor"></a>Reactor</h3><h4 id="单Reactor单线程模式"><a href="#单Reactor单线程模式" class="headerlink" title="单Reactor单线程模式"></a>单Reactor单线程模式</h4><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/010.png"></p>
+<p>2）角色</p>
+<ul>
+<li>selector：复用 IO 模型中的多路复用器，对应着 select&#x2F;poll&#x2F;epoll&#x2F;kqueue 。主要负责接收用户感兴趣的事件</li>
+<li>dispatch：属于 Reactor 职责，用于在 selector 返回非 accept 就绪事件后将其分派给 Handler 处理</li>
+<li>Acceptor：accept 事件处理器，以及负责其它事件Handler的创建工作</li>
+<li>Handler：事件处理器</li>
+</ul>
+<p>3）例子说明：日志服务程序</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/011.png"></p>
+<ol>
+<li>程序启动时，先向 Reactor 注册一个 Acceptor 处理器用于处理就绪的 accpet 事件</li>
+<li>Reactor 将对应的 Acceptor 处理器感兴趣的事件（accept）注册到 Selector 多路复用器中</li>
+<li>当有客户端连接到来时，Selector 多路复用器会返回 accept 事件的 key 给 Reactor，表示存在就绪事件让Reactor 进行分配处理</li>
+<li>Reactor 按照 key 的类型将其分派给对应的 Handler 。当前是 accept 事件所以会分派给 Acceptor 来处理</li>
+<li>Acceptor 接收到分派任务之后就会处理 accept 事件</li>
+<li>当 Acceptor 处理完 accept 事件后就会为后续的操作作准备，例如创建其它类型的 Handler 来监听和处理各种事件，譬如 read 和 write。</li>
+<li>Handler 被 Acceptor 创建后需要注册到 Reactor 上，除此之外和上面的 Acceptor 一样还需要注册相应感兴趣的事件。譬如 ReadHandler 就注册 read 事件，WriteHandler 就注册 write 事件。</li>
+</ol>
+<p>4）模式最佳实践以及优缺点</p>
+<ul>
+<li>Redis 采用的就是单 Reactor 单线 (6.x.x 版本前)</li>
+<li>优点1：单线程不存在资源竞争，所以这是线程的处理能力是最高的</li>
+<li>优点2：实现起来简单</li>
+<li>缺点1：单线程无法充分发挥多核心 CPU 的性能</li>
+<li>缺点2：单线程在执行 Handler 时无法处理其它事件，所以 Handler 执行时间较长时就会很容易导致系统出现瓶颈。也因为这个缘故所以 Redis 是不建议使用诸如 keys 这样较为耗时的命令来操作的。</li>
+<li>总的来说，单Reactor单线只适合请求处理迅速的场景</li>
+</ul>
+<h4 id="单Reactor多线程模式"><a href="#单Reactor多线程模式" class="headerlink" title="单Reactor多线程模式"></a>单Reactor多线程模式</h4><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/012.png"></p>
+<p>2）差异</p>
+<p>在当前模式中 Handler 位于 Reactor 线程，但它只负责接收事件，而真正的任务处理会交给其它线程来完成。例如可以创建一个单独的 Worker 线程池来处理。</p>
+<p>3）模式最佳实践以及优缺点</p>
+<ul>
+<li>Redis 6.x 版本开始支持多线程处理网络IO，而开启该功能后 Redis 就数据单Reactor多线程模型</li>
+<li>优点1：从 Reactor 线程中抽离了最为耗时的读写事件处理操作，大大地提高程序的任务处理能力</li>
+<li>优点2：引入了多线程处理，可以充分发挥多核 CPU 性能</li>
+<li>缺点1：多线程操作引入资源同步以及 CPU 资源竞争激烈等问题</li>
+<li>缺点2：因为 Reactor 依然是单线程，所以大量客户端发起 accept 操作时亦可能会出现瓶颈（当然这量要很大）</li>
+</ul>
+<h4 id="多Reactor多线程（主从Reactor）"><a href="#多Reactor多线程（主从Reactor）" class="headerlink" title="多Reactor多线程（主从Reactor）"></a>多Reactor多线程（主从Reactor）</h4><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/013.png"></p>
+<p>2）差异</p>
+<p>Reactor 引入了多线程，将 accept 和 非accept 两种事件进行了更细的拆分。</p>
+<p>主 Reactor 线程负责 accept 事件，而从 Reactor 则负责非accept 事件。</p>
+<p>每个 Reactor 线程都有自己的 Selector 。</p>
+<p>3）模式最佳实践以及优缺点</p>
+<ul>
+<li>Memcache 以及 Nginx(Worker进程) 都采用了主从 Reactor 模式<ul>
+<li>在 Nginx 中该模型叫 Run-Loop 而不叫 Reactor，但只是名字有别而已</li>
+<li>要注意的是 Nginx 使用的是多进程而不是线程。虽然多线程模型能够节省资源，但缺点是位于同一个进程内，线程之间能够访问同一地址空间，彼此容易互相影响，譬如虚拟内存发生缺页中断则有可能影响所有的线程。Nginx 使用多进程加异步操作处理网络请求，这种高可用高可靠的服务器需求</li>
+</ul>
+</li>
+<li>优点1：Reactor 通过多线程对职责进行了进一步的划分，这样领到模式的整体结构更加清晰以及实现起来比单Reactor多线程更加容易</li>
+<li>优点2：父子 Reactor 线程交互简单，且每个线程都有独自的 Selector ，所以处理非同步资源时性能要比前两种都好</li>
+<li>缺点：多线程会导致 CPU 资源竞争激烈，因此线程并不是越多越好。</li>
+<li>若果你不知道如何设置线程数的话可以<code>参考</code>以下原则<ul>
+<li>CPU密集型：大量操作落在 CPU 和 内存 上，意味着 CPU 资源竞争激烈，这样会容易导致 CPU 使用率急速上升从而导致系统瓶颈，甚至会出现卡顿。这时线程数应该尽量少一些，例如<code>CPU核心数 + 1</code></li>
+<li>IO密集型：大量操作落在  IO 上，因为 IO 存在阻塞现象（异步IO除外），所以线程可能会被短暂阻塞，这样可以起到缓解 CPU 资源竞争带来的压力。这时线程数可以稍微高一些，例如<code>CPU核心数x2+1</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="Proactor"><a href="#Proactor" class="headerlink" title="Proactor"></a>Proactor</h3><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/014.png"></p>
+<p>2）角色</p>
+<ul>
+<li>Proactor Initiator：Proactor 引导程序</li>
+<li>Acceptor：accept 事件处理器</li>
+<li>Handler：非 accept 事件处理器</li>
+<li>Asynchronous Operation Processor：内核异步操作处理</li>
+<li>Proactor：异步IO事件分派器</li>
+</ul>
+<p>3）模式最佳实践和优缺点</p>
+<ul>
+<li>ACE Proactor （由 Windows IOCP实现）</li>
+<li>在 Linux 中所谓的 AIO 操作是由 GNU libc 库函数在用户空间借由 pthread 方式实现的，而且仅仅针对磁盘类 I&#x2F;O，套接字 I&#x2F;O 不支持</li>
+</ul>
+<h2 id="Netty事件驱动浅析"><a href="#Netty事件驱动浅析" class="headerlink" title="Netty事件驱动浅析"></a>Netty事件驱动浅析</h2><h3 id="请求处理流程"><a href="#请求处理流程" class="headerlink" title="请求处理流程"></a>请求处理流程</h3><p>1）图解</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/015.png"></p>
+<p>2）启动说明</p>
+<ol>
+<li>Main 线程的使命是负责创建第一条 BossEventLoop 线程，然后再创建 NioServerSocketChannel 并注册到该 EventLoop 的 Selector 上</li>
+<li>EventLoop 执行 run 方法（上图的 EventLoop 轮询），并完成注册 Channel 的 TaskQueue 任务<ol>
+<li>将 Channel 注册到当前 EventLoop 的 Selector 中</li>
+<li>创建 Acceptor（Handler） 事件回调处理器</li>
+<li>绑定 NioServerSocketChannel 的监听地址，开始监听事件</li>
+<li>回调管道（DefaultChannelPipeline）中处理器的 ChannelActive 方法正式</li>
+</ol>
+</li>
+</ol>
+<h3 id="主从Reactor源码浅析"><a href="#主从Reactor源码浅析" class="headerlink" title="主从Reactor源码浅析"></a>主从Reactor源码浅析</h3><p>1）实例代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainTest</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">port</span> <span class="operator">=</span> <span class="number">8888</span>;</span><br><span class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="type">NioEventLoopGroup</span> <span class="variable">bossGroup</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>();</span><br><span class="line">    <span class="type">NioEventLoopGroup</span> <span class="variable">workerGroup</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>();</span><br><span class="line">    <span class="type">ServerBootstrap</span> <span class="variable">serverBootstrap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServerBootstrap</span>();</span><br><span class="line">    serverBootstrap</span><br><span class="line">      .group(bossGroup, workerGroup)</span><br><span class="line">      .channel(NioServerSocketChannel.class)</span><br><span class="line">      .childHandler(<span class="keyword">new</span> <span class="title class_">ChannelInitializer</span>&lt;SocketChannel&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">initChannel</span><span class="params">(SocketChannel ch)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">          <span class="type">ChannelPipeline</span> <span class="variable">pipeline</span> <span class="operator">=</span> ch.pipeline();</span><br><span class="line">          pipeline</span><br><span class="line">            .addLast(<span class="keyword">new</span> <span class="title class_">StringDecoder</span>()) <span class="comment">// 将字节流解码为String</span></span><br><span class="line">            .addLast(<span class="keyword">new</span> <span class="title class_">SimpleChannelInboundHandler</span>&lt;String&gt;() &#123;</span><br><span class="line">              <span class="meta">@Override</span></span><br><span class="line">              <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">channelRead0</span><span class="params">(ChannelHandlerContext ctx, String msg)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;当前处理线程：&quot;</span> + Thread.currentThread().getName());</span><br><span class="line">                System.out.println(ctx.channel().remoteAddress() + <span class="string">&quot;客户端：&quot;</span> + msg.replace(<span class="string">&quot;\r\n&quot;</span>, <span class="string">&quot;&quot;</span>));</span><br><span class="line">              &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;)</span><br><span class="line">      .option(ChannelOption.SO_BACKLOG, <span class="number">128</span>)</span><br><span class="line">      .childOption(ChannelOption.SO_KEEPALIVE, <span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">    System.out.println(<span class="string">&quot;服务端开启监听端口：&quot;</span> + port);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 同步操作</span></span><br><span class="line">    <span class="type">ChannelFuture</span> <span class="variable">future</span> <span class="operator">=</span> serverBootstrap</span><br><span class="line">      .bind(port) <span class="comment">// 调试断点位置 ------------</span></span><br><span class="line">      .sync();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 当关闭后会得到通知</span></span><br><span class="line">    future.channel().closeFuture().sync();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2）启动过程</p>
+<p>执行 ServerBootstrap 的 bind 方法</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/016.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/017.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/018.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/019.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/021.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/022.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/023.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/024.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/025.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/026.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/027.png"></p>
+<p>回调执行的第1个任务：</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/023.png"></p>
+<p>回调执行的第2个任务：</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/028.png"></p>
+<p>回调执行的第3个任务：</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/029.png"></p>
+<p>回调执行的第4个任务：</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/030.png"></p>
+<p>至此 Netty 的主从Reactor 初始化完成，主 Reactor 会阻塞在 Selector 上等待就绪事件到来。</p>
+<p>3）accept evetn 处理过程</p>
+<p>使用 telnet 模拟客户端请求</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/031.png"></p>
+<p>请求到来，主 Reactor 被 Selector 唤醒</p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/032.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/033.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/034.png"></p>
+<p><img src="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/035.png"></p>
+<p>处理完 accept event 后，主从 Reactor 都会阻塞在 Selector 上等待就绪事件到来。主 Reactor 阻塞等待 accept event，从 Reactor 阻塞等待非 accept event。</p>
+<p>4）非 accept event 处理过程</p>
+<p>因为非 accept event 处理是由 NioSocketChannel 来完成的，因此如果有非 accept event 就绪的话从 Reactor 就会从 Selector 唤醒，而处理过程和主 Reactor 处理 accept event 一样，不同的只是处理器而已（非 accept event 会交给 ChannelPipeline 来完成）</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>《Unix网络编程》</li>
+<li>《LINUX系统编程》</li>
+<li>《操作系统概念》</li>
+<li><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Epoll">epoll</a></li>
+<li><a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/cpjslides/nio.pdf">Scalable IO in Java - Doug Lea</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.laputan.org/pub/sag/proactor.pdf">Proactor</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E4%BD%BF%E7%94%A8%E9%98%BF%E9%87%8C%E4%BA%91%E6%8F%90%E4%BE%9B%E7%9A%84%E5%85%AC%E7%BD%91ip%E5%92%8Cfrp%E5%B7%A5%E5%85%B7%E5%AF%B9%E5%86%85%E7%BD%91%E8%AE%BE%E5%A4%87%E8%BF%9B%E8%A1%8C%E7%A9%BF%E9%80%8F%E8%AE%BF%E9%97%AE/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

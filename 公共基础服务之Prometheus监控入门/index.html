@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      公共基础服务之Prometheus监控入门 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Feb 21, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      公共基础服务之Prometheus监控入门
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="应用的监控方式有那些？"><a href="#应用的监控方式有那些？" class="headerlink" title="应用的监控方式有那些？"></a>应用的监控方式有那些？</h2><p>Logging：系统日志，最常用的监控手段，特点是结构化、离散、文本形式</p>
+<p>Tracing：请求链追踪，监控微服务架构下请求在多个节点之间的调用流程</p>
+<p>Metrics：度量&#x2F;指标，即单位时间内应用系统的指标，支持聚合运算、图形展示</p>
+<p>Healthchecks：健康检查，专门用于检查应用功能是否可用（健康）的endpoint</p>
+<h2 id="简单了解一下时间序列数据库"><a href="#简单了解一下时间序列数据库" class="headerlink" title="简单了解一下时间序列数据库"></a>简单了解一下时间序列数据库</h2><ul>
+<li>时间序列数据，通俗点说就是某个时间点所产生的数据</li>
+<li>时间序列数据库指的就是用于保存一系列有序的时间点指标数据的数据库</li>
+<li>比较流行的时间序列数据库有如<code>InfluxDB</code>、RRDtool、Kdb+、<code>Prometheus</code></li>
+</ul>
+<h2 id="关于Prometheus"><a href="#关于Prometheus" class="headerlink" title="关于Prometheus"></a>关于Prometheus</h2><ul>
+<li>一款开源监控(Metrics)工具，本质是 golang 实现的一款时间序列数据库（TSDB）</li>
+<li>支持多维度监控（标签，既即使Metrics一样但标签不同的话也是不同的时间序列数据）和Metrics的拉模式</li>
+<li>支持告警功能</li>
+<li>社区活跃，有各种的exporters（相当与agent，作用是无需修改被监控系统的情况下获取起Metrics信息）</li>
+<li>单机性能优异，每秒可消费百万级别的时间序列和上千的targets（监控目标）</li>
+</ul>
+<h2 id="Prometheus架构"><a href="#Prometheus架构" class="headerlink" title="Prometheus架构"></a>Prometheus架构</h2><blockquote>
+<p>以下为官网给出的架构图</p>
+</blockquote>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/001.png"></p>
+<p>从架构图中可以简单了解到如下内容：</p>
+<ul>
+<li>支持 pull 形式获取 metrics 数据，如拉取 exporters、pushgateway</li>
+<li>除了支持将监控目标配置到本地之外还支持服务发现的形式来动态获取监控目标。如（DNS、Consul、K8s）</li>
+<li>支持当某个指标到得设定阀值时将告警信息推送给Alertmanager（主要作用是将告警信息分类去重以及转发到特定的目标，如email、钉钉）</li>
+<li>支持使用 PromQL 来查询 Prometheus 所监控的系统应用的指标</li>
+<li>支持不同的UI界面，如自带的 Prometheus web UI 还有比较流行的 Grafana 并支持 API 形式获取监控指标</li>
+<li>通过 TSDB 将时间序列数据持久化到磁盘上</li>
+</ul>
+<h2 id="Prometheus支持的Metrics种类"><a href="#Prometheus支持的Metrics种类" class="headerlink" title="Prometheus支持的Metrics种类"></a>Prometheus支持的Metrics种类</h2><ul>
+<li><strong>Counter(计数器)：</strong><ul>
+<li>始终增加</li>
+<li>http请求数、浏览数等等</li>
+</ul>
+</li>
+<li><strong>Gauge(测量仪)</strong><ul>
+<li>当前值的一个快照测量，可增加可减少</li>
+<li>磁盘使用率、用户在线人数</li>
+</ul>
+</li>
+<li><strong>Histogram(直方图&#x2F;柱状图)</strong><ul>
+<li>通过分桶（bucket）方式统计样本</li>
+<li>分析数据分布情况</li>
+</ul>
+</li>
+<li><strong>Summary(汇总统计)</strong><ul>
+<li>根据样本统计出百分比</li>
+<li>分析数据分布情况</li>
+</ul>
+</li>
+</ul>
+<h2 id="关于metrics和metrics采集方式"><a href="#关于metrics和metrics采集方式" class="headerlink" title="关于metrics和metrics采集方式"></a>关于metrics和metrics采集方式</h2><p><strong>1）metrics说明</strong></p>
+<p>以prometheus的 <code>/metrics</code>下的一个metrics为例子</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">prometheus_http_request_duration_seconds_bucket&#123;handler=&quot;/&quot;,le=&quot;0.1&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>prometheus_http_request_duration_seconds_bucket</p>
+<ul>
+<li>metrics名称</li>
+</ul>
+<p>{handler&#x3D;”&#x2F;“,le&#x3D;”0.1”}：</p>
+<ul>
+<li>其中handler和le在prometheus称之为标签（维度）</li>
+</ul>
+<p><strong>2）metrics采集方式</strong></p>
+<p>prometheus支持两种pull方式：</p>
+<ul>
+<li>直接采集：如SpringBoot中的Actuator或prometheus模块可以直接提供metrics的采集endpoint</li>
+<li>间接采集：如MySQL一样已经成型的产品，可以通过对用的exporters来进行简介采集</li>
+</ul>
+<h2 id="Prometheus搭建"><a href="#Prometheus搭建" class="headerlink" title="Prometheus搭建"></a>Prometheus搭建</h2><p>官网下载地址：<a target="_blank" rel="noopener" href="https://prometheus.io/download/">https://prometheus.io/download/</a>，解压如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">➜  prometheus-2.12.0-rc.0.linux-amd64 ll</span><br><span class="line">总用量 130M</span><br><span class="line">drwxr-xr-x 2 tandi tandi 4.0K  8月 15 03:36 console_libraries</span><br><span class="line">drwxr-xr-x 2 tandi tandi 4.0K  8月 15 03:36 consoles</span><br><span class="line">drwxr-xr-x 5 tandi tandi 4.0K  8月 18 15:00 data</span><br><span class="line">-rw-r--r-- 1 tandi tandi  12K  8月 15 03:36 LICENSE</span><br><span class="line">-rw-r--r-- 1 tandi tandi 2.8K  8月 15 03:36 NOTICE</span><br><span class="line">-rwxr-xr-x 1 tandi tandi  81M  8月 15 01:44 prometheus</span><br><span class="line">-rw-r--r-- 1 tandi tandi 1.2K  8月 18 12:55 prometheus.yml</span><br><span class="line">-rwxr-xr-x 1 tandi tandi  49M  8月 15 01:46 promtool</span><br></pre></td></tr></table></figure>
+
+<p>prometheus.yml配置文件</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 全局参数配置</span></span><br><span class="line"><span class="attr">global:</span></span><br><span class="line">  <span class="comment"># 需要注意的是，如果刷新和统计频率过于频繁会对当前机器造成性能问题</span></span><br><span class="line">  <span class="attr">scrape_interval:</span> <span class="string">15s</span> <span class="comment"># 刷新频率</span></span><br><span class="line">  <span class="attr">evaluation_interval:</span> <span class="string">15s</span> <span class="comment"># 统计频率</span></span><br><span class="line">  </span><br><span class="line"><span class="comment"># 告警配置</span></span><br><span class="line"><span class="comment"># Alertmanager configuration</span></span><br><span class="line"><span class="attr">alerting:</span></span><br><span class="line">  <span class="attr">alertmanagers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">static_configs:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">targets:</span></span><br><span class="line">      <span class="comment"># - alertmanager:9093</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 监控规则</span></span><br><span class="line"><span class="comment"># Load rules once and periodically evaluate them according to the global &#x27;evaluation_interval&#x27;.</span></span><br><span class="line"><span class="attr">rule_files:</span></span><br><span class="line">  <span class="comment"># - &quot;first_rules.yml&quot;</span></span><br><span class="line">  <span class="comment"># - &quot;second_rules.yml&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 监控目标配置</span></span><br><span class="line"><span class="attr">scrape_configs:</span></span><br><span class="line">  <span class="comment"># The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">&#x27;prometheus&#x27;</span></span><br><span class="line">  	<span class="comment"># 默认访问目标uri&#x27;/metrics&#x27;</span></span><br><span class="line">    <span class="comment"># metrics_path defaults to &#x27;/metrics&#x27;</span></span><br><span class="line">    <span class="comment"># 默认使用协议 &#x27;http&#x27;</span></span><br><span class="line">    <span class="comment"># scheme defaults to &#x27;http&#x27;.</span></span><br><span class="line">    <span class="attr">static_configs:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">targets:</span> [<span class="string">&#x27;localhost:9090&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<p>启动prometheus，访问 localhost:9090</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./prometheus</span><br></pre></td></tr></table></figure>
+
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/002.png"></p>
+<h2 id="监控例子-MySQL监控"><a href="#监控例子-MySQL监控" class="headerlink" title="监控例子 - MySQL监控"></a>监控例子 - MySQL监控</h2><p>&amp;emsp;&amp;emsp;在上面已经提到过，Prometheus 支持两种 metrics 采集方式：直接采集、间接采集。因为 MySQL 是一个成型的产品，所以这里采用间接采集 metrics，即需要使用 exporter。</p>
+<p>MySQL 的 exporter 下载地址：<a target="_blank" rel="noopener" href="https://github.com/prometheus/mysqld_exporter/releases">https://github.com/prometheus/mysqld_exporter&#x2F;releases</a></p>
+<p><strong>1）解压如下：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➜  mysqld_exporter-0.12.1.linux-amd64 ll</span><br><span class="line">总用量 15M</span><br><span class="line">-rw-r--r-- 1 tandi tandi 12K  7月 29 20:47 LICENSE</span><br><span class="line">-rwxr-xr-x 1 tandi tandi 15M  7月 29 20:36 mysqld_exporter</span><br><span class="line">-rw-r--r-- 1 tandi tandi  65  7月 29 20:47 NOTICE</span><br></pre></td></tr></table></figure>
+
+<p><strong>2）在 mysqld_exporter 根目录添加用于访问MySQL的配置文件</strong></p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">[client]</span></span><br><span class="line"><span class="comment"># mysql所在ip</span></span><br><span class="line"><span class="attr">host</span>=<span class="string">0.0.0.0</span></span><br><span class="line"><span class="comment"># mysql用户密码</span></span><br><span class="line"><span class="attr">user</span>=<span class="string">root </span></span><br><span class="line"><span class="attr">password</span>=<span class="string">123456</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>3）启动exporter</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  mysqld_exporter-0.12.1.linux-amd64 ./mysqld_exporter --config.my-cnf=<span class="string">&quot;my.cnf&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>启动成功后会输出如下信息</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">INFO[0000] Starting mysqld_exporter (version=0.12.1, branch=HEAD, revision=48667bf7c3b438b5e93b259f3d17b70a7c9aff96)  <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:257&quot;</span></span><br><span class="line">INFO[0000] Build context (go=go1.12.7, user=root@0b3e56a7bc0a, <span class="built_in">date</span>=20190729-12:35:58)  <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:258&quot;</span></span><br><span class="line">INFO[0000] Enabled scrapers:                             <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:269&quot;</span></span><br><span class="line">INFO[0000]  --collect.global_status                      <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:273&quot;</span></span><br><span class="line">INFO[0000]  --collect.global_variables                   <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:273&quot;</span></span><br><span class="line">INFO[0000]  --collect.slave_status                       <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:273&quot;</span></span><br><span class="line">INFO[0000]  --collect.info_schema.innodb_cmp             <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:273&quot;</span></span><br><span class="line">INFO[0000]  --collect.info_schema.innodb_cmpmem          <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:273&quot;</span></span><br><span class="line">INFO[0000]  --collect.info_schema.query_response_time    <span class="built_in">source</span>=<span class="string">&quot;mysqld_exporter.go:273&quot;</span></span><br><span class="line">INFO[0000] Listening on :9104        </span><br></pre></td></tr></table></figure>
+
+<p><strong>4）在prometheus配置文件中将mysqld_exporter配置为监控目标</strong></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 监控目标配置</span></span><br><span class="line"><span class="attr">scrape_configs:</span></span><br><span class="line">  <span class="comment"># The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">&#x27;prometheus&#x27;</span></span><br><span class="line">  	<span class="comment"># 默认访问目标uri&#x27;/metrics&#x27;</span></span><br><span class="line">    <span class="comment"># metrics_path defaults to &#x27;/metrics&#x27;</span></span><br><span class="line">    <span class="comment"># 默认使用协议 &#x27;http&#x27;</span></span><br><span class="line">    <span class="comment"># scheme defaults to &#x27;http&#x27;.</span></span><br><span class="line">    <span class="attr">static_configs:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">targets:</span> [<span class="string">&#x27;localhost:9090&#x27;</span>]</span><br><span class="line">    </span><br><span class="line">  <span class="comment"># ########################  MySQL监控 ########################</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">&#x27;mysql&#x27;</span></span><br><span class="line">    <span class="comment"># scrape_interval: 5s</span></span><br><span class="line">    <span class="attr">static_configs:</span></span><br><span class="line">    <span class="comment"># 9104是Exporter端口</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">targets:</span> [<span class="string">&#x27;localhost:9104&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<p><strong>5）重启prometheus访问 <a target="_blank" rel="noopener" href="http://localhost:9090/targets">http://localhost:9090/targets</a> 如果mysql为up表示已经配置成功，可通过 <a target="_blank" rel="noopener" href="http://localhost:9090/graph">http://localhost:9090/graph</a> 进行PromQL进行指标查询</strong></p>
+<h2 id="监控例子-Linux"><a href="#监控例子-Linux" class="headerlink" title="监控例子 - Linux"></a>监控例子 - Linux</h2><p>Linux同样是成形产品，所以需要exporter。监控Linux的exporter下载地址：<a target="_blank" rel="noopener" href="https://github.com/prometheus/node_exporter/releases">https://github.com/prometheus/node_exporter&#x2F;releases</a></p>
+<p><strong>1）解压如下：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">➜  node_exporter-0.18.1.linux-amd64 ll</span><br><span class="line">总用量 17M</span><br><span class="line">-rw-r--r-- 1 tandi tandi 12K  6月  5 00:50 LICENSE</span><br><span class="line">-rwxr-xr-x 1 tandi tandi 17M  6月  5 00:41 node_exporter</span><br><span class="line">-rw-r--r-- 1 tandi tandi 463  6月  5 00:50 NOTICE</span><br></pre></td></tr></table></figure>
+
+<p><strong>2）启动exporter</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">➜  node_exporter-0.18.1.linux-amd64 ./node_exporter</span><br></pre></td></tr></table></figure>
+
+<p>启动成功会打印如下信息</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">INFO[0000] Starting node_exporter (version=0.18.1, branch=HEAD, revision=3db77732e925c08f675d7404a8c46466b2ece83e)  <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:156&quot;</span></span><br><span class="line">INFO[0000] Build context (go=go1.12.5, user=root@b50852a1acba, <span class="built_in">date</span>=20190604-16:41:18)  <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:157&quot;</span></span><br><span class="line">INFO[0000] Enabled collectors:                           <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:97&quot;</span></span><br><span class="line">INFO[0000]  - arp                                        <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - bcache                                     <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - bonding                                    <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - conntrack                                  <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - cpu                                        <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - cpufreq                                    <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - diskstats                                  <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - edac                                       <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - entropy                                    <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - filefd                                     <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - filesystem                                 <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - hwmon                                      <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - infiniband                                 <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - ipvs                                       <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - loadavg                                    <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - mdadm                                      <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - meminfo                                    <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - netclass                                   <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - netdev                                     <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - netstat                                    <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - nfs                                        <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - nfsd                                       <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - pressure                                   <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - sockstat                                   <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - <span class="built_in">stat</span>                                       <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - textfile                                   <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - time                                       <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - timex                                      <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - <span class="built_in">uname</span>                                      <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - vmstat                                     <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - xfs                                        <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000]  - zfs                                        <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:104&quot;</span></span><br><span class="line">INFO[0000] Listening on :9100                            <span class="built_in">source</span>=<span class="string">&quot;node_exporter.go:170&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>3）在prometheus配置文件中将node_exporter配置为监控目标</strong></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 监控目标配置</span></span><br><span class="line"><span class="attr">scrape_configs:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">&#x27;prometheus&#x27;</span></span><br><span class="line">    <span class="attr">static_configs:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">targets:</span> [<span class="string">&#x27;localhost:9090&#x27;</span>]</span><br><span class="line"></span><br><span class="line">  <span class="comment"># MySQL监控</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">&#x27;mysql&#x27;</span></span><br><span class="line">    <span class="attr">static_configs:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">targets:</span> [<span class="string">&#x27;localhost:9104&#x27;</span>]</span><br><span class="line"></span><br><span class="line">  <span class="comment"># Linux监控</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">&#x27;linux&#x27;</span></span><br><span class="line">    <span class="attr">static_configs:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">targets:</span> [<span class="string">&#x27;localhost:9100&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<p><strong>4) 重启prometheus访问 <a target="_blank" rel="noopener" href="http://localhost:9090/targets">http://localhost:9090/targets</a> 如果linux为up表示已经配置成功，可通过 <a target="_blank" rel="noopener" href="http://localhost:9090/graph">http://localhost:9090/graph</a> 进行PromQL进行指标查询</strong></p>
+<h2 id="搭建Dashbord-Grafana"><a href="#搭建Dashbord-Grafana" class="headerlink" title="搭建Dashbord - Grafana"></a>搭建Dashbord - Grafana</h2><p>Grafana 提供更加丰富的图形界面来展示 Prometheus 数据</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https://dl.grafana.com/oss/release/grafana-6.3.3.linux-amd64.tar.gz </span><br><span class="line">tar -zxvf grafana-6.3.3.linux-amd64.tar.gz </span><br></pre></td></tr></table></figure>
+
+<p><strong>1）解压如下：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">➜  grafana-6.3.3 ll</span><br><span class="line">总用量 52K</span><br><span class="line">drwxr-xr-x  2 tandi tandi 4.0K  8月 15 17:34 bin</span><br><span class="line">drwxr-xr-x  3 tandi tandi 4.0K  8月 18 11:04 conf</span><br><span class="line">drwxr-xr-x  5 tandi tandi 4.0K  8月 18 15:48 data</span><br><span class="line">-rw-r--r--  1 tandi tandi  12K  8月 15 17:24 LICENSE</span><br><span class="line">-rw-r--r--  1 tandi tandi  108  8月 15 17:24 NOTICE.md</span><br><span class="line">drwxr-xr-x 13 tandi tandi 4.0K  8月 15 17:34 public</span><br><span class="line">-rw-r--r--  1 tandi tandi 6.0K  8月 15 17:24 README.md</span><br><span class="line">drwxr-xr-x  9 tandi tandi 4.0K  8月 18 12:05 scripts</span><br><span class="line">drwxr-xr-x  3 tandi tandi 4.0K  8月 15 17:34 tools</span><br><span class="line">-rw-r--r--  1 tandi tandi    5  8月 15 17:34 VERSION</span><br></pre></td></tr></table></figure>
+
+<p>对与 Grafana 默认配置参数使用 sqlite3 来保存，但亦可以通过 conf 文件夹下的配置文件配置成通过 MySQL 来保存。</p>
+<p>**2）启动 Grafana **</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">➜  bin ./grafana-server    </span><br><span class="line">...</span><br><span class="line">INFO[08-18|12:58:56] HTTP Server Listen                       logger=http.server address=0.0.0.0:3000 protocol=http subUrl= socket=</span><br></pre></td></tr></table></figure>
+
+<p>访问 localhost:3000 默认帐号密码 <code>admin/admin</code></p>
+<h3 id="配置-Prometheus-的-Dashboard"><a href="#配置-Prometheus-的-Dashboard" class="headerlink" title="配置 Prometheus 的 Dashboard"></a>配置 Prometheus 的 Dashboard</h3><p>添加数据源 Prometheus</p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/003.png"></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/004.png"></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/005.png"></p>
+<p>配置完成后返回主页就会看到对应的 Dashboard 选项，点击进入如下：</p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/006.png"></p>
+<blockquote>
+<p>注：比较推荐到 <a target="_blank" rel="noopener" href="https://grafana.com/grafana/dashboards?direction=asc&orderBy=name&dataSource=prometheus">grafana_dashboards</a> 中找对应数据源的仪表盘模板。优点是只需简单地导入配置而无需手动制作</p>
+</blockquote>
+<h3 id="配置-MySQL-的-Dashboard"><a href="#配置-MySQL-的-Dashboard" class="headerlink" title="配置 MySQL 的 Dashboard"></a>配置 MySQL 的 Dashboard</h3><p>除了上面手动配置数据源的方式，Grafana 还支持导入 json 来配置 Dashboard。因为已经完成了prometheus监控了 MySQL 的配置，现在只需要导入 json 即可。</p>
+<p>mysql-dashboard 的 json 下载地址：<a target="_blank" rel="noopener" href="https://github.com/percona/grafana-dashboards"> https://github.com/percona/grafana-dashboards </a></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/007.png"></p>
+<p>可以看到，这里提供 Prometheus 监控 MySQL 和 MongoBD 后在 Grafana 上使用 Dashboard 的 json 脚本。</p>
+<p><strong>导入json</strong></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/008.png"></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/009.png"></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/010.png"></p>
+<h3 id="配置-Linux-的-Dashboard-手动添加"><a href="#配置-Linux-的-Dashboard-手动添加" class="headerlink" title="配置 Linux 的 Dashboard - 手动添加"></a>配置 Linux 的 Dashboard - 手动添加</h3><p>右上角保存</p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/011.png"></p>
+<p><img src="/%E5%85%AC%E5%85%B1%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1%E4%B9%8BPrometheus%E7%9B%91%E6%8E%A7%E5%85%A5%E9%97%A8/012.png"></p>
+<h2 id="PromSQL"><a href="#PromSQL" class="headerlink" title="PromSQL"></a>PromSQL</h2><p>因为使用比较简单所以建议参考官方文档即可</p>
+<p><a target="_blank" rel="noopener" href="https://prometheus.io/docs/prometheus/latest/querying/basics/">https://prometheus.io/docs/prometheus/latest/querying/basics/</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/jvm%E6%B7%B1%E5%85%A5/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%85%B3%E4%BA%8E%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

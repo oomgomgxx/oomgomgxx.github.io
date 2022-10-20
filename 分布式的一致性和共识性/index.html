@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      分布式的一致性与共识性 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Jul 09, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      分布式的一致性与共识性
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年8月20日15:03:45 — 添加 Quorum NWR 内容</li>
+</ul>
+<h2 id="分布式基础理论"><a href="#分布式基础理论" class="headerlink" title="分布式基础理论"></a>分布式基础理论</h2><h3 id="CAP定理"><a href="#CAP定理" class="headerlink" title="CAP定理"></a>CAP定理</h3><p>CAP定理在2007年7月被加州大学伯克利分校的Eric Brewer教授所提出，所以CAP定理又叫做 <strong>布鲁尔定理</strong> 。而该定理的结论是分布式系统并不能同时满足：一致性、可用性、分区容错性，而只能是三者选其二。</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/001.png"></p>
+<blockquote>
+<p>CAP概念理解</p>
+</blockquote>
+<ul>
+<li><strong>（C）一致性：</strong>客户端在任意节点上读取同一个值所返回的结果应该是一致的。<ul>
+<li>可以通过延迟请求应答来提高一致性。譬如在同步复制复制中，只有等待特定数量的节点同步成功才响应用户</li>
+</ul>
+</li>
+<li><strong>（A）可用性：</strong>节点应该在合理的时间内返回合理的客户端请求结果，但结果不应包含异常和超时。<ul>
+<li>可以通过 <code>主备</code>、<code>集群</code>、<code>服务体验降级（腾出资源保障核心服务）</code> 等手段来提高可用性</li>
+</ul>
+</li>
+<li><strong>（P）分区容错性：</strong>即使出现网络分区，系统也依然能够提供服务。<ul>
+<li>例如<code>熔断机制</code>就是用来提高分区容错性的</li>
+</ul>
+</li>
+</ul>
+<p>注：</p>
+<ul>
+<li>ACID中的一致性保证的是事务前后的数据库完整性，而CAP中的一致性强调的是状态，所以”一致性”其实并不是一个泛指</li>
+<li>强一致性在网络环境中是很难做到的，因此存在网络的不定性因素影响</li>
+</ul>
+<blockquote>
+<p>为什么三者只能选其二？</p>
+</blockquote>
+<ul>
+<li>对于分布式系统而言数据通常不会只存放在单个节点上，因为在网络环境下难以避免不会出现网络分区，而一旦出现网络分区就会导致系统不可用，所以就可以得出这样的结论就是<code>分布式系统首要应该支持的就是分区容错性（P）</code>，否则分布式就没有意义了</li>
+<li>高可用（HA）应该是一个后端开发人员经常听到的一个词了。最常见的做法就是横向扩展服务节点，但扩展节点就意味着增加了同步状态的成本，节点越多同步状态所花费的时间就越长，换句话就是系统可用性越高，那么要保证一致性就越困难，所以现今分布式系统实际上一般都只是在一致性（C）和可用性（A）之间权衡</li>
+<li>例如 Zookeeper、Etcd、MongoDB 等分布式高可用集群采用的是 CP 架构，这与其使用的共识算法&#x2F;协议有着密切的关系，而 Cassandra、CounchDB、Redis 等则是 AP 架构</li>
+<li>拿 Redis 来说，Redis 的高可用方案是建基于复制的基础上实现的，而复制因为网络原因又存在<strong>数据丢失</strong>以及<strong>脑裂</strong>等风险，所以它并不能很好地保证 CAP 的一致性，因此一般而言我们只会用 Redis 来做一些对一致性要求不高的功能。除此之外个人还认为这与 Redis 的设计理念有关，因为 AP 架构实质是一种可用优先的数据处理方案</li>
+<li>值得注意的是 CP 架构的系统并不是指能够保证强一致性，它只是在可用性和一致性之间优先考虑一致性而已。譬如 Zookeeper 的<strong>过半可用机制</strong>就保证了出现网络分区后少于过半的集群不再提供服务从而保证一致性，但却降低了系统的可用性</li>
+</ul>
+<blockquote>
+<p>拓展</p>
+</blockquote>
+<p>网络分区：指系统节点之间因为某些原因而导致不能通信</p>
+<h3 id="BASE理论"><a href="#BASE理论" class="headerlink" title="BASE理论"></a>BASE理论</h3><blockquote>
+<p>关于一致性的分类</p>
+</blockquote>
+<ul>
+<li><strong>强一致性：</strong>写操作后的读操作一定能够读到上一次写入的结果（不论是在哪个节点写和读）</li>
+<li><strong>弱一致性：</strong>写操作后的读操作可能读到也可能读不到写入的结果</li>
+<li><strong>最终一致性：</strong>写操作后的读操作需要经过一段（短暂的）时间才能读到上一次写入的结果</li>
+</ul>
+<p>注：</p>
+<ul>
+<li>个人理解一致性其实只有两个级别，要么是<strong>强一致</strong>要么是<strong>最终一致</strong>。而所谓的<strong>弱一致</strong>、<strong>顺序一致</strong>都是只是最终一致的变种而已。例如顺序一致其实是指集群处理命令是按照 FIFO 形式进行的，而 Zookeeper 就是这种形式</li>
+</ul>
+<blockquote>
+<p>基本概念</p>
+</blockquote>
+<ul>
+<li><strong>BA：</strong>基本可用。当系统出现故障时，允许其适当地延长响应时间（降低系统可用性）<ul>
+<li>例如 <code>流量削峰</code>、<code>过载保护</code>、<code>服务降级</code>、<code>延迟响应</code> 等</li>
+</ul>
+</li>
+<li><strong>S：</strong>软状态。指允许对客户端展示过度状态，即并不要强求系统的数据是强一致性，允许数据在节点间出现不一致（降低系统一致性）</li>
+<li><strong>E：</strong>最终一致性。个人理解这是对 S（软状态）的追加条件，既数据状态必须在一定时间后在所有节点上达成一致</li>
+</ul>
+<blockquote>
+<p>小结</p>
+</blockquote>
+<p>BASE 理论其实是 CAP 的一种权衡方案。也就是说如果你不知道怎样设计 CAP 就可以参考 BASE 理论。</p>
+<h2 id="分布式事务一致性解决方案"><a href="#分布式事务一致性解决方案" class="headerlink" title="分布式事务一致性解决方案"></a>分布式事务一致性解决方案</h2><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<ul>
+<li>这里的一致性其实就是 ACID 中的一致性，即保证事务在多个服务节点之间的数据完整性</li>
+<li>分布式事务一致性协议大体可分为两类<ul>
+<li>强一致性协议：2PC 、3PC</li>
+<li>最终一致性协议：TCC、可靠消息模式、Event Soucing、最大努力通知</li>
+</ul>
+</li>
+<li>在上面已经提到在网络中基本上是不可能实现强一致性，但为什么我们称 2PC 和 3PC 是强一致性协议呢？这是因为它们是通过降低可用性来换取一致性来实现的，既如果不达成一致就不响应用户（可用性差）</li>
+<li>最终一致性协议建基于 BASE理论的，它允许数据存在过渡状态，在必要做到最终一致。最终一致性协议较为适合对事务实时性不高的系统</li>
+</ul>
+<h3 id="强一致性方案"><a href="#强一致性方案" class="headerlink" title="强一致性方案"></a>强一致性方案</h3><h4 id="二段提交协议（2PC）"><a href="#二段提交协议（2PC）" class="headerlink" title="二段提交协议（2PC）"></a>二段提交协议（2PC）</h4><p><strong>2PC 参与者角色</strong></p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/003.png"></p>
+<p><strong>1）事务提交分为两个阶段</strong></p>
+<ol>
+<li>事务预提交<ul>
+<li>事务协调者向所有参与者发出事务预提交请求</li>
+<li>参与者接收到预提交请求后进行事务日志记录（undo 和 redo）</li>
+<li>各个参与者响应事务协调者后，告知事务协调者是否预提交成功</li>
+</ul>
+</li>
+<li>提交事务<ul>
+<li>事务协调者向所有参与者发出 commit&#x2F;rollback 请求（根据第一阶段的响应结果来判断发起 commit 还是 rollback）</li>
+<li>假设参与者接收 commit 请求，它就会进行真正的事务提交（如果收到 rollback 则参与者会通过 undo 日志进行回滚操作）</li>
+<li>各个参与者响应事务协调者</li>
+<li>全部参与者成功提交事务，事务提交流程结束，事务协调者响应客户端提交事务成功</li>
+</ul>
+</li>
+</ol>
+<p><strong>2）2PC存在的问题</strong></p>
+<ul>
+<li>同步阻塞：整个 2PC 阶段被选中的资源会一直被锁定</li>
+<li>单点问题：事务协调者存在单点故障隐患，一旦发生故障要人工干预恢复事务，维护成本较高</li>
+<li>存在一致性问题：若果事务协调者发出 commit 请求，但因为网络而导致只有部参与者接收命令就会导致一致性问题</li>
+<li>实现成本较大：在 Jakarta EE 中如果需要实现 JTA 事务（2PC），则需要资源管理器支持 XA 规范实现</li>
+</ul>
+<h4 id="三段提交协议（3PC）"><a href="#三段提交协议（3PC）" class="headerlink" title="三段提交协议（3PC）"></a>三段提交协议（3PC）</h4><p><strong>1）和 2PC 的区别</strong></p>
+<ul>
+<li><p>3PC 是 2PC 的进行一种改进，主要解决的是<code>减轻 2PC 同步阻塞问题</code>。</p>
+</li>
+<li><p>基本原理是将 2PC 的第一阶段进拆分，以及引入了<code>超时机制</code>（譬如：协调者等待超时、参与者等待超时）解决可用性问题</p>
+</li>
+</ul>
+<p><strong>2）提高事务过程</strong></p>
+<p>CanCommit（第一阶段）：</p>
+<ol>
+<li>事务协调者<strong>询问</strong>参与者是否可以执行事务预提交操作</li>
+<li>参与者响应事务协调者结果</li>
+</ol>
+<p>PreCommit（第二阶段）：</p>
+<ol>
+<li>事务协调者向所有参与者发出 PreCommit 预提交请求</li>
+</ol>
+<ul>
+<li>参与者接收到 PreCommit 后进行事务预提交操作（记录 undo 和 redo）</li>
+<li>参与者响应事务协调者结果</li>
+</ul>
+<p>DoCommit（第三阶段）：</p>
+<ul>
+<li>事务协调者向所有参与者发出 DoCommit 提交事务请求</li>
+<li>参与者接收到 DoCommit 后执行真正的事务提交</li>
+<li>参与者响应事务协调者结果后，事务协调者响应用户</li>
+</ul>
+<p> <strong>3）过程中可能打断 事务的情况</strong></p>
+<p>PreCommit（第二阶段）：预提交失败，事务参与者会做如下操作</p>
+<ol>
+<li>给参与者发出中断请求，让其恢复数据状态</li>
+<li>中断整个事务并响应客户端告知其失败（因时其实还没有正式提高事务）</li>
+</ol>
+<p>DoCommit（第三阶段）：正式提交事务失败，事务参与者会做如下操作</p>
+<ol>
+<li>给参与者发出中断请求，让其恢复数据状态（避免还没提交事务的参与者继续提交事务）</li>
+<li>给参与者发起事务回滚请求，参与者会依照 undo 记录进行回滚操作</li>
+<li>获取到回滚反馈后中断整个事务操作，响应客户端告知其失败</li>
+</ol>
+<p><strong>4）3PC的优缺点</strong></p>
+<ul>
+<li>通过询问降低事务失败的风险，从而提高了系统的可用性</li>
+<li>依然存在一致性问题。例如当事务协调者发出 PreCommit 之后出现了网络分区，那么参与者超时机制触发后依然会（默认）提交事务，这样就会导致数据的不一致</li>
+<li>据个人了解目前支持 3PC 的开源库少之又少，复杂性增加之余，依然存在各种问题，所以一般只在纸上谈</li>
+</ul>
+<h3 id="最终一致性方案"><a href="#最终一致性方案" class="headerlink" title="最终一致性方案"></a>最终一致性方案</h3><h4 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h4><p>1）<code>查询模式</code>：为事务设置状态查询接口，在必要时可以通过该接口来确定状态</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/004.png"></p>
+<p>2）<code>定时校对模式</code>：基于查询模式之上，通过定时任务主动检查事务状态，以修正正式（也属于补偿模式）</p>
+<p>3）<code>补偿模式</code>：补偿的意思实质就是<strong>重试</strong>或<strong>人为恢复</strong>事务</p>
+<ul>
+<li>自动恢复：通过重试机制实现</li>
+<li>通知运维：实在是无法回滚或者重试，则可以通过人工干预进行补偿（如一些系统有专门的运维模块）</li>
+<li>技术干预：如果以上两种手段都不可行，则可以直接修改数据库进行补偿（这是最糟糕的情况）</li>
+</ul>
+<h4 id="可靠消息最终一只-补偿-幂等处理（本地消息表）"><a href="#可靠消息最终一只-补偿-幂等处理（本地消息表）" class="headerlink" title="可靠消息最终一只 + 补偿 + 幂等处理（本地消息表）"></a>可靠消息最终一只 + 补偿 + 幂等处理（本地消息表）</h4><blockquote>
+<p>可靠消息实现方式：</p>
+<ul>
+<li>MQ自身提供可靠消息机制。如 RocketMQ 的事务消息（需要提供查询模式）</li>
+<li>MQ支持 XA 协议。可和支持 XA 协议数据库组成 Jta 事务保证可靠性（如 ActiveMQ）</li>
+<li>本地消息表。使用本地数据表来记录消息发送的状态，一般需要结合补偿模式一同使用</li>
+</ul>
+</blockquote>
+<p>1）操作流程</p>
+<ul>
+<li>使用消息系统来推动整个事务流程。<ul>
+<li>发送消息之前先将消息持久化到本地（文件或DB）并标注为<code>未发送</code>，然后再发送消息</li>
+<li>一旦发送成功就将持久化的消息状态改为<code>已发送</code></li>
+<li>其余消费者服务则通过监听对应的消息 Topic 来触发处理流程</li>
+</ul>
+</li>
+<li>使用补偿模式来处理<code>未发送</code>的消息<ul>
+<li>可设置一个<strong>定时任务</strong>来轮询消息状态为<code>未发送</code>的消息，让其重试发送来驱动后续的事物步骤操作</li>
+<li>这样做的用意是避免消息发送（重试）失败或丢失，即保证消息发送的可靠性</li>
+</ul>
+</li>
+</ul>
+<p>2）消息重试发送带来的幂等问题</p>
+<ul>
+<li>现在的消息系统一般都支持重试机制，即消息发送失败后会重试一定的次数。但要注意的是一旦引入重试机制就可能导致消息重复发送，从而导致同一条消息被消费者服务处理多次</li>
+</ul>
+<p>3）解决消费者幂等问题</p>
+<ul>
+<li>使用防重表、防重Token等方案解决</li>
+<li>例如选择防重表方案<ol>
+<li>消费者在处理消息前可以先判断防重表中是否有对应的记录（可根据消息内容定制），如果有则忽略该消息，如果没有则往防重表中插入一条记录，并设置其状态为<code>正在处理</code>（自定义）</li>
+<li>处理完成后将这条消息对应的<code>正在处理</code>记录修改为<code>已处理</code></li>
+<li>在整个事务完成后再将防重表中对应的记录删除</li>
+</ol>
+</li>
+</ul>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/006.png"></p>
+<h4 id="TCC协议模式（补偿事务）"><a href="#TCC协议模式（补偿事务）" class="headerlink" title="TCC协议模式（补偿事务）"></a>TCC协议模式（补偿事务）</h4><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/009.png"></p>
+<p>TCC 和 2PC 很像，也分为两个步骤：</p>
+<ol>
+<li>Try</li>
+<li>Confirm &#x2F; Cancel</li>
+</ol>
+<p>TCC 事务中事务的提交和回滚是由TCC管理器来完成的。TCC 是一种代码侵入性较强的事务实现，它要求将原来的一个业务方法拆分为三个。譬如付费服务 pay() 要拆分成 tryPay()、confirmPay()、cancelPay() 来分别支持<code>预提交</code>、<code>确认提交</code>、<code>取消操作（回滚）</code>等，而这些方法会由 TCC 管理器自动调用。</p>
+<blockquote>
+<p>理解例子</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 预付费</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">tryPay</span><span class="params">()</span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 更新订单状态</span></span><br><span class="line">	orderService.updateOrderStatus(<span class="string">&quot;正在付费&quot;</span>)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 预付费操作</span></span><br><span class="line">	<span class="comment">//1. 查看是否有足够的余额，例如还要100,那么20元商品就满足扣费要求</span></span><br><span class="line">	<span class="comment">//2. 冻结等价于商品的费用，防止中途因为某些原因导致余额不足</span></span><br><span class="line">	userService.freezeMoney(<span class="number">20</span>); <span class="comment">// 将商品金额保存到冻结金钱字段</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 正式付费</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">confirmPay</span><span class="params">()</span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 正式扣费，从冻结金钱中扣费</span></span><br><span class="line">	userService.deductionFreezeMoney(<span class="number">20</span>); </span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 更新订单状态</span></span><br><span class="line">	orderService.updateOrderStatus(<span class="string">&quot;付费成功&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 取消付费</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">cancelPay</span><span class="params">()</span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 解除冻结金钱</span></span><br><span class="line">	userService.relieveFreezeMoney(<span class="number">20</span>); </span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 更新订单状态</span></span><br><span class="line">	orderService.updateOrderStatus(<span class="string">&quot;等待付费&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>1）TCC存在的问题</p>
+<ul>
+<li><p>空补偿&#x2F;空回滚</p>
+<ul>
+<li>意思是没有执行 try 就执行 cancel 了。出现这类问题的主要原因是因为分支服务处于某些原因而不可用，导致协调者触发回滚操作，而这时如果不可用的分支服务恢复就会导致空补偿问题</li>
+<li>解决思路：<ul>
+<li>因为事务管理器发起全局事务时会生成全局事务记录，而其中全局 ID 会贯穿整个分布式事务调用链，因此我们可以再额外增加一个表来记录这个全局事务 ID 和分支事务 ID 这些信息</li>
+<li>服务在在执行完 try 后可以往这张表中插入一条记录以示 try 已经执行完，那么在执行 cancel 时就可以先检查这张表然后再确定后续的操作</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>幂等问题</p>
+<ul>
+<li>TCC 事务框架可能提供重试机制，因此需要对 try、confirm、cancel 等操作进行幂等处理</li>
+</ul>
+</li>
+<li><p>悬挂问题</p>
+<ul>
+<li>意思是二阶段要比一阶段先执行。出现这类问题的原因是因为网络问题导致事务协调调用发生的乱序</li>
+<li>解决思路：<ul>
+<li>和空补偿处理思路一样</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>2）开源的TCC实现</p>
+<ul>
+<li>Tcc-Transaction</li>
+<li>Himly</li>
+<li>TX-LCN</li>
+<li>EasyTransaction</li>
+<li>ByteTCC</li>
+</ul>
+<h4 id="一站式事务解决方案-Seata（默认AT模式）"><a href="#一站式事务解决方案-Seata（默认AT模式）" class="headerlink" title="一站式事务解决方案 - Seata（默认AT模式）"></a>一站式事务解决方案 - Seata（默认AT模式）</h4><p>基本介绍</p>
+<ul>
+<li>Seata（一站式分布式事务解决方案）是 2019 年 1 月份蚂蚁金服和阿里巴巴共同开源的分布式事务解决方案</li>
+<li>Seata 支持 AT、TCC、SAGA（长事物） 和 XA 等多种模式的分布式事务实现</li>
+</ul>
+<p>Seata中有3个重要角色</p>
+<ul>
+<li>事务协调器（TC）： 维护全局事务和分支事务的状态 </li>
+<li>事务管理器（TM）： 控制全局事务的开始、提交、回滚</li>
+<li>资源管理器（RM）： 向 TC <code>注册分支事务 </code> 和 <code>报告分支事务状态</code>以及用于<code>管理分支事务的提交或回滚 </code>（该 RM 由 Seata 代理本地 Datasource 产生）</li>
+</ul>
+<p>Seata事务管理例图</p>
+<p>一个典型的分布式事务过程</p>
+<ol>
+<li>TM 向 TC 申请开启一个全局事务，全局事务创建成功后会生成一个全局唯一的 XID （XID 会在微服务调用链路的上下文中传播）</li>
+<li>RM 记录源数据被操作前后的状态到 UNDO_LOG 表中，然后在提交本地事务前向 TC 注册分支事务（主要是请求TC将分支事务纳入到指定 XID 的全局事务中），随后提交本地事务，并汇报状态给 TC。至此当所有 RM 参与者都完成后，事务的第一阶段完成，释放资源。</li>
+<li>第二阶段，TC 让所有分支事务以完成后续操作（清除UNDO_LOG）或依赖 UNDO_LOG 进行回滚操作</li>
+</ol>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/011.png"></p>
+<p>与传统 2PC 的区别</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/013.png"></p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/015.png"></p>
+<p>可以看到在 Seata 中如果第一阶段是成功的它就不会再锁定资源，相当于缩短了阻塞时间</p>
+<p>快速入门案例</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/seata/seata/wiki/%E6%A6%82%E8%A7%88">https://github.com/seata/seata/wiki/%E6%A6%82%E8%A7%88</a> </li>
+<li><a target="_blank" rel="noopener" href="http://seata.io/en-us/docs/user/quickstart.html">http://seata.io/en-us/docs/user/quickstart.html</a></li>
+</ul>
+<h2 id="分布式共识性（针对故障容错）"><a href="#分布式共识性（针对故障容错）" class="headerlink" title="分布式共识性（针对故障容错）"></a>分布式共识性（针对故障容错）</h2><p>&amp;emsp;&amp;emsp;很多人将 Gossip、Paxos、Raft、ZAB 等算法和协议跟 2PC、3PC、TCC 等混为一谈将其统称为一致性协议。虽然这样称呼并没有什么大碍，但按个人认为这样并不利于理解他们，因为它们在于用途上并不太一样。譬如前者多见于用来解决集群节点之间的通信容错，而后者则时解决分布式事务的一致性问题，所以前者用<code>共识性</code>来形容而后者则是<code>一致性</code>这样更加贴切。</p>
+<p>注：Gossip、Paxos、Raft、ZAB 等算法和协议也被称做<code>非拜占庭容错算法（Crash Fault Tolerance，简称CFT）</code>。原因是一般的系统并不存在<code>伪造</code>和<code>篡改</code>消息，但如果是区块链服务就可能会存在伪造数据的节点，这时就符合 <code>拜占庭将军问题</code> 这种极端情况</p>
+<h3 id="Gossip协议"><a href="#Gossip协议" class="headerlink" title="Gossip协议"></a>Gossip协议</h3><blockquote>
+<p>Gossip模拟器： <a target="_blank" rel="noopener" href="https://flopezluis.github.io/gossip-simulator/">https://flopezluis.github.io/gossip-simulator/</a> </p>
+</blockquote>
+<h4 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h4><p>&amp;emsp;&amp;emsp;Gossip是一个非常有趣的分布式共识性协议，因为其工作原理的缘故亦被叫做<code>流行病协议</code>、<code>谣言协议</code>。常用作<code>信息广播</code>、<code>叠加网络</code> 、<code>数据交换</code>、<code>故障检测</code>等用途。譬如 Redis 集群和 ElasticSearch 集群都用它来实现节点状态信息交换，以及 Consul 用它来管理集群成员和广播信息。</p>
+<p>&amp;emsp;&amp;emsp;Gossip 的工作原理很简单。例如 A 节点希望与集群中的其它节点进行状态共享，那么 A 只需要定期从集群中随机选取 N（扇出数） 个节点来进行信息广播，而且在集群成员接收到 A 的信息广播后，这些节点亦需要开始定期地选取 N 个节点来广播自己得状态来延续 A 的状态传播（这就是为什么叫它流行病协议的原因）。</p>
+<p>注：在 Gossip 中一个状态扩散到所有节点的时间复杂度为 <code>log(节点数)(底数=扇出数)</code></p>
+<h4 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h4><ul>
+<li>易于理解和实现</li>
+<li>能提高集群的扩展性，但随着节点增加，达到最终一致性的时间会变长</li>
+<li>容错能力强，即使出现网络分区或节点暂时不可用都不会影响集群的正常工作，而且待网络或节点恢复后依然能够达到最终一致性</li>
+<li>最终一致</li>
+</ul>
+<h4 id="两种状态传播方案"><a href="#两种状态传播方案" class="headerlink" title="两种状态传播方案"></a>两种状态传播方案</h4><ul>
+<li>Anti-Entropy（反熵）：传播节点自身的所有信息。有利于提高节点状态的感知度，但消息的传播和处理成本较高</li>
+<li>Rumor-Mongering（谣言传播）：仅传播节点新接收的信息（增量传播）。需要自动检查信息是否已被过时，如果已过时则不再进行传播</li>
+</ul>
+<h4 id="三种行为模式"><a href="#三种行为模式" class="headerlink" title="三种行为模式"></a>三种行为模式</h4><ul>
+<li>push模式： 传播自己接收到的新信息（可以减少网络开销）</li>
+<li>pull模式：积极地想其它节点拉取自己的新信息</li>
+<li>push &amp; pull模式：  传播自己接收到的新信息，并积极想其它节点拉取自己的新信息</li>
+</ul>
+<h4 id="Redis是如何利用Gossip的？"><a href="#Redis是如何利用Gossip的？" class="headerlink" title="Redis是如何利用Gossip的？"></a>Redis是如何利用Gossip的？</h4><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/014.png"></p>
+<p>Redis 集群是通过 Gossip 协议来广播节点状态（包含槽位信息和节点状态）。在 Redis 集群中每一个节点都对应着不同的槽位段。例如现在 Client 连接的是 A 节点，并向其查询缓存，但 A 节点根据查询 key 计算后发现这个缓存并不在自己的槽位内，这时它就会根据先前通过 Gossip 协议交换回来的信息来通知 Client ，让其重定向到具体的节点中进行查找。</p>
+<p>注：其实 Redis Cluster 是 Gossip 和 Raft 混用。它采用 Gossip 进行通信，用 Raft 做主从的故障转移</p>
+<h3 id="Paxos算法"><a href="#Paxos算法" class="headerlink" title="Paxos算法"></a>Paxos算法</h3><h4 id="了解算法的诞生"><a href="#了解算法的诞生" class="headerlink" title="了解算法的诞生"></a>了解算法的诞生</h4><p>&amp;emsp;&amp;emsp;公元 10 世纪初，爱琴海上有一个叫做 Paxos 的小岛。该小岛商业兴旺，是当时出了名贸易的中心，而经济的发展也带来了政治的进步，譬如比较显著的就是通过议会政府取代了神权统治。虽然社会的不断进步，使得人民纷纷投身其中，但因为 Paxos 岛上的人民本身就以做生意为生，所以对于他们而已做生意才是头等大事，城市职责只是次要的。而因为这个原因，随着时间的推移，慢慢地开始越来越多公民不再愿意把自己的时间全部投入到议会事务中去，所以现在眼前需要解决的问题就是如果想要议会继续履行职责，就意味着需要有一种能够保证在议员缺席的情况下仍然能够正常运作的方案。</p>
+<p>&amp;emsp;&amp;emsp;不久后，经大家商讨最终决定了一种全新的议会协议。初期该协议的<strong>第一个要求</strong>是每一个议员都必须随身携带一个律簿（ledger）用来记录一系列已通过的法令，而且（从提出议案开始）每个法令都要求必须带有一个独立的编号。而<strong>第二个要求</strong>是在场议员在议会议事期间律簿新增的内容必须保持一致性。例如议事期间通过了法令《132：不能随地大小便 》，那么每个在场议员的律簿就不能篡改 132 编号这条法令的内容（可以为空，但如果存在就必须一致）。后来人民慢慢发现仅仅这种程度上一致还是不足以应对复杂的情况，因为如果让每个律簿都保留空白的话也能满足一致性，所以需要另外添加一些要求来<strong>保证法令能最终通过并被记录在律簿中</strong>。而在研究出对策之前，人们发现在 Paxos 这里人其实都能做到彼此之间互相信任，所以议员们是可以做到愿意通过任何被提出的法令的。但话虽然如此，因为大家都喜欢外出游历和做生意的缘故，即使能够做到愿意通过任何被提出的法令也难免不会出现问题。例如 A 组议员通过了法令《133：禁止在城市乱涂乱画》后就离开议会了，随后 B 组议员进入，因为不知道之前发生了什么事情的原因，所以 B 组议员又通过了法令《133：允许自由的艺术表达》，此时就导致前后通过的两个相同编号的法令，既产生了冲突而导致 A 和 B 两组议员的律簿失去了一致性。因此最后人民商讨出了协议的<strong>第三个要求</strong>，就是如果商议修订法令时大多数议员都在场，并且在一个足够长的时间内没人进出议会厅的话，那么任一个被议员提议的法令都将会被通过，且每一个被通过的法令都需要出现在议会厅中每个议员的律簿上（既引入多数派概念）。</p>
+<p>&amp;emsp;&amp;emsp;好了，Paxos 岛的故事简单说到这里，如果有兴趣继续了解下去可以阅读 Leslie Lamport 的《The Part-Time Parliamen》，但个人认为到这里已经足够了解 Paxos 算法的诞生和它所要处理的问题了。其实 Paxos 算法实质就是故事中的议会协议。</p>
+<h4 id="Paxos特点"><a href="#Paxos特点" class="headerlink" title="Paxos特点"></a>Paxos特点</h4><ul>
+<li>支持多个节点同时发出提案</li>
+<li>支持 Leader 选举<ul>
+<li>在 Paxos 中 Leader 选举并不是必须的</li>
+<li>需要实现 Leader 选举一般是以下两种情况<ul>
+<li>Proposer Leader</li>
+<li>Learner Leader</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>强一致性&#x2F;最终一致性（算法实现细节不同，效果就不同）</li>
+<li>高可用。有过半节点数概念</li>
+</ul>
+<h4 id="关系模型"><a href="#关系模型" class="headerlink" title="关系模型"></a>关系模型</h4><ul>
+<li>议会：相当于分布式集群</li>
+<li>议员：集群节点</li>
+<li>公民：客户端</li>
+<li>法令：节点状态</li>
+</ul>
+<h4 id="算法角色"><a href="#算法角色" class="headerlink" title="算法角色"></a>算法角色</h4><blockquote>
+<p>注意：在 Paxos 中一个节点可以有多个身份</p>
+</blockquote>
+<ul>
+<li>Proposer：负责接收和处理 Client 请求，以及发起提案的议员</li>
+<li>Acceptor：负责接收和处理 Proposer 的 prepare、accept 请求的议员</li>
+<li>Learner：记录通过的提案，不参与决策。相当于故事中的律簿</li>
+</ul>
+<h4 id="算法要求"><a href="#算法要求" class="headerlink" title="算法要求"></a>算法要求</h4><blockquote>
+<p>提案格式：[M，V]</p>
+<p>M为提案编号，V为提案Value</p>
+</blockquote>
+<p>P1：Acceptor 必须批准它收到的<strong>第一个提案</strong>，且 Acceptor <strong>可以批准多个</strong>提案。</p>
+<p>P1a：只要 Acceptor 尚未响应过任何编号大于 Mn 的 prepare 请求，那么它就可以接受这个编号为 Mn 的提案。</p>
+<p>P2：当提案 [M0，V0] 被选定，那么所有比编号 M0 更大且被选定的提案，其 Value 值都必须为 V0。</p>
+<p>P2a：当提案 [M0，V0] 被选定，那么所有比编号 M0 更大且被 Acceptor 批准的提案，其值都必须为 V0。</p>
+<p>P2b：当提案 [M0，V0] 被选定，那么之后 Proposer 产生号更大的提案其 Value 都是V0。</p>
+<h4 id="生成提案和接受提案"><a href="#生成提案和接受提案" class="headerlink" title="生成提案和接受提案"></a>生成提案和接受提案</h4><blockquote>
+<p>1）Proposer生成提案</p>
+</blockquote>
+<p>当 Proposer 生成一个 Mn 提案时，必须知道当前议会中某个<strong>将要</strong>或是<strong>已被半数批准</strong>且<strong>编号小于 Mn</strong>但<strong>为目前最大编号</strong>的提案。</p>
+<p>除此之外，Proposer 还会要求 Acceptor 承诺不能再接受编号小于 Mn 的提案。过程如下：</p>
+<ol>
+<li>Proposer 选择一个新的提案编号 Mn （注意这里只是发送编号），并向 Acceptor 集合成员发送请求（该请求称为prepare请求）。当 Acceptor 接收到 prepare 请求后会有以下两种情况：<ul>
+<li>Acceptor 向 Proposer 承诺不再会批准编号小于当前编号（Mn）的提案（既小于Mn就被认为是过时的请求）</li>
+<li>如果 Acceptor 在这之前已经批准过提案，那么就会将编号小于 Mn 但为目前提案中编号最大的提案返回给Proposer（主要是让 Proposer 从中提取出 value 值）</li>
+</ul>
+</li>
+<li>如果 Proposer 接收到半数以上的 Acceptor 响应自己发出的 prepare 请求时，Proposer 就可以生成编号为 Mn，值为 Vn 的提案了。注意这里的 Vn 是在 Acceptor 响应中得到的。不过也可能会出现这么一种情况，就是 Acceptor 在这之前并没有批准过提案，那么这时 Proposer 可以为编号为 Mn 的提案设置任意的 Value 值（即保证上面提到的 p2b）</li>
+</ol>
+<p>成功生成提案后 Proposer 就会将其发送给某个过半数的 Acceptor 集合，并期待他们通过提案（该请求称为 accept 请求）。需要注意的是这时接收 accept 请求的集合不一定是原来处理 prepare 的那个集合。这样之所以行的通的原因是基于<strong>集群中任意两个过半数的集合都肯定至少有一个公共的 Acceptor 成员</strong>的理论基础上实现的（这里潜在条件是 Acceptor 集合中成员的状态是一致的）</p>
+<blockquote>
+<p>2）Acceptor请求接收</p>
+</blockquote>
+<ol>
+<li>可以在任何时候响应 prepare 请求</li>
+<li>在不违背对 Proposer 的承诺的前提下，响应 accept 请求</li>
+</ol>
+<h4 id="算法陈述"><a href="#算法陈述" class="headerlink" title="算法陈述"></a>算法陈述</h4><blockquote>
+<p>Paxos算法分为两个阶段。</p>
+<p>第一阶段因为需要达到半数以上的 Acceptor 响应才能进入第二阶段，所以第一阶段也称为”投票阶段”。</p>
+<p>第二阶段其实就是”提交阶段”或叫通过提案阶段</p>
+</blockquote>
+<p><strong>第一个阶段（投票阶段）：</strong></p>
+<ol>
+<li>Proposer 根据已知信息选择一个提案编号 Mn，然后向 Acceptor 集群中某一个过半子集发送一个编号为 Mn 的 perpare 请求</li>
+<li>当 Acceptor 接收到编号为 Mn 的 prepare 请求后，如果编号大于当前已经响应过的所有 prepare 请求中的编号，Acceptor 就会向当前发出 prepare 请求的 Proposer 承诺不会再批准任何小于编号 Mn 的提案，然在再将编号小于 Mn 但为目前最大编号的提案返回给 Proposer。反之拒绝请求的同时返回目前最大的编号的提案给 Proposer （即这时 Mn 少于目前 Acceptor  已接的提案）</li>
+</ol>
+<p><strong>第二阶段（提交阶段）：</strong></p>
+<ol>
+<li>Proposer 如果得到半数以上的 Acceptor 响应，Proposer 就会再发送一个针对 [Mn，Vn] 提案的 accept 请求给某个过半的Acceptor 子集</li>
+<li>当 Acceptor 收到 [Mn，Vn] 提案的 accept 请求后，如果 Acceptor 在这之前尚未对大于该编号的提案作出过响应，那么它就会通过这个提案，并通知 Learner 记录这个已通过的提案</li>
+</ol>
+<p>注意 Proposer 是可以在任何时候丢弃某个提案的。例如 Proposer 发送针对 [Mn，Vn] 的提案给 Acceptor，但是 Acceptor 在这之前已经通过了一个比编号 Mn 大的提案，那么这时 Proposer 就会丢弃该提案。与此同时 Acceptor 亦应该有义务告诉 Proposer 当前自己通过的最大编号的提案是什么，以便 Proposer 后续生成新的 prepare 请求。</p>
+<blockquote>
+<p>协议正常执行时</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/020.png"></p>
+<blockquote>
+<p>协议发生冲突时（可能会导致死循环&#x2F;活锁）</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/021.png"></p>
+<h4 id="Learner获取已通过提案的3种方案"><a href="#Learner获取已通过提案的3种方案" class="headerlink" title="Learner获取已通过提案的3种方案"></a>Learner获取已通过提案的3种方案</h4><p><strong>方案1：</strong></p>
+<p>一旦 Acceptor 通过了某个提案就马上发送给所有Learner。</p>
+<p>这种方案瞬速但不高效，因为 Acceptor 需要的通信次数至少是两边节点数的乘积。</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/017.png"></p>
+<p><strong>方案2：</strong></p>
+<p>所有 Acceptor 在通过了某个提案后集体发送给某个<strong>主 Learner</strong>，然后由主 Learner 分发给其他Learner。</p>
+<p>虽然这样可以减少了 Acceptor 通信上的开销，但是主 Learner 存在单点故障问题。</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/018.png"></p>
+<p><strong>方案3（推荐）：</strong></p>
+<p>在方案 2 的基础上让<strong>主Learner</strong>组成一个集群（解决单点问题）。</p>
+<p>当然主 Learner 的数量肯定是少于普通 Learner 的，如果不是的话就和方案1没什么分别了。</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/019.png"></p>
+<h4 id="从-Learner-保存已通过提案来看-Paxos-的一致性"><a href="#从-Learner-保存已通过提案来看-Paxos-的一致性" class="headerlink" title="从 Learner 保存已通过提案来看 Paxos 的一致性"></a>从 Learner 保存已通过提案来看 Paxos 的一致性</h4><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/016.png"></p>
+<p>如图所示，只有 Learner 成功响应 Client 后，整个事务操作才算成功。那么就会有以下疑问？</p>
+<ul>
+<li>情况1，算法角色都是独立的服务器节点时。那么是过半 Learner 响应算成功，还是全部 Learner 响应算成功呢？<ul>
+<li>如果过半 Learner 算成功，则 Paxos 为最终一致</li>
+<li>如果所有 Learner 算成功，则 Paxos 为强一致</li>
+</ul>
+</li>
+<li>情况2（推荐）：算法角色在服务器节点中重叠，既一个节点多个角色。<ul>
+<li>如果没有 Leader Proposer，则 Paxos 因为过半为最终一致</li>
+<li>如果实现了 Leader Proposer， 且要求所有节点完成同步才响应用户，则 Paxos 为强一致</li>
+</ul>
+</li>
+</ul>
+<h4 id="解决活锁问题"><a href="#解决活锁问题" class="headerlink" title="解决活锁问题"></a>解决活锁问题</h4><p>&amp;emsp;&amp;emsp;在极端的情况下可能会出现这样的现象：Proposer-1提出了编号为M1的提案，且完成了第一阶段。于此同时Proposer-2提出了编号为M2（比M1大）的提案亦完成了第一阶段。那么这时就出现问题了，因为M2通过第一阶段就意味着Acceptor向Proposer-2承诺不会再通过编号小于M2的请求，因此Proposer-1的accept请求会在第二阶段被Acceptor拒绝。这时Proposer-1就会重新进入第一阶段，提出编号为M3的提案并通过第一阶段。而这时Acceptor又承诺Proposer-1不再批准编号小于M3的提案，从而导致Proposer-2第二阶段失败。如此类推进入了死循环，而这就是活锁，即明明没有发生资源锁定，但却一直获取不到执行权的情况。</p>
+<p>&amp;emsp;&amp;emsp;解决活锁的方案是选出一个 Leader Proposer，即只有 Leader Proposer 能发起请求，譬如 Zookeeper 就是这样做的，而这一种方案通常被称为做 <strong>Multi-Paxos</strong> （即经过第一轮的 Basic Paxos 成功得到多数派 accept 的 Proposer 就成为 Leader Proposer 以处理后续的客户端请求）。</p>
+<p>&amp;emsp;&amp;emsp;但 Multi-Paxos 并非完美，因为选举 Leader Proposer 依然需要进行一轮 Basic Paxos ，因此仍然存在活锁问题。所以可以考虑在 Leander Proposer 的基础上进行优化，既为每个 Proposer 加上一个<strong>随机超时器</strong>，让最先超时的 Proposer 先发出请求从而避免活锁问题。但其实如果做到这种程度的话，实质和 Raft 算法就十分类似了，因为 Raft 算法就是用超时器来解决这个问题的</p>
+<h3 id="Raft算法"><a href="#Raft算法" class="headerlink" title="Raft算法"></a>Raft算法</h3><blockquote>
+<p>Raft模型理解：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://thesecretlivesofdata.com/raft/">http://thesecretlivesofdata.com/raft/</a> </li>
+<li><a target="_blank" rel="noopener" href="https://raft.github.io/">https://raft.github.io/</a></li>
+</ul>
+</blockquote>
+<h4 id="算法的诞生"><a href="#算法的诞生" class="headerlink" title="算法的诞生"></a>算法的诞生</h4><p>&amp;emsp;&amp;emsp;Raft是一个以日志为核心的分布式共识协议，是 Raft 作者针对 Paxos 的改良版。意在比 Paxos 容易理解，而且性能和容错方面与 Paxos 是对等。</p>
+<p>&amp;emsp;&amp;emsp;据了解 Raft 作者当时为了比较 Paxos 和 Raft 两种算法的<code>可理解性</code>还专门在一个班里进行过实验。他分别为班里的每个学生讲授 Paxos 和 Raft 两种算法，然后进行测试，总分为60分。Raft 算法平均得分为25.7，而 Paxos 算法平均得分为20.8。甚至在测试过后还采访了参与实验的学生，结果回答如出一辙，都表示 Raft 算法比 Paxos 更加容易理解。当然事实也的确如此，Paxos 算法确实是有些晦涩难懂。准确点来说 Paxos 其实只是一种方法论，所以如果实现起来还需开发者考虑很多因素，而这点就没有 Raft 简单这具体了。</p>
+<p>&amp;emsp;&amp;emsp;那么 Raft 是如何提高算法的可理解性的呢？分别有两点：</p>
+<ul>
+<li>问题拆分：将大问题化为小问题，化繁为简</li>
+<li>减少状态空间：减少节点主动记录的数据内容，即降低集群的不确定性。例如在 Raft 中，日志条目只能从 Leader 节点复制到非 Leader 节点，而且是单向传输的</li>
+</ul>
+<h4 id="Raft特点"><a href="#Raft特点" class="headerlink" title="Raft特点"></a>Raft特点</h4><ul>
+<li>容易理解和具体</li>
+<li>支持 Leader 选举（与 Paxos 相比，Raft中的 Leader 是必须的，用于主导节点状态日志的复制）</li>
+<li>和 ZAB 协议一样，主节点负责读写操作，而其它节点只负责读操作</li>
+<li>支持崩溃恢复。节点宕机重启可以重新自动加入到集群中</li>
+<li>高可用。只要节点数过半正常就能对外提供服务（不能马上检测到，因此存在脑裂风险）</li>
+<li>最终一致性。脑裂和过半应答导致<ul>
+<li>如果可以在实现 Raft 时解决脑裂问题（参考ZAB），以及能做到只能从 Leader 读写的话，就能做到强一致。但如果读写都只能在 Leader 中进行的话就会降低集群的性能，所以亦可以参考<code>NWR</code>的思想来解决一致性问题的同时也能兼顾可用性</li>
+</ul>
+</li>
+</ul>
+<h4 id="问题拆分和减少状态空间"><a href="#问题拆分和减少状态空间" class="headerlink" title="问题拆分和减少状态空间"></a>问题拆分和减少状态空间</h4><blockquote>
+<p>Raft将共识性问题拆分成以下4个小问题</p>
+</blockquote>
+<ul>
+<li>Leader选举：节点集合启动后需要进行 Leader 选举，且 Leader 宕机后需要重新选举</li>
+<li>日志复制：Leader 接收到 Client 的状态修改后会将其操作对应的日志条目复制给其它节点，并且会要求这些节点的日志必须和自己的日志在状态上保持一致</li>
+<li>安全性：如果某节点已经将特定<strong>索引位置</strong>中的日志条目应用到状态中，那么其节点就不能在相同的索引位置下应用其它内容</li>
+<li>成员变更<strong>：</strong>正在供服务的集群，如果需要新增、删除、更改配置等操作是不会影响正常提供服务的</li>
+</ul>
+<blockquote>
+<p>减少状态空间</p>
+</blockquote>
+<ul>
+<li>强Leader：<ul>
+<li>日志条目只能从 Leader 节点复制到其它节点，所以系统的所有变更都只能通过 Leader 来进行</li>
+<li>强 Leader 采用的是二段提交。即 Leader 接收到客户端变更状态的请求后并不会马上应用日志条目，而是将该日志条目广播出去后，并得到过半节点的响应后，Leader 会率先应用日志条目然后再要求其他节点应用日志条目</li>
+</ul>
+</li>
+<li>Leader选举：Raft 使用<strong>随机超时器</strong>来开启选举阶段（解决活锁问题），即按照超时的先后来发竞选投票操作</li>
+</ul>
+<h4 id="算法角色-1"><a href="#算法角色-1" class="headerlink" title="算法角色"></a>算法角色</h4><ul>
+<li><strong>Follower：</strong>跟随者。功能是参与决策（该角色是所有节点的初始化角色）</li>
+<li><strong>Candidate：</strong>领导者候选人。功能是参与决策（发生选举超时的Follower节点）</li>
+<li><strong>Leader：</strong>领导者。负责接收客户端请求以及日志条目的复制和应用工作</li>
+</ul>
+<h4 id="两个重要的超时机制"><a href="#两个重要的超时机制" class="headerlink" title="两个重要的超时机制"></a>两个重要的超时机制</h4><h5 id="选举超时"><a href="#选举超时" class="headerlink" title="选举超时"></a>选举超时</h5><ul>
+<li>选举超时指的是 Follower 等待成为 Candidate 的这段时间。这段时间一般在150 毫秒 ~ 300毫秒之间 </li>
+<li>一旦 Follower 成为 Candidate 就会生成一个新的选举任期（Term）并发起一轮 Leader 选举（广播来拉票），而其它非 Leader 节点接收到拉票心跳后必须向其投票支持，而率先拿到过半票的 Candidate 就会成为 Leader</li>
+</ul>
+<h5 id="心跳超时"><a href="#心跳超时" class="headerlink" title="心跳超时"></a>心跳超时</h5><ul>
+<li>指 Leader 会在一定的时间间隔来广播日志条目信息，而这个时间就是心跳超时的时间</li>
+<li>一旦心跳超时就会进入选举超时环节</li>
+</ul>
+<h5 id="两种超时的转换"><a href="#两种超时的转换" class="headerlink" title="两种超时的转换"></a>两种超时的转换</h5><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/023.png"></p>
+<ol>
+<li>集群刚启动，所有节点均为 Follower</li>
+<li>因为一开始是没有 Leader 节点的，所以会发生选举超时节点就会从 Follower 变成 Candidate</li>
+<li>节点成为 Candidate 后会马上发起 Leader 选举，如果发起选举后得到集群中过半的节点投票（包含自己票数），那么 Candidate 就会成为 Leader。其中 Leader 有一个任期的概念，叫做 Term。Term 代表的是当前这界选举的编号。</li>
+</ol>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/024.png"></p>
+<p>需要特别注意的是，如果某个 Candidate 发起选举期间发现集群中存在某个比自己更高版本的节点（以应用条目的来衡量）的话，那么 Raft 将不会允许这个 Candidate 成为 Leader，而是要求高版本的 Follower 成为 Leader。这样做的目的是避免数据覆盖而丢失数据。</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/037.gif"></p>
+<p>从上图中可以看到 S4 节点选举超时先发起选举拉票，但它最后并没有成为Leader。这是因为 S4 只应用了 index 为 1 的条目状态，而其他节点都它应用的更多，所以 S4 在 Raft 中不能成为Leader。</p>
+<h4 id="通信"><a href="#通信" class="headerlink" title="通信"></a>通信</h4><p>Raft算法的通信主要由以下两种 RPC 请求组成</p>
+<p><strong>1）RequestVote RPC：竞选阶段使用，用于拉票</strong></p>
+<p>请求格式：候选人</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/029.png"></p>
+<p>响应格式：投票人</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/030.png"></p>
+<p><strong>2）AppendEntries RPC ：Leader正常通信时使用</strong></p>
+<p>发送格式：Leader</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/031.png"></p>
+<p>响应格式：非 Leader 节点</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/032.png"></p>
+<h4 id="日志复制过程"><a href="#日志复制过程" class="headerlink" title="日志复制过程"></a>日志复制过程</h4><blockquote>
+<p>状态机</p>
+</blockquote>
+<img src="分布式的一致性和共识性/033.png" style="zoom: 33%;" />
+
+<p>Raft 中的节点其实就是一个状态机，而日志就是状态机的标准。即通过保持日志的一致性来维持节点的节点状态一致性。</p>
+<blockquote>
+<p>Leader节点在复制操作日志之后宕机问题</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/027.png"></p>
+<blockquote>
+<p>因为网络分区而导致某个节点的任期大于大多数节点的任期</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/007.png"></p>
+<blockquote>
+<p>日志条目内容</p>
+</blockquote>
+<p>日志由有序编号（log index）的条目组成。</p>
+<p>每个条目包含了创建时它时所处的任期号（Term）以及用于状态机执行的命令。</p>
+<p>如果一个条目被成功复制到过半数节点，那么这个条目就可以被视为可以提交日志。</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/026.png"></p>
+<blockquote>
+<p>日志安全</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/028.png"></p>
+<blockquote>
+<p>网络分区问题（出现双Leader-“脑裂”）</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/025.png"></p>
+<ul>
+<li>解决脑裂可以参考 ZAB 协议，即低于过半节点就禁止对外提供服务。</li>
+<li>又或者可以额外为 Leader 设置一个<code>健康检测周期超时</code>来统计 Follower 健康状态。期间可通过心跳包来收集状态信息，而一旦到达健康检测周期就进行一次健康节统计，如果发现健康节点数大幅度减少（相较上一次统计）就马上停止提供服务。（思想参考自 Spring Cloud Eureka 的保护机制）</li>
+<li>除此之外也有人提出 <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzI3NDIxNTQyOQ==&mid=2247484229&idx=1&sn=77d6178f182189e1fc8f042aa698f2e5&chksm=eb16242fdc61ad39d74b4af1a72253bc5ae0de42fa1d65274fd21b9f903e03e77e8d4680ee0c&scene=21">leader lease</a> 方案，有兴趣的可以了解一下</li>
+</ul>
+<h3 id="ZooKeeper-Atomic-Broadcast（ZAB协议）"><a href="#ZooKeeper-Atomic-Broadcast（ZAB协议）" class="headerlink" title="ZooKeeper Atomic Broadcast（ZAB协议）"></a>ZooKeeper Atomic Broadcast（ZAB协议）</h3><h4 id="基本简介"><a href="#基本简介" class="headerlink" title="基本简介"></a>基本简介</h4><p>&amp;emsp;&amp;emsp;ZAB 协议如其名，是一个专门为 ZooKeeper 设计的协议，一开始是为了 Zookeeper <code>崩溃恢复</code>的需求而设计的。ZAB 实现了一种<code>主备模式</code>的系统架构，且可以让备份节点和主节点的状态保持一致。不难看出 ZAB 协议并不像 Paxos 和 Raft 那样，它是强耦合 Zookeeper 中的协议，并不通用。</p>
+<h4 id="ZAB特点"><a href="#ZAB特点" class="headerlink" title="ZAB特点"></a>ZAB特点</h4><ul>
+<li>支持 Leader 选举</li>
+<li>支持崩溃恢复。节点宕机恢复后可以自动重新加入集群</li>
+<li>可用性高。只要求过半节可用就能提供服务</li>
+<li>主节点负责读写操作，其它节点只负责读操作</li>
+<li>最终一致性。过半应答导致<ul>
+<li>数据提交后只需过半即可进行下一步操作，也就是说极端情况下可能出现某个节点还没响应 Leader 且又没有脱离集群，而这时因为已经得到过半Follower响应，所以 ZooKeeper 就响应用户操作数据成功了，但接着进行查询时正好查询到还没响应 Leader 的这个节点，这时就会数据不一致问题</li>
+</ul>
+</li>
+</ul>
+<h4 id="协议角色"><a href="#协议角色" class="headerlink" title="协议角色"></a>协议角色</h4><blockquote>
+<p>Observer官方介绍： <a target="_blank" rel="noopener" href="https://zookeeper.apache.org/doc/current/zookeeperObservers.html">https://zookeeper.apache.org/doc/current/zookeeperObservers.html</a> </p>
+</blockquote>
+<p>在 ZAB 协议中存在3种角色：Leader、Follower、Observer。其中<strong>Observer单纯是用来扩展集群的连接数（读性能）而设计的</strong>。它的功能和 Follower 差不多，但<strong>它并不参与 Leader 选举</strong>，而只会默默地同步 Leader 的状态。</p>
+<p>那为什么要用 Observer 而不直接用 Follower 来扩展呢？</p>
+<p>官方的解释是如果<strong>添加更多的 Follower 就会引起集群的写性能下降</strong>，因为写操作需要过半才算成功写入，所以使用 Follower 来扩展就需要询问更多的 Follower 从而导致集群可用性降低。</p>
+<p>因此到最后其实在 ZAB 协议中只有两个核心角色，它们分别是 Leader 和 Follower 。</p>
+<blockquote>
+<p>算法核心角色</p>
+</blockquote>
+<p><strong>Leader：</strong>读写请求处理、广播事务、接收转发过来的写请求</p>
+<p><strong>Follower：</strong>备份数据<strong>、</strong>扩展读性能、转发写请求、参加选举</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/034.png"></p>
+<h4 id="通信模型"><a href="#通信模型" class="headerlink" title="通信模型"></a>通信模型</h4><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/036.png"></p>
+<p> 在 ZAB 协议中通信是以 FIFO 模型来实现的。其请求处理过程如下：</p>
+<ol>
+<li>Leader 接收到 Client 请求之后会将每个请求打包成 proposal 并为其分配一个<strong>全局递增的事务ID（zxid）</strong>，然后按照接收顺序广播给所有 Follower</li>
+<li>Follower 接收到 proposal 后亦会顺序处理然并响应 Leader（即 Follower 和 Leader 用的是请求应答机制）</li>
+<li>当 Leader 接收到<strong>过半</strong> Follower 的ACK响应后就会广播 commit 给所有 Follower，以示让其提交对应zxid的 proposal </li>
+<li>Follower 接收到 commit 后会对 proposal 进行提交</li>
+</ol>
+<h4 id="节点的两种模式"><a href="#节点的两种模式" class="headerlink" title="节点的两种模式"></a>节点的两种模式</h4><ul>
+<li>恢复模式：Leader 选举时、新节点加入时</li>
+<li>广播模式：集群中过半节点正常提供服务时</li>
+</ul>
+<p>例如集群刚启动，因为还没有 Leader 的缘故所以所有节点都会进入恢复模式来选举Leader，直到选举完成。</p>
+<p>又例如在集群正常运作期间有新节点加入，这时<strong>新节点会进入恢复模式</strong>并找到正在广播消息的 Leader 进行数据同步，直到同步完成后才会转为广播模式参与提供服务的行列中。</p>
+<h4 id="全局事务ID（ZXID）格式"><a href="#全局事务ID（ZXID）格式" class="headerlink" title="全局事务ID（ZXID）格式"></a>全局事务ID（ZXID）格式</h4><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/040.png"></p>
+<p><strong>Epoch：</strong></p>
+<p>epoch 是一个时间戳。新任 Leader 会从本地查出最新的一次 proposal，取出其 ZXID 后解析出 epoch（即上一个任期）然后递增 1 作为新任期编号。当然，如果没有 proposal 就会直接用新的时间戳。</p>
+<p>这里的 epoch 值其实相当于 Raft 中的 Term。</p>
+<p><strong>Counter：</strong></p>
+<p>Zookeeper 每接收一个请求就会在现有 counter 的基础上加 1。</p>
+<p>注意，counter 是存在溢出问题的。当溢出后就会进行重新选举， 然后 counter 重新变回0 。但因为 Leader 选举其实是会导致集群短暂无法提供服务的，所以如果你对着方面有严苛的要求，也可以通过修改源码来重新调整 ZXID 中 epoch 和 counter 的比例，详情请异步到参考。</p>
+<h4 id="简单粗暴的二阶段提交"><a href="#简单粗暴的二阶段提交" class="headerlink" title="简单粗暴的二阶段提交"></a>简单粗暴的二阶段提交</h4><p>ZAB 的二阶段提交和 2PC 的不太一样。在 ZAB 中 Leader 广播 commit 后，如果 Follower 进行 commit 失败，那么 Follower 只会断开与当前 Leader 的连接，然后再重新<strong>进入恢复模式</strong>直到同步成功后才会重新进入集群。换句话说就是 ZAB 通过恢复模式避免了回滚事务这种操作。</p>
+<h4 id="协议陈述"><a href="#协议陈述" class="headerlink" title="协议陈述"></a>协议陈述</h4><blockquote>
+<p>节点模式和状态</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/038.png"></p>
+<p>两种模式实质可以细分为三个步骤</p>
+<ul>
+<li>发现：选举</li>
+<li>同步：复制数据</li>
+<li>广播：提供服务</li>
+</ul>
+<p>在协议中节点有三种状态</p>
+<ul>
+<li><p>LOOKING：处于选举阶段（集群节点的初始状态）</p>
+</li>
+<li><p>FOLLOWING：Follower 的状态</p>
+</li>
+<li><p>LEADEING：Leader 的状态</p>
+</li>
+</ul>
+<blockquote>
+<p>发现：选举过程（FastLeaderElection）</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/041.png"></p>
+<p>如图所示，选票结构是 vote ( myid，zxid )。其中 myid 是节点在集群中的唯一标识，而 zxid 则是当前节点最后的 zxid 值。</p>
+<p>选举步骤如下：</p>
+<ol>
+<li>节点进入恢复模式后会切换为 LOOKING 状态，并互相发送 vote 进行拉票</li>
+<li>接收到 vote 后首先会对比zxid。如果自己的 zxid 比接收到的小，则将自己的投标目标改为 zxid 值最大的那个节点。而如果zxid 一样（例如集群第一次启动），就接着对比 myid 值，然后改投给 myid 最大的节点。例如上图示例中最后 Leader 将会是 Server1（1，6）。而且不难发现如果节点在第一轮投票中自己的 vote 是最大的话，那么就不会再发起投票操作了，而是等待其节点投票给自己。</li>
+<li>经过第二次投票后，因为得到过半选票，所以 Leader 就可以确立了。这时 Leader 节点会切换为 Leading，而其他节点则切换为 Following。随后集群节点就会进入同步阶段</li>
+</ol>
+<p>注意：</p>
+<ul>
+<li>选举过程中是可能出现短暂脑裂的。譬如投票过程网络延时大，出现 A 认为 B 是 Leader，B 认为 C 是 Leader 的情况。当然，这时因为 B 知道自己不是 Leader 所以它并不会响应 A 的请求，最后 A 会断开重连再恢复。但以上说的这种情况无疑会降低集群的可用性，因此为了解决这个问题FastLeaderElection引入了<strong>FinalizeWait机制</strong>，即在投票期间节点会等待一段时间以避免延时带来不必要的问题</li>
+</ul>
+<blockquote>
+<p>同步：节点状态同步</p>
+</blockquote>
+<p>在选举阶段中随着 Leader 的确立，周期值 epoch 也会被重新赋值</p>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/039.png"></p>
+<ol>
+<li>在刚诞生准 Leader 后（同步Leader节点状态前的这段时间），Leader 会在最新的 zxid 中提取出 epoch 值然后在此基础上加 1 左为新一任 Leader 的任期标识<code>new epoch</code></li>
+<li>生成新 epoch 后 Leader 会将新 epoch 和事务状态集合打包一同广播给所有 Follower 让其复制自己的节点状态</li>
+<li>Follower 成功接收到要求后也会通过请求应答机制响应 Leader </li>
+<li>在这期间如果 Leader 得到过半 Follower 的响应，那么 Leader 就会继续向 Follower 发出 commit 要求，这时 Follower 就会正式将从 Leader 同步过来内容应用到自己的节点上</li>
+</ol>
+<blockquote>
+<p>广播：集群处于正常服务状态</p>
+</blockquote>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/042.png"></p>
+<ol>
+<li>Leader 接收到 Client 请求后将其封装为 proposal 并赋予一个全局唯一的事务id值（zxid），然后记录 log 并将其广播给 Follower</li>
+<li>得到过半 Follower 响应后，Leader 首先是自己执行 commit proposal 操作，然后再将 commit 广播给 Follower</li>
+<li>Follower 接收到 commit 要求后就会将 proposal 应用到当前节点中并响应 Leader</li>
+</ol>
+<p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/035.png"></p>
+<h3 id="Gossip、Paxos、Raft、ZAB之间的区别"><a href="#Gossip、Paxos、Raft、ZAB之间的区别" class="headerlink" title="Gossip、Paxos、Raft、ZAB之间的区别"></a>Gossip、Paxos、Raft、ZAB之间的区别</h3><p><img src="/%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E5%92%8C%E5%85%B1%E8%AF%86%E6%80%A7/043.png"></p>
+<blockquote>
+<p><strong>注：</strong> </p>
+<ul>
+<li>MongoDB 的 Master 选举以及 Redis Sentinel 的 Master 选举均使用 Raft 算法</li>
+<li>MongoDB 可以通过调节 writeConcern、readPreference、readConcern 等参数实现强一致的 CP 架构</li>
+<li>据了解 Redis 正在研发一个全新的集群模块，通过采用 Raft 算法实现节点间的共识，相当于提供多一种集群模式</li>
+</ul>
+</blockquote>
+<ul>
+<li>在 Paxos 中 Leader 选举并不是必须的，它只是一种优化手段</li>
+<li>ZAB 协议和 Raft 算法其实非常相似，而较为显著的差别有如下这些<ul>
+<li><strong>选举条件：</strong>ZAB 以 MYID 和 ZXID 作为选票，而 Raft 参考的是 Term 和 日志条目</li>
+<li><strong>Term和Epoch生成时机：</strong>Raft 中的 Term 只代表发起选举的次数，它在节点成为候选者时产生，而且如果在当前 Term 内没有选举成功，则会直接进入下一个 Term。而 ZAB 中的 Epoch 是在选举成功之后产生的</li>
+<li><strong>脑裂问题：</strong>ZAB 集群过半才可用，解决了脑裂问题。而 Raft 算法本身是存在脑裂问题的，出现脑裂后只能等待网络恢复才能达成最终一致性</li>
+</ul>
+</li>
+</ul>
+<h2 id="Quorum-NWR-一致性控制策略"><a href="#Quorum-NWR-一致性控制策略" class="headerlink" title="Quorum NWR 一致性控制策略"></a>Quorum NWR 一致性控制策略</h2><h3 id="基本介绍-1"><a href="#基本介绍-1" class="headerlink" title="基本介绍"></a>基本介绍</h3><blockquote>
+<p>介绍</p>
+</blockquote>
+<p>Quorum NWR 是一种控制读写一致性策略，是一种以<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E9%B4%BF%E5%B7%A2%E5%8E%9F%E7%90%86">鸽巢原理</a>为理论基础的一致性解决方案。它适用于<code>有数据冗余副本的集群</code>系统。</p>
+<ul>
+<li>N：集群中节点的个数量</li>
+<li>W：写操作必须等待至少 W 个副本节点都成功写入后才能响应客户端操作成功（W 不能大于 N）</li>
+<li>R：读操作必须一次读取 R 个节点上的数据，然后进行版本比对得出最新的数据（R 不能大于 N）</li>
+</ul>
+<p>注：鸽巢原理是一种证明<code>存在性</code>的论述。例如上述的 W 和 R 代表鸽子，而 N 代表的是鸽笼。当 W+R &gt; N 时就必定能够读取到最新写入的数据，从而实现强一致。譬如当 N &#x3D; 5，W &#x3D; 3， R&#x3D;3，那么读操作时就必然读到一个含有最新版本数据的节点。</p>
+<blockquote>
+<p>一致性级别</p>
+</blockquote>
+<ul>
+<li>W + R &gt; N：强一致</li>
+<li>W + R &#x3D; N：弱一致</li>
+<li>W + R &lt; N：最终一致</li>
+</ul>
+<blockquote>
+<p>注意事项</p>
+</blockquote>
+<ul>
+<li>不难看出 Quorum NWR 其实是一种通过降低可用性来提高一致性的方案</li>
+<li>个人理解读操作一般情况下都是既可以在主节点中也可以在副本节点中完成的，所以 R 既可以是主节点也可以是副本节点</li>
+<li>Quorum NWR 不仅是一种策略，也是一种思路，所以不同的实现方式可能存在稍微的出入，但思想是万变不离其宗的</li>
+</ul>
+<h3 id="最佳实践案例"><a href="#最佳实践案例" class="headerlink" title="最佳实践案例"></a>最佳实践案例</h3><h4 id="MongoDB"><a href="#MongoDB" class="headerlink" title="MongoDB"></a>MongoDB</h4><blockquote>
+<p>如何保证写不丢失数据？   </p>
+</blockquote>
+<p>通过 <code>wirteConcern</code> 设置</p>
+<ul>
+<li>0：只要主库写入成功就马上响应客户端，而无需关心从库是否已经成功落盘</li>
+<li>n（少于集群节点总数但大于0）：除了主库落盘成功外，还需要等待 n 个从库落盘成功才可以响应客户端</li>
+<li>majority：要求集群过半节点落盘成功才响应客户端</li>
+</ul>
+<blockquote>
+<p>读操作控制</p>
+</blockquote>
+<p>  通过 <code>readPreference</code> 设置</p>
+<ul>
+<li>primary（默认）：只在主库中读取（会降低集群性能，以及增加主库的负载）<ul>
+<li>注意：也就是说 MongoDB 集群其实是一个强一致的 CP 系统</li>
+</ul>
+</li>
+<li>primaryPreferred：优先选择主库，如果不可用则选择从库</li>
+<li>secondary：只在从库中读</li>
+<li>secondaryPreferred：优先选择从库，不可用再选主库</li>
+<li>nearest：选择距离最近的节点进行读操作（以 ping time响应速度决定）</li>
+</ul>
+<blockquote>
+<p>控制读操作的隔离级别（MongoDB ACID中的隔离性实现）</p>
+</blockquote>
+<p>通过<code>readConcern</code>设置</p>
+<ul>
+<li>local（默认）：可以读到所有可用的数据<ul>
+<li>简单说就是从当前所连接的节点上读取，所读到的数据不保证已经被多数节点持久化</li>
+</ul>
+</li>
+<li>available：可以读到所有可用的数据<ul>
+<li>3.6 版本开始支持，针对分片集群</li>
+<li>如果使用的是复制集 local 和 available 两种配置是一样的</li>
+</ul>
+</li>
+<li>majority：读取在大多数节点上已经提交成功的数据<ul>
+<li>majority 不代表能够一定读到最新写入的数据，但可以避免脏读</li>
+<li>该配置只建议在事务上临时设置，否则会影响集群的可用性</li>
+</ul>
+</li>
+<li>linearizable：线性化读<ul>
+<li>一定能读取到当前节点的上一个写操作的值</li>
+</ul>
+</li>
+<li>snapshot：读取快照中的数据<ul>
+<li>隔离性最强，相当于 RDBMS 中的序列化读写</li>
+</ul>
+</li>
+</ul>
+<h4 id="Kafka"><a href="#Kafka" class="headerlink" title="Kafka"></a>Kafka</h4><blockquote>
+<p>确保生产者消息不丢失</p>
+</blockquote>
+<p>在网上经常看到有说 Kafka 不可靠会导致消息丢失的说法，其实这完全是因为对 Kafka 不熟悉所致。</p>
+<p>例如可以在 Producer 中调节 acks 参数级别，以及在 Broker 中设置 min.insync.replicas 数量来保证消息日志落盘成功</p>
+<p>1）Producer 中 acks 的级别：</p>
+<ul>
+<li><p>0：Producer 完全不理会 Replica 是否已经日志落盘成功，发送完一个批消息后会马上发下一个。这时 Producer 吞吐量最高，但因为能确认日志是否落盘成功，所以存在丢失日志的风险</p>
+</li>
+<li><p>1（默认）：Producer 只关注 Leader Replica 是否已经日志落盘成功。该配置级别是吞吐量和安全性的折中点</p>
+</li>
+<li><p>-1或all：Producer 会等待集群中所有 Replica 的日志落盘成功才会发送下一个批次的消息。消息能够确保落盘成功，但吞吐量最低</p>
+</li>
+</ul>
+<p>2）Broker 中的 min.insync.replicas 配置：</p>
+<ul>
+<li>用于设置必须应答成功的 Replica 数，亦只有满足这个值 Leader Broker 才会响应 Producer 日志落盘成功</li>
+<li>特别注意，该配置只在 Producer 的 acks 值设置为 -1&#x2F;all 时才生效</li>
+</ul>
+<blockquote>
+<p>关于 Kafka 中的 ISR 集合（in-sync replica）</p>
+</blockquote>
+<p>ISR 集合是 Kafka 维护的一个健康节点集合。</p>
+<p>默认情况下所有节点都是 ISR 成员，亦只有 ISR 成员才有资格竞选成为 Leader。</p>
+<p>除此之外，Producer 发送一条消息到 Kafka 集群，那么这条消息持久化成功与否，默认情况下是根据 ISR 成员的响应情况来判断的</p>
+<h4 id="Redis"><a href="#Redis" class="headerlink" title="Redis"></a>Redis</h4><blockquote>
+<p>如何降低数据复制丢失和延时所带来的风险？</p>
+</blockquote>
+<p>&amp;emsp;&amp;emsp;因为<code>Redis高可用的基础是复制</code>，而且 Redis 高可用方案目前来说属于 AP 系统（据悉 Redis 正在开发基于 Raft 算法的一种新集群模式，而如果采用 Raft 算法，集群可用性将会降低，但会从 AP 摇身一变为 CP 系统）。</p>
+<p>&amp;emsp;&amp;emsp;首先要给出结论：目前版本的 Redis 高可用解决方案不能完全避免数据丢失，而只能做到尽量降低丢失数据可能。在 Redis 复制机制中有如下两个关键配置项，我们可以利用它们来降低复制时丢失数据的风险。</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 要求复制延迟低于指定时间值（秒），否则拒绝提供写服务</span></span><br><span class="line"><span class="attr">min-replicas-max-lag</span> <span class="string">10</span></span><br><span class="line"><span class="comment"># 要求健康节点数（副本节点）要达到一定的数量，否则拒绝提供写服务</span></span><br><span class="line"><span class="attr">min-replicas-to-write</span> <span class="string">3</span></span><br></pre></td></tr></table></figure>
+
+<p>以上配置项特性表面上和 Quorum NWR 不是很占边，但事实上亦属于提高读一致的操作。即通过<strong>确保副本健康节点的数量</strong>和<strong>限制网络延时</strong>来间接实现 W 功能。换句话说 min-replicas-max-lag 的值越低，以及 min-replicas-to-write 的值越大时，那么读一致性就越高。而在前面已经提到过，Redis 目前并不能完全解决<strong>复制延时</strong>和<strong>数据丢失</strong>等问题。</p>
+<ul>
+<li>主节点在未复制成功的前提下宕机了，然后副本节点成为主节点提供服务，这时就会造成丢失数据</li>
+<li>通过副本节点来提高读性能时，因为网络的不定性必然会出现一致性问题</li>
+</ul>
+<p>个人认为，Redis 之所以没有直接支持 Quorum NWR 的原因是与其设计理念有关，因为 Redis 是一个可用性优先的系统，而如果使用 Quorum NWR 就会导致可用性降低（是哟功能 min-replicas-max-lag、min-replicas-to-write 可会一定程度降低可用性 ）。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://managementfromscratch.wordpress.com/2016/04/01/introduction-to-gossip/">INTRODUCTION TO GOSSIP</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.taohui.pub/wp-content/uploads/2018/05/The_Part-Time_ParliamentPaxos%E7%AE%97%E6%B3%95%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91-3.pdf">The Part-Time Parliamen中文译文</a> </li>
+<li>《从Paxos到Zookeeper 分布式一致性原理与实践》</li>
+<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/27304887/paxos-vs-two-phase-commit">Paxos vs two phase commit</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/42112507">选出Leader Proposer解决活锁</a></li>
+<li>《云原生分布式存储基石 etcd深入解析》</li>
+<li><a target="_blank" rel="noopener" href="https://raft.github.io/">The Raft Consensus Algorithm</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/26506491">Raft实现指南</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhidao.baidu.com/question/391807382596818965.html">算法和协议的定义和区别</a></li>
+<li><a target="_blank" rel="noopener" href="https://zookeeper.apache.org/doc/r3.5.0-alpha/zookeeperInternals.html#sc_atomicBroadcast">ZooKeeper Internals</a></li>
+<li><a target="_blank" rel="noopener" href="https://issues.apache.org/jira/browse/ZOOKEEPER-2789">Reassign ZXID for solving 32bit overflow problem</a> </li>
+<li><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/46855968">ZooKeeper的zxid溢出了怎么办？</a></li>
+<li><a target="_blank" rel="noopener" href="https://juejin.im/post/5af14cd2f265da0b863633e4">Raft只读操作实现要点</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/mysql%E7%B4%A2%E5%BC%95/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/Manjaro%E4%BD%BF%E7%94%A8%E6%84%9F%E5%8F%97/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

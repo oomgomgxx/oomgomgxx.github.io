@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      ORM框架执行原理与比对 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Apr 22, 2020
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      ORM框架执行原理与比对
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年8月18日22:09:56 — 添加 Spring Data JPA 动态 SQL 相关内容</li>
+<li>2020年8月20日20:12:33 — 添加 MyBatis 源码分析</li>
+</ul>
+<h2 id="闲聊"><a href="#闲聊" class="headerlink" title="闲聊"></a>闲聊</h2><p>今天心血来潮地在网上搜了一下有关 ORM 框架的使用对比，发现其实国内外对于ORM 框架的使用还是有着很大差别的。例如国内比较流行 MyBatis ，而国外则是 Hibernate。至于为什么这样，个人认为不同的人有着不同的考虑。其实对于技术本身而言并没有最好也没有最坏之说，有的只是合不合适而已。因此从今晚开始，打算写一篇有关ORM 框架对比相关的文章以梳理一下自己对 ORM 框架的理解，以及顺便对相关知识进行查漏补缺一下。</p>
+<blockquote>
+<p>使用趋势比对</p>
+</blockquote>
+<p>全球趋势</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/043.png"></p>
+<p>中国占用份额</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/044.png"></p>
+<h2 id="ORM是什么"><a href="#ORM是什么" class="headerlink" title="ORM是什么"></a>ORM是什么</h2><p>ORM的全称叫 Object Relational Mapping ，既对象关系映射。最初 ORM 的概念起始于面向对象编程，因为在面向对象编程中有句这样的话，就是“万物皆对象”，但是我们知道数据最终是要被持久化到硬盘上的，例如通过关系型数据库做介质来做持久化操作，因此也有人将 ORM 中的 R 解释为关系型数据库，那么当时存在的问题就是在关系型数据库中数据是以一条条记录的形式来存储的，这种存储方式叫行存储，行存储的特点是可以将多个不同类型的数据列存储为一条行记录。因此问题的关键点就在于关系型数据库并不是以对象的形式来持久化数据的。那么面对这样一个问题该如何解决呢？这时就诞生了 ORM 。通俗点来说 ORM 其实就是将数据库表映射为对象的操作，那么程序要想操作表记录的话就只需操作其映射对象就可以了，而完成这个 ORM 操作或者说提供 ORM 功能支持的就叫 ORM 框架。</p>
+<p>现今主流的 ORM 框架可以大致分为两种，既 完全ORM 和 非完全ORM。完全ORM指的是在ORM框架的加持下开发人员无需再维护SQL语句而只需要关心其对象就可以了。而非完全ORM指的是虽然提供ORM功能，但SQL语句还是需要开发人员来维护的。</p>
+<p>对于目前而言，据个人的了解提供完全 ORM 功能的框架有两个，Hibernate 和 TopLink。但是实话实说 TopLink 我是没有使用过，而且目前使用 TopLink 的人实在是少，所以不太好评价。而半完全 ORM 的代表莫过于 MyBatis 了。</p>
+<p>最后还是那句，对于技术而言并没有最好和最坏之分，有的只是合不合适而已。</p>
+<h2 id="完全ORM-Hibernate"><a href="#完全ORM-Hibernate" class="headerlink" title="完全ORM-Hibernate"></a>完全ORM-Hibernate</h2><h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><ul>
+<li>完全可以使用 API 来代替 SQL 工作</li>
+<li>支持 JPA 规范，能够自动生成数据库表</li>
+<li>支持映射数据库表和视图</li>
+<li>支持 <code>Native SQL</code>、<code>HQL</code>、<code>Criteria</code> 3种操作方式</li>
+<li>支持 Annotation 和 XML 两种映射配置方式</li>
+<li>支持 一级缓存（Session级别）、二级缓存（SessionFactory级别）、查询缓存（需要二级缓存支持）</li>
+<li>默认会缓存 SQL（全列）语句模板来提高操作效率（可用 @DynamicUpdate&#x2F;@DynamicInsert 改为动态生成）</li>
+<li>支持多种 ID 自生成策略</li>
+<li>支持批量更新和插入操作（与IDENTITY主键自增长策略一起使用会失效）</li>
+<li>支持的懒加载配置：<code>FetchType.LAZY</code>、<code>FetchType.EAGER</code>、<code>@Fetch</code></li>
+<li>支持多种存储过程调用方式：<ul>
+<li>Session#createStoredProcedureCall()</li>
+<li>Session#doWork</li>
+<li>EntityManager#createStoredProcedureQuery</li>
+</ul>
+</li>
+<li>对并发操作支持较为完善，提供悲观锁（LockMode&#x2F;LockModeType）、乐观锁@Version、无版本乐观锁@OptimisticLocking等实现</li>
+<li>对第三方技术有良好支持，例如可以模块化组装第三方本地缓存以及连接池池等</li>
+<li>内置分页方法</li>
+<li>对关联表关系有较为全面的支持</li>
+<li>能做到切换数据源时代码无感知</li>
+<li>支持多租户</li>
+</ul>
+<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><ul>
+<li>封装程度较高，导致架构略显复杂，有一定学习成本</li>
+<li>无法对SQL进行统一管理，且SQL嵌套在代码中不利于修改和非开发人员浏览</li>
+<li>批量操作不够灵活</li>
+</ul>
+<h3 id="执行原理"><a href="#执行原理" class="headerlink" title="执行原理"></a>执行原理</h3><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/016.png"></p>
+<p>一、持久化（瞬态转持久态）</p>
+<ol>
+<li>使用 Session&#x2F;EntityManager 执行 CRUD 操作，譬如 save(Object)</li>
+<li>内部通过 SessionImpl#fireEventOnEachListener 发布 SaveOrUpdateEvent 事件<ul>
+<li>SaveOrUpdateEvent 包含了入参和 EventSource（SessionImpl）等信息</li>
+</ul>
+</li>
+<li>DefaultSaveEventListener（DefaultSaveOrUpdateEventListener） 接收到事件进行处理，会进行以下操作：<ol>
+<li>使用 IdentifierGenerator 生成主键</li>
+<li>将主键设置到入参实体中</li>
+<li>将实体保存到一级缓存（StatefulPersistenceContext）</li>
+</ol>
+</li>
+<li>返回 ID 值给调用层</li>
+<li>提交事务（start）</li>
+<li>执行 JdbcResourceLocalTransactionCoordinatorImpl#beforeCompletionCallback，而其主要逻辑位于 SessionImpl#flushBeforeTransactionCompletion</li>
+<li>发布 FlushEvent 事件</li>
+<li>DefaultFlushEventListener 接收事件执行 onFlush 方法<ol>
+<li>刷新缓存</li>
+<li>执行 SQL <ol>
+<li>通过 AbstractFlushingEventListener#performExecutions 执行 ActionQueue（当前 Session 的 CRUD 操作）</li>
+<li>执行具体 Action 的 execute 方法，主要做以下事情<ol>
+<li>构建 SQL 语句（PreparedStatement 从具体连接池中连接中返回）</li>
+<li>将入参设置进 PreparedStatement</li>
+<li>执行 SQL</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>提交事务（end）</li>
+</ol>
+<p>二、查询操作</p>
+<p>1）get 操作</p>
+<ol>
+<li>Session#get（class，id）</li>
+<li>SessionImpl#doLoad（id）发布 LoadEvent 事件。LoadEvent 包含 id、实例类型限定名、SessionImpl</li>
+<li>DefaultLoadEventListener 接收到事件执行 onLoad 方法<ol>
+<li>尝试从一级缓存（StatefulPersistenceContext）中找，如果没有则到二级缓存中找（CacheEntityLoaderHelper#loadFromSecondLevelCache）</li>
+<li>如果实例依然被 Session 管理则返回，否则返回null</li>
+</ol>
+</li>
+</ol>
+<p>2）query#iterator 操作</p>
+<ol>
+<li>Session#createQuery（HQL）返回 Query 实例</li>
+<li>Query#iterator 返回迭代器。期间会保存查询策略，并先查出 HQL 对应的所有 ID 值</li>
+<li>Iterator#hasNext 判断是否有数据</li>
+<li>Iterator#next 返回代理实例</li>
+</ol>
+<h3 id="使用回顾"><a href="#使用回顾" class="headerlink" title="使用回顾"></a>使用回顾</h3><h4 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/001.png"></p>
+<h4 id="实体"><a href="#实体" class="headerlink" title="实体"></a>实体</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/002.png"></p>
+<h4 id="自定义拦截器"><a href="#自定义拦截器" class="headerlink" title="自定义拦截器"></a>自定义拦截器</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/003.png"></p>
+<h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/004.png"></p>
+<h3 id="JPA-规范配置"><a href="#JPA-规范配置" class="headerlink" title="JPA 规范配置"></a>JPA 规范配置</h3><p><strong>配置</strong></p>
+<blockquote>
+<p>位置：src\main\resources\META-INF\persistence.xml</p>
+</blockquote>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/005.png"></p>
+<p><strong>使用案例</strong></p>
+<p>工具类</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/006.png"></p>
+<p>案例</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/007.png"></p>
+<h3 id="和Spring整合"><a href="#和Spring整合" class="headerlink" title="和Spring整合"></a>和Spring整合</h3><blockquote>
+<p>整合过程</p>
+</blockquote>
+<p>1）依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-tx<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-orm<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.hibernate<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hibernate-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>5.4.10.Final<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>2）配置Configuration</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableTransactionManagement</span></span><br><span class="line"><span class="meta">@PropertySource(&quot;classpath:jdbc.properties&quot;)</span></span><br><span class="line"><span class="meta">@Configuration(proxyBeanMethods = false)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HibernateConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.username&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String username;</span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.password&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String password;</span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.url&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String url;</span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.driver&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String driverClass;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> DataSource <span class="title function_">dataSource</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">HikariDataSource</span> <span class="variable">dataSource</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HikariDataSource</span>();</span><br><span class="line">        dataSource.setDriverClassName(driverClass);</span><br><span class="line">        dataSource.setJdbcUrl(url);</span><br><span class="line">        dataSource.setUsername(username);</span><br><span class="line">        dataSource.setPassword(password);</span><br><span class="line">        <span class="keyword">return</span> dataSource;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> LocalSessionFactoryBean <span class="title function_">localSessionFactoryBean</span><span class="params">(DataSource dataSource)</span> &#123;</span><br><span class="line">        <span class="type">LocalSessionFactoryBean</span> <span class="variable">factoryBean</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LocalSessionFactoryBean</span>();</span><br><span class="line">        factoryBean.setDataSource(dataSource);</span><br><span class="line">        factoryBean.setPackagesToScan(<span class="string">&quot;com.td.entity&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">Properties</span> <span class="variable">properties</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line">        properties.put(Environment.HBM2DDL_AUTO, <span class="string">&quot;create&quot;</span>);</span><br><span class="line">        properties.put(Environment.SHOW_SQL, <span class="literal">true</span>);</span><br><span class="line">        properties.put(Environment.FORMAT_SQL, <span class="literal">true</span>);</span><br><span class="line">        <span class="comment">// 不用配置</span></span><br><span class="line">        <span class="comment">//properties.put(Environment.DIALECT, &quot;org.hibernate.dialect.MySQL5Dialect&quot;);</span></span><br><span class="line">        factoryBean.setHibernateProperties(properties);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> factoryBean;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用spring声明式事务</span></span><br><span class="line">    <span class="comment">// 还需要使用@EnableTransactionManagement开启</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> HibernateTransactionManager <span class="title function_">transactionManager</span><span class="params">(LocalSessionFactoryBean localSessionFactoryBean)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">SessionFactory</span> <span class="variable">sessionFactory</span> <span class="operator">=</span> localSessionFactoryBean.getObject();</span><br><span class="line">        <span class="type">HibernateTransactionManager</span> <span class="variable">transactionManager</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HibernateTransactionManager</span>();</span><br><span class="line">        transactionManager.setSessionFactory(sessionFactory);</span><br><span class="line">        <span class="keyword">return</span> transactionManager;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用JPA方式操作</span></span><br><span class="line">    <span class="comment">// 如果想要用@PersistenceContext来注入EntityManager</span></span><br><span class="line">    <span class="comment">// 则需要引入hibernate-jpa-2.1-api</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> EntityManager <span class="title function_">entityManager</span><span class="params">(LocalSessionFactoryBean localSessionFactoryBean)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">SessionFactory</span> <span class="variable">sessionFactory</span> <span class="operator">=</span> localSessionFactoryBean.getObject();</span><br><span class="line">        <span class="type">EntityManager</span> <span class="variable">entityManager</span> <span class="operator">=</span> sessionFactory.createEntityManager();</span><br><span class="line">        <span class="keyword">return</span> entityManager;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RunWith(SpringJUnit4ClassRunner.class)</span></span><br><span class="line"><span class="meta">@ContextConfiguration(classes = &#123; HibernateConfig.class &#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HibernateTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> SessionFactory sessionFactory;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//@Transactional</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Session</span> <span class="variable">session</span> <span class="operator">=</span> sessionFactory.openSession();</span><br><span class="line"></span><br><span class="line">        <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> Person.builder().name(<span class="string">&quot;zhang&quot;</span>).age(<span class="number">30</span>).build();</span><br><span class="line"></span><br><span class="line">        <span class="type">Transaction</span> <span class="variable">transaction</span> <span class="operator">=</span> session.getTransaction();</span><br><span class="line">        transaction.begin();</span><br><span class="line"></span><br><span class="line">        session.save(person);</span><br><span class="line"></span><br><span class="line">        transaction.commit();</span><br><span class="line"></span><br><span class="line">        System.out.println(person);</span><br><span class="line">        session.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@PersistenceContext</span></span><br><span class="line">    <span class="keyword">private</span> EntityManager entityManager;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="meta">@Transactional</span> <span class="comment">// JPA不能用Session事务，只能用Spring事务</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test2</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> Person.builder().name(<span class="string">&quot;zhang&quot;</span>).age(<span class="number">30</span>).build();</span><br><span class="line">        entityManager.persist(person);</span><br><span class="line">        System.out.println(person);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="半ORM-MyBatis"><a href="#半ORM-MyBatis" class="headerlink" title="半ORM-MyBatis"></a>半ORM-MyBatis</h2><h3 id="特点-1"><a href="#特点-1" class="headerlink" title="特点"></a>特点</h3><ul>
+<li>支持 XML 统一管理 SQL 语句，方便修改和调优需要</li>
+<li>架构清晰简单，小巧易上手</li>
+<li>开放拦截器接口(插件)，可按需定制和扩展功能，灵活性较高</li>
+<li>支持 Annotation 和 XML 两种映射配置方式</li>
+<li>支持 一级缓存(Session&#x2F; Statement级别)、二级缓存(Namespace)</li>
+<li>提供 动态SQL 标签，可实现逻辑拼装 SQL</li>
+<li>提供 ResultMap 标签定制映射结果集，以及 association(1-1) 和 collection(1-n) 两种关联配置</li>
+<li>映射配置文件支持 OGNL 表达式</li>
+</ul>
+<h3 id="缺点-1"><a href="#缺点-1" class="headerlink" title="缺点"></a>缺点</h3><ul>
+<li>需要维护SQL，因此对开发人员而已需要有一定的SQL能能力</li>
+<li>不支持物理分页操作，需要依赖插件来完成</li>
+<li>级联操作与 Hibernate 相比支持较差</li>
+<li>引入第三方连接池需要手动实现接口</li>
+<li>不支持 JPA 规范，无法自动生成数据库表</li>
+<li>因为映射模板 ID 唯一，所以导致关联接口时方法不能重载</li>
+<li>二级缓存使用不当容易导致脏读现象</li>
+<li>ID自生成策略较为薄弱，只支持 Jdbc3KeyGenerator(依赖数据库) 和 SelectKeyGenerator 两种</li>
+<li>源码缺少注释</li>
+</ul>
+<blockquote>
+<p>二级缓脏读问题：</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/018.png"></p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/019.png"></p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/020.png"></p>
+</blockquote>
+<h3 id="执行原理-1"><a href="#执行原理-1" class="headerlink" title="执行原理"></a>执行原理</h3><blockquote>
+<p>图解</p>
+</blockquote>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/017.png"></p>
+<blockquote>
+<p>过程</p>
+</blockquote>
+<p>一、初始化过程</p>
+<ol>
+<li><p>容器启动，实例化 ConfigurationAnnotationProcessor，解析 @Configuration 配置类上 @MapperScan 的信息</p>
+</li>
+<li><p>实例化 MapperScannerConfigurer 并执行其 postProcessBeanDefinitionRegistry 方法</p>
+<ul>
+<li>该方法源自 BeanDefinitionRegistryPostProcessor（BeanFactoryPostProcessor的扩展，即只执行一次，可用于实现Bean的急切的初始化）</li>
+<li>创建一个 ClassPathMapperScanner，用来扫描 @MapperScan 中指定包上的 Mapper，并为其生成与之对应的 MapperFactoryBean 的 BeanDefinition 后添加到容器中</li>
+</ul>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/054.png"></p>
+</li>
+<li><p>实例化 MapperFactoryBean</p>
+</li>
+<li><p>执行 MapperFactoryBean#afterPropertiesSet（初始化方法，源自InitializingBean）</p>
+</li>
+<li><p>执行 MapperFactoryBean#checkDaoConfig，将抽象方法上面的注解信息，解析为 MappedStatement（SQL节点），并保存在 Configuration 中提供后续 MapperProxy 操作使用</p>
+<ul>
+<li>MappedStatement 包含了 sqlSource、keyGenerator 等信息。其中 sqlSource 用于返回 BoundSql ，而 BoundSql 是 SQL 相关的元信息（包含解析出来的 SQL 语句以及入参名字）</li>
+</ul>
+</li>
+</ol>
+<p>二、使用过程</p>
+<ol>
+<li><p>有其他 Bean 依赖了 Mapper 接口，那么在该 Bean 在填充属性阶段就会用对应的 MapperFactoryBean#getObject 方法返回一个 Mapper 的代理实例（JDK动态代理）</p>
+</li>
+<li><p>用 Mapper 代理（MapperProxy）执行 CRUD 方法</p>
+</li>
+<li><p>根据代理的限定名从 Configuration#getMappedStatement 中返回对应的 MappedStatement（SQL节点）</p>
+<ul>
+<li>MappedStatement 保存在 StrictMap 中（继承自 HashMap）</li>
+<li>StrictMap 的特点是插入时发现 key 存在就会直接抛异常。因此 Mapper 方法并不支持方法重载，因为 key 使用的是抽象方法的全限定名，当不包含参数列表在内</li>
+</ul>
+</li>
+<li><p>利用 SqlSession 创建 Executor 并将执行权交给 Executor 来处理（CachingExecutor -&gt; SimpleExecutor）</p>
+<ul>
+<li>Executor 通过 Configuration 创建，在返回实例前如果判断被拦截，则会返回代理</li>
+</ul>
+</li>
+<li><p>Executor 会将 this 引用、MappedStatement（SQL节点）等作为参数，通过 Configuration 生成一个 RoutingStatementHandler 并将执行权交给它</p>
+<ul>
+<li>RoutingStatementHandler 用的是委派模式，真正工作的 StatementHandler 实例会在 RoutingStatementHandler 创建时根据具体的 StatementType 来创建</li>
+<li>InterceptorChain 的拦截先后顺序是 Executor 、ParameterHandler、StatementHandler、ResultSetHandler</li>
+</ul>
+</li>
+<li><p>RoutingStatementHandler 会先从 BoundSql 中获取具体的 SQL 语句，然后通过 connection#prepareStatement 返回一个 PrepareStatement（由具体线程池提供）</p>
+</li>
+<li><p>接着 RoutingStatementHandler 会将设置 PrepareStatement 参数的任务交给具体的 StatementHandler 来处理，过程如下：</p>
+<ul>
+<li>从 BoundSql 中返回入参的名称和类型，然后通过 TypeHandler 将值设入 PrepareStatement </li>
+<li>TypeHandler 对应着不同参数类型，而 MyBatis 提供了四十多个 TypeHandler 实例</li>
+</ul>
+</li>
+<li><p>执行 SQL 语句</p>
+</li>
+<li><p>返回 SQL 影响到的记录数量。在这之前如果使用了指定的 KeyGenerator，则在当前返回之前会先将主键封装到实体中再返回</p>
+</li>
+</ol>
+<blockquote>
+<p>拓展：MappedStatement 中有什么？</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// MapperAnnotationBuilder#parseStatement(method)</span></span><br><span class="line">assistant.addMappedStatement(</span><br><span class="line">    mappedStatementId,    <span class="comment">// MappedStatement的key值（方法的限定名，当不包含参数列表）</span></span><br><span class="line">    sqlSource,            <span class="comment">// 用来返回BoundSql（保存了SQL语句和参数相关信息）</span></span><br><span class="line">    statementType,        <span class="comment">// SQL语句对应的类型（譬如CRUD类型）</span></span><br><span class="line">    sqlCommandType,       <span class="comment">// 对应的命令类型，用于分发操作是作为判断条件</span></span><br><span class="line">    fetchSize,            <span class="comment">// 抓取数据大小的建议值（可在@Options中配置）</span></span><br><span class="line">    timeout,              <span class="comment">// 执行超时值（可在@Options中配置）</span></span><br><span class="line">    <span class="comment">// ParameterMapID</span></span><br><span class="line">    <span class="literal">null</span>,</span><br><span class="line">    parameterTypeClass,    <span class="comment">// 入参的类型</span></span><br><span class="line">    resultMapId,           <span class="comment">// 如果用了ResultMap，则该值就是其对应的ID值，用于返回时进行映射</span></span><br><span class="line">    getReturnType(method), <span class="comment">// 抽象方法的返回值，用于判断是否有必要返回SQL执行后的影响记录数</span></span><br><span class="line">    resultSetType,         <span class="comment">// ResultSet的操作类型，譬如是否为只向后滚动变量（该类型是个枚举）</span></span><br><span class="line">    flushCache,            <span class="comment">// 用于判断是否需要刷新缓存</span></span><br><span class="line">    useCache,              <span class="comment">// 用于判断是否需要缓存记录，如果是select就需要</span></span><br><span class="line">    <span class="comment">// TODO gcode issue #577</span></span><br><span class="line">    <span class="literal">false</span>,</span><br><span class="line">    keyGenerator,          <span class="comment">// 返回主键的策略。譬如Jdbc3KeyGenerator、SelectKeyGenerator</span></span><br><span class="line">    keyProperty,           <span class="comment">// 主键映射的属性名称</span></span><br><span class="line">    keyColumn,             <span class="comment">// 主键在数据库表中的字段名称</span></span><br><span class="line">    <span class="comment">// DatabaseID</span></span><br><span class="line">    <span class="literal">null</span>,</span><br><span class="line">    <span class="comment">// 驱动SQL的类型</span></span><br><span class="line">    <span class="comment">// 这里的驱动不是JDBC驱动，是XMLLanguageDriver（默认）或RawLanguageDriver。用于解析注解上的SQL</span></span><br><span class="line">    languageDriver, </span><br><span class="line">    <span class="comment">// ResultSets</span></span><br><span class="line">    options != <span class="literal">null</span> ? nullOrEmpty(options.resultSets()) : <span class="literal">null</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用案例"><a href="#使用案例" class="headerlink" title="使用案例"></a>使用案例</h3><blockquote>
+<p><a target="_blank" rel="noopener" href="https://mybatis.org/mybatis-3/zh/java-api.html">官方 API 文档</a></p>
+</blockquote>
+<h4 id="依赖-1"><a href="#依赖-1" class="headerlink" title="依赖"></a>依赖</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/008.png"></p>
+<h4 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/013.png"></p>
+<h4 id="实体-1"><a href="#实体-1" class="headerlink" title="实体"></a>实体</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/009.png"></p>
+<h4 id="映射文件"><a href="#映射文件" class="headerlink" title="映射文件"></a>映射文件</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/010.png"></p>
+<h4 id="映射关联接口"><a href="#映射关联接口" class="headerlink" title="映射关联接口"></a>映射关联接口</h4><p>Person（传统XML配置SQL）</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/011.png"></p>
+<p>Employee（MyBatis 3 注解配置SQL）</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/012.png"></p>
+<h4 id="自定义拦截器-1"><a href="#自定义拦截器-1" class="headerlink" title="自定义拦截器"></a>自定义拦截器</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/014.png"></p>
+<h4 id="测试-1"><a href="#测试-1" class="headerlink" title="测试"></a>测试</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/015.png"></p>
+<h3 id="和Spring整合-1"><a href="#和Spring整合-1" class="headerlink" title="和Spring整合"></a>和Spring整合</h3><blockquote>
+<p>整合过程</p>
+</blockquote>
+<p>1）依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- orm事务由spring管理 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-tx<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-orm<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;spring-version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- orm --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.mybatis<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mybatis-spring<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.0.3<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.mybatis<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mybatis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.5.4<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.zaxxer<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>HikariCP<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.4.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>mysql<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mysql-connector-java<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>8.0.20<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>2）配置Configuration</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableTransactionManagement</span></span><br><span class="line"><span class="comment">// 扫描Mapper接口，将Mapper接口封装为一个个MapperFactoryBean</span></span><br><span class="line"><span class="comment">// MapperFactoryBean#getObject实质就是session.getMapper(Interface.class)</span></span><br><span class="line"><span class="comment">// 即返回一个Mapper代理实例（MapperProxy，JDK动态代理）</span></span><br><span class="line"><span class="comment">// 可参考：MapperProxyFactory</span></span><br><span class="line"><span class="meta">@MapperScan(basePackages = &quot;com.td.mapper&quot;)</span></span><br><span class="line"><span class="meta">@PropertySource(&quot;classpath:jdbc.properties&quot;)</span></span><br><span class="line"><span class="meta">@Configuration(proxyBeanMethods = false)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyBatisConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.username&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String username;</span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.password&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String password;</span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.url&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String url;</span><br><span class="line">    <span class="meta">@Value(&quot;$&#123;mysql.driver&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String driverClass;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> DataSource <span class="title function_">dataSource</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">HikariDataSource</span> <span class="variable">dataSource</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HikariDataSource</span>();</span><br><span class="line">        dataSource.setDriverClassName(driverClass);</span><br><span class="line">        dataSource.setJdbcUrl(url);</span><br><span class="line">        dataSource.setUsername(username);</span><br><span class="line">        dataSource.setPassword(password);</span><br><span class="line">        <span class="keyword">return</span> dataSource;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//     如果接入spring声明式事务，则不是用JdbcTransactionFactory而是用SpringManagedTransactionFactory</span></span><br><span class="line"><span class="comment">//    @Bean</span></span><br><span class="line"><span class="comment">//    public TransactionFactory transactionFactory() &#123;</span></span><br><span class="line"><span class="comment">//        JdbcTransactionFactory transactionFactory = new JdbcTransactionFactory();</span></span><br><span class="line"><span class="comment">//        return transactionFactory;</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> TransactionFactory <span class="title function_">transactionFactory</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">SpringManagedTransactionFactory</span> <span class="variable">transactionFactory</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SpringManagedTransactionFactory</span>();</span><br><span class="line">        <span class="keyword">return</span> transactionFactory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> SqlSessionFactory <span class="title function_">sqlSessionFactory</span><span class="params">(DataSource dataSource, TransactionFactory transactionFactory)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">SqlSessionFactoryBean</span> <span class="variable">factoryBean</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SqlSessionFactoryBean</span>();</span><br><span class="line">        factoryBean.setDataSource(dataSource);</span><br><span class="line">        factoryBean.setTransactionFactory(transactionFactory);</span><br><span class="line">        <span class="comment">// 如果用XML管理SQL，则需要指定其目录（PathMatchingResourcePatternResolver由Spring提供）</span></span><br><span class="line">        <span class="comment">// ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();</span></span><br><span class="line">        <span class="comment">// Resource[] resources = resolver.getResources(&quot;classpath:mapper/*.xml&quot;);</span></span><br><span class="line">        <span class="comment">// factoryBean.setMapperLocations(resources);</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果需要添加插件</span></span><br><span class="line">        <span class="comment">// org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();</span></span><br><span class="line">        <span class="comment">// factoryBean.setConfiguration(configuration);</span></span><br><span class="line">        <span class="keyword">return</span> factoryBean.getObject();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//    @Bean</span></span><br><span class="line"><span class="comment">//    public SqlSessionTemplate sqlSessionTemplate(SqlSessionFactoryBean sqlSessionFactoryBean)  &#123;</span></span><br><span class="line"><span class="comment">//        SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBean.getObject();</span></span><br><span class="line"><span class="comment">//        SqlSessionTemplate template = new SqlSessionTemplate(sqlSessionFactory);</span></span><br><span class="line"><span class="comment">//        return template;</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用spring声明式事务</span></span><br><span class="line">    <span class="comment">// 还需要使用@EnableTransactionManagement开启</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> DataSourceTransactionManager <span class="title function_">transactionManager</span><span class="params">(DataSource dataSource)</span> &#123;</span><br><span class="line">        <span class="type">DataSourceTransactionManager</span> <span class="variable">transactionManager</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DataSourceTransactionManager</span>();</span><br><span class="line">        transactionManager.setDataSource(dataSource);</span><br><span class="line">        <span class="keyword">return</span> transactionManager;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>3）Mapper</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Mapper</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">UserMapper</span> &#123;</span><br><span class="line">    <span class="meta">@Insert(&quot;insert into user(id,name,age) values(#&#123;id&#125;, #&#123;name&#125;, #&#123;age&#125;)&quot;)</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">insert</span><span class="params">(User user)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>4）单元测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RunWith(SpringJUnit4ClassRunner.class)</span></span><br><span class="line"><span class="meta">@ContextConfiguration(classes = &#123;MyBatisConfig.class&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyBatisTest</span> &#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">    // 操作方式1：使用temple</span></span><br><span class="line"><span class="comment">    <span class="doctag">@Autowired</span></span></span><br><span class="line"><span class="comment">    private SqlSessionTemplate sessionTemplate;</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    // 在SpringJUnit4ClassRunner中，声明式事务中的单元测试是不会落盘的</span></span><br><span class="line"><span class="comment">    <span class="doctag">@Transactional</span></span></span><br><span class="line"><span class="comment">    <span class="doctag">@Test</span></span></span><br><span class="line"><span class="comment">    public void testSqlSessionTemplate() &#123;</span></span><br><span class="line"><span class="comment">        User user = User.builder().id(1).name(&quot;sam&quot;).age(29).build();</span></span><br><span class="line"><span class="comment">        final UserMapper mapper = sessionTemplate.getMapper(UserMapper.class);</span></span><br><span class="line"><span class="comment">        mapper.insert(user);</span></span><br><span class="line"><span class="comment">    &#125;</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">    <span class="comment">// 操作方式2：直接用mapper代理</span></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="comment">// UserMapper没有显式用Spring注解加入容器，所以编译器会警告，但不用理</span></span><br><span class="line">    <span class="comment">// 因为是用@MapperScan加入容器的</span></span><br><span class="line">    <span class="keyword">private</span> UserMapper userMapper;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testMapper</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> User.builder().id(<span class="number">2</span>).name(<span class="string">&quot;lisa&quot;</span>).age(<span class="number">18</span>).build();</span><br><span class="line">        userMapper.insert(user);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>@MapperScan 流程</p>
+</blockquote>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/053.png"></p>
+<p>@MapperScan 其实就是自动配置了 MapperScannerConfigurer</p>
+<h3 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h3><h4 id="获取返回主键值"><a href="#获取返回主键值" class="headerlink" title="获取返回主键值"></a>获取返回主键值</h4><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>在 MyBatis 中，默认执行完 Insert 语句返回的是更新记录的数量，所以如果想要获取其主键值时就需要依赖 MyBatis 提供的 KeyGenerator 接口来实现。KeyGenerator 可以做到在执行 SQL 后将其 ID 值保存回实体中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">KeyGenerator</span> &#123;</span><br><span class="line">  <span class="comment">// SQL执行前触发</span></span><br><span class="line">  <span class="keyword">void</span> <span class="title function_">processBefore</span><span class="params">(Executor executor, MappedStatement ms, Statement stmt, Object parameter)</span>;</span><br><span class="line">  <span class="comment">// SQL执行后触发</span></span><br><span class="line">  <span class="keyword">void</span> <span class="title function_">processAfter</span><span class="params">(Executor executor, MappedStatement ms, Statement stmt, Object parameter)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>KeyGenerator 有 3 个实现</p>
+<ul>
+<li>NoKeyGenerator：默认，即不需要返回 ID 值</li>
+<li>Jdbc3KeyGenerator：用于支持自增主键的数据库，例如 MySQL</li>
+<li>SelectKeyGenerator：支持可以手动获取最新 ID 主键值的数据库，例如 Oracle、MySQL<ul>
+<li>即 SelectKey 动态查询标签</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>快速回顾：JDBC如何实现插入数据后返回其主键值</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JDBCTest</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">MYSQL_PROPS_FILE_PATH</span> <span class="operator">=</span> <span class="string">&quot;jdbc.properties&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">MYSQL_PROP_URL_KEY</span> <span class="operator">=</span> <span class="string">&quot;mysql.url&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">MYSQL_PROP_USERNAME_KEY</span> <span class="operator">=</span> <span class="string">&quot;mysql.username&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">String</span> <span class="variable">MYSQL_PROP_PASSWORD_KEY</span> <span class="operator">=</span> <span class="string">&quot;mysql.password&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Properties <span class="title function_">readProps</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">Properties</span> <span class="variable">properties</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Properties</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 加载类路径下的配置文件</span></span><br><span class="line">        <span class="comment">// 如果在Spring环境，可用ClassPathResource或PathMatchingResourcePatternResolver直接返回InputStream</span></span><br><span class="line">        <span class="type">ClassLoader</span> <span class="variable">classLoader</span> <span class="operator">=</span> getClass().getClassLoader();</span><br><span class="line">        <span class="type">InputStream</span> <span class="variable">inputStream</span> <span class="operator">=</span> classLoader.getResourceAsStream(MYSQL_PROPS_FILE_PATH);</span><br><span class="line">        properties.load(<span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(inputStream));</span><br><span class="line">        <span class="keyword">return</span> properties;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 注意：真实操作会使用反射来解决类型的不确定性</span></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">Properties</span> <span class="variable">props</span> <span class="operator">=</span> readProps();</span><br><span class="line">        <span class="type">String</span> <span class="variable">url</span> <span class="operator">=</span> props.getProperty(MYSQL_PROP_URL_KEY);</span><br><span class="line">        <span class="type">String</span> <span class="variable">name</span> <span class="operator">=</span> props.getProperty(MYSQL_PROP_USERNAME_KEY);</span><br><span class="line">        <span class="type">String</span> <span class="variable">password</span> <span class="operator">=</span> props.getProperty(MYSQL_PROP_PASSWORD_KEY);</span><br><span class="line"></span><br><span class="line">        <span class="type">Connection</span> <span class="variable">connection</span> <span class="operator">=</span> DriverManager.getConnection(url, name, password);</span><br><span class="line"></span><br><span class="line">        <span class="type">String</span> <span class="variable">sql</span> <span class="operator">=</span> <span class="string">&quot;insert into user(`name`, `age`) values(?, ?)&quot;</span>;</span><br><span class="line">        <span class="type">PreparedStatement</span> <span class="variable">statement</span> <span class="operator">=</span> connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);</span><br><span class="line"></span><br><span class="line">        <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> User.builder().name(<span class="string">&quot;sam&quot;</span>).age(<span class="number">18</span>).build();</span><br><span class="line">        statement.setString(<span class="number">1</span>, user.getName());</span><br><span class="line">        statement.setInt(<span class="number">2</span>, user.getAge());</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">updateRowNums</span> <span class="operator">=</span> statement.executeUpdate();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 返回当前insert操作生成的自增主键</span></span><br><span class="line">        <span class="type">ResultSet</span> <span class="variable">keysRS</span> <span class="operator">=</span> statement.getGeneratedKeys();</span><br><span class="line">        <span class="keyword">if</span> (updateRowNums == <span class="number">1</span>) &#123;</span><br><span class="line">            keysRS.next();</span><br><span class="line">            user.setId(keysRS.getInt(Statement.RETURN_GENERATED_KEYS));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;当前插入的记录：&quot;</span> + user);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>用 MyBatis 实现上面的功能，以 Jdbc3KeyGenerator 为例子</p>
+</blockquote>
+<p>Mapper</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Mapper</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">UserMapper</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Options(useGeneratedKeys = true, keyProperty=&quot;id&quot;, keyColumn = &quot;id&quot;)</span></span><br><span class="line">    <span class="meta">@Insert(&quot;insert into user(name,age) values(#&#123;name&#125;, #&#123;age&#125;)&quot;)</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">insert</span><span class="params">(User user)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="meta">@Transactional</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testMapper</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> User.builder().name(<span class="string">&quot;lisa&quot;</span>).age(<span class="number">18</span>).build();</span><br><span class="line">    userMapper.insert(user);</span><br><span class="line">    System.out.println(user);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="关于SqlSource类型"><a href="#关于SqlSource类型" class="headerlink" title="关于SqlSource类型"></a>关于SqlSource类型</h4><blockquote>
+<p>介绍</p>
+</blockquote>
+<p>SqlSource 的主要作用是用来返回 BoundSql。BoundSql 实例保存了具体的 SQL 语句和入参类型。但不同 SqlSource 所产生的 BoundSql 是不一样的。譬如 SqlSource 它有以下 4 个具体实现：</p>
+<ul>
+<li>DynamicSqlSource：<code>动态SQL</code>或使用<code>$&#123;&#125;</code>时使用</li>
+<li>RawSqlSource：使用了<code>#&#123;&#125;</code>时使用</li>
+<li>StaticSqlSource：使用了占位符时使用<ul>
+<li>其实 RawSqlSource 和 DynamicSqlSource 都用到次类</li>
+</ul>
+</li>
+<li>ProviderSqlSource：使用了 Provider 相关注解时使用<ul>
+<li>譬如 @InsertProvider 是在 MyBatis 3.4.5 版本后新增的，用于注解方式配置动态 SQL</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>SqlSource 的生成过程</p>
+</blockquote>
+<p>Spring 容器启动时会例化 MapperFactoryBean 并执行其初始化方法 afterPropertiesSet （该方法实现自生命周期接口 InitializingBean）。</p>
+<p>在 MapperFactoryBean#afterPropertiesSet 中会先通过 MapperFactoryBean#checkDaoConfig 方法对对应的 Mapper 接口进行解析。即如果这时使用了注解配置就会对其进行解析并得到 SQL 相关修改信息（如果是 XML 配置，则在构建创建 SqlSessionFactory 时解析）。</p>
+<p>以注解配置方式为例，这时就会通过 MapperAnnotationBuilder#parseStatement 方法对接口中的各个 Method 进行解析，而 SqlSource 就是在这期间产生的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> SqlSource <span class="title function_">getSqlSourceFromAnnotations</span><span class="params">(Method method, Class&lt;?&gt; parameterType, LanguageDriver languageDriver)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 返回CURD注解类型，如果有的话</span></span><br><span class="line">        Class&lt;? <span class="keyword">extends</span> <span class="title class_">Annotation</span>&gt; sqlAnnotationType = getSqlAnnotationType(method);</span><br><span class="line">        <span class="comment">// 返回Provider注解类型，如果有的话</span></span><br><span class="line">        Class&lt;? <span class="keyword">extends</span> <span class="title class_">Annotation</span>&gt; sqlProviderAnnotationType = getSqlProviderAnnotationType(method);     </span><br><span class="line">        <span class="comment">// 如果是CURD注解</span></span><br><span class="line">        <span class="keyword">if</span> (sqlAnnotationType != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="comment">// 则不能和Provider注解同时使用</span></span><br><span class="line">            <span class="keyword">if</span> (sqlProviderAnnotationType != <span class="literal">null</span>) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">BindingException</span>(<span class="comment">/**/);</span></span><br><span class="line"><span class="comment">            &#125;</span></span><br><span class="line"><span class="comment">            // 返回CRUD注解上的SQL语句</span></span><br><span class="line"><span class="comment">            Annotation sqlAnnotation = method.getAnnotation(sqlAnnotationType);</span></span><br><span class="line"><span class="comment">            final String[] strings = (String[]) sqlAnnotation.getClass().getMethod(&quot;value&quot;).invoke(sqlAnnotation);</span></span><br><span class="line"><span class="comment">            // 注意：返回SqlSource实例</span></span><br><span class="line"><span class="comment">            return buildSqlSourceFromStrings(strings, parameterType, languageDriver);</span></span><br><span class="line"><span class="comment">        &#125; else if (sqlProviderAnnotationType != null) &#123;</span></span><br><span class="line"><span class="comment">            // 如果用的是Provider注解，则返回类型为ProviderSqlSource的SqlSource</span></span><br><span class="line"><span class="comment">            Annotation sqlProviderAnnotation = method.getAnnotation(sqlProviderAnnotationType);</span></span><br><span class="line"><span class="comment">            return new ProviderSqlSource(assistant.getConfiguration(), sqlProviderAnnotation, type, method);</span></span><br><span class="line"><span class="comment">        &#125;</span></span><br><span class="line"><span class="comment">        return null;</span></span><br><span class="line"><span class="comment">    &#125; catch (Exception e) &#123;</span></span><br><span class="line"><span class="comment">        //...</span></span><br><span class="line"><span class="comment">    &#125;</span></span><br><span class="line"><span class="comment">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>buildSqlSourceFromStrings 返回 SqlSrouce 的主要逻辑实现位于 XMLLanguageDriver#createSqlSource</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> SqlSource <span class="title function_">createSqlSource</span><span class="params">(Configuration configuration, String script, Class&lt;?&gt; parameterType)</span> &#123;</span><br><span class="line">    <span class="comment">// 注意：在这里可以看到，CRUD注解除了可以直接在value属性中写SQL外</span></span><br><span class="line">    <span class="comment">// 还可以填写&lt;script&gt;标签。&lt;script&gt;标签相当于可以在注解中写XML一样的标签内容</span></span><br><span class="line">    <span class="keyword">if</span> (script.startsWith(<span class="string">&quot;&lt;script&gt;&quot;</span>)) &#123;</span><br><span class="line">        <span class="comment">// 解析XML动态SQL标签后返回SqlSource</span></span><br><span class="line">        <span class="type">XPathParser</span> <span class="variable">parser</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">XPathParser</span>(script, <span class="literal">false</span>, configuration.getVariables(), <span class="keyword">new</span> <span class="title class_">XMLMapperEntityResolver</span>());</span><br><span class="line">        <span class="keyword">return</span> createSqlSource(configuration, parser.evalNode(<span class="string">&quot;/script&quot;</span>), parameterType);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 注意：根据判断SQL中是否用了$&#123;&#125;来选择DynamicSqlSource或RawSqlSource</span></span><br><span class="line">        script = PropertyParser.parse(script, configuration.getVariables());</span><br><span class="line">        <span class="type">TextSqlNode</span> <span class="variable">textSqlNode</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TextSqlNode</span>(script);</span><br><span class="line">        <span class="keyword">if</span> (textSqlNode.isDynamic()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DynamicSqlSource</span>(configuration, textSqlNode);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RawSqlSource</span>(configuration, script, parameterType);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过以上操作过后，SqlSource 最终会被封装到对应的 MappedStatement 实例中。而 MappedStatement 则在执行 CURD 操作时被使用。</p>
+<h4 id="Executor的生成时机"><a href="#Executor的生成时机" class="headerlink" title="Executor的生成时机"></a>Executor的生成时机</h4><p>Executor 会在返回 SqlSession 实例时被创建。SqlSession 主要用于对外提供 CRUD 操作，而内部实质是由 Executor 来处理的 ，即 SqlSession 相当于 Executor 的一个代理。值得留意的是 Executor 使用了装饰器模式来扩展功能，譬如二级缓存实现。</p>
+<p>SqlSession 类结构如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DefaultSqlSession</span> <span class="keyword">implements</span> <span class="title class_">SqlSession</span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Configuration configuration;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Executor executor;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">boolean</span> autoCommit;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">boolean</span> dirty;</span><br><span class="line">  <span class="keyword">private</span> List&lt;Cursor&lt;?&gt;&gt; cursorList; </span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Executor 类结构如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">BaseExecutor</span> <span class="keyword">implements</span> <span class="title class_">Executor</span> &#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Log</span> <span class="variable">log</span> <span class="operator">=</span> LogFactory.getLog(BaseExecutor.class);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> Transaction transaction;</span><br><span class="line">  <span class="keyword">protected</span> Executor wrapper;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> ConcurrentLinkedQueue&lt;DeferredLoad&gt; deferredLoads;</span><br><span class="line">  <span class="keyword">protected</span> PerpetualCache localCache;</span><br><span class="line">  <span class="keyword">protected</span> PerpetualCache localOutputParameterCache;</span><br><span class="line">  <span class="keyword">protected</span> Configuration configuration;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">protected</span> <span class="type">int</span> queryStack;</span><br><span class="line">  <span class="keyword">private</span> <span class="type">boolean</span> closed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Executor 的创建逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Configuration</span></span><br><span class="line"><span class="keyword">public</span> Executor <span class="title function_">newExecutor</span><span class="params">(Transaction transaction, ExecutorType executorType)</span> &#123;</span><br><span class="line">    executorType = executorType == <span class="literal">null</span> ? defaultExecutorType : executorType;</span><br><span class="line">    executorType = executorType == <span class="literal">null</span> ? ExecutorType.SIMPLE : executorType;</span><br><span class="line">    Executor executor;</span><br><span class="line">    <span class="keyword">if</span> (ExecutorType.BATCH == executorType) &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> <span class="title class_">BatchExecutor</span>(<span class="built_in">this</span>, transaction);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (ExecutorType.REUSE == executorType) &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> <span class="title class_">ReuseExecutor</span>(<span class="built_in">this</span>, transaction);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> <span class="title class_">SimpleExecutor</span>(<span class="built_in">this</span>, transaction);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 如果开启了二级缓存，则装饰Executor</span></span><br><span class="line">    <span class="keyword">if</span> (cacheEnabled) &#123;</span><br><span class="line">        executor = <span class="keyword">new</span> <span class="title class_">CachingExecutor</span>(executor);</span><br><span class="line">    &#125;</span><br><span class="line">    executor = (Executor) interceptorChain.pluginAll(executor);</span><br><span class="line">    <span class="keyword">return</span> executor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="注解版使用"><a href="#注解版使用" class="headerlink" title="注解版使用"></a>注解版使用</h3><p>在 MyBatis 3 版本开始，已经推荐使用 JavaConfig 来代替传统的 XML 配置。譬如，提供 @Insert、@Update、@Delete、@Select、@InsertProvider、@DeleteProvider、@UpdateProvider、@SelectProvider 等注解来完成 CURD 模板定义，以及动态SQL定义</p>
+<p>详细使参考官方配置文档：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://mybatis.org/mybatis-3/zh/java-api.html">Java API</a></li>
+<li><a target="_blank" rel="noopener" href="https://mybatis.org/mybatis-3/zh/statement-builders.html">SQL 语句构建器</a></li>
+</ul>
+<p>但个人认为使用注解来配置 MyBatis 就相当于舍弃了它最大的优势（集中式管理SQL），因此并不推荐使用。</p>
+<h2 id="纯手动ORM-Spring-JDBC"><a href="#纯手动ORM-Spring-JDBC" class="headerlink" title="纯手动ORM-Spring JDBC"></a>纯手动ORM-Spring JDBC</h2><h3 id="特点-2"><a href="#特点-2" class="headerlink" title="特点"></a>特点</h3><ul>
+<li>仅在原生JDBC的基础上进行了简单的封装，让 JDBC 操作边的更加方便好用</li>
+<li>简单易上手，只要有原生 JDBC 知识就可以直接使用</li>
+<li>提供简单的 ORM 功能（RowMapper）</li>
+</ul>
+<h3 id="缺点-2"><a href="#缺点-2" class="headerlink" title="缺点"></a>缺点</h3><ul>
+<li>对 ORM 映射功能支持薄弱，复杂查询一般需要实现自定义 RowMapper</li>
+<li>无法对 SQL 进行统一管理，如果存在修改 SQL 的需求时需要修改源码后并重新编译</li>
+<li>开发人要维护 SQL，会降低了开发效率</li>
+<li>耦合程度较高，导致切换数据库困难</li>
+<li>不支持缓存</li>
+</ul>
+<h3 id="使用案例-1"><a href="#使用案例-1" class="headerlink" title="使用案例"></a>使用案例</h3><h4 id="依赖-2"><a href="#依赖-2" class="headerlink" title="依赖"></a>依赖</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/021.png"></p>
+<h4 id="配置-1"><a href="#配置-1" class="headerlink" title="配置"></a>配置</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/022.png"></p>
+<h4 id="测试-2"><a href="#测试-2" class="headerlink" title="测试"></a>测试</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/023.png"></p>
+<h2 id="JPA规范升华-Spring-Data-JPA"><a href="#JPA规范升华-Spring-Data-JPA" class="headerlink" title="JPA规范升华-Spring Data JPA"></a>JPA规范升华-Spring Data JPA</h2><h3 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>Spring Data JPA 其实并不是 ORM 框架，而是对 JPA 规范的进一步封装。它是 Spring Data 成员，而 Spring Data 一直在贯彻<code>抽象化持久层操作</code>和<code>约定优于配置</code>等理念。可以简单理解，它在现今五花八门的持久化库的基础上提供了一套抽象API，让其具体实现变得更加简单明了，因此通过使用 Spring Data 项目完全可以大大地提高开发效率。</p>
+<blockquote>
+<p>Spring Data JPA 架构图</p>
+</blockquote>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/024.png"></p>
+<p>从上图可以大体看到 Spring Data JPA 位于 Jakarta EE  JPA 规范之上。所以可以得出的结论是，只要底层的 ORM 框架支持 Jakarta EE  JPA 规范，那么就能够被 Spring Data JPA 所支持。</p>
+<h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><ul>
+<li>继承了 Hibernate 的优点</li>
+<li>支持约定优于配置的操作定义方式，大大提高了开发效率</li>
+<li>支持 JPQL（Spring版HQL）、Native SQL 两种方法来自定义SQL操作</li>
+<li>简单易上手</li>
+<li>支持持久层审计操作</li>
+<li>支持异步返回</li>
+<li>支持 DDD（领域驱动设计）聚合事件传播操作（ <em>@DomainEvents</em> 、 <em>AbstractAggregateRoot</em> ）</li>
+<li>支持审计</li>
+</ul>
+<h3 id="缺点-3"><a href="#缺点-3" class="headerlink" title="缺点"></a>缺点</h3><ul>
+<li>无法对 SQL 进行统一管理，如果存在修改 SQL 的需求时需要修改源码后并重新编译</li>
+<li>批量操作不够灵活</li>
+<li>动态SQL不灵活。如果确实有复杂查询和动态查询的需求，有以下几种解决方案：<ol>
+<li>定义多个不同条件的 Repository 方法，然后根据入参条件再判断应该使用哪个方法（不推荐）</li>
+<li>Example API 查询（不推荐）</li>
+<li>自定义 JPA Repository 接口和实现（通过注入 EntityManager 进行动态查询）</li>
+<li>在 @Query 注解中使用 MySQL IF 函数进行动态拼接 SQL</li>
+<li>非内置方式，既使用 QueryDSL - JPA 进行查询（类似 Hibernate 的 Criteria API）</li>
+</ol>
+</li>
+</ul>
+<h3 id="执行原理-2"><a href="#执行原理-2" class="headerlink" title="执行原理"></a>执行原理</h3><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/025.png"></p>
+<h3 id="使用案例-2"><a href="#使用案例-2" class="headerlink" title="使用案例"></a>使用案例</h3><h4 id="依赖-3"><a href="#依赖-3" class="headerlink" title="依赖"></a>依赖</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/026.png"></p>
+<h4 id="配置-2"><a href="#配置-2" class="headerlink" title="配置"></a>配置</h4><p>审计操作</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/027.png"></p>
+<p>JavaConfig</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/028.png"></p>
+<h4 id="实体和投影"><a href="#实体和投影" class="headerlink" title="实体和投影"></a>实体和投影</h4><p>基础模型</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/029.png"></p>
+<p>Person</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/030.png"></p>
+<p>Person投射</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/031.png"></p>
+<p>Job</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/032.png"></p>
+<p>PersonJob</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/033.png"></p>
+<h4 id="JpaRepository"><a href="#JpaRepository" class="headerlink" title="JpaRepository"></a>JpaRepository</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/034.png"></p>
+<h4 id="测试-3"><a href="#测试-3" class="headerlink" title="测试"></a>测试</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/035.png"></p>
+<h3 id="动态SQL解决案例"><a href="#动态SQL解决案例" class="headerlink" title="动态SQL解决案例"></a>动态SQL解决案例</h3><h4 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h4><blockquote>
+<p>自定义 Repository 接口方案</p>
+</blockquote>
+<p>步骤1：创建一个自定义的 JPA Repository 接口</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/045.png"></p>
+<p>步骤2：实现上面的接口</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/046.png"></p>
+<p>步骤3：正常使用以上自定义Repository，只需继承接口即可</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/047.png"></p>
+<blockquote>
+<p>MySQL if函数 方案</p>
+</blockquote>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/048.png"></p>
+<blockquote>
+<p>QueryDSL</p>
+</blockquote>
+<p>步骤1：添加 QueryDSL JPA 依赖和插件</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/049.png"></p>
+<p>步骤2：将 JPAQueryFactory 添加到容器让 Spring 管理</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/050.png"></p>
+<p>步骤3：在自定义 Repository 实现中进行动态SQL操作</p>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/051.png"></p>
+<h4 id="测试-4"><a href="#测试-4" class="headerlink" title="测试"></a>测试</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/052.png"></p>
+<h2 id="不伦不类-MyBatis-Plus"><a href="#不伦不类-MyBatis-Plus" class="headerlink" title="不伦不类-MyBatis Plus"></a>不伦不类-MyBatis Plus</h2><h3 id="基本介绍-1"><a href="#基本介绍-1" class="headerlink" title="基本介绍"></a>基本介绍</h3><p>MyBatis Plus 是国内开发团队 baomidou 在原 MyBatis 基础框架上做的扩展。其中特别强调了“ 只做增强不做改变 ”，所以如果是从 MyBatis 切换到 MyBatis Plus 的话，只需要简单地将 SqlSessionFactory 切换为 MybatisSqlSession 即可。MyBatis Plus 做的扩展在原理上解析其实很简单，主要是重写了 MyBatis 的以下部分：</p>
+<ul>
+<li>资源解析 - MapperXXXBuilder（注入通用SQL位置）</li>
+<li>代理处理 - MapperProxy</li>
+<li>方法分派 - MapperMethod</li>
+</ul>
+<p>通过以上组件的重写可以支持通用 CRUD 注入和 ActiveRecord 模式等功能。</p>
+<p>MyBatis Plus 除了封装通用 CRUD 之外还集成了一些插件。例如以前如果想进行物理分页的话是需要单独引入和配置分页插件的，而现在这个分页插件已经内嵌在 MyBatis Plus 中，既用的时候只需要配置一下就可以了。所以，可以简单地说 MyBatis Plus 让 MyBatis 更加人性化了。</p>
+<p>观点：从了解 MyBatis Plus 开始，它给我的感觉就有些不伦不类，因为是它和 Spring Data JPA 在功能上十分相似，甚至可以明确地看到存在借鉴 JPA 规范的操作，譬如实体注解和通用 CRUD 操作。个人的第1个疑问是为什么 baomidou 不尝试把 MyBatis Plus 上做的扩展尝试 pull requests 到现今的 MyBatis 中（难道是为了团队利益？看到文章MyBatis Plug提供收费功能），而不这样做的话如果后期 MyBatis 升级可能会导致功能重叠。第2个疑问是虽然 MyBatis3 本身已经提供注解配置，但这种方式摒弃了集中式管理SQL的优点，那么如果想要使用注解来处理持久化的话 Spring Data JPA 是更好的选择，既 MyBatis Plus 这种无谓的扩展是否有价值或是否背离了 MyBatis 初衷？。</p>
+<p>因此基于上述原因其实个人并不推荐使用 MyBatis Plus，之所以加到文章里完全是希望文章更饱满一些而已😃。</p>
+<blockquote>
+<p>MyBatis Plus 的依赖结构</p>
+</blockquote>
+<p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/036.png"></p>
+<h3 id="优点-1"><a href="#优点-1" class="headerlink" title="优点"></a>优点</h3><ul>
+<li>继承了 MyBatis 的优点</li>
+<li>内嵌分页插件支持物理分页操作</li>
+<li>新增通用 CRUD 模板。主要分为 Service 和 Mapper 两种，可配合新增的 Wrapper 实现对条件进行封装。该方案其实就等同于 Spring Data JPA 中的自定义Repository CRUD 方法</li>
+<li>新增 ActiveRecord 模式。实体可通过继承 Model 类来将 CRUD 操作内聚到实体自身中</li>
+<li>新增 ID 自生成策略</li>
+<li>新增 SQL 阻断器功能。支持拦截恶意或误操作等性质的全表 delete、update 行为</li>
+<li>新增字段映射类型转换器。例如：JacksonTypeHandler、GsonTypeHandler 等</li>
+</ul>
+<h3 id="缺点-4"><a href="#缺点-4" class="headerlink" title="缺点"></a>缺点</h3><ul>
+<li><p>不是正统 MyBatis 版本</p>
+</li>
+<li><p>引入第三方连接池需要手动实现接口</p>
+</li>
+<li><p>级联操作与 Hibernate 相比支持较差</p>
+</li>
+<li><p>仍然不支持自动生成数据库表</p>
+</li>
+<li><p>关联接口时方法仍然不能重载</p>
+</li>
+<li><p>二级缓存使用不当容易导致脏读现象</p>
+</li>
+</ul>
+<h3 id="执行原理-3"><a href="#执行原理-3" class="headerlink" title="执行原理"></a>执行原理</h3><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/037.png"></p>
+<h3 id="使用案例-3"><a href="#使用案例-3" class="headerlink" title="使用案例"></a>使用案例</h3><h4 id="依赖-4"><a href="#依赖-4" class="headerlink" title="依赖"></a>依赖</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/038.png"></p>
+<h4 id="配置-3"><a href="#配置-3" class="headerlink" title="配置"></a>配置</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/039.png"></p>
+<h4 id="实体和映射关联接口"><a href="#实体和映射关联接口" class="headerlink" title="实体和映射关联接口"></a>实体和映射关联接口</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/040.png"></p>
+<h4 id="测试-5"><a href="#测试-5" class="headerlink" title="测试"></a>测试</h4><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/041.png"></p>
+<h2 id="Spring中ORM的注意事项"><a href="#Spring中ORM的注意事项" class="headerlink" title="Spring中ORM的注意事项"></a>Spring中ORM的注意事项</h2><h3 id="事务问题"><a href="#事务问题" class="headerlink" title="事务问题"></a>事务问题</h3><p>在 Spring 单元测试环境使用 @Transactional 注解 CRUD 操作会自动回滚。如果想要持久化，可以直接去掉 @Transactional 注解即可，但并不推荐，因为单元测试数据没必要做落盘操作。</p>
+<h3 id="EntityManager问题"><a href="#EntityManager问题" class="headerlink" title="EntityManager问题"></a>EntityManager问题</h3><p>EntityManager 本身是非线程安全的，因此如果在 Singleton 实例中使用，则应该通过 @PersistenceContex 注解注入，而非 @Autowired、@Resource。因为 @PersistenceContex 可以为每条线程注入一个线程安全的 EntityManager。</p>
+<h2 id="ORM框架比对"><a href="#ORM框架比对" class="headerlink" title="ORM框架比对"></a>ORM框架比对</h2><p><img src="/ORM%E6%A1%86%E6%9E%B6%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86%E4%B8%8E%E6%AF%94%E5%AF%B9/042.png"></p>
+<h2 id="拓展小知识"><a href="#拓展小知识" class="headerlink" title="拓展小知识"></a>拓展小知识</h2><h3 id="ORM-中的-N-1-问题"><a href="#ORM-中的-N-1-问题" class="headerlink" title="ORM 中的 N + 1 问题"></a>ORM 中的 N + 1 问题</h3><blockquote>
+<p>基本介绍</p>
+</blockquote>
+<p>首先关于 N + 1 名字而言，个人认为叫 1 + N 更加合适。指的是当我们只想查询主模型时，ORM 框架默认会连同其关联也查出来。即原本只需 1 条 SQL 的功夫，现在却变成了 1 + N 条（N 代表的是 1 这条 SQL 所查出来的模型个数），既 ORM 会根据模型的 ID 值再次去查询其关联模型。</p>
+<p>例子：假设 A 模型关联了 B 模型</p>
+<ul>
+<li>A 进行 findAll（select * from A） 操作，假设现在返回了 2 个模型，既这时 n &#x3D; 2</li>
+<li>接着 ORM 框架（默认）会根据 findAll 查询出来的每个模型的 ID 值再到关联表 B 中将其关联的模型查询出来。既 n &#x3D; 2 的话，那么就会再另外多执行 2 条 SQL 来查询关联对象。</li>
+</ul>
+<blockquote>
+<p>问题思考</p>
+</blockquote>
+<p>个人理解其实就是执行了我们认为多余的SQL操作。譬如上述例子中原本我们只需要 1 条 SQL 的数据，但却执行了 1 + N 条，这显然造成了无畏的消耗，这不是我们想要的。而且应该需要知道的是，数据库通常是整个应用中最容易出现瓶颈的地方，所以如果存在大量的 1 + N 操作，就会导致大量的 SQL 语句执行，从而给数据库造成负担。除此之外，JDBC在获取返回数据时是阻塞的，所以如果大批量地执行 SQL 的话其效率不言而喻。</p>
+<p>在罗列解决方案之前需要多说一句，1 + N 问题只要是 ORM 支持关联操作就一定会存在，所以我们能够做的只有一些补救操作：</p>
+<ul>
+<li>使用<code>懒加载</code>延迟 N 操作的执行，既只有我们通过代理实例访问关联模型时才真正执行 SQL 查询</li>
+<li>将 1 + N 操作直接合并为 1 条 SQL。譬如在 Hibernate 的 HQL 中支持使用<code>join fetch</code>操作一次过连同关联模型一同查询出来，这样做可以避免多次执行 SQL </li>
+<li>在 Hibernate 中提供<code>Criteria查询</code>查询方式，即所谓的 QBC （Query by Criteria ）。该操作效果和 join fetch 一样，会连同关联模型一同查出来</li>
+</ul>
+<p>除了以上方案外，还看到网上有些文章建议使用二级缓存来解决，我想大概的思路是，第一次 findAll 操作虽然会有 1 + N 问题，但因为查询出来后会被缓存，那么后续操作就能相应地降低额外的 SQL 查询数量了。个人认为这种方法实属是投机取消，因为 1 + N 问题的本质是执行了多余的 SQL ，所以我们要从如何减少多余 SQL 执行的角度出发。而且缓存这种机制一开始就是针对那些常用且少修改的数据设计的，所以如果对象频繁地被修改的话，那么缓存就没什么意义了。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>《MyBatis从入门到精通》</li>
+<li>《MyBatis技术内幕》</li>
+<li>《深入浅出Hibernate》</li>
+<li><a target="_blank" rel="noopener" href="https://docs.spring.io/spring-data/jpa/docs/current/reference/html/">Spring Data JPA - Reference Documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://mybatis.plus/guide/">MyBatis-Plus Guide</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/Java%E4%B8%AD%E4%B8%8D%E5%8F%AA%E6%9C%89%E5%80%BC%E4%BC%A0%E9%80%92/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E4%B8%89%E5%8D%81%E5%88%86%E9%92%9F%E4%BD%93%E4%BC%9AAQS%E4%B8%8ESynchronized%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%B5%81%E7%A8%8B/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

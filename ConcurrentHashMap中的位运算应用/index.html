@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      ConcurrentHashMap中的位运算应用 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Nov 28, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      ConcurrentHashMap中的位运算应用
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <p>先前写过一篇针对 HashMap 源码进行浅析的文章，现在回看觉得内容实在有些简陋，所以借着最近时间比较充裕，打算记录一下自己对 JDK 1.8 后 ConcurrentHashMap 的一些理解。<br>位运算是计算机中最为高效的运算方式，如果你平时有翻阅源码的爱好那么肯定不难发现其实很多大神写的代码中的计算操作都是用位运算来完成的。因此接下来我们就从位运算的角度切入 ConcurrentHashMap 源码，分析一下在 ConcurrentHashMap 中位运算的应用。</p>
+<h2 id="自定义初始化容量"><a href="#自定义初始化容量" class="headerlink" title="自定义初始化容量"></a>自定义初始化容量</h2><p>先前在Q群里看到有小伙伴说面试被问到一个这样的问题，就是如果将 ConcurrentHashMap 初始化容量设置为 10000，然后往里头存储 10000 个元素，问 ConcurrentHashMap 需要扩容几次？对于这样一个问题如果你没有阅读过源码你就很容易被引入坑里，因为一些人他只知道 ConcurrentHashMap 中加载因为 0.75 ，所以 10000 的容量实质只能存储 7500 个，因此需要扩容1次。但是实际情况真的是这样的？答案肯定是否定的，对于 ConcurrentHashMap 而言它的容量必须是2的n次幂，且n不能大于30。也就是说如果你设置初始化容量为 10000 的话，那么 ConcurrentHashMap 会先判断 10000 是不是2的n次幂，如果不是则将其转变为2的n次幂再作为初始化容量。当然，前提是传入的这个初始化值是大于或等于零且小于或等于 MAXIMUM_CAPACITY（1 &lt;&lt; 30，即2的30次幂）。</p>
+<p>以下我们就承接着上面的问题来阅读以下初始化容量的构造方法，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">ConcurrentHashMap</span><span class="params">(<span class="type">int</span> initialCapacity)</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (initialCapacity &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="type">int</span> <span class="variable">cap</span> <span class="operator">=</span> ((initialCapacity &gt;= (MAXIMUM_CAPACITY &gt;&gt;&gt; <span class="number">1</span>)) ?</span><br><span class="line">               MAXIMUM_CAPACITY : <span class="comment">// 入参大于或等于最大容量的一半时，直接使用最大容量</span></span><br><span class="line">               <span class="comment">// 先扩容为原来的1.5配再加1，然后转化为2的n次幂</span></span><br><span class="line">               <span class="comment">// 重点注意：如果是 HashMap 则会直接转化为2的n次幂</span></span><br><span class="line">               tableSizeFor(initialCapacity + (initialCapacity &gt;&gt;&gt; <span class="number">1</span>) + <span class="number">1</span>)); </span><br><span class="line">    <span class="built_in">this</span>.sizeCtl = cap;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>initialCapacity 必须大于或者等于0</li>
+<li>如果 initialCapacity 大于或等于(MAXIMUM_CAPACITY &gt;&gt;&gt; 1)，则直接将其设置为MAXIMUM_CAPACITY。个人认为有如下原因：<ul>
+<li>大于时，意味着 initialCapacity 有可能超过 MAXIMUM_CAPACITY 或者并不是2的n次幂，因此避免越界和减少计算操作而直接设置为 MAXIMUM_CAPACITY 会更加高效</li>
+<li>等于时，如果 initialCapacity 等于 (MAXIMUM_CAPACITY &gt;&gt;&gt; 1)，其实意味着后续扩容只剩下有且仅有的1次，而且到了那个时候元素的数量庞大，扩容操作的代价可想而知，因此直接设置为 MAXIMUM_CAPACITY，可以减少扩容带来的性能损耗，效果更佳</li>
+</ul>
+</li>
+<li>如果 initialCapacity 不符合上面的条件，既小于 (MAXIMUM_CAPACITY &gt;&gt;&gt; 1)，那么 initialCapacity 会增加为原来的 1.5 倍再加 1。操作是 initialCapacity + (initialCapacity &gt;&gt;&gt; 1) + 1，这里采用无符号右移的好处是当 initialCapacity 为基数时可以截断其小数位（例如7除2结果时3.5，而右移结果则是3。再加1后相当于是往上取整）。</li>
+</ul>
+<p>将 initialCapacity 扩容为原来的1.5配再加1后操作还没有完成，这时还需要将其结果转换为2的n次幂。操作如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">tableSizeFor</span><span class="params">(<span class="type">int</span> c)</span> &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> c - <span class="number">1</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">1</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">2</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">4</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">8</span>;</span><br><span class="line">    n |= n &gt;&gt;&gt; <span class="number">16</span>;</span><br><span class="line">    <span class="keyword">return</span> (n &lt; <span class="number">0</span>) ? <span class="number">1</span> : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面这这个操作主要分为两部分：</p>
+<ol>
+<li>return 对上的操作，主要是将数值 c 的二进制最高位1后的所有0置换为1</li>
+<li>return行，判断结果值 n 是否越界，大于或等于 MAXIMUM_CAPACITY 时则最终结果为MAXIMUM_CAPACITY。否则为 n + 1。</li>
+</ol>
+<blockquote>
+<p>接下来是分析时间，我们分析一下 return 对上的操作是如何进行的。</p>
+<p>现在假设传入的 initialCapacity 值为 10000。过程如下：</p>
+</blockquote>
+<p><strong>第一步：</strong>进入构造器</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">initialCapacity + (initialCapacity &gt;&gt;&gt; <span class="number">1</span>) + <span class="number">1</span> = <span class="number">15001</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>第二部：</strong>进行 return 对上的操作，即将数值的二进制最高位1后的所有0置换为1</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">int</span> <span class="string">n = c - 1;</span></span><br><span class="line"><span class="attr">n</span> = <span class="string">15001 - 1 = 15000</span></span><br><span class="line"><span class="comment">        </span></span><br><span class="line"><span class="comment"># n |= n &gt;&gt;&gt; 1; 计算如下</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1010 1001 1000 = 15000补码</span></span><br><span class="line"><span class="attr">0001</span> <span class="string">1101 0100 1100 = 右移1位后</span></span><br><span class="line"><span class="attr">-------------------</span> <span class="string">或运算结果（或运算是00才为0）</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1111 1101 1100 = 16348      </span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># n |= n &gt;&gt;&gt; 2; 计算如下</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1111 1101 1100 = 16348补码</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">1111 1111 0111 = 右移2位后</span></span><br><span class="line"><span class="attr">-------------------</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1111 1111 1111 = 16383</span></span><br><span class="line"><span class="comment"># 可以看到这个时候n值的二进制最高位1后的值已经全部为1，所以后续的操作结果都是16383，即不会再变化</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># n |= n &gt;&gt;&gt; 2;  计算如下</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1111 1111 1111 = 16383补码</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0011 1111 1111 = 右移4位后</span></span><br><span class="line"><span class="attr">-------------------</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1111 1111 1111 = 16383 </span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># n |= n &gt;&gt;&gt; 8;</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1111 1111 1111 = 16383补码</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0011 1111 = 右移8位后</span></span><br><span class="line"><span class="attr">-------------------</span></span><br><span class="line"><span class="attr">0011</span> <span class="string">1111 1111 1111 = 16383 </span></span><br><span class="line"><span class="comment"># 省略...</span></span><br></pre></td></tr></table></figure>
+
+<p>因此n的最终结果为：16383</p>
+<p><strong>第三部：</strong>判断是否越界，并将n设置为2的n次幂</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(n &lt; <span class="number">0</span>) ? <span class="number">1</span> : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + <span class="number">1</span> = <span class="number">16384</span></span><br></pre></td></tr></table></figure>
+
+<p>最后我们使用 debug 来验证我们的结果：</p>
+<p><img src="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/001.png"></p>
+<p>好了，到这里我们就可以回答一下上面的那个面试题了。16384 乘 0.75 结果约为 12288，所以存储 10000 个元素是不会发生扩容的。</p>
+<h2 id="哈希值"><a href="#哈希值" class="headerlink" title="哈希值"></a>哈希值</h2><p>哈希值对于散列表数据结构来说是至关重要的存在。这是因为元素要想存储到散列表时必须通过哈希值（也叫散列值）来确定自己的存储下标。因为这个缘故，所以大多数情况下要是我们要用散列表来存储自己编写的引用类型时都应该重写从 Object 类继承过来的 hashCode 和 equals 两个方法。</p>
+<p>在讲解 hashCode 和 equals 两个方法之前我们先简单回顾一下什么是散列表。散列表也叫哈希表，一般数据结构表现为 数组 + 链表。但其实这只是一种常见实现而已（例如JDK1.8加入了红黑树），因为散列表在最理想的情况下仅仅只需要数组来实现即可，即这个时候的查询时间复杂度为O(1)，这是最理想的情况，但前提是数据足够离散。但是生活告诉我们很多情况都是事与愿违的，如果数据不够离散的话，那么元素使用哈希值来定位存储下标时就会出现一种叫”哈希冲突&#x2F;碰撞”的现象，既元素之间出现了相同的哈希值。出现这种情况的原因有3种：</p>
+<ul>
+<li>重复保存了同一个元素</li>
+<li>不同元素间存在相同哈希值</li>
+<li>大小值位运算导致哈希冲突（下面有案例）</li>
+</ul>
+<p>&amp;emsp;&amp;emsp;好了，我们已经回顾了散列表数据结构，还提到什么是”哈希冲突&#x2F;碰撞”。那么现在就说说 hashCode 和 equals 两个方法的作用：</p>
+<ul>
+<li>hashCode：获取实例的哈希值</li>
+<li>equals：判断实例是否相同</li>
+</ul>
+<p>hashCode 和 equals 的关系是这样的，例如：Person A 和 Person B 的 hashCode 相等，既发生了哈希碰撞，这时散列表就会调用实例的 equals 方法来进一步判断 Person A 和 Person B 是不是同一个实例。这就为什么需要重写 hashCode 和 equals 方法的原因。也因为这样的缘故所以重写方法时需要重点注意，既如果两个实例进行 equals 操作返回 true 的话，那么他们的 hashCode 肯定是相等的，反之不然。</p>
+<p>至此，该回顾的内容我们都已经回顾了，接下来是时候看看 ConcurrentHashMap 中它是如何使用位运算来优化元素实例的哈希值的。我们从它的 put 方法开始观察，源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> V <span class="title function_">putVal</span><span class="params">(K key, V value, <span class="type">boolean</span> onlyIfAbsent)</span> &#123;</span><br><span class="line">    <span class="comment">// 省略</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">hash</span> <span class="operator">=</span> spread(key.hashCode());</span><br><span class="line">    <span class="comment">// 省略</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，在存储元素时它先获取了元素自身的 hashCode 值，然后传递给了 spread 方法。对于 spread 而言，它的主要功能有两个：</p>
+<ol>
+<li>降低元素的哈希冲突</li>
+<li>将元素的负哈希值改为正</li>
+</ol>
+<p>以下为 spread 方法源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">spread</span><span class="params">(<span class="type">int</span> h)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (h ^ (h &gt;&gt;&gt; <span class="number">16</span>)) &amp; HASH_BITS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>第一步：</strong>h ^ (h &gt;&gt;&gt; 16)</p>
+<p>首先需要知道的是 hashCode 它是一个int类型的数值（即32位）。这里无符号右移16位的意思就是将高16位挪到低16位位置中，这样做的目的是降低哈希冲突。因为散列表下标计算公式为：h &amp; (n-1) ，而 n 的最大值为 2 的 30 次方（散列表最大容量），但又因为 hashCode 是一个32位的int类型，其最大值是 2 的 31 次方减1，因此存在 h 远大于 (n-1) 的情况（如h值体验的高位中），这是如果不做任何处理的话就会加大哈希冲突率。举个简单的例子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># 例如有两个哈希值a 和 b，分别如下：</span><br><span class="line">#    <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = a</span><br><span class="line">#    <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = b</span><br><span class="line"># 可以看到a和b的低<span class="number">16</span>位是相同的，而高<span class="number">16</span>位是存在差异的。</span><br><span class="line"># 接下来以HashMap默认容量值<span class="number">16</span>为例子，计算一下a和b的存储下标位置：</span><br><span class="line">a:</span><br><span class="line">	<span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1111</span> = <span class="number">16</span> - <span class="number">1</span>，高位以<span class="number">0</span>补全</span><br><span class="line">        &amp;</span><br><span class="line">	<span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = a</span><br><span class="line">	---- 结果</span><br><span class="line">	<span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = 下标<span class="number">2</span></span><br><span class="line"></span><br><span class="line">b:</span><br><span class="line">	<span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1111</span> = <span class="number">16</span> - <span class="number">1</span>，高位以<span class="number">0</span>补全</span><br><span class="line">        &amp;</span><br><span class="line">	<span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = b</span><br><span class="line">	---- 结果</span><br><span class="line">	<span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = 下标同样为<span class="number">2</span>    </span><br></pre></td></tr></table></figure>
+
+<p>从例子中可以看到，a和b本身并不相同，但结果却一样。既当两个哈希值高位不同但低位相同时，且与值也小时（如16-1），就容易发生了哈希冲突现象。而 h ^ (h &gt;&gt;&gt; 16) 就是解决这个问题的。</p>
+<p>接下来我们还是使用上面a和b这两个值来进行一次 h ^ (h &gt;&gt;&gt; 16) 验证，证实一下是不是上面所说的那样可以解决上面的冲突问题。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">原值</span><br><span class="line"><span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = a</span><br><span class="line"><span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = b</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt; <span class="number">16</span> 后</span><br><span class="line"><span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1000</span> = a</span><br><span class="line"><span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> = b</span><br><span class="line"></span><br><span class="line">^（同为假，异位真） 后</span><br><span class="line"><span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">1010</span> = a <span class="comment">// 相当于原基础上加了8</span></span><br><span class="line"><span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0000</span> <span class="number">0010</span> = b</span><br></pre></td></tr></table></figure>
+
+<p>经过计算后可以看到 a 的低位变成了1010，而b则原封不动还是0010，因此可以证实时可以减轻冲突现象的。</p>
+<p><strong>第二步：</strong>h ^ (h &gt;&gt;&gt; 16) &amp; HASH_BITS</p>
+<p>HASH_BITS 的值为 0x7fffffff（Integer.MAX_VALUE）。该值的二进制位 <code>0111 1111 1111 1111 1111 1111 1111 1111</code>。因此负数<code>&amp;</code>上 0x7fffffff 就会变为正数。</p>
+<h2 id="LastRun高低位机制"><a href="#LastRun高低位机制" class="headerlink" title="LastRun高低位机制"></a>LastRun高低位机制</h2><h3 id="了解"><a href="#了解" class="headerlink" title="了解"></a>了解</h3><p>LastRun机制是用来提高 ConcurrentHashMap 的扩容（rehash）效率的，主要体现在它可以减少扩容时需要重新计算散列表下标值的工作量。但需要注意的是 LastRun 机制在 JDK1.7 和 JDK1.8 两个版本中是存在差异的。</p>
+<p>对于高低位机制的理解，个人认为应该溯源到 JDK1.7 的 HashMap 身上，因为高低位机制解决了 HashMap 并发扩容后 get 操作的死循环问题（实在不太理解为什么会有人用多线程并发操作HashMap，真是黑人问号.jpg）。那么这个问题的点位于 JDK1.7 版 HashMap 的 transfer 方法中，源码如下：</p>
+<blockquote>
+<p>java.util.HashMap</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> <span class="title function_">resize</span><span class="params">(<span class="type">int</span> newCapacity)</span> &#123;</span><br><span class="line">    <span class="comment">// 省略</span></span><br><span class="line">    transfer(newTable, initHashSeedAsNeeded(newCapacity));</span><br><span class="line">    table = newTable; <span class="comment">// 注意：这里需要先迁移完才会切断OldTable的引用释放空间</span></span><br><span class="line">    <span class="comment">// 省略</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">transfer</span><span class="params">(Entry[] newTable, <span class="type">boolean</span> rehash)</span> &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">newCapacity</span> <span class="operator">=</span> newTable.length;</span><br><span class="line">  	<span class="comment">// 遍历数组</span></span><br><span class="line">    <span class="keyword">for</span> (Entry&lt;K,V&gt; e : table) &#123; </span><br><span class="line">      	<span class="comment">// 遍历冲突链表</span></span><br><span class="line">        <span class="keyword">while</span>(<span class="literal">null</span> != e) &#123; <span class="comment">// 关键变量 e（开始时为冲突链表头节点）和 next</span></span><br><span class="line">            Entry&lt;K,V&gt; next = e.next;</span><br><span class="line">            <span class="keyword">if</span> (rehash) &#123; <span class="comment">// 正处于rehash操作</span></span><br><span class="line">              	<span class="comment">// 只有key不为null才进行rehash</span></span><br><span class="line">                e.hash = <span class="literal">null</span> == e.key ? <span class="number">0</span> : hash(e.key);</span><br><span class="line">            &#125;</span><br><span class="line">          	<span class="comment">// 计算新下标</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> indexFor(e.hash, newCapacity);</span><br><span class="line">            <span class="comment">// 头插法问题代码</span></span><br><span class="line">            e.next = newTable[i]; <span class="comment">// 1、先将冲突链表接到e下</span></span><br><span class="line">            newTable[i] = e; <span class="comment">// 2、将e放到槽的第一个位置，即成为链头</span></span><br><span class="line">            e = next; <span class="comment">// 下一个节点循环</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那么为什么会导致死循环呢？我用图片来解释下死循环是如何发生的，如下：</p>
+<p><img src="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/002.png"></p>
+<p>好了，现在我们知道了 JDK1.7 的 HashMap 并发扩容时会导致 get 死循环问题后我们再看看 JDK1.8 中 HashMap 是如何解决这个问题的，迁移源码如下：</p>
+<blockquote>
+<p>java.util.HashMap#resize</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">Node&lt;K,V&gt; loHead = <span class="literal">null</span>, loTail = <span class="literal">null</span>; <span class="comment">// 低位链表，即这条链表的</span></span><br><span class="line">Node&lt;K,V&gt; hiHead = <span class="literal">null</span>, hiTail = <span class="literal">null</span>;</span><br><span class="line">Node&lt;K,V&gt; next;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 迭代冲突链表</span></span><br><span class="line"><span class="keyword">do</span> &#123; </span><br><span class="line">    next = e.next; <span class="comment">// 记录下一个迭代节点</span></span><br><span class="line">    <span class="keyword">if</span> ((e.hash &amp; oldCap) == <span class="number">0</span>) &#123; <span class="comment">// 等于0，表示两个二进制并没有1的相同位</span></span><br><span class="line">      	<span class="comment">// 将相同情况的节点连接起来，组成低位链表</span></span><br><span class="line">        <span class="keyword">if</span> (loTail == <span class="literal">null</span>) </span><br><span class="line">            loHead = e;</span><br><span class="line">        <span class="keyword">else</span> </span><br><span class="line">            loTail.next = e;</span><br><span class="line">        loTail = e;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123; <span class="comment">// 两个二进制有相同的1位</span></span><br><span class="line">      	<span class="comment">// 将相同情况的节点连接起来，组成高位链表</span></span><br><span class="line">        <span class="keyword">if</span> (hiTail == <span class="literal">null</span>)</span><br><span class="line">            hiHead = e;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            hiTail.next = e;</span><br><span class="line">        hiTail = e;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">while</span> ((e = next) != <span class="literal">null</span>); </span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (loTail != <span class="literal">null</span>) &#123;</span><br><span class="line">    loTail.next = <span class="literal">null</span>;</span><br><span class="line">    newTab[j] = loHead; <span class="comment">// 直接放在新表相同的位置</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (hiTail != <span class="literal">null</span>) &#123;</span><br><span class="line">    hiTail.next = <span class="literal">null</span>;</span><br><span class="line">    newTab[j + oldCap] = hiHead; <span class="comment">// 放在下标=旧表位置+旧表容量的位置</span></span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+
+<p>可以看到，相较于 JDK 1.7 而言除了e和next之外 JDK1.8 还新增了4个变量值：</p>
+<ul>
+<li>记录低位节点：loHead、loTail</li>
+<li>记录高位节点：hiHead、hiTail。</li>
+</ul>
+<p>那么它是如何解决循环引用问题的呢？如果你有认真看上面那张循环引用分析图的话其实很容易就能得出答案。JDK 1.7之所以并发扩容会导致循环引用，主要是因为使用了头插法后直接操作变量e所导致的，因为这样会导致原来的A-&gt;B引用转换为B-&gt;A，那么多线程并发操作时就会存在循环引用的隐患。JDK 1.8后改为采用尾插法之余还新增了4个变量来避免直接操作变量e，也就是说不存在将A-&gt;B引用转换为B-&gt;A的情况。具体迁移步骤是先用hiHead和loHead按原来顺序拼接成两条链表，等拼接完后再一次设置到新散列表中。但需要强调的是，即使 JDK 1.8 的 HashMap 解决了循环引用的问题，但它依然是非线程安全的。例如在并发拼接链表时节点的next指向会被修改，这样一来就可能会直接导致其它线程拼装链表时丢失某部分节点，所以如果是多线程环境的话还是需要使用线程安全的 ConcurrentHashMap 才能保证安全。</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>接下来将视角切换到 JDK 1.8 的 ConcurrentHashMap 中。先了解一个 ConcurrentHashMap 扩容时是如何使用 LastRun 高低位机制的。迁移源码如下：</p>
+<blockquote>
+<p>java.util.concurrent.ConcurrentHashMap#transfer</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (tabAt(tab, i) == f) &#123; <span class="comment">// 普通节点</span></span><br><span class="line">    Node&lt;K,V&gt; ln, hn;</span><br><span class="line">  	<span class="comment">// n：当前散列表容量</span></span><br><span class="line">  	<span class="comment">// fh：当前节点的哈希值</span></span><br><span class="line">  	<span class="comment">// runBit：用于判断高低位</span></span><br><span class="line">    <span class="keyword">if</span> (fh &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">runBit</span> <span class="operator">=</span> fh &amp; n; </span><br><span class="line">        Node&lt;K,V&gt; lastRun = f; <span class="comment">// 预定义LastRun为整条冲突链表</span></span><br><span class="line">        <span class="keyword">for</span> (Node&lt;K,V&gt; p = f.next; p != <span class="literal">null</span>; p = p.next) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">b</span> <span class="operator">=</span> p.hash &amp; n;</span><br><span class="line">	          <span class="comment">// 迭代出LastRun位置（判断依据是runBit存在差异）</span></span><br><span class="line">          	<span class="comment">// 得到的结果是，从LastRun这个节点位置往后都是同一种情况的节点（即b=0或n!=0）</span></span><br><span class="line">            <span class="keyword">if</span> (b != runBit) &#123; </span><br><span class="line">                runBit = b; <span class="comment">// 注意：如果runBit存在差异，证明在迁移后当前冲突链表需要拆分</span></span><br><span class="line">                lastRun = p;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (runBit == <span class="number">0</span>) &#123; <span class="comment">// 低位</span></span><br><span class="line">            ln = lastRun;</span><br><span class="line">            hn = <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123; <span class="comment">// 高位</span></span><br><span class="line">            hn = lastRun;</span><br><span class="line">            ln = <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 拼装高低位链表，只需迭代到lastRun即可</span></span><br><span class="line">        <span class="keyword">for</span> (Node&lt;K,V&gt; p = f; p != lastRun; p = p.next) &#123; </span><br><span class="line">            <span class="type">int</span> <span class="variable">ph</span> <span class="operator">=</span> p.hash; <span class="type">K</span> <span class="variable">pk</span> <span class="operator">=</span> p.key; <span class="type">V</span> <span class="variable">pv</span> <span class="operator">=</span> p.val;</span><br><span class="line">            <span class="keyword">if</span> ((ph &amp; n) == <span class="number">0</span>) <span class="comment">// 低位</span></span><br><span class="line">                ln = <span class="keyword">new</span> <span class="title class_">Node</span>&lt;K,V&gt;(ph, pk, pv, ln);</span><br><span class="line">            <span class="keyword">else</span> <span class="comment">// 高位</span></span><br><span class="line">                hn = <span class="keyword">new</span> <span class="title class_">Node</span>&lt;K,V&gt;(ph, pk, pv, hn);</span><br><span class="line">        &#125;</span><br><span class="line">        setTabAt(nextTab, i, ln); <span class="comment">// 低位链表迁移无需修改下标</span></span><br><span class="line">        setTabAt(nextTab, i + n, hn); <span class="comment">// 高位链表新下标 = 当前下标 + OldTable.length</span></span><br><span class="line">        setTabAt(tab, i, fwd); </span><br><span class="line">        advance = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>可能跟随着上面注释的步伐一时之间还是不明白 LastRun 到底在哪里降低了下标值的计算工作。所以我又画了一张图来帮助理解：</p>
+<p><img src="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/003.png"></p>
+<p>首先其巧妙之处是使用<code>runBit = fh &amp; n </code>来区分高低位以确定节点迁移的新下标值。而runBit的结果只有两种：</p>
+<ul>
+<li>等于0，迁移后 newIndex &#x3D; oldIndex</li>
+<li>非0，迁移后 newIndex &#x3D; oldIndex + old</li>
+</ul>
+<p>其实一开始看源码的时候我自己是十分困惑的。我的疑问是，为什么可以这样确定新下标值，感觉很是神奇。Google了一番都没有得到结果。后来我使用位运算来模拟计算，同时进行猜想和验证：</p>
+<p><strong>首先验证的问题：</strong>当runBit值为非0时 newIndex &#x3D; oldIndex + old。过程如下：</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># lastRun操作：table.length &amp; h</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># lastRun操作：16 &amp; 2070812441(哈希值)</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0001 0000 = 16</span></span><br><span class="line"><span class="attr">&amp;</span></span><br><span class="line"><span class="attr">0111</span> <span class="string">1011 0110 1110 0001 0111 0001 1001 = 2070812441。因为两个都是正数，所以原码就是补码</span></span><br><span class="line"><span class="attr">------</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0001 0000 = 16 </span></span><br><span class="line"><span class="comment"># runBit值不等于0，因此newIndex应该是等于 oldIndex + oldLength</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># 而节点当前下标位置：(16-1) &amp; 2070812441</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0000 1111 = 15</span></span><br><span class="line"><span class="attr">&amp;</span></span><br><span class="line"><span class="attr">0111</span> <span class="string">1011 0110 1110 0001 0111 0001 1001 = 2070812441</span></span><br><span class="line"><span class="attr">------</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0000 1001 = 当前下标值为9</span></span><br><span class="line"><span class="comment"># 所以在runBit值为非零的理论基础上，扩容后newIndex应该为 9+16 = 25</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># 验证上面的问题</span></span><br><span class="line"><span class="comment"># 散列表扩容后节点的新下标：(32-1) &amp; 2070812441</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0001 1111 = 31</span></span><br><span class="line"><span class="attr">&amp;</span></span><br><span class="line"><span class="attr">0111</span> <span class="string">1011 0110 1110 0001 0111 0001 1001 = 2070812441</span></span><br><span class="line"><span class="attr">------</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0001 1001 = 结果是25</span></span><br><span class="line"><span class="comment"># 因此验证了当runBit值为非零时 newIndex = oldIndex + old 是成立的</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>证实猜想：</strong>如果runBit等于0，那么扩容前后下标( hash&amp;(n-1) )值不变</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># LastRun判断为0案例：</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># LastRun：16 &amp; 2070812457</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0001 0000 = 16</span></span><br><span class="line"><span class="attr">&amp;</span></span><br><span class="line"><span class="attr">0111</span> <span class="string">1011 0110 1110 0001 0111 0010 1001 = 2070812457</span></span><br><span class="line"><span class="attr">------</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0000 0000 = 0，既runBit值为0</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># 而节点当前下标位置：(16-1) &amp; 2070812457</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0000 1111 = 16-1</span></span><br><span class="line"><span class="attr">&amp;</span></span><br><span class="line"><span class="attr">0111</span> <span class="string">1011 0110 1110 0001 0111 0010 1001 = 2070812457</span></span><br><span class="line"><span class="attr">------</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0000 1001 = 9</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># 散列表扩容后节点的新下标：(32-1) &amp; 2070812457</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0001 1111 = 32-1</span></span><br><span class="line"><span class="attr">&amp;</span></span><br><span class="line"><span class="attr">0111</span> <span class="string">1011 0110 1110 0001 0111 0010 1001 = 2070812457</span></span><br><span class="line"><span class="attr">------</span></span><br><span class="line"><span class="attr">0000</span> <span class="string">0000 0000 0000 0000 0000 0000 1001 = 9</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># 可以看到当runBit值为0时，节点迁移前后的下标确实没有变化</span></span><br></pre></td></tr></table></figure>
+
+<p>感到神奇。😃</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E4%BB%8EIO%E6%A8%A1%E5%9E%8B%E5%88%B0%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

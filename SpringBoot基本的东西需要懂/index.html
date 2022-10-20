@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      SpringBoot基本的东西需要懂 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Aug 07, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      SpringBoot基本的东西需要懂
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2><ul>
+<li>2020年6月7日 10:11:51 — 函数式控制器、404处理、后端跨域配置</li>
+</ul>
+<h2 id="SpringBoot自动配置的基本原理"><a href="#SpringBoot自动配置的基本原理" class="headerlink" title="SpringBoot自动配置的基本原理"></a>SpringBoot自动配置的基本原理</h2><blockquote>
+<p>注意：基于 SpringBoot 2.1.6.RELEASE 版本</p>
+</blockquote>
+<h3 id="初始化自动配置信息"><a href="#初始化自动配置信息" class="headerlink" title="初始化自动配置信息"></a>初始化自动配置信息</h3><p>以下为一个简单的springboot启动类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DemoApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(DemoApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>跟中代码到 SpringApplication 构造函数</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">SpringApplication</span><span class="params">(ResourceLoader resourceLoader, Class&lt;?&gt;... primarySources)</span> &#123;</span><br><span class="line">	<span class="built_in">this</span>.resourceLoader = resourceLoader;</span><br><span class="line">	<span class="built_in">this</span>.primarySources = <span class="keyword">new</span> <span class="title class_">LinkedHashSet</span>&lt;&gt;(Arrays.asList(primarySources));  </span><br><span class="line">	<span class="comment">// 当前应用的类型：none、servlet、reactive</span></span><br><span class="line">	<span class="comment">// 默认为none、添加web模块后为servlet、添加webflux模块后为reactive</span></span><br><span class="line">	<span class="built_in">this</span>.webApplicationType = WebApplicationType.deduceFromClasspath(); </span><br><span class="line">	<span class="comment">// 设置内置的初始化器</span></span><br><span class="line">	setInitializers((Collection)getSpringFactoriesInstances(ApplicationContextInitializer.class)); </span><br><span class="line">	<span class="comment">// 设置内置的事件监听器</span></span><br><span class="line">	setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));</span><br><span class="line">	<span class="comment">// 加载当前项目的启动类，即 DemoApplication.class</span></span><br><span class="line">	<span class="built_in">this</span>.mainApplicationClass = deduceMainApplicationClass();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面的源码中可以看到有多处使用了 getSpringFactoriesInstances 方法。该方法的作用是<strong>根据指定的类型</strong>从 <code>META/spring.factories</code>文件中加载其实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> &lt;T&gt; Collection&lt;T&gt; <span class="title function_">getSpringFactoriesInstances</span><span class="params">(Class&lt;T&gt; type, Class&lt;?&gt;[] parameterTypes, Object... args)</span> &#123;</span><br><span class="line">	<span class="type">ClassLoader</span> <span class="variable">classLoader</span> <span class="operator">=</span> getClassLoader(); </span><br><span class="line">	<span class="comment">// 使用SPI思想加载type的实现</span></span><br><span class="line">	Set&lt;String&gt; names = <span class="keyword">new</span> <span class="title class_">LinkedHashSet</span>&lt;&gt;(SpringFactoriesLoader.loadFactoryNames(type, classLoader));</span><br><span class="line">	<span class="comment">// 根据名称创建实例</span></span><br><span class="line">	List&lt;T&gt; instances = createSpringFactoriesInstances(type, parameterTypes, classLoader, args, names);</span><br><span class="line">	AnnotationAwareOrderComparator.sort(instances);</span><br><span class="line">	<span class="keyword">return</span> instances;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据上面的方法，进一步追中方法 SpringFactoriesLoader.loadFactoryNames </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;String&gt; <span class="title function_">loadFactoryNames</span><span class="params">(Class&lt;?&gt; factoryClass, <span class="meta">@Nullable</span> ClassLoader classLoader)</span> &#123;</span><br><span class="line">	<span class="type">String</span> <span class="variable">factoryClassName</span> <span class="operator">=</span> factoryClass.getName();</span><br><span class="line">	<span class="keyword">return</span> loadSpringFactories(classLoader).getOrDefault(factoryClassName, 	 Collections.emptyList());</span><br><span class="line">&#125;	</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Map&lt;String, List&lt;String&gt;&gt; <span class="title function_">loadSpringFactories</span><span class="params">(<span class="meta">@Nullable</span> ClassLoader classLoader)</span> &#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="comment">// 加载类路径下的所有 META-INF/spring.factories 文件</span></span><br><span class="line">		<span class="comment">// public static final String FACTORIES_RESOURCE_LOCATION = &quot;META-INF/spring.factories&quot;;</span></span><br><span class="line">        <span class="comment">// 注意：在一个SpringBoot项目中最少会有两个 spring.factories</span></span><br><span class="line">		<span class="comment">// 第一个位于spring-boot、第二个位于spring-boot-autoconfigure</span></span><br><span class="line">		Enumeration&lt;URL&gt; urls = (classLoader != <span class="literal">null</span> ?</span><br><span class="line">								 classLoader.getResources(FACTORIES_RESOURCE_LOCATION) :</span><br><span class="line">								 ClassLoader.getSystemResources(FACTORIES_RESOURCE_LOCATION));</span><br><span class="line">		result = <span class="keyword">new</span> <span class="title class_">LinkedMultiValueMap</span>&lt;&gt;();</span><br><span class="line">		<span class="keyword">while</span> (urls.hasMoreElements()) &#123;</span><br><span class="line">		 <span class="comment">//...</span></span><br><span class="line">		&#125;</span><br><span class="line">		cache.put(classLoader, result);</span><br><span class="line">		<span class="keyword">return</span> result;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>org\springframework\boot\spring-boot\2.1.6.RELEASE\spring-boot-2.1.6.RELEASE.jar!\META-INF\spring.factories</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># PropertySource Loaders</span></span><br><span class="line"><span class="attr">org.springframework.boot.env.PropertySourceLoader</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.env.PropertiesPropertySourceLoader,\</span></span><br><span class="line"><span class="string">org.springframework.boot.env.YamlPropertySourceLoader</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Run Listeners</span></span><br><span class="line"><span class="attr">org.springframework.boot.SpringApplicationRunListener</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.event.EventPublishingRunListener</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Error Reporters</span></span><br><span class="line"><span class="attr">org.springframework.boot.SpringBootExceptionReporter</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.FailureAnalyzers</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Application Context Initializers</span></span><br><span class="line"><span class="attr">org.springframework.context.ApplicationContextInitializer</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.ConfigurationWarningsApplicationContextInitializer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.ContextIdApplicationContextInitializer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.config.DelegatingApplicationContextInitializer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.web.context.ServerPortInfoApplicationContextInitializer</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Application Listeners</span></span><br><span class="line"><span class="attr">org.springframework.context.ApplicationListener</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.ClearCachesApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.builder.ParentContextCloserApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.FileEncodingApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.config.AnsiOutputApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.config.ConfigFileApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.config.DelegatingApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.logging.ClasspathLoggingApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.context.logging.LoggingApplicationListener,\</span></span><br><span class="line"><span class="string">org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Environment Post Processors</span></span><br><span class="line"><span class="attr">org.springframework.boot.env.EnvironmentPostProcessor</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor,\</span></span><br><span class="line"><span class="string">org.springframework.boot.env.SpringApplicationJsonEnvironmentPostProcessor,\</span></span><br><span class="line"><span class="string">org.springframework.boot.env.SystemEnvironmentPropertySourceEnvironmentPostProcessor</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Failure Analyzers</span></span><br><span class="line"><span class="attr">org.springframework.boot.diagnostics.FailureAnalyzer</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.BeanCurrentlyInCreationFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.BeanDefinitionOverrideFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.BeanNotOfRequiredTypeFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.BindFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.BindValidationFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.UnboundConfigurationPropertyFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.ConnectorStartFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.NoSuchMethodFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.NoUniqueBeanDefinitionFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.PortInUseFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.ValidationExceptionFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyNameFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyValueFailureAnalyzer</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># FailureAnalysisReporters</span></span><br><span class="line"><span class="attr">org.springframework.boot.diagnostics.FailureAnalysisReporter</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.diagnostics.LoggingFailureAnalysisReporter</span></span><br></pre></td></tr></table></figure>
+
+<p>org\springframework\boot\spring-boot-autoconfigure\2.1.6.RELEASE\spring-boot-autoconfigure-2.1.6.RELEASE-sources.jar!\META-INF\spring.factories</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Initializers</span></span><br><span class="line"><span class="attr">org.springframework.context.ApplicationContextInitializer</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.SharedMetadataReaderFactoryContextInitializer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Application Listeners</span></span><br><span class="line"><span class="attr">org.springframework.context.ApplicationListener</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.BackgroundPreinitializer</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Auto Configuration Import Listeners</span></span><br><span class="line"><span class="attr">org.springframework.boot.autoconfigure.AutoConfigurationImportListener</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.condition.ConditionEvaluationReportAutoConfigurationImportListener</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Auto Configuration Import Filters</span></span><br><span class="line"><span class="attr">org.springframework.boot.autoconfigure.AutoConfigurationImportFilter</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.condition.OnBeanCondition,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.condition.OnClassCondition,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.condition.OnWebApplicationCondition</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Auto Configure</span></span><br><span class="line"><span class="comment"># @EnableAutoConfiguration注解默认加载的自动配置类</span></span><br><span class="line"><span class="attr">org.springframework.boot.autoconfigure.EnableAutoConfiguration</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.cloud.CloudServiceConnectorsAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.cassandra.CassandraRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseReactiveRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.couchbase.CouchbaseRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.ldap.LdapRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.mongo.MongoReactiveRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.neo4j.Neo4jRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.solr.SolrRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.rest.RepositoryRestMvcAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.elasticsearch.rest.RestClientAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.hateoas.HypermediaAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.hazelcast.HazelcastJpaDependencyAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.influx.InfluxDbAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jdbc.JndiDataSourceAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jdbc.XADataSourceAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jms.JndiConnectionFactoryAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jms.artemis.ArtemisAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jersey.JerseyAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jsonb.JsonbAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.mail.MailSenderValidatorAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.reactor.core.ReactorCoreAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.servlet.SecurityRequestMatcherProviderAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.sendgrid.SendGridAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.session.SessionAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.security.oauth2.resource.reactive.ReactiveOAuth2ResourceServerAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.embedded.EmbeddedWebServerFactoryCustomizerAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.reactive.HttpHandlerAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.reactive.ReactiveWebServerFactoryAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.reactive.error.ErrorWebFluxAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.websocket.reactive.WebSocketReactiveAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.websocket.servlet.WebSocketMessagingAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.webservices.client.WebServiceTemplateAutoConfiguration</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Failure analyzers</span></span><br><span class="line"><span class="attr">org.springframework.boot.diagnostics.FailureAnalyzer</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.diagnostics.analyzer.NoSuchBeanDefinitionFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jdbc.DataSourceBeanCreationFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.jdbc.HikariDriverConfigurationFailureAnalyzer,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.session.NonUniqueSessionRepositoryFailureAnalyzer</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"># Template availability providers</span></span><br><span class="line"><span class="attr">org.springframework.boot.autoconfigure.template.TemplateAvailabilityProvider</span>=<span class="string">\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.freemarker.FreeMarkerTemplateAvailabilityProvider,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.mustache.MustacheTemplateAvailabilityProvider,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAvailabilityProvider,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.thymeleaf.ThymeleafTemplateAvailabilityProvider,\</span></span><br><span class="line"><span class="string">org.springframework.boot.autoconfigure.web.servlet.JspTemplateAvailabilityProvider</span></span><br></pre></td></tr></table></figure>
+
+
+<h3 id="启动-SpringBoot-应用"><a href="#启动-SpringBoot-应用" class="headerlink" title="启动 SpringBoot 应用"></a>启动 SpringBoot 应用</h3><p>SpringApplication.run() 方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> ConfigurableApplicationContext <span class="title function_">run</span><span class="params">(String... args)</span> &#123;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">    </span><br><span class="line">	<span class="comment">// 从spring.factories中加载SpringApplicationRunListener监听器实现用于发布事件、</span></span><br><span class="line">    <span class="comment">// 它只有一个实现，就是EventPublishingRunListener</span></span><br><span class="line">	<span class="type">SpringApplicationRunListeners</span> <span class="variable">listeners</span> <span class="operator">=</span> getRunListeners(args);</span><br><span class="line">	listeners.starting(); <span class="comment">// 发布应用“准备启动”事件</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="type">ApplicationArguments</span> <span class="variable">applicationArguments</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DefaultApplicationArguments</span>(args);</span><br><span class="line">		<span class="comment">// 加载配置（入参、环境变量、配置文件）</span></span><br><span class="line">         <span class="comment">// 譬如配置文件加载就由ConfigFileApplicationListener监听器来完成</span></span><br><span class="line">		<span class="type">ConfigurableEnvironment</span> <span class="variable">environment</span> <span class="operator">=</span> prepareEnvironment(listeners, applicationArguments);</span><br><span class="line">		<span class="comment">// ...		</span></span><br><span class="line">		<span class="comment">// 如果开了Banner，则打印Banner</span></span><br><span class="line">         <span class="type">Banner</span> <span class="variable">printedBanner</span> <span class="operator">=</span> printBanner(environment);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 根据当前应用环境实例化应用上下文对象</span></span><br><span class="line">		<span class="comment">// 譬如当前导入了Web模块，所以环境为Servlet，因此创建的具体类型为AnnotationConfigServletWebServerApplicationContext</span></span><br><span class="line">		context = createApplicationContext();</span><br><span class="line">		prepareContext(context, environment, listeners, applicationArguments, printedBanner);</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 启动应用上下文</span></span><br><span class="line">		<span class="comment">// 1. 加载配置类</span></span><br><span class="line">		<span class="comment">// 2. 扫描配置类上的注解，并优先实例化</span></span><br><span class="line">		<span class="comment">// 	  譬如@EnableAutoConfiguration中通过@Import导入的AutoConfigurationImportSelector</span></span><br><span class="line">		<span class="comment">// 3. 利用AutoConfigurationImportSelector从spring.factories中导入自动配置类</span></span><br><span class="line">		<span class="comment">// 4. 先根据排除规则得到AutoConfigurationImportFilter过滤掉排除了的配置</span></span><br><span class="line">		<span class="comment">// 5. 再根据Condition过滤器（FilteringSpringBootCondition）对类进行条件启用筛选，得到符合条件的自动配置类</span></span><br><span class="line">		<span class="comment">// 6. 最后再根据Condition过滤器（OnBeanCondition、OnClassCondition、OnWebApplicationCondition）筛选出符合条件的BeanDefinition</span></span><br><span class="line">		<span class="comment">// 	  参考：AutoConfigurationImportSelector#filter</span></span><br><span class="line">         <span class="comment">// 7. 启动服务器。参考ApplicationContext#refresh()中的onRefresh()</span></span><br><span class="line">		<span class="comment">// 8. 实例化阶段，根据BeanDefinition实例化Bean</span></span><br><span class="line">		refreshContext(context); </span><br><span class="line">		afterRefresh(context, applicationArguments);</span><br><span class="line">		stopWatch.stop();</span><br><span class="line">		<span class="comment">// ...</span></span><br><span class="line">		<span class="comment">// 发布“应用即将运行”事件，这时应用上下文已经启动完成</span></span><br><span class="line">		listeners.started(context); </span><br><span class="line">		</span><br><span class="line">		<span class="comment">// 回调ApplicationRunner、CommandLineRunner的实现</span></span><br><span class="line">		callRunners(context, applicationArguments);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		listeners.running(context); <span class="comment">// 发布应用【正在运行】事件，这时run方法即将执行完成</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">	<span class="keyword">return</span> context;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="关于-Conditional-注解"><a href="#关于-Conditional-注解" class="headerlink" title="关于 @Conditional 注解"></a>关于 @Conditional 注解</h2><p>@Conditional 注解是 Spring 4 提供的实例化谓语，也就是说只有满足满足特定条件下才会实例化 Bean。</p>
+<p>以下为常见的 @Conditional 派生注解：</p>
+<table>
+<thead>
+<tr>
+<th>条件注解</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>@ConditionalOnBean</td>
+<td>要求上下文中存在特定的 Bean 实例</td>
+</tr>
+<tr>
+<td>@ConditionalOnClass</td>
+<td>要求类路径中存在指定的类文件</td>
+</tr>
+<tr>
+<td>@ConditionalOnExpression</td>
+<td>要求满足表达式要求</td>
+</tr>
+<tr>
+<td>@ConditionalOnMissingBean</td>
+<td>要求上下文中不存在特定的 Bean 实例</td>
+</tr>
+<tr>
+<td>@ConditionalOnMissingClass</td>
+<td>要求类路径中不存在指定的class文件</td>
+</tr>
+<tr>
+<td>@ConditionalOnNotWebApplication</td>
+<td>要求当前应用所在的环境不是 Web 环境（Servlet、WebFlux）</td>
+</tr>
+<tr>
+<td>@ConditionalOnProperty</td>
+<td>要求环境中有指定的配置</td>
+</tr>
+</tbody></table>
+<p>自定义条件注解：</p>
+<p>实现 Condition 接口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ConditionalOnHelloWorld</span> <span class="keyword">implements</span> <span class="title class_">Condition</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">matches</span><span class="params">(ConditionContext context, AnnotatedTypeMetadata metadata)</span> &#123;</span><br><span class="line">      	<span class="comment">// 我这里要求配置中 my.flag 的值为 true 才满足条件</span></span><br><span class="line">        <span class="keyword">return</span> Boolean.valueOf(context.getEnvironment().getProperty(<span class="string">&quot;my.flag&quot;</span>).toLowerCase());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用@Conditional</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestConfig</span> &#123;</span><br><span class="line">    <span class="meta">@Conditional(ConditionalOnHelloWorld.class)</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;into TestConfig.test()&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>除了以上方式使用 @Conditional 之外还可以参照 SpringBoot 中的其派生条件注解来创建</p>
+<h2 id="SpringBoot参数和配置文件的加载顺序"><a href="#SpringBoot参数和配置文件的加载顺序" class="headerlink" title="SpringBoot参数和配置文件的加载顺序"></a>SpringBoot参数和配置文件的加载顺序</h2><h3 id="参数（优先级由上至下）"><a href="#参数（优先级由上至下）" class="headerlink" title="参数（优先级由上至下）"></a>参数（优先级由上至下）</h3><ol>
+<li>启动应用时输入的命令行参数</li>
+<li>名称为SPRING_APPLICATION_JSON的系统环境变量或系统属性（格式：SPRING_APPLICATION_JSON&#x3D;’{“my”:{“name”:”test”}}’）</li>
+<li>ServletConfig初始化参数</li>
+<li>ServletContext初始化参数</li>
+<li>Java系统属性（System.getPropterties()）</li>
+<li>操作系统环境变量</li>
+<li>配置文件</li>
+<li>@PropertySource引入的Properties文件参数</li>
+<li>默认参数（通过SpringApplication.setDefaultProperties设置）</li>
+</ol>
+<p>注：其参数可以使用@Value获取并注入</p>
+<h3 id="配置文件（优先级由上至下）"><a href="#配置文件（优先级由上至下）" class="headerlink" title="配置文件（优先级由上至下）"></a>配置文件（优先级由上至下）</h3><p>加载配置文件的工作由<code>org.springframework.boot.context.config.ConfigFileApplicationListener</code>监听器来完成的，时机在SpringApplication创建后，run之前。</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/1.png"></p>
+<p>其余不常用请参考如下文档：<a target="_blank" rel="noopener" href="https://docs.spring.io/spring-boot/docs/2.5.4/reference/html/features.html#features.external-config">https://docs.spring.io/spring-boot/docs/2.5.4/reference/html/features.html#features.external-config</a></p>
+<h2 id="开发时用的自动重启模块"><a href="#开发时用的自动重启模块" class="headerlink" title="开发时用的自动重启模块"></a>开发时用的自动重启模块</h2><p>开发 Web 是一件非常耗时的事情，耗时主要不是耗在写代码上，而是部署、配置、弄环境这些繁琐的事情上，实属非常令人厌烦，所以先前一直使用一款叫 JReble 的热部署插件，而 SpringBoot也提供了类似的功能，该功能位于<code>spring-boot-devtools</code>模块，而且使用方法也很简单。</p>
+<p>添加依赖：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-devtools<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">optional</span>&gt;</span>true<span class="tag">&lt;/<span class="name">optional</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>配置 IDEA 让其提供支持：</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/2.png"></p>
+<p>双击 shift 搜索关键字 “Maintenance”</p>
+<blockquote>
+<p>如果是 windows 则按 “ctrl + shift + alt + &#x2F;“ 后选择注册即可</p>
+</blockquote>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/3.png"></p>
+<p>至此已经配置完成，但值得注意的是，当开启了 devtools 功能后默认会添加以下配置</p>
+<blockquote>
+<p>org.springframework.boot.devtools.env.DevToolsPropertyDefaultsPostProcessor</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> &#123; <span class="comment">// 禁止缓存</span></span><br><span class="line">	Map&lt;String, Object&gt; properties = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">	properties.put(<span class="string">&quot;spring.thymeleaf.cache&quot;</span>, <span class="string">&quot;false&quot;</span>); </span><br><span class="line">	properties.put(<span class="string">&quot;spring.freemarker.cache&quot;</span>, <span class="string">&quot;false&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.groovy.template.cache&quot;</span>, <span class="string">&quot;false&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.mustache.cache&quot;</span>, <span class="string">&quot;false&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;server.servlet.session.persistent&quot;</span>, <span class="string">&quot;true&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.h2.console.enabled&quot;</span>, <span class="string">&quot;true&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.resources.cache.period&quot;</span>, <span class="string">&quot;0&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.resources.chain.cache&quot;</span>, <span class="string">&quot;false&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.template.provider.cache&quot;</span>, <span class="string">&quot;false&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.mvc.log-resolved-exception&quot;</span>, <span class="string">&quot;true&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;server.error.include-stacktrace&quot;</span>, <span class="string">&quot;ALWAYS&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;server.servlet.jsp.init-parameters.development&quot;</span>, <span class="string">&quot;true&quot;</span>);</span><br><span class="line">	properties.put(<span class="string">&quot;spring.reactor.stacktrace-mode.enabled&quot;</span>, <span class="string">&quot;true&quot;</span>);</span><br><span class="line">	PROPERTIES = Collections.unmodifiableMap(properties);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="SpringBoot-2-x默认的数据源连接池-HikariCP"><a href="#SpringBoot-2-x默认的数据源连接池-HikariCP" class="headerlink" title="SpringBoot 2.x默认的数据源连接池 - HikariCP"></a>SpringBoot 2.x默认的数据源连接池 - HikariCP</h2><p>添加 JDBC 操作依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-jdbc<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>在 SpringBoot 1.5 版本时默认的数据源连接池是<strong>Tomcat据源连接池</strong>，而 2.x 之后更改为<strong>HikariCP</strong>。</p>
+<p>以下为 DataSource 自动配置源码（org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@Conditional(PooledDataSourceCondition.class)</span></span><br><span class="line"><span class="meta">@ConditionalOnMissingBean(&#123; DataSource.class, XADataSource.class &#125;)</span></span><br><span class="line"><span class="comment">// 加载数据源连接池配置类</span></span><br><span class="line"><span class="meta">@Import(&#123; DataSourceConfiguration.Hikari.class, DataSourceConfiguration.Tomcat.class,</span></span><br><span class="line"><span class="meta">         DataSourceConfiguration.Dbcp2.class, DataSourceConfiguration.Generic.class,</span></span><br><span class="line"><span class="meta">         DataSourceJmxConfiguration.class &#125;)</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">PooledDataSourceConfiguration</span> &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>org.springframework.boot.autoconfigure.jdbc.DataSourceConfiguration</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/6.png"></p>
+<p>可以看到，添加jdbc依赖后，HikariCP被添加到类路径中</p>
+<h2 id="会话级别的H2数据库和ActiveMQ"><a href="#会话级别的H2数据库和ActiveMQ" class="headerlink" title="会话级别的H2数据库和ActiveMQ"></a>会话级别的H2数据库和ActiveMQ</h2><p>SpringBoot 提供了方便开发者在调研阶段使用的数据库 H2 和 ActiveMQ 模块。其非常方便的是两个模块都并不需要做任何配置就可以马上使用（既无需在本地安装DB和MQ），实属方便。但需要注意的是 H2 和 ActiveMQ 都是会话级别的，即重启后就会抹杀之前的数据。</p>
+<h3 id="H2数据库"><a href="#H2数据库" class="headerlink" title="H2数据库"></a>H2数据库</h3><p>添加依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- h2数据库 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.h2database<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>h2<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!-- spring data jpa --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-jpa<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>正常地配置实体</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Entity</span></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">    <span class="meta">@Id</span></span><br><span class="line">    <span class="keyword">private</span> Integer id;</span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>正常地编写jpa repository即可。如果想要查看H2数据内容，步骤如下</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">h2:</span></span><br><span class="line">    <span class="attr">console:</span></span><br><span class="line">      <span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>浏览器访问：localhost:8080&#x2F;h2-console</p>
+<p>数据库信息可以在控制台输出的日志中得知，例如</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at &#x27;/h2-console&#x27;. Database available at &#x27;jdbc:h2:mem:testdb&#x27;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="ActiveMQ"><a href="#ActiveMQ" class="headerlink" title="ActiveMQ"></a>ActiveMQ</h3><p>添加依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-activemq<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>正常地使用mq功能</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestController</span> &#123;</span><br><span class="line">  </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> JmsTemplate template;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping(&quot;/save&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">save</span><span class="params">()</span> &#123;</span><br><span class="line">        template.convertAndSend(<span class="string">&quot;person:msg:new&quot;</span>, <span class="string">&quot;新增了一个person对象&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@JmsListener(destination = &quot;person:msg:new&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">showMsg</span><span class="params">(String msg)</span> &#123;</span><br><span class="line">        log.info(<span class="string">&quot;msg=&#123;&#125;&quot;</span>, msg);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="使用Actuator来观察应用端点"><a href="#使用Actuator来观察应用端点" class="headerlink" title="使用Actuator来观察应用端点"></a>使用Actuator来观察应用端点</h2><p>Actuator 启动器是 SpringBoot 提供的一个用于监控和管理应用的模块。其功能譬如有<strong>审计</strong>、<strong>健康信息</strong>、<strong>数据采集统计</strong>等等功能。</p>
+<p>官方文档：<a target="_blank" rel="noopener" href="https://docs.spring.io/spring-boot/docs/2.2.0.M4/reference/html/#production-ready">https://docs.spring.io/spring-boot/docs/2.2.0.M4/reference/html/#production-ready</a></p>
+<h3 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h3><p><strong>添加依赖</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-actuator<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>访问<code>/actuator</code>查看有哪些端点</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/4.png"></p>
+<p>默认情况下只开放以上端点，如果想要开启所有内置端点则需要添加一下配置</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 暴露所有端点</span></span><br><span class="line"><span class="attr">management.endpoints.enabled-by-default</span>=<span class="string">true</span></span><br><span class="line"><span class="attr">management.endpoints.web.exposure.include</span>=<span class="string">*</span></span><br><span class="line"><span class="comment"># 允许端点关闭应用</span></span><br><span class="line"><span class="attr">management.endpoint.shutdown.enabled</span>=<span class="string">true</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="常用的端点"><a href="#常用的端点" class="headerlink" title="常用的端点"></a>常用的端点</h3><table>
+<thead>
+<tr>
+<th>请求方式</th>
+<th>请求路径</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td>&#x2F;beans</td>
+<td>返回应用中的所有bean信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;health</td>
+<td>监控检测</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;env</td>
+<td>返回系统所有的环境变量</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;env&#x2F;{name}</td>
+<td>返回具体的环境变量</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;info</td>
+<td>返回系统信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;conditions</td>
+<td>返回自动配置的条件信息</td>
+</tr>
+<tr>
+<td>POST</td>
+<td>&#x2F;shutdown</td>
+<td>关闭应用</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;mappings</td>
+<td>返回应用所有的URL映射</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;metrics</td>
+<td>返回当前应用的系统指标（度量）信息，（提供给如promethues）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;scheduledtasks</td>
+<td>返回应用的定时任务信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;threaddump</td>
+<td>返回应用线程转存信息</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>请求方式</th>
+<th>请求路径</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td>&#x2F;heapdump</td>
+<td>返回应用当前堆内存的信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;httptrace</td>
+<td>返回应用的http请求的追中信息</td>
+</tr>
+<tr>
+<td>GET</td>
+<td>&#x2F;caches</td>
+<td>返回应用的缓存管理对象信息</td>
+</tr>
+<tr>
+<td>POST</td>
+<td>&#x2F;refresh</td>
+<td>重新加载一次配置参数（如配置文件），用于刷新配置</td>
+</tr>
+</tbody></table>
+<h3 id="自定义端点"><a href="#自定义端点" class="headerlink" title="自定义端点"></a>自定义端点</h3><p>定义</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Endpoint(id = &quot;my&quot;)</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyEndponint</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@ReadOperation</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">endpointMsg</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;my endpoint msg!!!!&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@ReadOperation</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">endpointMsg2</span><span class="params">(<span class="meta">@Selector</span> String msg)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;my endpoint &quot;</span> + msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">my<span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">  href<span class="punctuation">:</span> <span class="string">&quot;http://localhost:8080/actuator/my&quot;</span><span class="punctuation">,</span></span><br><span class="line">  templated<span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span></span><br><span class="line"><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">my-msg<span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">	href<span class="punctuation">:</span> <span class="string">&quot;http://localhost:8080/actuator/my/&#123;msg&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">    templated<span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="使用可视化界面Admin来展示端点信息"><a href="#使用可视化界面Admin来展示端点信息" class="headerlink" title="使用可视化界面Admin来展示端点信息"></a>使用可视化界面Admin来展示端点信息</h3><h4 id="服务端"><a href="#服务端" class="headerlink" title="服务端"></a>服务端</h4><blockquote>
+<p>可以创建一个独立的springboot应用在作为amdin-ui应用</p>
+</blockquote>
+<p>添加依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>de.codecentric<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-admin-server-ui<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>启动admin server</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="meta">@EnableAdminServer</span> <span class="comment">// 开启admin server</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DemoApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(DemoApplication.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>界面</p>
+<p><img src="/SpringBoot%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%B8%9C%E8%A5%BF%E9%9C%80%E8%A6%81%E6%87%82/5.png"></p>
+<h4 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h4><p>添加依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>de.codecentric<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-admin-starter-client<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>添加配置，将端点注册到amdin server上</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 暴露端点</span></span><br><span class="line"><span class="attr">management.endpoints.enabled-by-default</span>=<span class="string">true</span></span><br><span class="line"><span class="attr">management.endpoints.web.exposure.include</span>=<span class="string">*</span></span><br><span class="line"></span><br><span class="line"><span class="attr">spring.application.name</span>=<span class="string">my-endpoint-application</span></span><br><span class="line"><span class="comment"># admin server的地址</span></span><br><span class="line"><span class="attr">spring.boot.admin.client.url</span>=<span class="string">http://localhost:8080</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="关于SpringBoot如何弃用默认技术或自动配置"><a href="#关于SpringBoot如何弃用默认技术或自动配置" class="headerlink" title="关于SpringBoot如何弃用默认技术或自动配置"></a>关于SpringBoot如何弃用默认技术或自动配置</h2><p>有些时候我们希望使用自己熟悉的技术，譬如 SpringBoot 中默认数据库连接池是 HikariCP，现在我们打算使用Druid，那么只需要将 HikariCP 在 pom 中的依赖排除再将 Druid 的 starter 导入即可。</p>
+<p>Druid GitHub：<a target="_blank" rel="noopener" href="https://github.com/alibaba/druid">https://github.com/alibaba/druid</a></p>
+<p>详细配置：<a target="_blank" rel="noopener" href="https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter">https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter</a></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.alibaba<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>druid-spring-boot-starter<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.1.17<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>除此之外，有时候我们不希望 SpringBoot 对某些功能进行自动配置。譬如多数据源这种常见下，除了使用 @Primary 进行优先级注入之外，还可以直接排除其自动配置改为手动配置。实现方法如下：</p>
+<ol>
+<li>首先将配置排除</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication(exclude = &#123;DataSourceAutoConfiguration.class, </span></span><br><span class="line"><span class="meta">        DataSourceTransactionManagerAutoConfiguration.class,</span></span><br><span class="line"><span class="meta">        JdbcTemplateAutoConfiguration.class</span></span><br><span class="line"><span class="meta">&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DemoApplication</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(Demo2Application.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><p>在配置文件中添加自定义的数据源连接配置项</p>
+</li>
+<li><p>加载配置项到环境中，再用其进行数据源和事务管理器的配置</p>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="meta">@ConfigurationProperties(&quot;one.datasource&quot;)</span></span><br><span class="line"><span class="keyword">public</span> DataSourceProperties <span class="title function_">oneDataSourceProperties</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DataSourceProperties</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> DataSource <span class="title function_">oneDataSource</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="type">DataSourceProperties</span> <span class="variable">dataSourceProperties</span> <span class="operator">=</span> oneDataSourceProperties();</span><br><span class="line">  <span class="keyword">return</span> dataSourceProperties.initializeDataSourceBuilder().build();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="meta">@Resource</span> <span class="comment">// 根据BeanName注入</span></span><br><span class="line"><span class="keyword">public</span> PlatformTransactionManager <span class="title function_">twoTransactionManager</span><span class="params">(DataSource oneDataSource)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DataSourceTransactionManager</span>(oneDataSource);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ------------------------------------------------------</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="meta">@ConfigurationProperties(&quot;two.datasource&quot;)</span></span><br><span class="line"><span class="keyword">public</span> DataSourceProperties <span class="title function_">twoDataSourceProperties</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DataSourceProperties</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> DataSource <span class="title function_">twoDataSource</span><span class="params">()</span> &#123;</span><br><span class="line">  <span class="type">DataSourceProperties</span> <span class="variable">dataSourceProperties</span> <span class="operator">=</span> twoDataSourceProperties();</span><br><span class="line">  <span class="keyword">return</span> dataSourceProperties.initializeDataSourceBuilder().build();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="meta">@Resource</span> <span class="comment">// 根据BeanName注入</span></span><br><span class="line"><span class="keyword">public</span> PlatformTransactionManager <span class="title function_">oneTransactionManager</span><span class="params">(DataSource twoDataSource)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DataSourceTransactionManager</span>(twoDataSource);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<ul>
+<li>除了以上废弃默认配置之外，也可以在 SpringBoot 项目中实现自动配置类，然后通过 @AutoConfigureBefore 注解将自己的自动配置类排到特定配置前即可。例如在自动配置类中实例化了 DataSource，则后续的自动配置因为有 @ConditionalOnMissingBean 的缘故就不会再创建 Bean 了</li>
+</ul>
+<h2 id="函数式控制器（Spring5新特性）"><a href="#函数式控制器（Spring5新特性）" class="headerlink" title="函数式控制器（Spring5新特性）"></a>函数式控制器（Spring5新特性）</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Spring5加入的函数式Controller （当控制器相对较为简单的时候推荐使用）</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> RouterFunction&lt;ServerResponse&gt; <span class="title function_">hello</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> RouterFunctions.route()</span><br><span class="line">        .GET(<span class="string">&quot;hello&quot;</span>, handlerFunction -&gt; ServerResponse.ok().body(<span class="string">&quot;hello function.&quot;</span>))</span><br><span class="line">        .GET(<span class="string">&quot;hello2&quot;</span>, handlerFunction -&gt; ServerResponse.ok().body(<span class="string">&quot;hello function2.&quot;</span>))</span><br><span class="line">        .POST(<span class="string">&quot;hello3&quot;</span>, handlerFunction -&gt; ServerResponse.ok().body(<span class="string">&quot;hello function3.&quot;</span>))</span><br><span class="line">        .build();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 相当于以下</span></span><br><span class="line"><span class="comment">//    @RestController</span></span><br><span class="line"><span class="comment">//    class XxxController &#123;</span></span><br><span class="line"><span class="comment">//        @GetMapping(&quot;hello&quot;)</span></span><br><span class="line"><span class="comment">//        public String hello() &#123;</span></span><br><span class="line"><span class="comment">//            return &quot;hello function.&quot;;</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br><span class="line"><span class="comment">//        @GetMapping(&quot;hello2&quot;)</span></span><br><span class="line"><span class="comment">//        public String hello2() &#123;</span></span><br><span class="line"><span class="comment">//            return &quot;hello function2.&quot;;</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br><span class="line"><span class="comment">//        @PostMapping(&quot;hello3&quot;)</span></span><br><span class="line"><span class="comment">//        public String hello3() &#123;</span></span><br><span class="line"><span class="comment">//            return &quot;hello function3.&quot;;</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> RouterFunction&lt;ServerResponse&gt; <span class="title function_">hello2</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 设置前缀</span></span><br><span class="line">    <span class="keyword">return</span> RouterFunctions.route().nest(RequestPredicates.path(<span class="string">&quot;api/v1&quot;</span>), builder -&gt; &#123;</span><br><span class="line">        builder.GET(<span class="string">&quot;hello&quot;</span>, handlerFunction -&gt; ServerResponse.ok().body(<span class="string">&quot;v1 hello function.&quot;</span>))</span><br><span class="line">            .GET(<span class="string">&quot;hello2&quot;</span>, handlerFunction -&gt; ServerResponse.ok().body(<span class="string">&quot;v1 hello function2.&quot;</span>))</span><br><span class="line">            .POST(<span class="string">&quot;hello3&quot;</span>, handlerFunction -&gt; ServerResponse.ok().body(<span class="string">&quot;v1 hello function3.&quot;</span>));</span><br><span class="line">    &#125;)</span><br><span class="line">        .onError(Exception.class, (exception, serverRequest) -&gt; &#123; <span class="comment">// 局部异常处理</span></span><br><span class="line">            <span class="keyword">return</span> EntityResponse.fromObject(<span class="keyword">new</span> <span class="title class_">Error</span>(exception.getMessage())).status(HttpStatus.NOT_FOUND).build();</span><br><span class="line">        &#125;).build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="后端CORS响应头跨域"><a href="#后端CORS响应头跨域" class="headerlink" title="后端CORS响应头跨域"></a>后端CORS响应头跨域</h2><p>局部跨域</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;json&quot;)</span></span><br><span class="line"><span class="meta">@CrossOrigin</span></span><br><span class="line"><span class="keyword">public</span> JsonData <span class="title function_">json</span><span class="params">(WebRequest webRequest ,</span></span><br><span class="line"><span class="params">                     <span class="meta">@CookieValue(value = &quot;JSESSIONID&quot;, required = false)</span> String jsessionid)</span> </span><br><span class="line">    <span class="keyword">throws</span> Exception &#123; <span class="comment">// WebRequest 是 Spring 用来代替 HttpServletRequest 的工具类</span></span><br><span class="line">    </span><br><span class="line">    webRequest.getHeaderNames().forEachRemaining(System.out::println);</span><br><span class="line">    System.out.printf(<span class="string">&quot;jsessionid=%s&quot;</span>, jsessionid==<span class="literal">null</span>?<span class="string">&quot;null&quot;</span>:jsessionid);</span><br><span class="line">    <span class="keyword">return</span> JsonData.buildSuccess(LocalDateTime.now());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//        上传文件</span></span><br><span class="line"><span class="comment">//        @PostMapping(&quot;/file&quot;)</span></span><br><span class="line"><span class="comment">//        public String handle(@RequestPart(&quot;meta-data&quot;) MetaData metadata,</span></span><br><span class="line"><span class="comment">//                             @RequestPart(&quot;file-data&quot;) MultipartFile file) &#123;</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>全局跨域 - 方式1</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebConfig</span> <span class="keyword">implements</span> <span class="title class_">WebMvcConfigurer</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addCorsMappings</span><span class="params">(CorsRegistry registry)</span> &#123;</span><br><span class="line">        registry.addMapping(<span class="string">&quot;/**&quot;</span>)</span><br><span class="line">            .allowedOrigins(<span class="string">&quot;*&quot;</span>)</span><br><span class="line">            .allowedOrigins(<span class="string">&quot;*&quot;</span>)</span><br><span class="line">            .allowedMethods(<span class="string">&quot;*&quot;</span>)</span><br><span class="line">            .allowCredentials(<span class="literal">true</span>)</span><br><span class="line">            .maxAge(<span class="number">3600</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>全局跨域 - 方式2</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 全局配置Cors请求头跨域</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="meta">@Bean</span></span><br><span class="line"><span class="keyword">public</span> CorsFilter <span class="title function_">corsFilter</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">CorsConfiguration</span> <span class="variable">config</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CorsConfiguration</span>();</span><br><span class="line">    config.setAllowCredentials(<span class="literal">true</span>);</span><br><span class="line">    config.addAllowedOrigin(<span class="string">&quot;*&quot;</span>);</span><br><span class="line">    config.addAllowedHeader(<span class="string">&quot;*&quot;</span>);</span><br><span class="line">    config.addAllowedMethod(<span class="string">&quot;*&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="type">UrlBasedCorsConfigurationSource</span> <span class="variable">source</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">UrlBasedCorsConfigurationSource</span>();</span><br><span class="line">    source.registerCorsConfiguration(<span class="string">&quot;/**&quot;</span>, config);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">CorsFilter</span>(source);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="404以及全局异常处理"><a href="#404以及全局异常处理" class="headerlink" title="404以及全局异常处理"></a>404以及全局异常处理</h2><p>NotFoundExecptionHandler</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NotFoundExecptionHandler</span> <span class="keyword">extends</span> <span class="title class_">AbstractErrorController</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">ERROR_PATH</span> <span class="operator">=</span> <span class="string">&quot;/error&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">NotFoundController</span><span class="params">(ErrorAttributes errorAttributes)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(errorAttributes);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 注意：必须显示填写&quot;/error&quot;，否则无法截 HttpServletRequest</span></span><br><span class="line">    <span class="meta">@RequestMapping(ERROR_PATH)</span></span><br><span class="line">    <span class="keyword">public</span> Map&lt;String, Object&gt; <span class="title function_">notFoundPage</span><span class="params">(HttpServletRequest request)</span> &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">            &#123;</span></span><br><span class="line"><span class="comment">                timestamp: &quot;2018-11-22T20:57:52.886+0000&quot;,</span></span><br><span class="line"><span class="comment">                status: 404,</span></span><br><span class="line"><span class="comment">                error: &quot;Not Found&quot;,</span></span><br><span class="line"><span class="comment">                message: &quot;No message available&quot;,</span></span><br><span class="line"><span class="comment">                path: &quot;/asdasdasd&quot;</span></span><br><span class="line"><span class="comment">            &#125;</span></span><br><span class="line"><span class="comment">        * */</span></span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">this</span>.getErrorAttributes(request, <span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getErrorPath</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> ERROR_PATH;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>GlobalExceptionHanddler</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 全局异常处理</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@RestControllerAdvice</span></span><br><span class="line"><span class="comment">//@RestControllerAdvice(annotations = RestController.class) // 只处理 @RestController</span></span><br><span class="line"><span class="comment">//@RestControllerAdvice(&quot;pub.tandi.controller&quot;) // 只处理指定包</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">GlobalExceptionHanddler</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)</span> <span class="comment">// 报文响应码</span></span><br><span class="line">    <span class="meta">@ExceptionHandler(ArithmeticException.class)</span></span><br><span class="line">    <span class="keyword">public</span> JsonData <span class="title function_">arithmeticException</span><span class="params">(HttpServletRequest request, Exception exception)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> JsonData.buildError(<span class="string">&quot;算数异常&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="SpringBoot启动后触发"><a href="#SpringBoot启动后触发" class="headerlink" title="SpringBoot启动后触发"></a>SpringBoot启动后触发</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AppStarted</span> <span class="keyword">implements</span> <span class="title class_">ApplicationRunner</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">(ApplicationArguments args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;应用已启动完成&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="ResponseEntity-自定义对象响应"><a href="#ResponseEntity-自定义对象响应" class="headerlink" title="ResponseEntity+自定义对象响应"></a>ResponseEntity+自定义对象响应</h2><p>自定义响应类 - JsonData</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JsonData</span> <span class="keyword">implements</span> <span class="title class_">Serializable</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">long</span> <span class="variable">serialVersionUID</span> <span class="operator">=</span> <span class="number">1L</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Integer code; 	<span class="comment">// 状态码 0表示成功，1表示处理中，-1表示失败，其他表示http状态码</span></span><br><span class="line">    <span class="meta">@JsonFormat(pattern = &quot;yyyy-MM-dd HH:mm:ss&quot;)</span> <span class="comment">// 当 Object 为 Date/LocalDateTime 时指定它们的日期时间格式</span></span><br><span class="line">    <span class="keyword">private</span> Object data; 	<span class="comment">// 数据</span></span><br><span class="line">    <span class="keyword">private</span> String msg;		<span class="comment">// 描述</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">JsonData</span><span class="params">()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">JsonData</span><span class="params">(Integer code, Object data, String msg)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.code = code;</span><br><span class="line">        <span class="built_in">this</span>.data = data;</span><br><span class="line">        <span class="built_in">this</span>.msg = msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 成功，传入数据</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> JsonData <span class="title function_">buildSuccess</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">JsonData</span>(<span class="number">0</span>, <span class="literal">null</span>, <span class="literal">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 成功，传入数据</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> JsonData <span class="title function_">buildSuccess</span><span class="params">(Object data)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">JsonData</span>(<span class="number">0</span>, data, <span class="literal">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 成功，传入数据,及描述信息</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> JsonData <span class="title function_">buildSuccess</span><span class="params">(Object data, String msg)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">JsonData</span>(<span class="number">0</span>, data, msg);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 成功，传入数据,及状态码</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> JsonData <span class="title function_">buildSuccess</span><span class="params">(Object data, <span class="type">int</span> code)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">JsonData</span>(code, data, <span class="literal">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 失败，传入描述信息</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> JsonData <span class="title function_">buildError</span><span class="params">(String msg)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">JsonData</span>(-<span class="number">1</span>, <span class="literal">null</span>, msg);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 失败，传入描述信息,状态码</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> JsonData <span class="title function_">buildError</span><span class="params">(String msg, Integer code)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">JsonData</span>(code, <span class="literal">null</span>, msg);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Integer <span class="title function_">getCode</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> code;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setCode</span><span class="params">(Integer code)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.code = code;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">getData</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> data;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setData</span><span class="params">(Object data)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.data = data;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getMsg</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setMsg</span><span class="params">(String msg)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.msg = msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;JsonData [code=&quot;</span> + code + <span class="string">&quot;, data=&quot;</span> + data + <span class="string">&quot;, msg=&quot;</span> + msg</span><br><span class="line">                + <span class="string">&quot;]&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>响应操作</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;hi&quot;)</span></span><br><span class="line"><span class="keyword">public</span> ResponseEntity&lt;JsonData&gt; <span class="title function_">hi</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//        HttpHeaders headers = new HttpHeaders();</span></span><br><span class="line">    <span class="comment">//        headers.add(&quot;Content-Type&quot;, &quot;application/json; charset=utf-8&quot;);</span></span><br><span class="line">    <span class="comment">//        headers.add(&quot;Cache-Control&quot;,&quot;max-age=60, must-revalidate, no-transform&quot;);</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ResponseEntity</span><br><span class="line">        .ok()</span><br><span class="line">        <span class="comment">//                .headers(headers)</span></span><br><span class="line">        .cacheControl(CacheControl.noCache()) <span class="comment">// 禁止缓存</span></span><br><span class="line">        .body(JsonData.buildSuccess(<span class="string">&quot;hello world&quot;</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>ResponseEntity 是 Spring 提供用来设置 HTTP 响应码和响应头的一站式工具类</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.baeldung.com/spring-mvc-functional-controllers">Functional Controllers in Spring MVC</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#webmvc-fn">webmvc-fn</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.baeldung.com/spring-mvc-cache-headers">Cache Headers in Spring MVC</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/consul%E5%85%A5%E9%97%A8/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BC%80%E5%B1%B1%E7%AF%87-%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E7%9A%84%E6%BC%94%E8%BF%9B/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

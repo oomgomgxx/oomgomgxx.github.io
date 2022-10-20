@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      从ConcurrentModificationException分析ArrayList迭代器 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Feb 11, 2018
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      从ConcurrentModificationException分析ArrayList迭代器
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近突然想起刚毕业那会找工作时面试被问了个这样的问题。就是“使用增强for循环遍历ArrayList（List集合）时删除其中的元素是否会出现异常？”。说实话当时真把我愣住了，我当时的回答是：<code>ArrayList内部使用的是Object数组，所以在增删时会自动挪动下标，而且对于数组而言长度是固定的，没有元素的位置会用null填充，虽然我没试过但我觉得不会抛异常。</code> </p>
+<p>现在想起这件事自己都觉得有些搞笑，哈哈，经验少也是没办法。现在回想既然面试官问得出这样的问题肯定是会抛出异常的，这个拿大腿都能想到，但是为什么呢？今天就这个问题来分析一下源码到底是怎么一回事。</p>
+<p>文章分为两部分。首先是了解<code>迭代器设计模式</code>，然后再拿ArrayList作为例子进行源码分析。</p>
+<h2 id="迭代器模式"><a href="#迭代器模式" class="headerlink" title="迭代器模式"></a>迭代器模式</h2><h3 id="用途"><a href="#用途" class="headerlink" title="用途"></a>用途</h3><ul>
+<li>遍历集合中的元素</li>
+<li>优点是无需暴露集合内部信息，且迭代器可以为不同结构集合指定统一接口</li>
+<li>缺点是每一个迭代器实现只对应一个特定结构的集合，也就是说如果集合类型繁多就增加迭代器的实现的个数</li>
+</ul>
+<h3 id="自定义迭代器"><a href="#自定义迭代器" class="headerlink" title="自定义迭代器"></a>自定义迭代器</h3><ul>
+<li>迭代器模式其实也很简单，主要角色有：<code>自定义集合</code>、<code>迭代器接口</code>、<code>迭代器实现</code>3个</li>
+<li>以下例子并不严谨，只作为了解迭代器的参考</li>
+</ul>
+<h4 id="自定义集合"><a href="#自定义集合" class="headerlink" title="自定义集合"></a>自定义集合</h4><blockquote>
+<p>以数组作为内部存储结构（模仿ArrayList）</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyList</span>&lt;T&gt; &#123;</span><br><span class="line">    <span class="keyword">private</span> Object[] list;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> savePosition;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> size;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">MyList</span><span class="params">()</span> &#123;</span><br><span class="line">        list = <span class="keyword">new</span> <span class="title class_">Object</span>[<span class="number">10</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">(T t)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (savePosition &gt;= list.length) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ArrayIndexOutOfBoundsException</span>();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="built_in">this</span>.list[savePosition++] = t;</span><br><span class="line">        size ++ ;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> T <span class="title function_">get</span><span class="params">(<span class="type">int</span> position)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (position &gt;= list.length) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ArrayIndexOutOfBoundsException</span>();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> (T) <span class="built_in">this</span>.list[position];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回实质存储的元素个数</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">size</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">this</span>.size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回迭代器</span></span><br><span class="line">    <span class="keyword">public</span> Iterator <span class="title function_">iterator</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">MyListIterator</span>(<span class="built_in">this</span>.list, size);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">StringBuilder</span> <span class="variable">builder</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">        builder.append(<span class="string">&quot;[&quot;</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; list.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (list[i] != <span class="literal">null</span>) &#123;</span><br><span class="line">                builder.append(list[i]);</span><br><span class="line">                <span class="keyword">if</span> ((i+<span class="number">1</span>) &lt; list.length &amp;&amp; list[i+<span class="number">1</span>] != <span class="literal">null</span>) &#123;</span><br><span class="line">                    builder.append(<span class="string">&quot;, &quot;</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        builder.append(<span class="string">&quot;]&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> builder.toString();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="迭代器接口"><a href="#迭代器接口" class="headerlink" title="迭代器接口"></a>迭代器接口</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Iterator</span>&lt;E&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">boolean</span> <span class="title function_">hasNext</span><span class="params">()</span>;</span><br><span class="line">    </span><br><span class="line">    E <span class="title function_">next</span><span class="params">()</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">default</span> <span class="keyword">void</span> <span class="title function_">remove</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">UnsupportedOperationException</span>(<span class="string">&quot;remove&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">default</span> <span class="keyword">void</span> <span class="title function_">forEachRemaining</span><span class="params">(Consumer&lt;? <span class="built_in">super</span> E&gt; action)</span> &#123;</span><br><span class="line">        Objects.requireNonNull(action);</span><br><span class="line">        <span class="keyword">while</span> (hasNext())</span><br><span class="line">            action.accept(next());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="迭代器实现"><a href="#迭代器实现" class="headerlink" title="迭代器实现"></a>迭代器实现</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MyListIterator</span>&lt;T&gt; <span class="keyword">implements</span> <span class="title class_">Iterator</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Object[] list;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> position;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">MyListIterator</span><span class="params">(Object[] ts, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.list = <span class="keyword">new</span> <span class="title class_">Object</span>[size];</span><br><span class="line">        <span class="type">int</span> <span class="variable">index</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt;ts.length ; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (ts[i] != <span class="literal">null</span>) &#123;</span><br><span class="line">                list[index++] = ts[i];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> T <span class="title function_">next</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> (T) list[position++];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">hasNext</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> position != list.length;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><ul>
+<li>迭代器的本质就是用来遍历某个时间点集合中的元素</li>
+<li>在上面的例子中，MyListIterator 相当于在 MyList.iterator() 时copy了一份 MyList 的元素然后进行遍历</li>
+<li>结合上面这个简单的例子可以得出结论，在迭代器迭代元素过程中，源集合序列是否允许被修改。上面例子我并没有做任何处理，所以在迭代器迭代元素过程中源集合序列是可以被修改。但这样就存在问题了，就是并发操作时迭代的元素序列可能会与源集合序列不一致。那为什么要引出这个问题呢？这是为了响应文章开头讨论的问题。即为什么增强for循环遍历List集合时删除元素会抛出异常，原因有以下两个：<ul>
+<li>增强for循环使用迭代器实现（可以通过Debug观察）</li>
+<li>在JDK中集合的迭代器实现是不允许在迭代元素过程中源集合序列被修改的，即为了保证迭代元素序列和源元素序列的一致性。</li>
+</ul>
+</li>
+</ul>
+<h2 id="ArrayList迭代器浅析"><a href="#ArrayList迭代器浅析" class="headerlink" title="ArrayList迭代器浅析"></a>ArrayList迭代器浅析</h2><blockquote>
+<p>异常问题</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Main</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line"></span><br><span class="line"><span class="comment">//        List&lt;String&gt; list = new LinkedList&lt;&gt;();</span></span><br><span class="line">        List&lt;String&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        list.add(<span class="string">&quot;1&quot;</span>);</span><br><span class="line">        list.add(<span class="string">&quot;2&quot;</span>);</span><br><span class="line">        list.add(<span class="string">&quot;3&quot;</span>);</span><br><span class="line"></span><br><span class="line">        Iterator&lt;String&gt; iterator = list.iterator();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (String s : list) &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="string">&quot;1&quot;</span>.equals(s)) &#123;</span><br><span class="line">                list.remove(s);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 输出结果：</span></span><br><span class="line"><span class="comment">         * Exception in thread &quot;main&quot; java.util.ConcurrentModificationException</span></span><br><span class="line"><span class="comment">         * 	at java.util.ArrayList$Itr.checkForComodification(ArrayList.java:909)</span></span><br><span class="line"><span class="comment">         * 	at java.util.ArrayList$Itr.next(ArrayList.java:859)</span></span><br><span class="line"><span class="comment">         * 	at wiki.td.Main.main(Main.java:16)</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>可以看到在增强for循环遍历过程中如果删除一个元素会抛出 ConcurrentModificationException 。该异常的用意是并发修改是不允许的（说明源自 ConcurrentModificationException 类注释）。</li>
+<li>从异常中可以看到问题出自 ArrayList$Itr.next 方法，该方法中触发了 ArrayList$Itr.checkForComodification 导致了异常的发生</li>
+</ul>
+<blockquote>
+<p>ArrayList$Itr （迭代器实现）源码</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">class</span> <span class="title class_">Itr</span> <span class="keyword">implements</span> <span class="title class_">Iterator</span>&lt;E&gt; &#123;</span><br><span class="line">    <span class="type">int</span> cursor;       <span class="comment">// index of next element to return</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">lastRet</span> <span class="operator">=</span> -<span class="number">1</span>; <span class="comment">// index of last element returned; -1 if no such</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 【重】modCount是源集合序列（即List）中的成员变量</span></span><br><span class="line">    <span class="comment">// modCount代表着源集合序列的操作次数。即在List返回Iterator时</span></span><br><span class="line">    <span class="comment">// 就会实例化1个Iterator，这时expectedModCount就固定了值为modCount</span></span><br><span class="line">    <span class="comment">// 所以一旦在增强for循环（迭代器）迭代元素过程中源集合序列被修改，就会导致</span></span><br><span class="line">    <span class="comment">// expectedModCount 不等于 modCount，因此被视为并发问题导致集合序列不一致</span></span><br><span class="line">    <span class="comment">// 随即就会抛出 ConcurrentModificationException</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">expectedModCount</span> <span class="operator">=</span> modCount;</span><br><span class="line"></span><br><span class="line">    Itr() &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 是否有下一个元素</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">hasNext</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> cursor != size;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取下一个元素</span></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> E <span class="title function_">next</span><span class="params">()</span> &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 迭代获取下一个元素之前检查一下源集合序列是否有被修改</span></span><br><span class="line">        <span class="comment">// 如果有则抛异常</span></span><br><span class="line">        checkForComodification();</span><br><span class="line">        </span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> cursor;</span><br><span class="line">        <span class="keyword">if</span> (i &gt;= size)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NoSuchElementException</span>();</span><br><span class="line">        </span><br><span class="line">        Object[] elementData = ArrayList.<span class="built_in">this</span>.elementData;</span><br><span class="line">        <span class="keyword">if</span> (i &gt;= elementData.length)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">        </span><br><span class="line">        cursor = i + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">return</span> (E) elementData[lastRet = i];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 移除当前遍历到的元素</span></span><br><span class="line">    <span class="comment">// 【重】如果想要在迭代器迭代过程中删除元素，只能通过Iterator的remove方法实现</span></span><br><span class="line">    <span class="comment">// Iterator.remove方法之所以不会抛出异常是因为迭代器remove后随即重新赋值了expectedModCount的值，因此checkForComodification()不会抛异常</span></span><br><span class="line">    <span class="comment">// 那么我们可以得出这么一个结论，就是为什么增强for循环中删除元素会抛异常，是因为删除了元素之后没有重新修改迭代器中的expectedModCount值</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">remove</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (lastRet &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>();</span><br><span class="line">        checkForComodification();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 调用当前实例的外部类ArrayList的remove方法删除当前遍历到的元素</span></span><br><span class="line">            ArrayList.<span class="built_in">this</span>.remove(lastRet);</span><br><span class="line">            cursor = lastRet;</span><br><span class="line">            lastRet = -<span class="number">1</span>;</span><br><span class="line">            <span class="comment">// 重新设置expectedModCount值</span></span><br><span class="line">            expectedModCount = modCount;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IndexOutOfBoundsException ex) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// JDK 1.8 新方法，用于支持函数式编程</span></span><br><span class="line">    <span class="comment">// 即无需再手动写while或者for操作迭代器，可以直接Iterator.forEachRemaining使用Lambda传入Consumer消费（迭代）元素</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">forEachRemaining</span><span class="params">(Consumer&lt;? <span class="built_in">super</span> E&gt; consumer)</span> &#123;</span><br><span class="line">        Objects.requireNonNull(consumer);</span><br><span class="line">        <span class="keyword">final</span> <span class="type">int</span> <span class="variable">size</span> <span class="operator">=</span> ArrayList.<span class="built_in">this</span>.size;</span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> cursor;</span><br><span class="line">        <span class="keyword">if</span> (i &gt;= size) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">final</span> Object[] elementData = ArrayList.<span class="built_in">this</span>.elementData;</span><br><span class="line">        <span class="keyword">if</span> (i &gt;= elementData.length) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (i != size &amp;&amp; modCount == expectedModCount) &#123;</span><br><span class="line">            consumer.accept((E) elementData[i++]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// update once at end of iteration to reduce heap write traffic</span></span><br><span class="line">        cursor = i;</span><br><span class="line">        lastRet = i - <span class="number">1</span>;</span><br><span class="line">        checkForComodification();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 检测源集合序列在迭代器迭代过程中是否有被修改</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">checkForComodification</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (modCount != expectedModCount)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>可以在源码中看到 next 方法中会先触发 checkForComodification 来检测源集合序列是否被修改，没有被修改才会继续操作，否则抛出异常。但我们想深一层，next 和 checkForComodification 两个方法其实都不是线程安全的，因此在多线程并发过程中并不能保证一致性。那么为什么需要 checkForComodification 呢？或者问 checkForComodification 的意义何在？其实这种操常被人叫做 <code>fail-fast 机制</code>，即快速失败。大概的用意是，如果不满足条件就没必要继续执行了，这时可以是跳过操作（比如continue和break），或者是抛出异常等等。这操作好比如我们在执行逻辑前会先判断传入的参数是否为null，如果为null则抛异常，道理是一样的。</li>
+</ul>
+<h2 id="增强for循环中删除元素是不是一定抛异常？"><a href="#增强for循环中删除元素是不是一定抛异常？" class="headerlink" title="增强for循环中删除元素是不是一定抛异常？"></a>增强for循环中删除元素是不是一定抛异常？</h2><p>答案是否定的。原因是增强for循环本质是 Iterator 。而 Iterator 的操作步骤是先 hasNext 判断有没有下一个元素(<code>判断的依据是源集合的size变量</code>)。然后如果 hasNext 返回 true 才可以进行 next 操作。</p>
+<p>所以什么情况下在增强for循环中删除元素不会抛出 ConcurrentModificationException 异常呢？答案就是，删除元素后（导致源集合序列的size减1）hasNext 正好返回false就不会抛出异常（删除的元素正好是倒数第2个）。因为返回false就不会触发 next  方法的 checkForComodification 操作。</p>
+<p>例子如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">list.add(<span class="string">&quot;1&quot;</span>);</span><br><span class="line">list.add(<span class="string">&quot;2&quot;</span>);</span><br><span class="line">list.add(<span class="string">&quot;3&quot;</span>); </span><br><span class="line"></span><br><span class="line">Iterator&lt;String&gt; iterator = list.iterator();</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (String s : list) &#123;</span><br><span class="line">    <span class="comment">// 删除的元素正好是倒数第2个时就不会抛出异常</span></span><br><span class="line">    <span class="comment">// 删除元素后导致list的size-1，但因为hasNext依据是size</span></span><br><span class="line">    <span class="comment">// 所以size-1后hasNext返回false导致迭代直接结束所以不会触发next抛出异常</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;2&quot;</span>.equals(s)) &#123; </span><br><span class="line">        list.remove(s); </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>hasNext方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">hasNext</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// cursor记录的是将要返回的元素的下标值</span></span><br><span class="line">    <span class="comment">// 即删除倒数第2个元素，导致size-1后触发hasNext导致了cursor等于size退出迭代</span></span><br><span class="line">    <span class="keyword">return</span> cursor != size;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/%E5%88%9D%E5%A7%8Bzookeeper/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/python%E7%88%AC%E8%99%AB%E7%AC%94%E8%AE%B0-%E9%9D%99%E6%80%81%E7%BD%91%E9%A1%B5%E5%9B%BE%E7%89%87%E7%88%AC%E5%8F%96-%E7%88%AC%E8%99%AB%E5%85%A5%E9%97%A8/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>

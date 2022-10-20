@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="DeeTam" />
+  <meta name="description" content="学然后知不足" />
+  
+  
+  <title>
+    
+      基于Java探针和字节码框架来动态修改代码运行时行为 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">DEE TAM</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="归档" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="邮箱" target="" href="mailto:oomgomgxx@gmail.com">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="QQ" target="" href="tencent://message/?Menu=yes&uin=0x1DACE601&Service=300&sigT=45a1e5847943b64c6ff3990f8a9e644d2b31356cb0b4ac6b24663a3c8dd0f8aa12a595b1714f9d45">
+      <i class="iconfont icon-qq"></i>
+    </a>
+  
+    <a title="关于" target="" href="/about/">
+      <i class="iconfont icon-emoji-friendly"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  
+  <!--
+  
+    <h3 class="date">
+    Dec 01, 2019
+  </h3>
+  
+  -->
+
+  
+  <center>
+    <h1>
+      基于Java探针和字节码框架来动态修改代码运行时行为
+    </h1>
+  </center>
+  
+
+  <div class="content markdown-body">
+    <h2 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h2><blockquote>
+<p>是什么？</p>
+</blockquote>
+<ul>
+<li><code>Java探针</code>其实就是指Java Agent，一种能够直接与 JVM 交互的代理</li>
+<li>Java Agent能与JVM交互的前提是JVM本身支持JVM TI（<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/platform/jvmti/jvmti.html">JVM Tool Interface</a>）。这样说的原因是并非所有JVM都支持JVM TI，即JVM TI并不是规范</li>
+<li>JVM TI 支持需要访问JVM状态的全部工具，包括但不限于：<code>性能分析</code>，<code>Debug调试</code>，<code>监控</code>，<code>线程分析</code>和<code>覆盖率分析</code>等等。从这点可以看出 JVM TI 是很强大的</li>
+<li>Java从JDK5开始提供了实现Java Agent的API，位于<code>java.lang.instrument </code>包下</li>
+</ul>
+<blockquote>
+<p>Java Agent与 JVM TI 的关系</p>
+</blockquote>
+<ul>
+<li><p>Java Agent通过实现JVM TI的回调方法来获取或操作 JVM 的相关性信息</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/001.png"></p>
+</li>
+<li><p>Java Agent可以简单理解为是一段需要依附在主程序上的代码。目前的依附方式有两种（都属于本机内操作）</p>
+<ul>
+<li><p><strong>启动依附：</strong>即在启动主程序时指定Java Agent，通过<code>-javaagent:代理.jar[=参数]</code>设置（个认为这对于国内的小伙伴来说并不陌生，其实IDEA的破解包就是用它来实现的🌚）</p>
+</li>
+<li><p><strong>使用Attach API依附：</strong>该API位于 <code>tool.jar</code> 的<code>com.sun.tools.attach</code>包下。该方式可以实现动态依附，既即使主程序正在运行也可以操作</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/002.png"></p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>可能经过上面一番说明你依然感觉很困惑，但没关系，我们来看看Java Agent 的身影</p>
+</blockquote>
+<ul>
+<li>热部署插件JRebel</li>
+<li>懒人开发包Lombok</li>
+<li>分布式链路追中服务的Java探针（例如SkyWalking和Pinpoint）</li>
+<li>安全(不能改内容)且动态的Java跟踪工具 BTrace</li>
+<li>阿里开源的在线分析诊断工具 Arthas</li>
+<li>JDK自带的诊断工具，例如 Visual VM、JConsole、jmap</li>
+<li>IDEA破解包…</li>
+</ul>
+<h2 id="Java-Agent实现"><a href="#Java-Agent实现" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h2><h3 id="了解基本API"><a href="#了解基本API" class="headerlink" title="了解基本API"></a>了解基本API</h3><p>经过一番了解过后我想大家对 Java Agent 的情况已经略知一二了。接下来以案例的形式对 Java Agent 开发进行快速入门。案例分为两部分：</p>
+<ul>
+<li>第1部分，以<code>-javaagent</code>参数进行依附，模拟在不修改主程序源码情况下为目标类增加方法</li>
+<li>第2部分，以<code>Attach API</code>进行依附，模拟主程序处于运行时，为目标织入环绕代码（类似于Spring AOP中的 @Around 功能）</li>
+</ul>
+<blockquote>
+<p>在这之前先了解一下 Java Agent 的 jar 包结构：</p>
+</blockquote>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/003.png"></p>
+<ul>
+<li><p>Agent class</p>
+<p>实现了 JVM TI 回调方法的代理类，相当于普通程序的入口类(Main)。其中有两个回调方法可以实现，分别是：premain 和 agentmain，各自为 <code>-javaagent</code>依附和<code>Attach API</code>依附的入口方法</p>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/004.png"></p>
+</li>
+<li><p>Packaging</p>
+<p>即包结构，如图所示需要创建 <code>META-INF/MANIFEST.MF</code>文件结构。其中 MANIFEST.MF 包含以下描述配置</p>
+<ul>
+<li>Agent-Class：实现了agentmain回调方法的入口类限定名</li>
+<li>Premain-Class：实现了premain 回调方法的入口类限定名</li>
+<li>Boot-Class-Path：依赖的路径，可以省略但需要将依赖一同编译进jar包</li>
+<li>Can-Redefine-Classes：是否允许重新定义类，默认为false</li>
+<li>Can-Retransform-Classes：是否允许替换类的字节码，默认为false</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>JDK 5 开始提供的Instrumentation API</p>
+</blockquote>
+<p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/005.png"></p>
+<h3 id="不修改主程序源码情况下为目标类增加方法"><a href="#不修改主程序源码情况下为目标类增加方法" class="headerlink" title="不修改主程序源码情况下为目标类增加方法"></a>不修改主程序源码情况下为目标类增加方法</h3><h4 id="主程序"><a href="#主程序" class="headerlink" title="主程序"></a>主程序</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 用于指定程序入口，如果不做以下操作运行需要使用-cp参数指定入口类 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-jar-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">archive</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">manifest</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">addClasspath</span>&gt;</span>true<span class="tag">&lt;/<span class="name">addClasspath</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">mainClass</span>&gt;</span>wiki.td.Main<span class="tag">&lt;/<span class="name">mainClass</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">manifest</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">archive</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>主程序代码</p>
+</blockquote>
+<p>Person</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Person</span><span class="params">()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Person</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> name;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setName</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Main</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Main</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;============ main ===========&quot;</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&quot;Sam&quot;</span>);</span><br><span class="line">        System.out.println(person.toString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="Java-Agent实现-1"><a href="#Java-Agent实现-1" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 字节码框架Javassit --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.javassist<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>javassist<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.26.0-GA<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- 打包插件 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!--            &lt;plugin&gt;</span></span><br><span class="line"><span class="comment">                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</span></span><br><span class="line"><span class="comment">                &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;</span></span><br><span class="line"><span class="comment">                &lt;version&gt;3.1.1&lt;/version&gt;</span></span><br><span class="line"><span class="comment">                &lt;configuration&gt;</span></span><br><span class="line"><span class="comment">                    &lt;archive&gt;</span></span><br><span class="line"><span class="comment">                        &lt;manifest&gt;</span></span><br><span class="line"><span class="comment">                            &lt;addClasspath&gt;true&lt;/addClasspath&gt;</span></span><br><span class="line"><span class="comment">                        &lt;/manifest&gt;</span></span><br><span class="line"><span class="comment">                        &lt;manifestEntries&gt;</span></span><br><span class="line"><span class="comment">                            &lt;Premain-Class&gt;wiki.td.Agent&lt;/Premain-Class&gt;</span></span><br><span class="line"><span class="comment">                            &lt;Agent-Class&gt;wiki.td.Agent&lt;/Agent-Class&gt;</span></span><br><span class="line"><span class="comment">                            &lt;Can-Redefine-Classes&gt;true&lt;/Can-Redefine-Classes&gt;</span></span><br><span class="line"><span class="comment">                            &lt;Can-Retransform-Classes&gt;true&lt;/Can-Retransform-Classes&gt;</span></span><br><span class="line"><span class="comment">                            &amp;lt;!&amp;ndash; 指定依赖的classpath &amp;ndash;&amp;gt;</span></span><br><span class="line"><span class="comment">                            &amp;lt;!&amp;ndash; 如果不配置则启动时指定：java -classpath &amp;ndash;&amp;gt;</span></span><br><span class="line"><span class="comment">                            &lt;Boot-Class-Path&gt;E:/ProgrammingEnvironment/maven/LocalRepository/org/javassist/javassist/3.26.0-GA/javassist-3.26.0-GA.jar&lt;/Boot-Class-Path&gt;</span></span><br><span class="line"><span class="comment">                        &lt;/manifestEntries&gt;</span></span><br><span class="line"><span class="comment">                    &lt;/archive&gt;</span></span><br><span class="line"><span class="comment">                &lt;/configuration&gt;</span></span><br><span class="line"><span class="comment">            &lt;/plugin&gt;--&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!--</span></span><br><span class="line"><span class="comment">                1. 将依赖一同打包进jar（因为依赖会一起打包所以无需像maven-jar-plugin那样指定依赖的classpath）</span></span><br><span class="line"><span class="comment">                2. 指定 Premain-Class、Agent-Class、Can-Redefine-Classes、Can-Retransform-Classes</span></span><br><span class="line"><span class="comment">            --&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-assembly-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.1.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">archive</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">index</span>&gt;</span>true<span class="tag">&lt;/<span class="name">index</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">manifest</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">addClasspath</span>&gt;</span>true<span class="tag">&lt;/<span class="name">addClasspath</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;/<span class="name">manifest</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">Premain-Class</span>&gt;</span>wiki.td.Agent<span class="tag">&lt;/<span class="name">Premain-Class</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">Agent-Class</span>&gt;</span>wiki.td.Agent<span class="tag">&lt;/<span class="name">Agent-Class</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">Can-Redefine-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Redefine-Classes</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">Can-Retransform-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Retransform-Classes</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;/<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">archive</span>&gt;</span></span><br><span class="line">                    <span class="comment">&lt;!-- 将当前项目的依赖一同打包进jar --&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">descriptorRef</span>&gt;</span>jar-with-dependencies<span class="tag">&lt;/<span class="name">descriptorRef</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">id</span>&gt;</span>make-assembly-dir<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">goal</span>&gt;</span>single<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Java Agent实现</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Agent</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 启动依附回调方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> agentArgs</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> inst</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">premain</span><span class="params">(String agentArgs, Instrumentation inst)</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;========================= into premain =========================&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;参数：&quot;</span> + agentArgs);</span><br><span class="line">        inst.addTransformer(<span class="keyword">new</span> <span class="title class_">PersonClassFileTransformer</span>(agentArgs), <span class="literal">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Attach API依附回调方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> agentArgs</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> inst</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">agentmain</span><span class="params">(String agentArgs, Instrumentation inst)</span> &#123;</span><br><span class="line">		premain(agentArgs, inst);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PersonClassFileTransformer</span> <span class="keyword">implements</span> <span class="title class_">ClassFileTransformer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> String targetClassName;</span><br><span class="line"></span><br><span class="line">    PersonClassFileTransformer(String targetClassName) &#123;</span><br><span class="line">        <span class="built_in">this</span>.targetClassName = targetClassName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined,</span><br><span class="line">                            ProtectionDomain protectionDomain, <span class="type">byte</span>[] classfileBuffer) <span class="keyword">throws</span> IllegalClassFormatException &#123;</span><br><span class="line">		<span class="comment">// 修改类的限定名格式</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">target</span> <span class="operator">=</span> className.replace(<span class="string">&quot;/&quot;</span>, <span class="string">&quot;.&quot;</span>);</span><br><span class="line">		</span><br><span class="line">        <span class="keyword">if</span> (targetClassName.equals(target)) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">				<span class="comment">// 获取目标类</span></span><br><span class="line">                <span class="type">ClassPool</span> <span class="variable">classPool</span> <span class="operator">=</span> ClassPool.getDefault();</span><br><span class="line">                <span class="type">CtClass</span> <span class="variable">ctClass</span> <span class="operator">=</span> classPool.makeClass(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(classfileBuffer));</span><br><span class="line">				</span><br><span class="line">				<span class="comment">// 构建一个新的方法，案例以toString为例</span></span><br><span class="line">				<span class="comment">// 如果不重写toString，默认对象会用Object的toString，输出类容是限定名加十六进制地址</span></span><br><span class="line">				<span class="comment">// 这里我们重载toString让其输出Person的name</span></span><br><span class="line">                <span class="keyword">final</span> <span class="type">String</span> <span class="variable">method</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>()</span><br><span class="line">                        .append(<span class="string">&quot;public String toString() &#123; &quot;</span>)</span><br><span class="line">                        .append(<span class="string">&quot;return \&quot;name=\&quot; + this.name; &#125;&quot;</span>)</span><br><span class="line">                        .toString();</span><br><span class="line">                <span class="type">CtMethod</span> <span class="variable">make</span> <span class="operator">=</span> CtNewMethod.make(method, ctClass);</span><br><span class="line">				</span><br><span class="line">                <span class="comment">// 将添加到类中（注意：如果是修改操作无需进行addMethod）</span></span><br><span class="line">                ctClass.addMethod(make);</span><br><span class="line">                <span class="keyword">return</span> ctClass.toBytecode();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="打包并测试"><a href="#打包并测试" class="headerlink" title="打包并测试"></a>打包并测试</h4><p>未使用agent之前</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">~ java -jar hello.jar</span><br><span class="line">============ main ===========</span><br><span class="line">wiki.td.Person@75b84c92</span><br></pre></td></tr></table></figure>
+
+<p>使用agent之后</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">~ java -javaagent:agent.jar=wiki.td.Person -jar hello.jar</span><br><span class="line">========================= into premain =========================</span><br><span class="line">参数：wiki.td.Person</span><br><span class="line">============ main ===========</span><br><span class="line">name=Sam</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="主程序处于运行时，为目标织入Around代码"><a href="#主程序处于运行时，为目标织入Around代码" class="headerlink" title="主程序处于运行时，为目标织入Around代码"></a>主程序处于运行时，为目标织入Around代码</h3><h4 id="主程序-1"><a href="#主程序-1" class="headerlink" title="主程序"></a>主程序</h4><blockquote>
+<p>依赖</p>
+</blockquote>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 因为检索不到tools的缘故，所以这里我硬编指定本地依赖 --&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- attach api --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.sun<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>tools<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.8.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">scope</span>&gt;</span>system<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">systemPath</span>&gt;</span>C:/Program Files/Java/jdk1.8.0_231/lib/tools.jar<span class="tag">&lt;/<span class="name">systemPath</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>主程序代码</p>
+</blockquote>
+<p>Person</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">sayHi</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;你好呀&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Main</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Main</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// 让程序一直循环以便观察</span></span><br><span class="line">        <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">Person</span>().sayHi();</span><br><span class="line">            TimeUnit.SECONDS.sleep(<span class="number">3</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="Java-Agent实现-2"><a href="#Java-Agent实现-2" class="headerlink" title="Java Agent实现"></a>Java Agent实现</h4><blockquote>
+<p>Java Agent实现（依赖和上面案例一样不变）</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Agent</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 启动依附回调方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> agentArgs</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> inst</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">premain</span><span class="params">(String agentArgs, Instrumentation inst)</span> &#123;</span><br><span class="line">        agentmain(agentArgs, inst)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Attach API依附回调方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> agentArgs</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> inst</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">agentmain</span><span class="params">(String agentArgs, Instrumentation inst)</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;========================= into agentmain =========================&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;参数：&quot;</span> + agentArgs);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 获取所有已加载的类</span></span><br><span class="line">        Class[] allLoadedClasses = inst.getAllLoadedClasses();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; allLoadedClasses.length; i++) &#123;</span><br><span class="line">            <span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> allLoadedClasses[i];</span><br><span class="line">			<span class="comment">// 只往目标类织入代码</span></span><br><span class="line">            <span class="keyword">if</span> (clazz.getName().equals(agentArgs)) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">					<span class="comment">// 添加转换器</span></span><br><span class="line">                    inst.addTransformer(<span class="keyword">new</span> <span class="title class_">PersonClassFileTransformer</span>(agentArgs), <span class="literal">true</span>);</span><br><span class="line">					<span class="comment">// 用转换器重新转换类</span></span><br><span class="line">                    inst.retransformClasses(clazz);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PersonClassFileTransformer</span> <span class="keyword">implements</span> <span class="title class_">ClassFileTransformer</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> String targetClassName;</span><br><span class="line"></span><br><span class="line">    PersonClassFileTransformer(String targetClassName) &#123;</span><br><span class="line">        <span class="built_in">this</span>.targetClassName = targetClassName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="type">byte</span>[] transform(ClassLoader loader, String className, Class&lt;?&gt; classBeingRedefined,</span><br><span class="line">                            ProtectionDomain protectionDomain, <span class="type">byte</span>[] classfileBuffer) <span class="keyword">throws</span> IllegalClassFormatException &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">target</span> <span class="operator">=</span> className.replace(<span class="string">&quot;/&quot;</span>, <span class="string">&quot;.&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (targetClassName.equals(target)) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">				<span class="comment">// 获取到类</span></span><br><span class="line">                <span class="type">ClassPool</span> <span class="variable">classPool</span> <span class="operator">=</span> ClassPool.getDefault();</span><br><span class="line">                <span class="type">CtClass</span> <span class="variable">ctClass</span> <span class="operator">=</span> classPool.get(targetClassName);</span><br><span class="line">				<span class="comment">// 获取到目标类的sayHi方法</span></span><br><span class="line">                <span class="type">CtMethod</span> <span class="variable">method</span> <span class="operator">=</span> ctClass.getDeclaredMethod(<span class="string">&quot;sayHi&quot;</span>);</span><br><span class="line">				<span class="comment">// 在say之前和之后织入环绕代码</span></span><br><span class="line">                method.insertBefore(<span class="string">&quot;&#123; System.out.println(\&quot;----- agent before -----\&quot;); &#125;&quot;</span>);</span><br><span class="line">                method.insertAfter(<span class="string">&quot;&#123; System.out.println(\&quot;----- agent after -----\&quot;); &#125;&quot;</span>);</span><br><span class="line">				<span class="comment">// 返回类的最终字节流</span></span><br><span class="line">                <span class="keyword">return</span> ctClass.toBytecode();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="测试类（Attach-API操作）"><a href="#测试类（Attach-API操作）" class="headerlink" title="测试类（Attach API操作）"></a>测试类（Attach API操作）</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AgentTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// 遍历所有vm进程来获取目标进程（代替手动jps查找）</span></span><br><span class="line">        List&lt;VirtualMachineDescriptor&gt; vms = VirtualMachine.list();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; vms.size(); i++) &#123;</span><br><span class="line">            <span class="type">VirtualMachineDescriptor</span> <span class="variable">descriptor</span> <span class="operator">=</span> vms.get(i);</span><br><span class="line">            <span class="comment">// 要求主程序为wiki.td.Main才进行attach</span></span><br><span class="line">            <span class="keyword">if</span> (<span class="string">&quot;wiki.td.Main&quot;</span>.equals(descriptor.displayName())) &#123;</span><br><span class="line">                <span class="comment">// 往目标attach agent</span></span><br><span class="line">                <span class="type">VirtualMachine</span> <span class="variable">attach</span> <span class="operator">=</span> VirtualMachine.attach(descriptor.id());</span><br><span class="line">                <span class="comment">// 参数1：agent jar, 参数2：agent参数</span></span><br><span class="line">                attach.loadAgent(<span class="string">&quot;E:/ProgrammingEnvironment/workspace/IdeaProjects/agent/target/agent-1.0-jar-with-dependencies.jar&quot;</span>, <span class="string">&quot;wiki.td.Person&quot;</span>);</span><br><span class="line">                TimeUnit.SECONDS.sleep(<span class="number">20</span>);</span><br><span class="line">                attach.detach(); <span class="comment">// 20s后detach agent</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><p><img src="/%E5%9F%BA%E4%BA%8EJava%E6%8E%A2%E9%92%88%E4%B8%8E%E5%AD%97%E8%8A%82%E7%A0%81%E6%A1%86%E6%9E%B6%E6%9D%A5%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E6%97%B6%E8%A1%8C%E4%B8%BA/006.gif"></p>
+<p>OK~~~，这就完成了我们的无代码侵入aop操作了 </p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/java/j-lo-jpda2/index.html">JVMTI 和 Agent 实现</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=tlcF8awgUEE">How to Create a Java Agent and Why Would You Need One?</a></li>
+<li><a href="%5Bhttps://zh.wikipedia.org/wiki/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%5D(https://zh.wikipedia.org/wiki/%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90)">性能分析</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.smartik.net/2017/11/method-breakpoints-are-evil.html">Method Breakpoints are Evil</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/java/j-lo-jvmti/">基于 JVMTI 实现 Java 线程的监控</a></li>
+</ul>
+<h2 id="内容修订"><a href="#内容修订" class="headerlink" title="内容修订"></a>内容修订</h2>
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/ConcurrentHashMap%E4%B8%AD%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E5%BA%94%E7%94%A8/">OLDER&nbsp;&gt;</a>
+      
+        
+          <a id="newer" class="blog-nav" href="/Spring%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90%E4%B9%8BSingletonBean%E7%9A%84%E5%AE%9E%E4%BE%8B%E5%8C%96%E8%BF%87%E7%A8%8B/">&lt;&nbsp;NEWER</a>
+          
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        <a href="/"><em style="color:red;">新站点正在开发中，网站暂停更新。</em></a>
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a href="/">Copyright © DeeTam 2022</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="搜索...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>
