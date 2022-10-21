@@ -122,24 +122,21 @@
 <li>并发引起的是临界同步问题，而幂等是重复操作问题</li>
 </ul>
 <h2 id="常见解决方案"><a href="#常见解决方案" class="headerlink" title="常见解决方案"></a>常见解决方案</h2><ul>
-<li><p>乐观锁状态机</p>
+<li><p>状态机（需要业务支持）</p>
 <ul>
-<li>加入 version 字段</li>
-<li>更新数据前先进行 version 字段判断。例如 obj.setVersion(1) ,其中1是固定值或是入参时传入的版本值，那么这个更新操作只会有一个成功。该方式实质就是 CAS，在SQL层面来看相当于 <code>update table set age = xxx and version = version + 1 where version = 0</code>，因此只会有第个操作成功更新数据</li>
+<li>根据业务数据状态判断是否已经处理过</li>
 </ul>
 </li>
-<li><p>防重表</p>
+<li><p>防重表（推荐）</p>
 <ul>
-<li>依赖唯一约束，该表不一定是数据库表，只要提供唯一约束的存储设系统即可 ，例如Redis的setnx</li>
-<li>操作前先往防重表插入一条数据，成功插入后才操作。那么如果发生非幂等操作，多余的插入是不会成功</li>
+<li>依赖唯一约束</li>
+<li>操作前先往防重表插入一条数据，成功插入后才操作</li>
 </ul>
 </li>
-<li><p>防重Token（推荐）</p>
+<li><p>防重Token（适合表单防重）</p>
 <ul>
-<li>例如客户端在请求处理操作前先向服务方索取一个token（服务端返回token时应将其持久化），然后客户端需要携带该token进行请求操作。服务端通过判断token是否存在，如果存在则先删除token后并处理请求。如果不存在则返回响应提示。因此以上操作只有第一次请求会被处理，因为服务方会在判断token之后删除token以防客户端携带同一个token进行多次操作。</li>
-<li>对于持久化token操作而言，可以存储在HttpSession中，如果是分布式系统也可以存储在Redis中。</li>
-<li>可以使用全局唯一ID作为token。例如：ZooKeeper事务唯一ID、MongoDB的ObjectID、Twitter的SnowFlake算法、UUID等等。</li>
-<li>案例：例如Struts的token标签就是该原理，在加载页面时会为表单生成一个token，在提交表单时一并提交到服务端，然后服务端会将token保存到session中，再利用Filter来过滤多余的提交操作以达到防止表单重复提交的效果</li>
+<li>例如客户端在请求处理操作前先向服务方索取一个token（服务端返回token时应将其持久化），然后客户端需要携带该token进行请求操作。服务端通过判断token是否存在，如果存在则先删除token后并处理请求。如果不存在则返回响应提示</li>
+<li>例如Struts的token标签就是该原理，在加载页面时会为表单生成一个token，在提交表单时一并提交到服务端，然后服务端会将token保存到session中，再利用Filter来过滤多余的提交操作以达到防止表单重复提交的效果</li>
 </ul>
 </li>
 </ul>
