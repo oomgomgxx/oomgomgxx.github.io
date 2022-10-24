@@ -377,6 +377,9 @@
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/027.png"></p>
 <p>4）如何防止数据不一致问题？</p>
 <p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/001.png"></p>
+<ul>
+<li>注意，此时原Leader Replica的“1”并不属于丢失数据，因为它并没有同步成功，所以客户端会得到反馈结果。</li>
+</ul>
 <h2 id="Java-kafka-Producer"><a href="#Java-kafka-Producer" class="headerlink" title="Java kafka Producer"></a>Java kafka Producer</h2><h3 id="生产者模型"><a href="#生产者模型" class="headerlink" title="生产者模型"></a>生产者模型</h3><p><img src="/kafka%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/005.png"></p>
 <blockquote>
 <p>注意：</p>
@@ -691,7 +694,7 @@
 <h3 id="分区再均衡"><a href="#分区再均衡" class="headerlink" title="分区再均衡"></a>分区再均衡</h3><blockquote>
 <p>是什么？</p>
 </blockquote>
-<p>&amp;emsp;&amp;emsp;在消费者组的 Consumer 数量没超过 Partition 数量的情况下，每一个 Consumer 都能分配到一个或多个独自负责的 Partition 。但现在因为某些原因某个 Consumer 宕机了，这时消费者组就会根据<strong>分配策略</strong>来重新设置 Connsuemr 和 Partition 的消费关系。而这个过程就叫做分区再均衡。</p>
+<p>在消费者组的 Consumer 数量没超过 Partition 数量的情况下，每一个 Consumer 都能分配到一个或多个独自负责的 Partition 。但现在因为某些原因某个 Consumer 宕机了，这时消费者组就会根据<strong>分配策略</strong>来重新设置 Connsuemr 和 Partition 的消费关系。而这个过程就叫做分区再均衡。</p>
 <p>注：分区再均衡和 JVM 的 STW 类似，在期间正常的 Consumer 是不能继续消费的，而需要等待分区再均衡结束。</p>
 <blockquote>
 <p>什么情况下会发生分区再均衡？</p>
@@ -860,7 +863,7 @@
 <blockquote>
 <p>如何解决以上两个问题呢？</p>
 </blockquote>
-<p>&amp;emsp;&amp;emsp;改为手动提交 offset 来解决。例如可以在真正处理完消息后才手动交 offset ，而不是在此之前或较久的之后提交。</p>
+<p>改为手动提交 offset 来解决。例如可以在真正处理完消息后才手动交 offset ，而不是在此之前或较久的之后提交。</p>
 <h4 id="同步提交"><a href="#同步提交" class="headerlink" title="同步提交"></a>同步提交</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    ConsumerRecords&lt;String, String&gt; records = consumer.poll(<span class="number">100</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">        consumer.commitSync(); <span class="comment">// 同步提交</span></span><br><span class="line">    &#125; <span class="keyword">catch</span> (CommitFailedException e) &#123;</span><br><span class="line">        log.error(<span class="string">&quot;commit failed&quot;</span>, e)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>同步提交是一个阻塞操作，需要等待 Broker 应答后才能继续后续的操作。因此只要不是发生无法恢复的异常 commitSync() 都能提交成功，但这样无疑会降低消费者的消费吞吐量。</p>
